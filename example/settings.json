@@ -1,0 +1,77 @@
+{
+  "lib_path": "/Users/dream/Desktop/code/projects/dlkt",
+  "FILE_MANAGER_ROOT": "/Users/dream/Desktop/code/projects/dlkt",
+  "lab-setting": {
+    "global-setting": {},
+    "setting-name-config": {
+      "common-setting": {
+        "type": "COM"
+      },
+      "common_age-setting": {
+        "type": "COM"
+      },
+      "common_age_include_unknown-setting": {
+        "type": "COM"
+      },
+      "domain_school-leave_one_out-setting": {
+        "type": "LOO",
+        "domain": "school"
+      },
+      "domain_country-leave_one_out-setting": {
+        "type": "LOO",
+        "domain": "country"
+      },
+      "domain_campus-leave_one_out-setting": {
+        "type": "LOO",
+        "domain": "country"
+      },
+      "domain_gender-leave_one_out-setting": {
+        "type": "LOO",
+        "domain": "gender"
+      },
+      "domain_age-leave_one_out-setting": {
+        "type": "LOO",
+        "domain": "age"
+      },
+      "domain_age_partial-leave_one_out-setting": {
+        "type": "LOO",
+        "domain": "age"
+      }
+    },
+    "LOO_domain_id4test": {
+      "school": "school_id4test",
+      "country": "country_id4test",
+      "age": "age_group_id4test",
+      "gender": "gender4test",
+      "campus": "campus4test"
+    },
+    "COM_has_info": [
+      {
+        "param": "school_ids",
+        "domain": "school",
+        "info_name": "school_id"
+      },
+      {
+        "param": "country_ids",
+        "domain": "country",
+        "info_name": "country_id"
+      },
+      {
+        "param": "genders",
+        "domain": "gender",
+        "info_name": "gender"
+      },
+      {
+        "param": "campuses",
+        "domain": "campus",
+        "info_name": "campus"
+      },
+      {
+        "param": "age_group_ids",
+        "domain": "age",
+        "info_name": "age",
+        "group_info": "age_groups"
+      }
+    ]
+  }
+}

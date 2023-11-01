@@ -1,0 +1,55 @@
+{
+  "file_manager_root": "",
+  "setting_name": "",
+  "dataset_name": "",
+  "device": "cuda",
+  "train_policy": {
+    "type": "early_stop / performance_best_in_test / average_performance_of_last_n_epoch",
+    "fold": "0",
+    "num_epoch4early_stop": "10",
+    "num_epoch4last_average": "5",
+    "main_metric": "AUC / ACC / MAE / RMSE",
+    "use_mutil_metric": false,
+    "multi_metrics": ["AUC", "ACC"]
+  },
+  "model_config": {
+    "kt_model": {
+      "embed_layer": {
+        "concept": [123, 64],
+        "question": [17000, 64],
+        "correct": [2, 128],
+        "interaction": [246, 64],
+        "interval_time": ["60*24*30", 64],
+        "use_time": [3600, 64]
+      },
+      "encoder_layer": {
+        "type": "AKT",
+        "params": []
+      },
+      "predict_layer": ""
+    }
+  },
+  "optimizer_config": {
+    "kt_mode": {
+      "optimizer_type": "adam / sgd",
+      "learning_rate": "0.001",
+      "weight_decay": "0.0",
+      "momentum": "0.0",
+      "eps": "1e-8",
+      "use_lr_schedule": false,
+      "lr_schedule_type": "StepLR",
+      "lr_schedule_step": "10",
+      "lr_schedule_gamma": "0.1"
+    }
+  },
+  "dataset_config": {
+    "type": "kt / srs",
+    "use_aug": false,
+    "aug_config": {
+      "type": "random / info"
+    },
+    "train_path": "",
+    "valid_path": "",
+    "test_path": ""
+  }
+}

@@ -1,7 +1,7 @@
 notebook/.ipynb_checkpoints/
 .pytest_cache/
 result/
-example/lab/
+lab/
 example/edi2020/
 example/edi2022/
 example/pyBKT-master/

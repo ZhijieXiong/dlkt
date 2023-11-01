@@ -6,25 +6,21 @@ import torch.nn as nn
 from lib.util import parse
 
 
-class EmbedLayer(nn.Module):
+class KTEmbedLayer(nn.Module):
     def __init__(self, params, objects):
-        super(EmbedLayer, self).__init__()
+        super(KTEmbedLayer, self).__init__()
         self.params = params
         self.objects = objects
         self.embed_concept = None
         self.embed_question = None
         self.embed_correct = None
         self.embed_interaction = None
-        self.embed_interval_time = None
-        self.embed_use_time = None
 
         self.emb_dict = {
             "concept": self.embed_concept,
             "question": self.embed_question,
             "correct": self.embed_correct,
-            "interaction": self.embed_interaction,
-            "interval_time": self.embed_interval_time,
-            "use_time": self.embed_use_time,
+            "interaction": self.embed_interaction
         }
         self.init_emb_table()
 
@@ -44,7 +40,7 @@ class EmbedLayer(nn.Module):
 
     def init_emb_table(self, init_type=None, table_extend=None):
         # 从params的配置构造embedding表
-        emb_config = self.params["model_config"]["kt_model"]["embed_layer"]
+        emb_config = self.params["model_config"]["kt_model"]["kt_embed_layer"]
         if table_extend is not None:
             pass
         for k, (num_emb, dim_emb) in emb_config.items():
@@ -63,6 +59,10 @@ class EmbedLayer(nn.Module):
         return result
 
     def parse_Q_table(self):
+        """
+        用于多知识点embedding融合，如对于一道多知识点习题的知识点embedding取平均值作为该习题的embedding
+        :return:
+        """
         self.question2concept_list = parse.question2concept_from_Q(self.Q_table)
         self.concept2question_list = parse.concept2question_from_Q(self.Q_table)
 

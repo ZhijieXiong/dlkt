@@ -1,14 +1,15 @@
 import os
 import json
+import platform
 
 
-from .util.data import load_json
+from .data import load_json
 
 
 class FileManager:
     dataset_raw_path_in_lab = {
         "assist2009": "lab/dataset_raw/assist2009/skill_builder_data_corrected_collapsed.csv",
-        "assist2009-new": "lab/dataset_raw/assist2009-new/skill_builder_data.csv",
+        "assist2009-new": "lab/dataset_raw/assist2009-new/skill_builder_data_corrected_collapsed.csv",
         "assist2012": "lab/dataset_raw/assist2012/2012-2013-data-with-predictions-4-final.csv",
         "assist2015": "lab/dataset_raw/assist2015/2015_100_skill_builders_main_problems.csv",
         "assist2017": "lab/dataset_raw/assist2017/anonymized_full_release_competition_dataset.csv",
@@ -51,17 +52,12 @@ class FileManager:
         "slepemapy": "lab/dataset_preprocessed/slepemapy"
     }
 
-    data_preprocessed_name = {
-        "multi": "data_multi.txt",
-        "single": "data_single.txt",
-    }
-
     builtin_datasets = ["assist2009", "assist2009-new", "assist2012", "assist2015", "assist2017", "statics2011",
                         "junyi2015", "ednet-kt1", "edi2020", "edi2020-task1", "edi2020-task12", "edi2020-task4",
                         "edi2022", "SLP-bio", "SLP-mat", "slepemapy"]
 
-    result_dir_in_lab = "lab/result"
-    models_dir_in_lab = "lab/result/saved_models"
+    setting_dir_in_lab = "lab/settings"
+    models_dir_in_lab = "lab/saved_models"
     file_settings_name = "setting.json"
     data_info_name = "info.json"
     Q_table_name = "Q_table.npy"
@@ -111,11 +107,13 @@ class FileManager:
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "SLP-geo"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "SLP-phy"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "slepemapy"),
-            os.path.join(self.root_dir, "lab", "result"),
-            os.path.join(self.root_dir, "lab", "result", "saved_models"),
+            os.path.join(self.root_dir, "lab", "settings"),
+            os.path.join(self.root_dir, "lab", "saved_models"),
         ]
-        # win系统下是用'\\'分隔的
-        all_dirs = list(sorted(all_dirs, key=lambda dir_str: len(dir_str.split("\\"))))
+        if platform.system() == "Windows":
+            all_dirs = list(sorted(all_dirs, key=lambda dir_str: len(dir_str.split("\\"))))
+        else:
+            all_dirs = list(sorted(all_dirs, key=lambda dir_str: len(dir_str.split("/"))))
         for dir_ in all_dirs:
             if os.path.join(dir_):
                 os.mkdir(dir_)
@@ -144,11 +142,16 @@ class FileManager:
         info = load_json(data_info_path)
         return info["preprocessed"]
 
-    def get_preprocessed_path(self, dataset_name, multi=True):
-        # 根据数据集选择
+    def get_preprocessed_path(self, dataset_name, data_type):
+        # 根据数据集选择data_type: multi_concept, single_concept, single_question
+        # 单知识点数据集只有一种类型，即single_question
+        # 多知识点数据集三种类型都有：
+        # multi_concept：多知识点拆成单知识点
+        # single_concept：多知识点当成新知识点，就变成一个单知识点数据集
+        # single_question：序列只有习题序列，没有知识点序列，通过Q table索引知识点
+        assert data_type in ["multi_concept", "single_concept", "single_question"]
         preprocessed_dir = self.get_preprocessed_dir(dataset_name)
-        file_name_key = 'multi' if multi else 'single'
-        return os.path.join(preprocessed_dir, FileManager.data_preprocessed_name[file_name_key])
+        return os.path.join(preprocessed_dir, f"data_{data_type}.txt")
 
     # ==================================================================================================================
 
@@ -156,23 +159,22 @@ class FileManager:
         return os.path.join(self.root_dir, FileManager.models_dir_in_lab)
 
     # ==================================================================================================================
-    def add_new_setting(self, setting_new, setting_new_name):
-        setting_dir = os.path.join(self.root_dir, FileManager.result_dir_in_lab, setting_new_name)
-        # assert not os.path.exists(setting_dir) and not os.path.isdir(setting_dir), f"{setting_new_name} dir exists"
+    def add_new_setting(self, setting_name, setting_info):
+        setting_dir = os.path.join(self.root_dir, FileManager.setting_dir_in_lab, setting_name)
         if os.path.exists(setting_dir) and os.path.isdir(setting_dir):
             return
         setting_path = os.path.join(setting_dir, FileManager.file_settings_name)
         os.mkdir(setting_dir)
         with open(setting_path, "w") as f:
-            json.dump(setting_new, f, indent=2)
+            json.dump(setting_info, f, indent=2)
 
     def delete_old_setting(self, setting_old_name):
-        setting_dir = os.path.join(self.root_dir, FileManager.result_dir_in_lab, setting_old_name)
+        setting_dir = os.path.join(self.root_dir, FileManager.setting_dir_in_lab, setting_old_name)
         assert os.path.exists(setting_dir) or os.path.isdir(setting_dir), f"{setting_old_name} dir does not exist"
         os.rmdir(setting_dir)
 
     def get_setting_dir(self, setting_name):
-        result_dir = os.path.join(self.root_dir, FileManager.result_dir_in_lab)
+        result_dir = os.path.join(self.root_dir, FileManager.setting_dir_in_lab)
         setting_names = os.listdir(result_dir)
         assert setting_name in setting_names, f"{setting_name} dir does not exist"
         return os.path.join(result_dir, setting_name)

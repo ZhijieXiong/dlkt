@@ -1,6 +1,6 @@
 import config
 
-from lib.FileManager import FileManager
+from lib.util.FileManager import FileManager
 
 
 if __name__ == "__main__":

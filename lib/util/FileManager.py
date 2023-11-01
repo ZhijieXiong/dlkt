@@ -69,7 +69,6 @@ class FileManager:
 
     def create_dirs(self):
         assert os.path.exists(self.root_dir), f"{self.root_dir} not exist"
-        assert not os.path.exists(os.path.join(self.root_dir, "lab")), f"lab already exists in {self.root_dir}"
         all_dirs = [
             os.path.join(self.root_dir, "lab"),
             os.path.join(self.root_dir, "lab", "dataset_raw"),
@@ -115,7 +114,7 @@ class FileManager:
         else:
             all_dirs = list(sorted(all_dirs, key=lambda dir_str: len(dir_str.split("/"))))
         for dir_ in all_dirs:
-            if os.path.join(dir_):
+            if not os.path.exists(dir_):
                 os.mkdir(dir_)
 
     def get_root_dir(self):

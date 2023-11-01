@@ -1,7 +1,7 @@
 from copy import deepcopy
 import torch.nn as nn
 
-from .Module.EmbedLayer import EmbedLayer
+from .Module.KTEmbedLayer import EmbedLayer
 from .Module.EncoderLayer import EncoderLayer
 
 

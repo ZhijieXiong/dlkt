@@ -9,4 +9,4 @@ settings_path = os.path.join(current_dir, "./settings.json")
 with open(settings_path, "r") as f:
     settings = json.load(f)
 FILE_MANAGER_ROOT = settings["FILE_MANAGER_ROOT"]
-sys.path.append(settings["lib_path"])
+sys.path.append(settings["LIB_PATH"])

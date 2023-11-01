@@ -2,11 +2,13 @@ import os
 import pandas as pd
 
 
-def load_csv(data_path, useful):
+def load_csv(data_path, useful_cols=None, rename_dict=None):
     try:
-        df = pd.read_csv(data_path, usecols=useful, encoding="utf-8", low_memory=False)
+        df = pd.read_csv(data_path, usecols=useful_cols, encoding="utf-8", low_memory=False)
     except UnicodeDecodeError:
-        df = pd.read_csv(data_path, usecols=useful, encoding="ISO-8859-1", low_memory=False)
+        df = pd.read_csv(data_path, usecols=useful_cols, encoding="ISO-8859-1", low_memory=False)
+    if rename_dict is not None:
+        df.rename(columns=rename_dict, inplace=True)
     return df
 
 

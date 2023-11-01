@@ -6,7 +6,7 @@ from .util import create_optimizer
 from .LossRecord import LossRecord
 
 
-class BaseTrainer:
+class KnowledgeTracingTrainer:
     def __init__(self, params):
         self.params = params
 

@@ -142,13 +142,7 @@ class FileManager:
         return info["preprocessed"]
 
     def get_preprocessed_path(self, dataset_name, data_type):
-        # 根据数据集选择data_type: multi_concept, single_concept, single_question
-        # 单知识点数据集只有一种类型，即single_question
-        # 多知识点数据集三种类型都有：
-        # multi_concept：多知识点拆成单知识点
-        # single_concept：多知识点当成新知识点，就变成一个单知识点数据集
-        # single_question：序列只有习题序列，没有知识点序列，通过Q table索引知识点
-        assert data_type in ["multi_concept", "single_concept", "single_question"]
+        assert data_type in ["multi_concept", "single_concept", "only_question"]
         preprocessed_dir = self.get_preprocessed_dir(dataset_name)
         return os.path.join(preprocessed_dir, f"data_{data_type}.txt")
 

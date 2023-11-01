@@ -14,13 +14,11 @@
   },
   "model_config": {
     "kt_model": {
-      "embed_layer": {
+      "kt_embed_layer": {
         "concept": [123, 64],
         "question": [17000, 64],
         "correct": [2, 128],
-        "interaction": [246, 64],
-        "interval_time": ["60*24*30", 64],
-        "use_time": [3600, 64]
+        "interaction": [246, 64]
       },
       "encoder_layer": {
         "type": "AKT",

@@ -25,26 +25,11 @@ def load_SLP(data_dir, dataset_name):
     student_cols = ["student_id", "gender", "school_id"]
     school_cols = ["school_id", "school_type"]
 
-    try:
-        unit = pd.read_csv(unit_path, usecols=useful_cols, encoding="utf-8", low_memory=False, index_col=False)
-    except UnicodeDecodeError:
-        unit = pd.read_csv(unit_path, usecols=useful_cols, encoding="ISO-8859-1", low_memory=False, index_col=False)
-    try:
-        term = pd.read_csv(term_path, usecols=useful_cols, encoding="utf-8", low_memory=False, index_col=False)
-    except UnicodeDecodeError:
-        term = pd.read_csv(term_path, usecols=useful_cols, encoding="ISO-8859-1", low_memory=False, index_col=False)
-    try:
-        student = pd.read_csv(student_path, usecols=student_cols, encoding="utf-8", low_memory=False, index_col=False)
-    except UnicodeDecodeError:
-        student = pd.read_csv(student_path, usecols=student_cols, encoding="ISO-8859-1", low_memory=False, index_col=False)
-    try:
-        family = pd.read_csv(family_path, usecols=family_cols, encoding="utf-8", low_memory=False, index_col=False)
-    except UnicodeDecodeError:
-        family = pd.read_csv(family_path, usecols=family_cols, encoding="ISO-8859-1", low_memory=False, index_col=False)
-    try:
-        school = pd.read_csv(school_path, usecols=school_cols, encoding="utf-8", low_memory=False, index_col=False)
-    except UnicodeDecodeError:
-        school = pd.read_csv(school_path, usecols=school_cols, encoding="ISO-8859-1", low_memory=False, index_col=False)
+    unit = load_csv(unit_path, useful_cols)
+    term = load_csv(term_path, useful_cols)
+    student = load_csv(student_path, student_cols)
+    family = load_csv(family_path, family_cols)
+    school = load_csv(school_path, school_cols)
 
     # 原文件已经是排过序的，加上order方便后面利用
     unit["order"] = range(len(unit))
@@ -61,5 +46,30 @@ def load_SLP(data_dir, dataset_name):
     # live_on_campus和school_type有nan
     return df[["student_id", "question_id", "concept", "score", "full_score", "time_access", "order",
                "live_on_campus", "school_type", "gender"]]
+
+
+def load_ednet_kt1(data_dir):
+    # 多知识点算新知识点
+    dfs = []
+
+    def process_tags(tags_str):
+        tags = tags_str.split("_")
+        tags = list(map(str, sorted(list(map(int, tags)))))
+        return "_".join(tags)
+
+    for i in range(200):
+        file_name = f"users_{i}.csv"
+        file_path = os.path.join(data_dir, file_name)
+        if not os.path.exists(file_path):
+            break
+        else:
+            try:
+                df = pd.read_csv(file_path, encoding="utf-8", low_memory=False)
+            except UnicodeDecodeError:
+                df = pd.read_csv(file_path, encoding="ISO-8859-1", low_memory=False)
+            df["tags"] = df["tags"].map(process_tags)
+            dfs.append(df)
+
+    return pd.concat(dfs, axis=0)
 
 

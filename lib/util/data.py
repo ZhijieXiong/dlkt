@@ -6,22 +6,22 @@ import numpy as np
 
 
 def write2file(data, data_path):
-    # seq_feature_keys表示序列级别的特征，如user_id, seq_len
-    # interaction_feature_keys表示交互级别的特征，如question_id, concept_id
+    # id_keys表示序列级别的特征，如user_id, seq_len
+    # seq_keys表示交互级别的特征，如question_id, concept_id
+    id_keys = []
     seq_keys = []
-    interaction_keys = []
     for key in data[0].keys():
         if type(data[0][key]) == list:
-            interaction_keys.append(key)
-        else:
             seq_keys.append(key)
+        else:
+            id_keys.append(key)
     with open(data_path, "w") as f:
-        first_line = ",".join(seq_keys) + ";" + ",".join(interaction_keys) + "\n"
+        first_line = ",".join(id_keys) + ";" + ",".join(seq_keys) + "\n"
         f.write(first_line)
         for item_data in data:
-            for seq_key in seq_keys:
+            for seq_key in id_keys:
                 f.write(f"{item_data[seq_key]}\n")
-            for interaction_key in interaction_keys:
+            for interaction_key in seq_keys:
                 f.write(",".join(map(str, item_data[interaction_key])) + "\n")
 
 
@@ -31,11 +31,11 @@ def read_preprocessed_file(data_path):
         all_lines = f.readlines()
         first_line = all_lines[0].strip()
         seq_interaction_keys_str = first_line.split(";")
-        seq_keys_str = seq_interaction_keys_str[0].strip()
-        interaction_keys_str = seq_interaction_keys_str[1].strip()
+        id_keys_str = seq_interaction_keys_str[0].strip()
+        seq_keys_str = seq_interaction_keys_str[1].strip()
+        id_keys = id_keys_str.split(",")
         seq_keys = seq_keys_str.split(",")
-        interaction_keys = interaction_keys_str.split(",")
-        keys = seq_keys + interaction_keys
+        keys = id_keys + seq_keys
         num_key = len(keys)
         all_lines = all_lines[1:]
         data = []

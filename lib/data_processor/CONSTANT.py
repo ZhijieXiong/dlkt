@@ -8,8 +8,7 @@ def datasets_treatable(datasets_merged=None):
 
 def datasets_useful_cols(datasets_merged=None):
     result = {
-        "assist2009": ["order_id", "user_id", "problem_id", "correct", "skill_id", "skill_name", "school_id",
-                       "teacher_id"],
+        "assist2009": ["order_id", "user_id", "problem_id", "correct", "skill_id", "school_id", "teacher_id"],
         "assist2012": ["skill", "problem_id", "user_id", "end_time", "correct", "skill_id", "overlap_time", "school_id",
                        "teacher_id"],
         "assist2017": ["studentId", "MiddleSchoolId", "problemId", "skill", "timeTaken", "startTime", "correct"],
@@ -27,8 +26,7 @@ def datasets_renamed(datasets_merged=None):
     result = {
         "assist2009": {
             "problem_id": "question_id",
-            "skill_id": "concept_id",
-            "skill_name": "concept_name",
+            "skill_id": "concept_id"
         },
         "assist2012": {
             "problem_id": "question_id",
@@ -38,7 +36,7 @@ def datasets_renamed(datasets_merged=None):
             "overlap_time": "use_time"
         },
         "assist2015": {
-            "sequence_id": "concept_id"
+            "sequence_id": "question_id"
         },
         "assist2017": {
             "problemId": "question_id",
@@ -69,7 +67,7 @@ def datasets_renamed(datasets_merged=None):
         result.setdefault(k, v)
 
 
-def datasets_seq_names(datasets_merged=None):
+def datasets_seq_keys(datasets_merged=None):
     result = {
         "assist2009": ["question_seq", "concept_seq", "correct_seq"],
         "assist2012": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],

@@ -1,4 +1,5 @@
 objects = {
+    "file_manager": None,
     "models": {
         "kt_model": None,
         # "other_model1": None

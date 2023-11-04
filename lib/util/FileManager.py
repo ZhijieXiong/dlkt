@@ -1,9 +1,10 @@
 import os
 import json
 import platform
+import numpy as np
 
 
-from .data import load_json
+from .data import load_json, write_json
 
 
 class FileManager:
@@ -59,8 +60,6 @@ class FileManager:
     setting_dir_in_lab = "lab/settings"
     models_dir_in_lab = "lab/saved_models"
     file_settings_name = "setting.json"
-    data_info_name = "info.json"
-    Q_table_name = "Q_table.npy"
 
     def __init__(self, root_dir, init_dirs=False):
         self.root_dir = root_dir
@@ -128,18 +127,36 @@ class FileManager:
         assert dataset_name in FileManager.builtin_datasets, f"{dataset_name} is not in builtin datasets"
         return os.path.join(self.root_dir, FileManager.data_preprocessed_dir_in_lab[dataset_name])
 
-    def get_data_info_path(self, dataset_name):
+    def save_q_table(self, Q_table, dataset_name, data_type):
+        assert data_type in ["multi_concept", "single_concept", "only_question"]
         preprocessed_dir = self.get_preprocessed_dir(dataset_name)
-        return os.path.join(preprocessed_dir, FileManager.data_info_name)
+        Q_table_path = os.path.join(preprocessed_dir, f"Q_table_{data_type}.npy")
+        np.save(Q_table_path, Q_table)
 
-    def get_q_table_path(self, dataset_name):
+    def save_data_statics_processed(self, statics, dataset_name, data_type):
+        assert data_type in ["multi_concept", "single_concept", "only_question"]
         preprocessed_dir = self.get_preprocessed_dir(dataset_name)
-        return os.path.join(preprocessed_dir, FileManager.Q_table_name)
+        statics_path = os.path.join(preprocessed_dir, f"statics_preprocessed_{data_type}.json")
+        write_json(statics, statics_path)
 
-    def get_data_preprocessed_info(self, dataset_name):
-        data_info_path = self.get_data_info_path(dataset_name)
-        info = load_json(data_info_path)
-        return info["preprocessed"]
+    def save_data_statics_raw(self, statics, dataset_name):
+        preprocessed_dir = self.get_preprocessed_dir(dataset_name)
+        statics_path = os.path.join(preprocessed_dir, f"statics_raw.json")
+        write_json(statics, statics_path)
+
+    def get_q_table(self, dataset_name, data_type):
+        assert data_type in ["multi_concept", "single_concept", "only_question"]
+        preprocessed_dir = self.get_preprocessed_dir(dataset_name)
+        Q_table_path = os.path.join(preprocessed_dir, f"Q_table_{data_type}.npy")
+        Q_table = np.load(Q_table_path)
+        return Q_table
+
+    def get_data_statics_processed(self, dataset_name, data_type):
+        assert data_type in ["multi_concept", "single_concept", "only_question"]
+        preprocessed_dir = self.get_preprocessed_dir(dataset_name)
+        statics_path = os.path.join(preprocessed_dir, f"statics_preprocessed_{data_type}.json")
+        statics = load_json(statics_path)
+        return statics
 
     def get_preprocessed_path(self, dataset_name, data_type):
         assert data_type in ["multi_concept", "single_concept", "only_question"]

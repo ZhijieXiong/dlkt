@@ -1,8 +1,10 @@
 params = {
   "file_manager_root": "",
-  "setting_name": "",
-  "dataset_name": "",
   "device": "cuda",
+  "preprocess_config": {
+    "dataset_name": "assist2009",
+    "data_path": ""
+  },
   "train_strategy": {
     "type": "valid_test / no_valid",
     "valid_test": {
@@ -76,6 +78,8 @@ params = {
   },
   "dataset_config": {
     "type": "kt / srs",
+    "setting_name": "",
+    "dataset_name": "",
     "use_aug": False,
     "aug_config": {
       "type": "random / info"

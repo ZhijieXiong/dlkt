@@ -1,18 +1,18 @@
 import torch.optim as optim
 
 
-def create_optimizer(opt_config, parameters):
-    optimizer_type = opt_config["optimizer_type"]
-    learning_rate = opt_config["learning_rate"]
-    weight_decay = opt_config.get("weight_decay", 0.0)
-    momentum = opt_config.get("momentum", 0.0)
-    eps = 1e-8
-
-    if optimizer_type == 'adam':
-        optimizer = optim.Adam(parameters, learning_rate, weight_decay=weight_decay, eps=eps)
-    elif optimizer_type == 'sgd':
-        optimizer = optim.SGD(parameters, learning_rate, weight_decay=weight_decay, momentum=momentum)
+def create_optimizer(parameters, opt_config):
+    if opt_config["type"] == 'sgd':
+        optimizer = optim.SGD(parameters, **opt_config["sgd"])
     else:
-        optimizer = optim.Adam(parameters, learning_rate, weight_decay=weight_decay)
-
+        optimizer = optim.Adam(parameters, **opt_config["adam"])
     return optimizer
+
+
+def create_scheduler(optimizer, sch_config):
+    if sch_config["type"] == "CosineAnnealingLR":
+        scheduler = None
+    else:
+        # 默认StepLR
+        scheduler = optim.lr_scheduler.StepLR(optimizer, **sch_config["StepLR"])
+    return scheduler

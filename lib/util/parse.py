@@ -1,5 +1,7 @@
 import numpy as np
 
+from .. import DATASET_INFO
+
 
 def concept2question_from_Q(Q_table):
     # 将Q table转换为{concept_id1: [question_id1,...]}的形式，表示各个知识点对应的习题
@@ -21,3 +23,23 @@ def get_keys_from_uniform(data_uniformed):
             id_keys.append(k)
     seq_keys = list(set(item_data.keys()) - set(id_keys))
     return id_keys, seq_keys
+
+
+def parse_data_type(dataset_name, data_type):
+    """
+    判断一个数据集是否有某种数据类型（multi concept、single concept、only question）
+    :param dataset_name:
+    :param data_type:
+    :return:
+    """
+    datasets_has_concept = DATASET_INFO.datasets_has_concept()
+    datasets_multi_concept = DATASET_INFO.datasets_multi_concept()
+
+    if data_type == "multi_concept":
+        return dataset_name in datasets_multi_concept
+    elif data_type == "single_concept":
+        return dataset_name in datasets_has_concept
+    elif data_type == "only_question":
+        return (dataset_name in datasets_multi_concept) or (dataset_name not in datasets_has_concept)
+    else:
+        assert False, f"data type \"{data_type}\" does not exist!"

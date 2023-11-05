@@ -11,14 +11,10 @@ from lib.util.data import *
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_name", type=str, default="assist2009")
-    parser.add_argument("--file_manager_root", type=str, default=r"")
 
     args = parser.parse_args()
     params = vars(args)
-
-    if params["file_manager_root"] == "":
-        params["file_manager_root"] = config.FILE_MANAGER_ROOT
-    objects = {"file_manager": FileManager(params["file_manager_root"])}
+    objects = {"file_manager": FileManager(config.FILE_MANAGER_ROOT)}
 
     params["preprocess_config"] = {
         "dataset_name": params["dataset_name"],

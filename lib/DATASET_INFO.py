@@ -5,7 +5,7 @@ def datasets_multi_concept(datasets_merged=None):
     return result.extend(datasets_merged)
 
 
-def datasets_has_question(datasets_merged=None):
+def datasets_has_concept(datasets_merged=None):
     result = ["assist2009", "assist2009-new", "assist2012", "assist2017", "SLP-bio", "SLP-mat", "edi2020-task12",
               "edi2020-task1", "edi2020-task4", "slepemapy", "ednet-kt1"]
     if datasets_merged is None:

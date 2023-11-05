@@ -6,14 +6,14 @@ from lib.util.FileManager import FileManager
 from lib.util.parse import parse_data_type
 from lib.util.data import read_preprocessed_file
 from lib.dataset.split_seq import dataset_truncate2multi_seq
-from lib.dataset.split_dataset import n_fold_split2
+from lib.dataset.split_dataset import n_fold_split1
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_name", type=str, default="assist2009")
     # setting config
-    parser.add_argument("--setting_name", type=str, default="multi_concept-truncate2multi_seq_five_fold_2")
+    parser.add_argument("--setting_name", type=str, default="pykt_setting")
     parser.add_argument("--data_type", type=str, default="multi_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
     parser.add_argument("--max_seq_len", type=int, default=200)
@@ -28,8 +28,8 @@ if __name__ == "__main__":
 
     params["lab_setting"] = {
         "name": params["setting_name"],
-        "description": "序列处理：（1）序列长度小于n，则在后面补零；（2）序列长度大于n，则截断成多条序列；\n"
-                       "数据集划分：先用k折交叉划分为训练集和测试集，再在训练集中划分一部分数据为验证集",
+        "description": "序列处理：（1）序列长度小于200，则在后面补零；（2）序列长度大于200，则截断成多条序列；\n"
+                       "数据集划分：选一部分数据做测试集，剩余数据用k折交叉划分为训练集和验证集",
         "data_type": params["data_type"],
         "max_seq_len": params["max_seq_len"],
         "min_seq_len": params["min_seq_len"],
@@ -46,4 +46,4 @@ if __name__ == "__main__":
                                                    params["min_seq_len"],
                                                    params["max_seq_len"],
                                                    single_concept=params["data_type"] != "multi_concept")
-    n_fold_split2(dataset_truncated, params, objects)
+    n_fold_split1(dataset_truncated, params, objects)

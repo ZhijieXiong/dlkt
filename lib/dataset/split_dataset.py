@@ -41,11 +41,10 @@ def split1(dataset_uniformed, n_fold, test_radio, valid_radio, seed=0):
     return result
 
 
-def split2(dataset_uniformed, n_fold, test_radio, valid_radio, seed=0):
+def split2(dataset_uniformed, n_fold, valid_radio, seed=0):
     """
     先用n折交叉划分为训练集和测试集，再在训练集中划分一部分数据为验证集
     :param valid_radio:
-    :param test_radio:
     :param dataset_uniformed:
     :param n_fold:
     :param seed:
@@ -54,14 +53,10 @@ def split2(dataset_uniformed, n_fold, test_radio, valid_radio, seed=0):
     random.seed(seed)
     random.shuffle(dataset_uniformed)
     num_all = len(dataset_uniformed)
-    num_fold = int(num_all * test_radio)
+    num_fold = num_all // n_fold
 
-    if n_fold == 1:
-        num_test = int(num_all * test_radio)
-        num_valid = int((num_all - num_test) * valid_radio)
-        return ([dataset_uniformed[:num_test]],
-                [dataset_uniformed[num_test:(num_test+num_valid)]],
-                [dataset_uniformed[(num_test+num_valid):]])
+    if n_fold <= 1:
+        assert False, "num of fold must greater than 1, 5 is suggested"
 
     dataset_folds = [dataset_uniformed[num_fold * fold: num_fold * (fold + 1)] for fold in range(n_fold)]
     result = ([], [], [])
@@ -115,18 +110,17 @@ def n_fold_split2(dataset_uniformed, params, objects):
     :return:
     """
     n_fold = params["lab_setting"]["n_fold"]
-    test_radio = params["lab_setting"]["test_radio"]
     valid_radio = params["lab_setting"]["valid_radio"]
     dataset_name = params["dataset_name"]
     setting_dir = objects["file_manager"].get_setting_dir(params["lab_setting"]["name"])
 
     # dataset_uniformed = deepcopy(dataset_uniformed)
-    datasets_train, datasets_valid, datasets_test = split2(dataset_uniformed, n_fold, test_radio, valid_radio)
+    datasets_train, datasets_valid, datasets_test = split2(dataset_uniformed, n_fold, valid_radio)
     if n_fold == 1:
         pass
     names_train = [f"{dataset_name}_train_fold_{fold}.txt" for fold in range(n_fold)]
     names_valid = [f"{dataset_name}_valid_fold_{fold}.txt" for fold in range(n_fold)]
-    names_test = [f"{dataset_name}_valid_fold_{fold}.txt" for fold in range(n_fold)]
+    names_test = [f"{dataset_name}_test_fold_{fold}.txt" for fold in range(n_fold)]
 
     for fold in range(n_fold):
         write2file(datasets_train[fold], os.path.join(setting_dir, names_train[fold]))

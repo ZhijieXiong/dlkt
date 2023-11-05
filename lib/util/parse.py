@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 
 from .. import DATASET_INFO
@@ -43,3 +44,12 @@ def parse_data_type(dataset_name, data_type):
         return (dataset_name in datasets_multi_concept) or (dataset_name not in datasets_has_concept)
     else:
         assert False, f"data type \"{data_type}\" does not exist!"
+
+
+def str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')

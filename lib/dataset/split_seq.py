@@ -1,7 +1,7 @@
 from ..util import parse
 
 
-def dataset_truncate2one_seq(data_uniformed, multi_concept=True, from_start=True, min_seq_len=2, max_seq_len=200):
+def dataset_truncate2one_seq(data_uniformed, min_seq_len=2, max_seq_len=200, multi_concept=True, from_start=True):
     """
     截断数据，取最前面或者最后面一段，不足的在后面补0
     :param data_uniformed:
@@ -13,9 +13,9 @@ def dataset_truncate2one_seq(data_uniformed, multi_concept=True, from_start=True
     """
     data_uniformed = list(filter(lambda item: min_seq_len <= item["seq_len"], data_uniformed))
     result = []
-    info_names = list(set(data_uniformed[0].keys()) - {"user_id", "seq_len"})
+    id_keys, seq_keys = parse.get_keys_from_uniform(data_uniformed)
     for item_data in data_uniformed:
-        item_data_new = {"user_id": item_data["user_id"]}
+        item_data_new = {key: item_data[key] for key in id_keys}
         seq_len = item_data["seq_len"]
         start_index, end_index = 0, seq_len
         if not multi_concept:
@@ -51,11 +51,11 @@ def dataset_truncate2one_seq(data_uniformed, multi_concept=True, from_start=True
                     if q_id != -1:
                         start_index = j
         pad_len = max_seq_len - end_index + start_index
-        for info_name in info_names:
-            item_data_new[info_name] = item_data[info_name][start_index:end_index] + [0] * pad_len
+        for k in seq_keys:
+            item_data_new[k] = item_data[k][start_index:end_index] + [0] * pad_len
         item_data_new["seq_len"] = end_index - start_index
-        item_data_new["mask_seq"] = [1] * (end_index - start_index) + \
-                                    [0] * (0 if seq_len >= max_seq_len else pad_len)
+        item_data_new["mask_seq"] = [1] * item_data_new["seq_len"] + \
+                                    [0] * (max_seq_len - item_data_new["seq_len"])
         result.append(item_data_new)
     return result
 

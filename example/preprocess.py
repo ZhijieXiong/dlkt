@@ -36,4 +36,3 @@ if __name__ == "__main__":
             k = "multi_concept"
         objects["file_manager"].save_data_statics_processed(data_statics_preprocessed[k], dataset_name, k)
         objects["file_manager"].save_q_table(Q_table[k], dataset_name, k)
-

@@ -28,9 +28,7 @@ if __name__ == "__main__":
 
     params["lab_setting"] = {
         "name": params["setting_name"],
-        "description": "序列处理：\n"
-                       "（1）序列长度小于n，则在后面补零\n"
-                       "（2）序列长度大于n，则截断成多条序列\n"
+        "description": "序列处理：（1）序列长度小于n，则在后面补零；（2）序列长度大于n，则截断成多条序列；\n"
                        "数据集划分：选一部分数据做测试集，剩余数据用k折交叉划分为训练集和验证集",
         "data_type": params["data_type"],
         "max_seq_len": params["max_seq_len"],
@@ -49,4 +47,3 @@ if __name__ == "__main__":
                                                    params["max_seq_len"],
                                                    single_concept=params["data_type"] != "multi_concept")
     n_fold_split1(dataset_truncated, params, objects)
-

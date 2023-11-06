@@ -1,8 +1,10 @@
 import os
 import json
-
 import numpy
 import numpy as np
+from copy import deepcopy
+
+from .parse import get_keys_from_uniform
 
 
 def write2file(data, data_path):
@@ -68,3 +70,48 @@ def write_json(json_data, json_path):
 
 def get_concept_from_question(q_table: numpy.ndarray, question_id):
     return np.argwhere(q_table[question_id] == 1).reshape(-1).tolist()
+
+
+def dataset_delete_pad(dataset):
+    id_keys, seq_keys = get_keys_from_uniform(dataset)
+    data_uniformed = []
+    for item_data in dataset:
+        item_data_new = deepcopy(item_data)
+        mask_seq = item_data_new["mask_seq"]
+        end_index = mask_seq.index(0) if mask_seq[-1] != 1 else len(mask_seq)
+        for k in seq_keys:
+            item_data_new[k] = item_data_new[k][0:end_index]
+        item_data_new["seq_len"] = len(item_data_new["correct_seq"])
+        data_uniformed.append(item_data_new)
+    return data_uniformed
+
+
+def data_pad(data_uniformed, max_seq_len=200, padding_value=0):
+    dataset_new = []
+    id_keys, seq_keys = get_keys_from_uniform(data_uniformed)
+    for item_data in data_uniformed:
+        item_new = {k: item_data[k] for k in id_keys}
+        seq_len = len(item_data["correct_seq"])
+        for k in seq_keys:
+            item_new[k] = item_data[k] + [padding_value] * (max_seq_len - seq_len)
+        dataset_new.append(item_new)
+    return dataset_new
+
+
+def dataset_agg_concept(data_uniformed):
+    # 用于将数据中question_seq序列为-1的去掉，也就是生成single数据，不做multi
+    data_new = []
+    id_keys, seq_keys = get_keys_from_uniform(data_uniformed)
+    for item_data in data_uniformed:
+        item_data_new = {}
+        for key in id_keys:
+            item_data_new[key] = item_data[key]
+        for key in seq_keys:
+            item_data_new[key] = []
+        for i, q_id in enumerate(item_data["question_seq"]):
+            if q_id != -1:
+                for key in seq_keys:
+                    item_data_new[key].append(item_data[key][i])
+        item_data_new["seq_len"] = len(item_data_new["correct_seq"])
+        data_new.append(item_data_new)
+    return data_new

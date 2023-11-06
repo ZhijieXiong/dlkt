@@ -76,7 +76,7 @@ params = {
     #   },
     # }
   },
-  "dataset_config": {
+  "datasets_config": {
     "type": "kt / srs",
     "setting_name": "",
     "dataset_name": "",
@@ -87,5 +87,12 @@ params = {
     "train_path": "",
     "valid_path": "",
     "test_path": ""
+  },
+  # 配置KTDataset需要的参数
+  "dataset_this_config": {
+    "dataset_path": "",
+    "data_type": "multi_concept",
+    "unuseful_seq_keys": {"user_id"},
+    "base_type": "concept"
   }
 }

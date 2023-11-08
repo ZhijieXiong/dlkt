@@ -23,8 +23,11 @@ class KTDataset(Dataset):
         return result
 
     def load_dataset(self):
-        dataset_config = self.params["dataset_this_config"]
-        dataset_path = dataset_config["dataset_path"]
+        dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
+        setting_name = dataset_config_this["setting_name"]
+        file_name = dataset_config_this["file_name"]
+        dataset_path = os.path.join(self.objects["file_manager"].get_setting_dir(setting_name), file_name)
+        dataset_config = dataset_config_this["kt"]
         unuseful_keys = dataset_config["unuseful_seq_keys"]
         unuseful_keys = unuseful_keys - {"seq_len"}
         base_type = dataset_config["base_type"]

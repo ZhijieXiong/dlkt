@@ -1,0 +1,62 @@
+import argparse
+
+import config
+
+from lib.util.parse import str2bool
+from lib.util.set_up import set_seed
+from lib.dataset.KTDataset import KTDataset
+from lib.model.DKT import DKT
+from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    # 数据集相关
+    parser.add_argument("--setting_name", type=str, default="pykt_setting")
+    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2009_test.txt")
+    # 优化器相关参数选择
+    parser.add_argument("--optimizer_type", type=str, default="sgd",
+                        choices=("adam", "sgd"))
+    parser.add_argument("--weight_decay", type=float, default=0)
+    parser.add_argument("--momentum", type=float, default=0.9)
+    # 训练策略
+    parser.add_argument("--train_strategy", type=str, default="valid_test",
+                        choices=("valid_test", "no_valid"))
+    parser.add_argument("--num_epoch", type=int, default=200)
+    parser.add_argument("--use_early_stop", type=str2bool, default=True)
+    parser.add_argument("--epoch_early_stop", type=int, default=10)
+    parser.add_argument("--use_last_average", type=str2bool, default=True)
+    parser.add_argument("--epoch_last_average", type=int, default=5)
+    parser.add_argument("--main_metric", type=str, default="AUC")
+    parser.add_argument("--use_mutil_metrics", type=str2bool, default=False)
+    parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
+    parser.add_argument("--learning_rate", type=float, default=0.1)
+    parser.add_argument("--train_batch_size", type=int, default=64)
+    parser.add_argument("--evaluate_batch_size", type=int, default=256)
+    parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
+    parser.add_argument("--lr_schedule_type", type=str, default="StepLR")
+    parser.add_argument("--lr_schedule_step", type=int, default=10)
+    parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
+    parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
+    parser.add_argument("--grad_clipped", type=float, default=10.0)
+    # 模型参数
+    parser.add_argument("--num_concept", type=int, default=123)
+    parser.add_argument("--dim_emb", type=int, default=64)
+    parser.add_argument("--dim_latent", type=int, default=64)
+    parser.add_argument("--rnn_type", type=str, default="gru")
+    parser.add_argument("--num_rnn_layer", type=int, default=1)
+    parser.add_argument("--dropout", type=float, default=0.3)
+    parser.add_argument("--num_predict_layer", type=int, default=1)
+    parser.add_argument("--dim_predict_mid", type=int, default=256)
+    parser.add_argument("--activate_type", type=str, default="sigmoid")
+    # 其它
+    parser.add_argument("--save_model", type=str2bool, default=False)
+    parser.add_argument("--seed", type=int, default=0)
+
+    args = parser.parse_args()
+    params = vars(args)
+    set_seed(params["seed"])
+    config.dkt_config(params)
+

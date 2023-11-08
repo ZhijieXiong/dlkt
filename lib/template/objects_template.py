@@ -1,4 +1,4 @@
-objects = {
+OBJECTS = {
     "file_manager": None,
     "models": {
         "kt_model": None,
@@ -17,6 +17,4 @@ objects = {
         "valid_loader": None,
         "test_loader": None
     },
-    # 用于KTDataset的数据
-    "dataset_this": []
 }

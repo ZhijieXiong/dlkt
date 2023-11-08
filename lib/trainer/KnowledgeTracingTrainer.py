@@ -20,6 +20,7 @@ class KnowledgeTracingTrainer:
             used_losses.append(loss_name)
         self.loss_record = LossRecord(used_losses)
         self.train_record = TrainRecord(params, objects)
+        self.init_trainer()
 
     def init_trainer(self):
         # 初始化optimizer和scheduler
@@ -29,9 +30,11 @@ class KnowledgeTracingTrainer:
         optimizers_config = self.params["optimizers_config"]
         schedulers_config = self.params["schedulers_config"]
 
-        for model_name, optimizers_config in optimizers_config.items():
-            model_parameters = models[model_name].parameters()
-            optimizer_config = optimizers_config[model_name]
+        for model_name, optimizer_config in optimizers_config.items():
+            if model_name == "kt_model":
+                model_parameters = models[model_name].get_parameters()
+            else:
+                model_parameters = models[model_name].parameters()
             optimizers[model_name] = create_optimizer(model_parameters, optimizer_config)
 
             scheduler_config = schedulers_config[model_name]
@@ -46,17 +49,18 @@ class KnowledgeTracingTrainer:
         schedulers_config = self.params["schedulers_config"]["kt_model"]
         num_epoch = train_strategy["num_epoch"]
         train_loader = self.objects["data_loaders"]["train_loader"]
+        optimizer = self.objects["optimizers"]["kt_model"]
         scheduler = self.objects["schedulers"]["kt_model"]
         model = self.objects["models"]["kt_model"]
 
         for epoch in range(1, num_epoch + 1):
             for batch in train_loader:
-                model.optimizer.zero_grad()
+                optimizer.zero_grad()
 
                 num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
                 loss = model.get_loss(batch)
                 self.loss_record.add_loss("predict loss", loss.detach().cpu().item() * num_sample, num_sample)
-                loss.bachward()
+                loss.backward()
                 if grad_clip_config["use_clip"]:
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
             if schedulers_config["use_scheduler"]:

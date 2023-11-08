@@ -1,9 +1,10 @@
+import torch
 import torch.nn as nn
 
 from .Module.KTEmbedLayer import KTEmbedLayer
 
 
-class DKT(nn.Module):
+class DKT:
     model_name = "DKT"
 
     def __init__(self, params, objects):
@@ -20,7 +21,7 @@ class DKT(nn.Module):
     def init_model(self):
         self.embed_layer = KTEmbedLayer(self.params, self.objects)
 
-        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DKT"]
         dim_emb = encoder_config["dim_emb"]
         dim_latent = encoder_config["dim_latent"]
         rnn_type = encoder_config["rnn_type"]
@@ -31,8 +32,9 @@ class DKT(nn.Module):
             self.encoder_layer = nn.LSTM(dim_emb, dim_latent, batch_first=True, num_layers=num_rnn_layer)
         else:
             self.encoder_layer = nn.GRU(dim_emb, dim_latent, batch_first=True, num_layers=num_rnn_layer)
+        self.encoder_layer = self.encoder_layer.to(self.params["device"])
 
-        predict_layer_config = self.params["models_config"]["kt_model"]["predict_layer"]
+        predict_layer_config = self.params["models_config"]["kt_model"]["predict_layer"]["direct"]
         dropout = predict_layer_config["dropout"]
         num_predict_layer = predict_layer_config["num_predict_layer"]
         dim_predict_mid = predict_layer_config["dim_predict_mid"]
@@ -58,14 +60,25 @@ class DKT(nn.Module):
             self.predict_layer.append(nn.Dropout(dropout))
             self.predict_layer.append(nn.Linear(dim_latent, dim_predict_out))
             self.predict_layer.append(act_func())
+        self.predict_layer = nn.Sequential(*self.predict_layer).to(self.params["device"])
+
+    def get_parameters(self):
+        result = []
+        for emb_table in self.embed_layer.emb_dict.values():
+            if emb_table is not None:
+                result.append(emb_table.weight)
+        result.extend(self.encoder_layer.parameters())
+        result.extend(self.predict_layer.parameters())
+        return result
 
     def forward(self, batch):
         correct_seq = batch["correct_seq"]
         concept_seq = batch["concept_seq"]
-        interaction_seq = concept_seq[:, 0:-1].long() + self.model.num_item * correct_seq[:, 0:-1].long()
+        dim_predict_out = self.params["models_config"]["kt_model"]["predict_layer"]["direct"]["dim_predict_out"]
+        interaction_seq = concept_seq[:, 0:-1].long() + dim_predict_out * correct_seq[:, 0:-1].long()
         emb_interaction = self.embed_layer.get_emb("interaction", interaction_seq)
-        self.rnn.flatten_parameters()
-        latent, _ = self.rnn(emb_interaction)
+        self.encoder_layer.flatten_parameters()
+        latent, _ = self.encoder_layer(emb_interaction)
         predict_score = self.predict_layer(latent)
 
         return predict_score
@@ -73,9 +86,28 @@ class DKT(nn.Module):
     def get_latent(self, batch):
         correct_seq = batch["correct_seq"]
         concept_seq = batch["concept_seq"]
-        interaction_seq = concept_seq[:, 0:-1].long() + self.model.num_item * correct_seq[:, 0:-1].long()
+        dim_predict_out = self.params["models_config"]["kt_model"]["predict_layer"]["direct"]["dim_predict_out"]
+        interaction_seq = concept_seq[:, 0:-1].long() + dim_predict_out * correct_seq[:, 0:-1].long()
         emb_interaction = self.embed_layer.get_emb("interaction", interaction_seq)
-        self.rnn.flatten_parameters()
-        latent, _ = self.rnn(emb_interaction)
+        self.encoder_layer.flatten_parameters()
+        latent, _ = self.encoder_layer(emb_interaction)
 
         return latent
+
+    def get_loss(self, batch):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        predict_score = self.get_predict_score(batch)
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+        loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+
+        return loss
+
+    def get_predict_score(self, batch):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        dim_predict_out = self.params["models_config"]["kt_model"]["predict_layer"]["direct"]["dim_predict_out"]
+        one_hot4predict_score = nn.functional.one_hot(batch["concept_seq"][:, 1:], dim_predict_out)
+        predict_score = self.forward(batch)
+        predict_score = (predict_score * one_hot4predict_score).sum(-1)
+        predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
+
+        return predict_score

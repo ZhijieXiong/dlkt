@@ -1,4 +1,6 @@
 import argparse
+from copy import deepcopy
+from torch.utils.data import DataLoader
 
 import config
 
@@ -17,7 +19,7 @@ if __name__ == "__main__":
     parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
     parser.add_argument("--test_file_name", type=str, default="assist2009_test.txt")
     # 优化器相关参数选择
-    parser.add_argument("--optimizer_type", type=str, default="sgd",
+    parser.add_argument("--optimizer_type", type=str, default="adam",
                         choices=("adam", "sgd"))
     parser.add_argument("--weight_decay", type=float, default=0)
     parser.add_argument("--momentum", type=float, default=0.9)
@@ -32,7 +34,7 @@ if __name__ == "__main__":
     parser.add_argument("--main_metric", type=str, default="AUC")
     parser.add_argument("--use_mutil_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
-    parser.add_argument("--learning_rate", type=float, default=0.1)
+    parser.add_argument("--learning_rate", type=float, default=0.001)
     parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
@@ -58,5 +60,28 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    config.dkt_config(params)
+    global_params, global_objects = config.dkt_config(params)
 
+    if params["train_strategy"] == "valid_test":
+        valid_params = deepcopy(global_params)
+        valid_params["datasets_config"]["dataset_this"] = "valid"
+        dataset_valid = KTDataset(valid_params, global_objects)
+        dataloader_valid = DataLoader(dataset_valid, batch_size=params["evaluate_batch_size"], shuffle=False)
+    else:
+        dataloader_valid = None
+    train_params = deepcopy(global_params)
+    train_params["datasets_config"]["dataset_this"] = "train"
+    dataset_train = KTDataset(train_params, global_objects)
+    dataloader_train = DataLoader(dataset_train, batch_size=params["train_batch_size"], shuffle=True)
+    test_params = deepcopy(global_params)
+    test_params["datasets_config"]["dataset_this"] = "test"
+    dataset_test = KTDataset(test_params, global_objects)
+    dataloader_test = DataLoader(dataset_test, batch_size=params["evaluate_batch_size"], shuffle=False)
+    global_objects["data_loaders"]["train_loader"] = dataloader_train
+    global_objects["data_loaders"]["valid_loader"] = dataloader_valid
+    global_objects["data_loaders"]["test_loader"] = dataloader_test
+
+    model = DKT(global_params, global_objects)
+    global_objects["models"]["kt_model"] = model
+    trainer = KnowledgeTracingTrainer(global_params, global_objects)
+    trainer.train()

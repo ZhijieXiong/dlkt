@@ -6,21 +6,17 @@ import torch.nn as nn
 from lib.util import parse
 
 
-class KTEmbedLayer(nn.Module):
+class KTEmbedLayer:
     def __init__(self, params, objects):
         super(KTEmbedLayer, self).__init__()
         self.params = params
         self.objects = objects
-        self.embed_concept = None
-        self.embed_question = None
-        self.embed_correct = None
-        self.embed_interaction = None
 
         self.emb_dict = {
-            "concept": self.embed_concept,
-            "question": self.embed_question,
-            "correct": self.embed_correct,
-            "interaction": self.embed_interaction
+            "concept": None,
+            "question": None,
+            "correct": None,
+            "interaction": None
         }
         self.init_emb_table()
 
@@ -40,11 +36,12 @@ class KTEmbedLayer(nn.Module):
 
     def init_emb_table(self, init_type=None, table_extend=None):
         # 从params的配置构造embedding表
-        emb_config = self.params["model_config"]["kt_model"]["kt_embed_layer"]
+        emb_config = self.params["models_config"]["kt_model"]["kt_embed_layer"]
         if table_extend is not None:
             pass
-        for k, (num_emb, dim_emb) in emb_config.items():
-            self.emb_dict[k] = nn.Embedding(num_emb, dim_emb)
+        for k, v in emb_config.items():
+            if len(v) > 0:
+                self.emb_dict[k] = nn.Embedding(v[0], v[1]).to(self.params["device"])
             if init_type is not None:
                 pass
 

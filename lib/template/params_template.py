@@ -24,13 +24,13 @@ PARAMS = {
   },
   "loss_config": {
     # loss名称和权重，如对比损失cl loss
-    "cl loss": 0.1
+    # "cl loss": 0.1
   },
   "models_config": {
     "kt_model": {
       "kt_embed_layer": {
         # 都是[num_emb, dim_emb]的格式
-        "concept": [123, 64],
+        "concept": [],
         "question": [],
         "correct": [],
         "interaction": []
@@ -117,7 +117,7 @@ PARAMS = {
       "type": "kt",
       "setting_name": "pykt_setting",
       "file_name": "assist2009_train_fold_0.txt",
-      "batch_size": 64,
+      # "batch_size": 64,
       "kt": {
         # 配置KTDataset需要的参数
         "data_type": "multi_concept",
@@ -129,7 +129,7 @@ PARAMS = {
       "type": "kt",
       "setting_name": "pykt_setting",
       "file_name": "assist2009_valid_fold_0.txt",
-      "batch_size": 64,
+      # "batch_size": 64,
       "kt": {
         "data_type": "multi_concept",
         "unuseful_seq_keys": {"user_id"},
@@ -140,7 +140,7 @@ PARAMS = {
       "type": "kt",
       "setting_name": "pykt_setting",
       "file_name": "assist2009_test.txt",
-      "batch_size": 64,
+      # "batch_size": 64,
       "kt": {
         "data_type": "multi_concept",
         "unuseful_seq_keys": {"user_id"},

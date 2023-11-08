@@ -17,4 +17,5 @@ OBJECTS = {
         "valid_loader": None,
         "test_loader": None
     },
+    "data": {}
 }

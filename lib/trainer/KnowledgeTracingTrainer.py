@@ -73,7 +73,7 @@ class KnowledgeTracingTrainer:
         pass
 
     @staticmethod
-    def evaluate_(model, data_loader):
+    def evaluate_kt_dataset(model, data_loader):
         model.eval()
         with torch.no_grad():
             predict_score_all = []

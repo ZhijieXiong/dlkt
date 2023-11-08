@@ -11,7 +11,7 @@ params = {
       "use_early_stop": True,
       "epoch_early_stop": 10,
       "main_metric": "AUC / ACC / MAE / RMSE",
-      "use_mutil_metric": False,
+      "use_mutil_metrics": False,
       "multi_metrics": [("AUC", 1), ("ACC", 1)]
     },
     "no_valid": {

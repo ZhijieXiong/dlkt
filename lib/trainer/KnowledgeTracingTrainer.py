@@ -50,6 +50,7 @@ class KnowledgeTracingTrainer:
         model = self.objects["models"]["kt_model"]
 
         for epoch in range(1, num_epoch + 1):
+            model.train()
             for batch in train_loader:
                 optimizer.zero_grad()
 
@@ -59,6 +60,7 @@ class KnowledgeTracingTrainer:
                 loss.backward()
                 if grad_clip_config["use_clip"]:
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
+                self.objects["optimizers"]["kt_model"].step()
             if schedulers_config["use_scheduler"]:
                 scheduler.step()
             self.evaluate()
@@ -79,6 +81,7 @@ class KnowledgeTracingTrainer:
             data_loader = data_loaders["test_loader"]
             test_performance = self.evaluate_kt_dataset(model, data_loader)
             self.train_record.next_epoch(test_performance, valid_performance)
+            print(self.train_record.get_performance_str("valid"))
 
     def train_with_cl(self):
         pass
@@ -95,8 +98,7 @@ class KnowledgeTracingTrainer:
             for batch in data_loader:
                 correct_seq = batch["correct_seq"]
                 mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-                predict_score = model.get_predict_score(batch)
-                predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:]).detach().cpu().numpy()
+                predict_score = model.get_predict_score(batch).detach().cpu().numpy()
                 ground_truth = torch.masked_select(correct_seq[:, 1:], mask_bool_seq[:, 1:]).detach().cpu().numpy()
                 predict_score_all.append(predict_score)
                 ground_truth_all.append(ground_truth)

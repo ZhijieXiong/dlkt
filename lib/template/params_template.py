@@ -11,7 +11,7 @@ PARAMS = {
     "num_epoch": 200,
     # "AUC" or "ACC" or "MAE" or "RMSE"
     "main_metric": "AUC",
-    "use_mutil_metrics": False,
+    "use_multi_metrics": False,
     "multi_metrics": [("AUC", 1), ("ACC", 1)],
     "valid_test": {
       "use_early_stop": True,

@@ -10,6 +10,7 @@ class PredictorLayer(nn.Module):
 
         predict_layer_config = self.params["models_config"]["kt_model"]["predict_layer"]
         if predict_layer_config["type"] == "direct":
+            predict_layer_config = predict_layer_config["direct"]
             dropout = predict_layer_config["dropout"]
             num_predict_layer = predict_layer_config["num_predict_layer"]
             dim_predict_in = predict_layer_config["dim_predict_in"]
@@ -45,12 +46,4 @@ class PredictorLayer(nn.Module):
             raise NotImplementedError()
 
     def forward(self, batch):
-        predict_layer_config = self.params["models_config"]["kt_model"]["predict_layer"]
-        if predict_layer_config["type"] == "direct":
-            pass
-        elif predict_layer_config["type"] == "concat_direct":
-            pass
-        elif predict_layer_config["type"] == "product":
-            pass
-        else:
-            raise NotImplementedError()
+        return self.predict_layer(batch)

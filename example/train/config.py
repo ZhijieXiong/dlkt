@@ -4,6 +4,7 @@ import os
 import inspect
 from copy import deepcopy
 
+import torch.cuda
 
 current_file_name = inspect.getfile(inspect.currentframe())
 current_dir = os.path.dirname(current_file_name)
@@ -24,6 +25,7 @@ def general_config(local_params, global_params, global_objects):
     global_objects["file_manager"] = file_manager
     global_params["save_model"] = local_params["save_model"]
     global_params["train_strategy"]["type"] = local_params["train_strategy"]
+    global_params["device"] = "cuda" if torch.cuda.is_available() else "cpu"
 
     # 训练策略配置
     num_epoch = local_params["num_epoch"]
@@ -32,14 +34,14 @@ def general_config(local_params, global_params, global_objects):
     use_last_average = local_params["use_last_average"]
     epoch_last_average = local_params["epoch_last_average"]
     main_metric = local_params["main_metric"]
-    use_mutil_metrics = local_params["use_mutil_metrics"]
+    use_multi_metrics = local_params["use_multi_metrics"]
     mutil_metrics = local_params["multi_metrics"]
 
     train_strategy = global_params["train_strategy"]
     train_strategy["num_epoch"] = num_epoch
     train_strategy["main_metric"] = main_metric
-    train_strategy["use_mutil_metrics"] = use_mutil_metrics
-    if use_mutil_metrics:
+    train_strategy["use_multi_metrics"] = use_multi_metrics
+    if use_multi_metrics:
         train_strategy["multi_metrics"] = eval(mutil_metrics)
     if train_strategy["type"] == "valid_test":
         train_strategy["valid_test"]["use_early_stop"] = use_early_stop

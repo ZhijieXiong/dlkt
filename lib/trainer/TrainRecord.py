@@ -20,17 +20,19 @@ class TrainRecord:
         self.update_best_metric(test_performance, update_type="test")
 
     def update_best_metric(self, performance, update_type):
-        use_mutil_metrics = self.params["train_strategy"]["valid_test"]["use_mutil_metrics"]
-        main_metric_key = self.params["train_strategy"]["valid_test"]["main_metric"]
-        mutil_metrics = self.params["train_strategy"]["valid_test"]["multi_metrics"]
-        main_metric = self.cal_main_metric(performance, mutil_metrics) if use_mutil_metrics else \
-            self.params["train_strategy"][main_metric_key]
+        use_multi_metrics = self.params["train_strategy"]["use_multi_metrics"]
+        main_metric_key = self.params["train_strategy"]["main_metric"]
+        multi_metrics = self.params["train_strategy"]["multi_metrics"]
+        main_metric = self.cal_main_metric(performance, multi_metrics) if use_multi_metrics else (
+            performance)[main_metric_key]
 
         if update_type == "valid":
+            self.record["performance_valid"].append(performance)
             if (main_metric - self.record["best_valid_main_metric"]) > 0.0001:
                 self.record["best_valid_main_metric"] = main_metric
                 self.record["best_epoch_by_valid"] = self.record["current_epoch"]
         elif update_type == "test":
+            self.record["performance_test"].append(performance)
             if (main_metric - self.record["best_test_main_metric"]) > 0.0001:
                 self.record["best_test_main_metric"] = main_metric
                 self.record["best_epoch_by_test"] = self.record["current_epoch"]

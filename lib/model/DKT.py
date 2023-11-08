@@ -41,7 +41,7 @@ class DKT(nn.Module):
         correct_seq = batch["correct_seq"]
         concept_seq = batch["concept_seq"]
         dim_predict_out = self.params["models_config"]["kt_model"]["predict_layer"]["direct"]["dim_predict_out"]
-        interaction_seq = concept_seq[:, 0:-1].long() + dim_predict_out * correct_seq[:, 0:-1].long()
+        interaction_seq = concept_seq[:, 0:-1] + dim_predict_out * correct_seq[:, 0:-1]
         emb_interaction = self.embed_layer.get_emb("interaction", interaction_seq)
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(emb_interaction)
@@ -53,7 +53,7 @@ class DKT(nn.Module):
         correct_seq = batch["correct_seq"]
         concept_seq = batch["concept_seq"]
         dim_predict_out = self.params["models_config"]["kt_model"]["predict_layer"]["direct"]["dim_predict_out"]
-        interaction_seq = concept_seq[:, 0:-1].long() + dim_predict_out * correct_seq[:, 0:-1].long()
+        interaction_seq = concept_seq[:, :-1] + dim_predict_out * correct_seq[:, :-1]
         emb_interaction = self.embed_layer.get_emb("interaction", interaction_seq)
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(emb_interaction)

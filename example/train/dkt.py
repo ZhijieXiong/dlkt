@@ -32,7 +32,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_last_average", type=str2bool, default=True)
     parser.add_argument("--epoch_last_average", type=int, default=5)
     parser.add_argument("--main_metric", type=str, default="AUC")
-    parser.add_argument("--use_mutil_metrics", type=str2bool, default=False)
+    parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
     parser.add_argument("--learning_rate", type=float, default=0.001)
     parser.add_argument("--train_batch_size", type=int, default=64)
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = DKT(global_params, global_objects).to(params["device"])
+    model = DKT(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
     trainer = KnowledgeTracingTrainer(global_params, global_objects)
     trainer.train()

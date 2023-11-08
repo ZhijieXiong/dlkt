@@ -6,19 +6,28 @@ import torch.nn as nn
 from lib.util import parse
 
 
-class KTEmbedLayer:
+class KTEmbedLayer(nn.Module):
     def __init__(self, params, objects):
         super(KTEmbedLayer, self).__init__()
         self.params = params
         self.objects = objects
 
-        self.emb_dict = {
-            "concept": None,
-            "question": None,
-            "correct": None,
-            "interaction": None
-        }
-        self.init_emb_table()
+        emb_config = self.params["models_config"]["kt_model"]["kt_embed_layer"]
+        self.emb_dict = {}
+        for k, v in emb_config.items():
+            if len(v) > 0:
+                if k == "concept":
+                    self.embed_concept = nn.Embedding(v[0], v[1])
+                    self.emb_dict["concept"] = self.embed_concept
+                if k == "question":
+                    self.embed_question = nn.Embedding(v[0], v[1])
+                    self.emb_dict["question"] = self.embed_question
+                if k == "correct":
+                    self.embed_correct = nn.Embedding(v[0], v[1])
+                    self.emb_dict["correct"] = self.embed_correct
+                if k == "interaction":
+                    self.embed_interaction = nn.Embedding(v[0], v[1])
+                    self.emb_dict["interaction"] = self.embed_interaction
 
         self.Q_table = self.objects["data"].get("Q_table", None)
         # 如果有Q table的话，question2concept_table和question2concept_mask_table都是(num_q, num_max_c)的tensor
@@ -33,17 +42,6 @@ class KTEmbedLayer:
         self.num_max_concept = None
         if self.Q_table is not None:
             self.parse_Q_table()
-
-    def init_emb_table(self, init_type=None, table_extend=None):
-        # 从params的配置构造embedding表
-        emb_config = self.params["models_config"]["kt_model"]["kt_embed_layer"]
-        if table_extend is not None:
-            pass
-        for k, v in emb_config.items():
-            if len(v) > 0:
-                self.emb_dict[k] = nn.Embedding(v[0], v[1]).to(self.params["device"])
-            if init_type is not None:
-                pass
 
     def get_emb(self, emb_name, emb_index):
         assert self.emb_dict[emb_name] is not None, f"Embedding of {emb_name} is not initialized"

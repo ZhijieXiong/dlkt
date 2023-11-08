@@ -4,7 +4,7 @@ import torch.nn as nn
 from .Module.KTEmbedLayer import KTEmbedLayer
 
 
-class DKT:
+class DKT(nn.Module):
     model_name = "DKT"
 
     def __init__(self, params, objects):
@@ -32,7 +32,7 @@ class DKT:
             self.encoder_layer = nn.LSTM(dim_emb, dim_latent, batch_first=True, num_layers=num_rnn_layer)
         else:
             self.encoder_layer = nn.GRU(dim_emb, dim_latent, batch_first=True, num_layers=num_rnn_layer)
-        self.encoder_layer = self.encoder_layer.to(self.params["device"])
+        self.encoder_layer = self.encoder_layer
 
         predict_layer_config = self.params["models_config"]["kt_model"]["predict_layer"]["direct"]
         dropout = predict_layer_config["dropout"]
@@ -60,7 +60,7 @@ class DKT:
             self.predict_layer.append(nn.Dropout(dropout))
             self.predict_layer.append(nn.Linear(dim_latent, dim_predict_out))
             self.predict_layer.append(act_func())
-        self.predict_layer = nn.Sequential(*self.predict_layer).to(self.params["device"])
+        self.predict_layer = nn.Sequential(*self.predict_layer)
 
     def get_parameters(self):
         result = []

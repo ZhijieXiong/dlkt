@@ -7,6 +7,7 @@ params = {
   },
   "train_strategy": {
     "type": "valid_test / no_valid",
+    "num_epoch": 200,
     "valid_test": {
       "use_early_stop": True,
       "epoch_early_stop": 10,
@@ -17,6 +18,12 @@ params = {
     "no_valid": {
       "use_average": True,
       "epoch_last_average": 5
+    }
+  },
+  "loss_config": {
+    "joint_losses": {
+      # loss名称和权重
+      "cl_loss": 0.1
     }
   },
   "models_config": {
@@ -46,7 +53,8 @@ params = {
           "activate_type": "sigmoid"
         }
       }
-    }
+    },
+    # "other_model1": {}
   },
   "optimizers_config": {
     "kt_mode": {

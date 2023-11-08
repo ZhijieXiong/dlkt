@@ -1,10 +1,9 @@
-import os
 import torch
-import numpy as np
 from sklearn.metrics import roc_auc_score, accuracy_score, mean_absolute_error, mean_squared_error
 
 from .util import *
 from .LossRecord import *
+from .TrainRecord import *
 
 
 class KnowledgeTracingTrainer:
@@ -14,7 +13,8 @@ class KnowledgeTracingTrainer:
         self.objects["optimizers"] = {}
         self.objects["schedulers"] = {}
 
-        self.loss_records = {}
+        self.loss_record = None
+        self.train_record = TrainRecord(params, objects)
 
     def init_trainer(self):
         # 初始化optimizer和scheduler
@@ -39,10 +39,11 @@ class KnowledgeTracingTrainer:
         self.init_loss_record()
 
     def init_loss_record(self):
-        self.loss_records["predict loss"] = LossRecord(["predict loss"])
-        loss_config = self.params.get("loss_record_config", None)
-        if loss_config is not None:
-            pass
+        used_losses = ["predict loss"]
+        loss_config = self.params["loss_config"]
+        for loss_name in loss_config:
+            used_losses.append(loss_name)
+        self.loss_record = LossRecord(used_losses)
 
     def train(self):
         train_strategy = self.params["train_strategy"]
@@ -56,14 +57,14 @@ class KnowledgeTracingTrainer:
         if train_strategy["type"] == "no valid":
             # 无验证集，只有测试集
             data_loader = data_loaders["test_loader"]
-            test_performance = self.evaluate_(model, data_loader)
+            test_performance = self.evaluate_kt_dataset(model, data_loader)
             return test_performance, None
         else:
             # 有验证集，同时在验证集和测试集上测试
             data_loader = data_loaders["valid_loader"]
-            valid_performance = self.evaluate_(model, data_loader)
+            valid_performance = self.evaluate_kt_dataset(model, data_loader)
             data_loader = data_loaders["test_loader"]
-            test_performance = self.evaluate_(model, data_loader)
+            test_performance = self.evaluate_kt_dataset(model, data_loader)
             return test_performance, valid_performance
 
     def train_with_cl(self):

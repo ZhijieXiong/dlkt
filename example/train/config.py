@@ -139,6 +139,7 @@ def dkt_config(local_params):
     predict_layer_config["type"] = "direct"
     predict_layer_config["direct"]["dropout"] = dropout
     predict_layer_config["direct"]["num_predict_layer"] = num_predict_layer
+    predict_layer_config["direct"]["dim_predict_in"] = dim_latent
     predict_layer_config["direct"]["dim_predict_mid"] = dim_predict_mid
     predict_layer_config["direct"]["activate_type"] = activate_type
     predict_layer_config["direct"]["dim_predict_out"] = num_concept

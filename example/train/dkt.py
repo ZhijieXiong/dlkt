@@ -81,7 +81,7 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = DKT(global_params, global_objects).to(self.params["device"])
+    model = DKT(global_params, global_objects).to(params["device"])
     global_objects["models"]["kt_model"] = model
     trainer = KnowledgeTracingTrainer(global_params, global_objects)
     trainer.train()

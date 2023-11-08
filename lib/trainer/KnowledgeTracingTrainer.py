@@ -31,11 +31,7 @@ class KnowledgeTracingTrainer:
         schedulers_config = self.params["schedulers_config"]
 
         for model_name, optimizer_config in optimizers_config.items():
-            if model_name == "kt_model":
-                model_parameters = models[model_name].get_parameters()
-            else:
-                model_parameters = models[model_name].parameters()
-            optimizers[model_name] = create_optimizer(model_parameters, optimizer_config)
+            optimizers[model_name] = create_optimizer(models[model_name].parameters(), optimizer_config)
 
             scheduler_config = schedulers_config[model_name]
             if scheduler_config["use_scheduler"]:

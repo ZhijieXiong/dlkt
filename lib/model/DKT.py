@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 
 from .Module.KTEmbedLayer import KTEmbedLayer
+from .Module.PredictorLayer import PredictorLayer
 
 
 class DKT(nn.Module):
@@ -34,42 +35,7 @@ class DKT(nn.Module):
             self.encoder_layer = nn.GRU(dim_emb, dim_latent, batch_first=True, num_layers=num_rnn_layer)
         self.encoder_layer = self.encoder_layer
 
-        predict_layer_config = self.params["models_config"]["kt_model"]["predict_layer"]["direct"]
-        dropout = predict_layer_config["dropout"]
-        num_predict_layer = predict_layer_config["num_predict_layer"]
-        dim_predict_mid = predict_layer_config["dim_predict_mid"]
-        activate_type = predict_layer_config["activate_type"]
-        if activate_type == "tanh":
-            act_func = nn.Tanh
-        elif activate_type == "relu":
-            act_func = nn.ReLU
-        else:
-            act_func = nn.Sigmoid
-        dim_predict_out = predict_layer_config["dim_predict_out"]
-        self.predict_layer = []
-        if num_predict_layer == 1:
-            self.predict_layer.append(nn.Dropout(dropout))
-            self.predict_layer.append(nn.Linear(dim_latent, dim_predict_out))
-            self.predict_layer.append(act_func())
-        else:
-            self.predict_layer.append(nn.Linear(dim_latent, dim_predict_mid))
-            for _ in range(num_predict_layer - 1):
-                self.predict_layer.append(act_func())
-                self.predict_layer.append(nn.Dropout(dropout))
-                self.predict_layer.append(nn.Linear(dim_predict_mid, dim_predict_mid))
-            self.predict_layer.append(nn.Dropout(dropout))
-            self.predict_layer.append(nn.Linear(dim_latent, dim_predict_out))
-            self.predict_layer.append(act_func())
-        self.predict_layer = nn.Sequential(*self.predict_layer)
-
-    def get_parameters(self):
-        result = []
-        for emb_table in self.embed_layer.emb_dict.values():
-            if emb_table is not None:
-                result.append(emb_table.weight)
-        result.extend(self.encoder_layer.parameters())
-        result.extend(self.predict_layer.parameters())
-        return result
+        self.predict_layer = PredictorLayer(self.params, self.objects)
 
     def forward(self, batch):
         correct_seq = batch["correct_seq"]

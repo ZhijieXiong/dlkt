@@ -14,10 +14,10 @@ from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
-    parser.add_argument("--setting_name", type=str, default="pykt_setting")
-    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2009_test.txt")
+    parser.add_argument("--setting_name", type=str, default="cl4kt_setting")
+    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_4.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_4.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_4.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam",
                         choices=("adam", "sgd"))
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=123)
+    parser.add_argument("--num_concept", type=int, default=149)
     parser.add_argument("--dim_emb", type=int, default=64)
     parser.add_argument("--dim_latent", type=int, default=64)
     parser.add_argument("--rnn_type", type=str, default="gru")

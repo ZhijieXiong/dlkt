@@ -3,6 +3,7 @@ import torch.nn as nn
 from sklearn.metrics import roc_auc_score, accuracy_score, mean_absolute_error, mean_squared_error
 
 from .util import *
+from ..util.basic import *
 from .LossRecord import *
 from .TrainRecord import *
 
@@ -65,6 +66,18 @@ class KnowledgeTracingTrainer:
                 scheduler.step()
             self.evaluate()
 
+            if self.train_record.stop_training():
+                if train_strategy["type"] == "no valid":
+                    pass
+                else:
+                    best_performance_str_by_valid = self.train_record.get_evaluate_result_str("valid", "valid")
+                    best_performance_str_by_test = self.train_record.get_evaluate_result_str("test", "valid")
+                    print(f"best valid epoch: {self.train_record.get_best_epoch('valid'):<3} , "
+                          f"best test epoch: {self.train_record.get_best_epoch('test')}\n"
+                          f"valid performance by best valid epoch is {best_performance_str_by_valid}\n"
+                          f"test performance by best valid epoch is {best_performance_str_by_test}")
+                break
+
     def evaluate(self):
         train_strategy = self.params["train_strategy"]
         data_loaders = self.objects["data_loaders"]
@@ -81,7 +94,11 @@ class KnowledgeTracingTrainer:
             data_loader = data_loaders["test_loader"]
             test_performance = self.evaluate_kt_dataset(model, data_loader)
             self.train_record.next_epoch(test_performance, valid_performance)
-            print(self.train_record.get_performance_str("valid"))
+            valid_performance_str = self.train_record.get_performance_str("valid")
+            test_performance_str = self.train_record.get_performance_str("test")
+            print(f"{get_now_time()} epoch {self.train_record.get_current_epoch():<3} , valid performance is "
+                  f"{valid_performance_str}train loss is {self.loss_record.get_str()}, test performance is "
+                  f"{test_performance_str}")
 
     def train_with_cl(self):
         pass

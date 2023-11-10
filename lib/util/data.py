@@ -3,6 +3,7 @@ import json
 import numpy
 import numpy as np
 from copy import deepcopy
+from collections import defaultdict
 
 from .parse import get_keys_from_uniform
 
@@ -115,3 +116,44 @@ def dataset_agg_concept(data_uniformed):
         item_data_new["seq_len"] = len(item_data_new["correct_seq"])
         data_new.append(item_data_new)
     return data_new
+
+
+def drop_qc(data_uniformed, num2drop=30):
+    """
+    丢弃练习次数少于指定值的习题，如DIMKT丢弃练习次数少于30次的习题
+    :param data_uniformed:
+    :param num2drop:
+    :return:
+    """
+    data_uniformed = deepcopy(data_uniformed)
+    id_keys, seq_keys = get_keys_from_uniform(data_uniformed)
+    questions_frequency = defaultdict(int)
+
+    for item_data in data_uniformed:
+        for question_id in item_data["question_seq"]:
+            questions_frequency[question_id] += 1
+
+    questions2drop = set()
+    for q_id in questions_frequency.keys():
+        if questions_frequency[q_id] < num2drop:
+            questions2drop.add(q_id)
+
+    data_dropped = []
+    num_drop_interactions = 0
+    for item_data in data_uniformed:
+        item_data_new = {}
+        for k in id_keys:
+            item_data_new[k] = item_data[k]
+        for k in seq_keys:
+            item_data_new[k] = []
+        for i in range(item_data["seq_len"]):
+            q_id = item_data["question_seq"][i]
+            if q_id in questions2drop:
+                num_drop_interactions += 1
+                continue
+            for k in seq_keys:
+                item_data_new[k].append(item_data[k][i])
+        item_data_new["seq_len"] = len(item_data_new["question_seq"])
+        data_dropped.append(item_data_new)
+
+    return data_dropped

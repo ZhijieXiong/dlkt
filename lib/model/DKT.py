@@ -13,13 +13,6 @@ class DKT(nn.Module):
         self.params = params
         self.objects = objects
 
-        self.embed_layer = None
-        self.encoder_layer = None
-        self.predict_layer = None
-
-        self.init_model()
-
-    def init_model(self):
         self.embed_layer = KTEmbedLayer(self.params, self.objects)
 
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DKT"]

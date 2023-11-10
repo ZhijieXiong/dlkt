@@ -56,7 +56,7 @@ class KTEmbedLayer(nn.Module):
         """
         result = self.get_emb(seq_names2cat[0], emb_indices2cat[0])
         for i, seq in enumerate(seq_names2cat[1:]):
-            result = torch.cat((result, self.get_emb(seq, emb_indices2cat[i])), dim=-1)
+            result = torch.cat((result, self.get_emb(seq, emb_indices2cat[i+1])), dim=-1)
         return result
 
     def parse_Q_table(self):

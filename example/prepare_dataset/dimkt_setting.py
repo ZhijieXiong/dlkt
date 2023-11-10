@@ -12,11 +12,11 @@ from lib.dataset.split_dataset import n_fold_split2
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="assist2009")
+    parser.add_argument("--dataset_name", type=str, default="assist2012")
     # setting config
     parser.add_argument("--setting_name", type=str, default="dimkt_setting")
     parser.add_argument("--max_seq_len", type=int, default=100)
-    parser.add_argument("--min_seq_len", type=int, default=3)
+    parser.add_argument("--min_seq_len", type=int, default=2)
     parser.add_argument("--n_fold", type=int, default=5)
     parser.add_argument("--test_radio", type=float, default=0.2)
     parser.add_argument("--valid_radio", type=float, default=0.2)
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     data_uniformed_path = objects["file_manager"].get_preprocessed_path(params["dataset_name"], params["data_type"])
     data_uniformed = read_preprocessed_file(data_uniformed_path)
     data_uniformed = drop_qc(data_uniformed, num2drop=30)
-    data_uniformed = process4DIMKT(data_uniformed)
+    data_uniformed = process4DIMKT(data_uniformed, num_q_level=100, num_c_level=100)
     dataset_truncated = dataset_truncate2multi_seq(data_uniformed,
                                                    params["min_seq_len"],
                                                    params["max_seq_len"],

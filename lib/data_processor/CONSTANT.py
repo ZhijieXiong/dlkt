@@ -8,9 +8,8 @@ def datasets_treatable(datasets_merged=None):
 
 def datasets_useful_cols(datasets_merged=None):
     result = {
-        "assist2009": ["order_id", "user_id", "problem_id", "correct", "skill_id", "school_id", "teacher_id"],
-        "assist2012": ["problem_id", "user_id", "end_time", "correct", "skill_id", "overlap_time", "school_id",
-                       "teacher_id"],
+        "assist2009": ["order_id", "user_id", "problem_id", "correct", "skill_id", "school_id"],
+        "assist2012": ["problem_id", "user_id", "end_time", "correct", "skill_id", "overlap_time", "school_id"],
         "assist2017": ["studentId", "MiddleSchoolId", "problemId", "skill", "timeTaken", "startTime", "correct"],
         "slepemapy": ["user", "item_asked", "item_answered", "context_name", "type", "time", "response_time",
                       "ip_country"],

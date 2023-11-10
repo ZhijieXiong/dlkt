@@ -11,11 +11,9 @@ from lib.dataset.split_dataset import n_fold_split1
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="assist2009")
+    parser.add_argument("--dataset_name", type=str, default="assist2012")
     # setting config
     parser.add_argument("--setting_name", type=str, default="pykt_setting")
-    parser.add_argument("--data_type", type=str, default="multi_concept",
-                        choices=("multi_concept", "single_concept", "only_question"))
     parser.add_argument("--max_seq_len", type=int, default=200)
     parser.add_argument("--min_seq_len", type=int, default=3)
     parser.add_argument("--n_fold", type=int, default=5)
@@ -24,6 +22,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     params = vars(args)
+    if params["dataset_name"] in ["assist2009", "assist2009-new", "ednet-kt1"]:
+        params["data_type"] = "multi_concept"
+    elif params["dataset_name"] in ["assist2015", "statics2011"]:
+        params["data_type"] = "only_question"
+    else:
+        params["data_type"] = "single_concept"
     objects = {"file_manager": FileManager(config.FILE_MANAGER_ROOT)}
 
     params["lab_setting"] = {

@@ -21,10 +21,10 @@ def write2file(data, data_path):
         first_line = ",".join(id_keys) + ";" + ",".join(seq_keys) + "\n"
         f.write(first_line)
         for item_data in data:
-            for seq_key in id_keys:
-                f.write(f"{item_data[seq_key]}\n")
-            for interaction_key in seq_keys:
-                f.write(",".join(map(str, item_data[interaction_key])) + "\n")
+            for k in id_keys:
+                f.write(f"{item_data[k]}\n")
+            for k in seq_keys:
+                f.write(",".join(map(str, item_data[k])) + "\n")
 
 
 def read_preprocessed_file(data_path):

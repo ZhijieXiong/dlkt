@@ -11,11 +11,9 @@ from lib.dataset.split_dataset import n_fold_split2
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="assist2009")
+    parser.add_argument("--dataset_name", type=str, default="assist2012")
     # setting config
     parser.add_argument("--setting_name", type=str, default="cl4kt_setting")
-    parser.add_argument("--data_type", type=str, default="single_concept",
-                        choices=("single_concept",))
     parser.add_argument("--max_seq_len", type=int, default=100)
     parser.add_argument("--min_seq_len", type=int, default=5)
     parser.add_argument("--n_fold", type=int, default=5)
@@ -24,6 +22,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     params = vars(args)
+    if params["dataset_name"] in ["assist2015", "statics2011"]:
+        params["data_type"] = "only_question"
+    else:
+        params["data_type"] = "single_concept"
     objects = {"file_manager": FileManager(config.FILE_MANAGER_ROOT)}
 
     params["lab_setting"] = {

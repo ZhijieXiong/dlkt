@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 
 from .Module.EncoderLayer import EncoderLayer
-from .Module.PredictorLayer import PredictorLayer
 
 
 class AKT(nn.Module):

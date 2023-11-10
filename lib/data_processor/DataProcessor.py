@@ -38,6 +38,9 @@ class DataProcessor:
         # 统一格式的数据
         self.data_uniformed = {}
 
+        # 一些数据的信息，如学校、城市
+        self.other_info = {}
+
     def process_data(self):
         datasets_treatable = CONSTANT.datasets_treatable()
         dataset_name = self.params["preprocess_config"]["dataset_name"]
@@ -138,6 +141,12 @@ class DataProcessor:
         pass
 
     def uniform_assist2009(self):
+        df = deepcopy(self.data_preprocessed["multi_concept"])
+        # school_id按照学生数量重映射
+        df["school_id"] = df["school_id"].fillna(-1)
+        df["school_id"] = df["school_id"].map(int)
+        school_id_map, school_info = preprocess_raw.map_user_info(df, "school_id")
+
         info_name_table = {
             "question_seq": "question_id",
             "concept_seq": "concept_id",
@@ -145,7 +154,6 @@ class DataProcessor:
         }
 
         # only_question
-        df = self.data_preprocessed["multi_concept"]
         id_keys = list(set(df.columns) - set(info_name_table.values()) - {"order_id"})
         dataset_seq_keys = CONSTANT.datasets_seq_keys()["assist2009"]
         # 去除多知识点习题的冗余
@@ -187,6 +195,12 @@ class DataProcessor:
         self.data_uniformed["single_concept"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
 
     def uniform_assist2012(self):
+        df = deepcopy(self.data_preprocessed["single_concept"])
+        # school_id按照学生数量重映射
+        df["school_id"] = df["school_id"].fillna(-1)
+        df["school_id"] = df["school_id"].map(int)
+        school_id_map, school_info = preprocess_raw.map_user_info(df, "school_id")
+
         info_name_table = {
             "question_seq": "question_id",
             "concept_seq": "concept_id",
@@ -196,7 +210,6 @@ class DataProcessor:
         }
 
         # single_concept
-        df = self.data_preprocessed["single_concept"]
         id_keys = list(set(df.columns) - set(info_name_table.values()))
         dataset_seq_keys = CONSTANT.datasets_seq_keys()["assist2012"]
         seqs = []

@@ -1,4 +1,6 @@
 import os
+import re
+import time
 import pandas as pd
 import numpy as np
 
@@ -46,6 +48,10 @@ class DataProcessor:
 
         if dataset_name in ["assist2009", "assist2009-new"]:
             self.process_assist2009()
+        elif dataset_name == "assist2012":
+            self.process_assist2012()
+        else:
+            raise NotImplementedError()
 
         self.uniform_data()
         return self.data_uniformed
@@ -82,7 +88,31 @@ class DataProcessor:
             self.get_basic_info(result_preprocessed["single_concept"]["data_processed"]))
 
     def process_assist2012(self):
-        pass
+        def time_str2timestamp(time_str):
+            if len(time_str) != 19:
+                time_str = re.search(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", time_str).group()
+            return int(time.mktime(time.strptime(time_str[:19], "%Y-%m-%d %H:%M:%S")))
+
+        data_path = self.params["preprocess_config"]["data_path"]
+        dataset_name = self.params["preprocess_config"]["dataset_name"]
+        useful_cols = CONSTANT.datasets_useful_cols()[dataset_name]
+        rename_cols = CONSTANT.datasets_renamed()[dataset_name]
+        self.data_raw = load_raw.load_csv(data_path, useful_cols, rename_cols)
+        self.statics_raw = self.get_basic_info(self.data_raw)
+
+        df = deepcopy(self.data_raw)
+        df.dropna(subset=["question_id", "concept_id"], inplace=True)
+        df["correct"] = df["correct"].astype('int8')
+        df["use_time"] = df["use_time"].map(lambda t: min(max(1, int(t) // 1000), 60 * 60))
+        df["timestamp"] = df["timestamp"].map(time_str2timestamp)
+        df["question_id"] = df["question_id"].map(int)
+        df["concept_id"] = df["concept_id"].map(int)
+        result_preprocessed = preprocess_raw.preprocess_assist(dataset_name, df)
+
+        self.data_preprocessed["single_concept"] = result_preprocessed["single_concept"]["data_processed"]
+        self.Q_table["single_concept"] = result_preprocessed["single_concept"]["Q_table"]
+        self.statics_preprocessed["single_concept"] = (
+            self.get_basic_info(result_preprocessed["single_concept"]["data_processed"]))
 
     def process_assist2015(self):
         data_path = self.params["preprocess_config"]["data_path"]
@@ -103,6 +133,8 @@ class DataProcessor:
         dataset_name = self.params["preprocess_config"]["dataset_name"]
         if dataset_name in ["assist2009", "assist2009-new"]:
             self.uniform_assist2009()
+        if dataset_name in ["assist2012", "assist2017"]:
+            self.uniform_assist2012()
         pass
 
     def uniform_assist2009(self):
@@ -155,12 +187,33 @@ class DataProcessor:
         self.data_uniformed["single_concept"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
 
     def uniform_assist2012(self):
-        pass
+        info_name_table = {
+            "question_seq": "question_id",
+            "concept_seq": "concept_id",
+            "correct_seq": "correct",
+            "time_seq": "timestamp",
+            "use_time_seq": "use_time"
+        }
+
+        # single_concept
+        df = self.data_preprocessed["single_concept"]
+        id_keys = list(set(df.columns) - set(info_name_table.values()))
+        dataset_seq_keys = CONSTANT.datasets_seq_keys()["assist2012"]
+        seqs = []
+        for user_id in pd.unique(df["user_id"]):
+            user_data = df[df["user_id"] == user_id]
+            user_data = user_data.sort_values(by=["timestamp"])
+            object_data = {info_name: [] for info_name in dataset_seq_keys}
+            for k in id_keys:
+                object_data[k] = user_data.iloc[0][k]
+            for i, (_, row_data) in enumerate(user_data.iterrows()):
+                for info_name in dataset_seq_keys:
+                    object_data[info_name].append(row_data[info_name_table[info_name]])
+            object_data["seq_len"] = len(object_data["correct_seq"])
+            seqs.append(object_data)
+        self.data_uniformed["single_concept"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
 
     def uniform_assist2015(self):
-        pass
-
-    def uniform_assist2017(self):
         pass
 
     @staticmethod

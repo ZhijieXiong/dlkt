@@ -15,8 +15,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="pykt_setting")
-    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_1.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_1.txt")
     parser.add_argument("--test_file_name", type=str, default="assist2009_test.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam",
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
     parser.add_argument("--learning_rate", type=float, default=0.0001)
-    parser.add_argument("--train_batch_size", type=int, default=64)
+    parser.add_argument("--train_batch_size", type=int, default=32)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type", type=str, default="StepLR")
@@ -51,6 +51,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_head", type=int, default=8)
     parser.add_argument("--num_block", type=int, default=2)
     parser.add_argument("--dim_ff", type=int, default=128)
+    parser.add_argument("--dim_final_fc", type=int, default=256)
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--separate_qa", type=str2bool, default=False)
     parser.add_argument("--num_predict_layer", type=int, default=3)

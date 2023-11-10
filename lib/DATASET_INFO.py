@@ -1,5 +1,5 @@
 def datasets_multi_concept(datasets_merged=None):
-    result = ["assist2009", "assist2009-new", "assist2012", "ednet-kt1"]
+    result = ["assist2009", "assist2009-new", "ednet-kt1"]
     if datasets_merged is None:
         return result
     return result.extend(datasets_merged)

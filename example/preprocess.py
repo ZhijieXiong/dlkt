@@ -10,7 +10,7 @@ from lib.util.data import *
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="assist2009")
+    parser.add_argument("--dataset_name", type=str, default="assist2012")
 
     args = parser.parse_args()
     params = vars(args)

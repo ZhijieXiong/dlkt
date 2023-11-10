@@ -28,7 +28,25 @@ class AKT(nn.Module):
             self.embed_interaction = nn.Embedding(2, dim_emb)
 
         self.encoder_layer = EncoderLayer(params, objects)
-        self.predict_layer = PredictorLayer(params, objects)
+        encoder_layer_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
+        dim_model = encoder_layer_config["dim_model"]
+        dim_final_fc = encoder_layer_config["dim_final_fc"]
+        dropout = encoder_layer_config["dropout"]
+        self.predict_layer = nn.Sequential(
+            nn.Linear(dim_model * 2, dim_final_fc),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(dim_final_fc, 256),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(256, 1),
+            nn.Sigmoid()
+        )
+
+        # 对性能来说至关重要的一步
+        for p in self.parameters():
+            if p.size(0) == num_question and num_question > 0:
+                torch.nn.init.constant_(p, 0.)
 
     def base_emb(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]

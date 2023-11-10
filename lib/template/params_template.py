@@ -58,7 +58,8 @@ PARAMS = {
           "key_query_same": True,
           "num_head": 8,
           "num_block": 2,
-          "dim_ff": 256,
+          "dim_ff": 128,
+          "dim_final_fc": 256,
           "dropout": 0.3,
           "separate_qa": False
         }

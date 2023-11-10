@@ -211,11 +211,9 @@ def akt_config(local_params):
     num_head = local_params["num_head"]
     num_block = local_params["num_block"]
     dim_ff = local_params["dim_ff"]
+    dim_final_fc = local_params["dim_final_fc"]
     separate_qa = local_params["separate_qa"]
     dropout = local_params["dropout"]
-    num_predict_layer = local_params["num_predict_layer"]
-    dim_predict_mid = local_params["dim_predict_mid"]
-    activate_type = local_params["activate_type"]
 
     # encoder layer
     akt_encoder_layer_config = global_params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
@@ -226,18 +224,9 @@ def akt_config(local_params):
     akt_encoder_layer_config["num_head"] = num_head
     akt_encoder_layer_config["num_block"] = num_block
     akt_encoder_layer_config["dim_ff"] = dim_ff
+    akt_encoder_layer_config["dim_final_fc"] = dim_final_fc
     akt_encoder_layer_config["separate_qa"] = separate_qa
     akt_encoder_layer_config["dropout"] = dropout
-
-    # predict layer
-    predict_layer_config = global_params["models_config"]["kt_model"]["predict_layer"]
-    predict_layer_config["type"] = "direct"
-    predict_layer_config["direct"]["dropout"] = dropout
-    predict_layer_config["direct"]["num_predict_layer"] = num_predict_layer
-    predict_layer_config["direct"]["dim_predict_in"] = dim_model * 2
-    predict_layer_config["direct"]["dim_predict_mid"] = dim_predict_mid
-    predict_layer_config["direct"]["activate_type"] = activate_type
-    predict_layer_config["direct"]["dim_predict_out"] = 1
 
     # 损失权重
     global_params["loss_config"]["rasch_loss"] = local_params["weight_rasch_loss"]

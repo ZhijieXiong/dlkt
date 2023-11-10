@@ -5,11 +5,9 @@ from .Module.KTEmbedLayer import KTEmbedLayer
 from .Module.PredictorLayer import PredictorLayer
 
 
-class DKT(nn.Module):
-    model_name = "DKT"
-
+class qDKT(nn.Module):
     def __init__(self, params, objects):
-        super(DKT, self).__init__()
+        super(qDKT, self).__init__()
         self.params = params
         self.objects = objects
 
@@ -22,8 +20,11 @@ class DKT(nn.Module):
     def init_model(self):
         self.embed_layer = KTEmbedLayer(self.params, self.objects)
 
-        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DKT"]
-        dim_emb = encoder_config["dim_emb"]
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
+        dim_concept = encoder_config["dim_concept"]
+        dim_question = encoder_config["dim_question"]
+        dim_correct = encoder_config["dim_correct"]
+        dim_emb = dim_concept + dim_question + dim_correct
         dim_latent = encoder_config["dim_latent"]
         rnn_type = encoder_config["rnn_type"]
         num_rnn_layer = encoder_config["num_rnn_layer"]
@@ -37,24 +38,42 @@ class DKT(nn.Module):
 
         self.predict_layer = PredictorLayer(self.params, self.objects)
 
-    def forward(self, batch):
-        correct_seq = batch["correct_seq"]
+    def get_qc_emb(self, batch):
         concept_seq = batch["concept_seq"]
-        dim_predict_out = self.params["models_config"]["kt_model"]["predict_layer"]["direct"]["dim_predict_out"]
-        interaction_seq = concept_seq[:, 0:-1] + dim_predict_out * correct_seq[:, 0:-1]
-        interaction_emb = self.embed_layer.get_emb("interaction", interaction_seq)
+        question_seq = batch["question_seq"]
+        concept_question_emb = (
+            self.embed_layer.get_emb_concatenated(("concept", "question"), (concept_seq, question_seq)))
+
+        return concept_question_emb
+
+    def forward(self, batch):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
+        dim_correct = encoder_config["dim_correct"]
+        correct_seq = batch["correct_seq"]
+
+        batch_size = correct_seq.shape[0]
+        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
+        qc_emb = self.get_qc_emb(batch)
+        interaction_emb = torch.cat((qc_emb[:, :-1], correct_emb[:, :-1]), dim=2)
+
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(interaction_emb)
-        predict_score = self.predict_layer(latent)
+
+        predict_layer_input = torch.cat((latent, qc_emb[:, 1:]), dim=2)
+        predict_score = self.predict_layer(predict_layer_input).squeeze(dim=-1)
 
         return predict_score
 
     def get_latent(self, batch):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
+        dim_correct = encoder_config["dim_correct"]
         correct_seq = batch["correct_seq"]
-        concept_seq = batch["concept_seq"]
-        dim_predict_out = self.params["models_config"]["kt_model"]["predict_layer"]["direct"]["dim_predict_out"]
-        interaction_seq = concept_seq[:, :-1] + dim_predict_out * correct_seq[:, :-1]
-        interaction_emb = self.embed_layer.get_emb("interaction", interaction_seq)
+
+        batch_size = correct_seq.shape[0]
+        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
+        qc_emb = self.get_qc_emb(batch)
+        interaction_emb = torch.cat((qc_emb[:, :-1], correct_emb), dim=2)
+
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(interaction_emb)
 
@@ -70,10 +89,7 @@ class DKT(nn.Module):
 
     def get_predict_score(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-        dim_predict_out = self.params["models_config"]["kt_model"]["predict_layer"]["direct"]["dim_predict_out"]
-        one_hot4predict_score = nn.functional.one_hot(batch["concept_seq"][:, 1:], dim_predict_out)
         predict_score = self.forward(batch)
-        predict_score = (predict_score * one_hot4predict_score).sum(-1)
         predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
 
         return predict_score

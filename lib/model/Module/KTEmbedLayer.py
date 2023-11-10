@@ -47,10 +47,16 @@ class KTEmbedLayer(nn.Module):
         assert self.emb_dict[emb_name] is not None, f"Embedding of {emb_name} is not initialized"
         return self.emb_dict[emb_name](emb_index)
 
-    def get_emb_concatenated(self, seq_cat, emb_indices):
-        result = self.get_emb(seq_cat[0], emb_indices[0])
-        for i, seq in enumerate(seq_cat[1:]):
-            result = torch.cat((result, self.get_emb(seq, emb_indices[i])), dim=-1)
+    def get_emb_concatenated(self, seq_names2cat, emb_indices2cat):
+        """
+        获取拼接后的emb
+        :param seq_names2cat:
+        :param emb_indices2cat:
+        :return:
+        """
+        result = self.get_emb(seq_names2cat[0], emb_indices2cat[0])
+        for i, seq in enumerate(seq_names2cat[1:]):
+            result = torch.cat((result, self.get_emb(seq, emb_indices2cat[i])), dim=-1)
         return result
 
     def parse_Q_table(self):

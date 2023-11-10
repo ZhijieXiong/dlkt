@@ -11,18 +11,14 @@ class EncoderLayer(nn.Module):
         self.params = params
         self.objects = objects
 
-        encoder_config = params["model_config"]["kt_model"]["encoder_layer"]
-        self.encoder_type = encoder_config["type"]
+        self.encoder_type = params["models_config"]["kt_model"]["encoder_layer"]["type"]
         if self.encoder_type == "AKT":
             self.encoder = Architecture(self.params)
         else:
-            pass
+            raise NotImplementedError()
 
-    def forward(self):
-        pass
+    def forward(self, batch):
+        return self.encoder(batch)
 
-    def get_latent(self, embeddings):
-        if self.encoder_type == "AKT":
-            pass
-
-
+    def get_latent_cl4kt(self, batch):
+        return self.encoder.get_latent_cl4kt(batch)

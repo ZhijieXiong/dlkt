@@ -27,7 +27,7 @@ class PredictorLayer(nn.Module):
             if num_predict_layer == 1:
                 self.predict_layer.append(nn.Dropout(dropout))
                 self.predict_layer.append(nn.Linear(dim_predict_in, dim_predict_out))
-                self.predict_layer.append(act_func())
+                self.predict_layer.append(nn.Sigmoid())
             else:
                 self.predict_layer.append(nn.Linear(dim_predict_in, dim_predict_mid))
                 for _ in range(num_predict_layer - 1):
@@ -36,7 +36,7 @@ class PredictorLayer(nn.Module):
                     self.predict_layer.append(nn.Linear(dim_predict_mid, dim_predict_mid))
                 self.predict_layer.append(nn.Dropout(dropout))
                 self.predict_layer.append(nn.Linear(dim_predict_mid, dim_predict_out))
-                self.predict_layer.append(act_func())
+                self.predict_layer.append(nn.Sigmoid())
             self.predict_layer = nn.Sequential(*self.predict_layer)
         elif predict_layer_config["type"] == "concat_direct":
             pass

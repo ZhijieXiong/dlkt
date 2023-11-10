@@ -10,22 +10,24 @@ class Architecture(nn.Module):
     def __init__(self, params):
         super(Architecture, self).__init__()
         self.params = params
-        encoder_params = self.params["model_config"]["kt_model"]["encoder_layer"]["params"]
-        dim_model, num_block, num_head, dim_ff, key_query_same, dropout = encoder_params
+
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
+        num_block = encoder_config["num_block"]
 
         # question encoder的偶数层（从0开始）用于对question做self attention，奇数层用于对question和interaction做cross attention
         self.question_encoder = nn.ModuleList([TransformerLayer(params) for _ in range(num_block * 2)])
         self.knowledge_encoder = nn.ModuleList([TransformerLayer(params) for _ in range(num_block)])
 
-    def get_latent(self, interaction_emb, question_difficulty_emb):
-        y = interaction_emb
+    def get_latent_cl4kt(self, batch):
+        y = batch["interaction_emb"]
         for block in self.knowledge_encoder:
-            y = block(y, y, y, question_difficulty_emb, apply_pos=False, mask_flag=True)
+            y = block(y, y, y, batch["question_difficulty_emb"], apply_pos=False, mask_flag=True)
         return y
 
-    def forward(self, question_emb, interaction_emb, question_difficulty_emb):
-        x = question_emb
-        y = interaction_emb
+    def forward(self, batch):
+        x = batch["question_emb"]
+        y = batch["interaction_emb"]
+        question_difficulty_emb = batch["question_difficulty_emb"]
 
         for block in self.knowledge_encoder:
             # 对0～t-1时刻前的qa信息进行编码, \hat{y_t}
@@ -52,8 +54,11 @@ class TransformerLayer(nn.Module):
     def __init__(self, params):
         super(TransformerLayer, self).__init__()
         self.params = params
-        encoder_params = self.params["model_config"]["kt_model"]["encoder_layer"]["params"]
-        dim_model, num_block, num_head, dim_ff, key_query_same, dropout = encoder_params
+
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
+        dim_model = encoder_config["dim_model"]
+        dim_ff = encoder_config["dim_ff"]
+        dropout = encoder_config["dropout"]
 
         # Multi-Head Attention Block
         self.masked_attn_head = MultiHeadAttention(params)
@@ -70,17 +75,17 @@ class TransformerLayer(nn.Module):
         self.layer_norm2 = nn.LayerNorm(dim_model)
         self.dropout2 = nn.Dropout(dropout)
 
-    def forward(self, query, key, value, emb_question_difficulty, apply_pos, mask_flag):
+    def forward(self, query, key, value, question_difficulty_emb, apply_pos, mask_flag):
         seq_len, batch_size = query.size(1), query.size(0)
         # 上三角和对角为1，其余为0的矩阵
         upper_triangle_ones = np.triu(np.ones((1, 1, seq_len, seq_len)), k=mask_flag).astype('uint8')
         src_mask = (torch.from_numpy(upper_triangle_ones) == 0).to(self.params["device"])
         if not mask_flag:
             # 只看过去
-            query2 = self.masked_attn_head(query, key, value, src_mask, True, emb_question_difficulty)
+            query2 = self.masked_attn_head(query, key, value, src_mask, True, question_difficulty_emb)
         else:
             # 看当前和过去
-            query2 = self.masked_attn_head(query, key, value, src_mask, False, emb_question_difficulty)
+            query2 = self.masked_attn_head(query, key, value, src_mask, False, question_difficulty_emb)
 
         # 残差
         query = query + self.dropout1(query2)
@@ -96,8 +101,12 @@ class MultiHeadAttention(nn.Module):
     def __init__(self, params, bias=True):
         super(MultiHeadAttention, self).__init__()
         self.params = params
-        encoder_params = self.params["model_config"]["kt_model"]["encoder_layer"]["params"]
-        dim_model, num_block, num_head, dim_ff, key_query_same, dropout = encoder_params
+
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
+        dim_model = encoder_config["dim_model"]
+        key_query_same = encoder_config["key_query_same"]
+        num_head = encoder_config["num_head"]
+        dropout = encoder_config["dropout"]
 
         self.dim_model = dim_model
         self.dim_feature = dim_model // num_head
@@ -129,7 +138,7 @@ class MultiHeadAttention(nn.Module):
                 nn.init.constant_(self.query_linear.bias, 0.)
             nn.init.constant_(self.out_proj.bias, 0.)
 
-    def forward(self, q, k, v, mask, zero_pad, emb_question_difficulty):
+    def forward(self, q, k, v, mask, zero_pad, question_difficulty_emb):
         batch_size = q.size(0)
         k = self.key_linear(k).view(batch_size, -1, self.num_head, self.dim_feature)
         if not self.key_query_same:
@@ -144,7 +153,7 @@ class MultiHeadAttention(nn.Module):
         v = v.transpose(1, 2)
         # calculate attention using function we will define next
         gammas = self.gammas
-        scores = attention_AKT(q, k, v, self.dim_feature, mask, self.dropout, zero_pad, gammas, emb_question_difficulty,
+        scores = attention_AKT(q, k, v, self.dim_feature, mask, self.dropout, zero_pad, gammas, question_difficulty_emb,
                                device=self.params["device"])
 
         # concatenate heads and put through final linear layer

@@ -46,10 +46,18 @@ class KnowledgeTracingTrainer:
         schedulers_config = self.params["schedulers_config"]["kt_model"]
         num_epoch = train_strategy["num_epoch"]
         train_loader = self.objects["data_loaders"]["train_loader"]
+        test_loader = self.objects["data_loaders"]["test_loader"]
         optimizer = self.objects["optimizers"]["kt_model"]
         scheduler = self.objects["schedulers"]["kt_model"]
         model = self.objects["models"]["kt_model"]
 
+        train_statics = self.statics_kt_dataset(train_loader)
+        print(f"train, seq: {train_statics[0]}, sample: {train_statics[1]}, accuracy: {train_statics[2]:<.4}")
+        if train_strategy["type"] == "valid_test":
+            valid_statics = self.statics_kt_dataset(self.objects["data_loaders"]["valid_loader"])
+            print(f"valid, seq: {valid_statics[0]}, sample: {valid_statics[1]}, accuracy: {valid_statics[2]:<.4}")
+        test_statics = self.statics_kt_dataset(test_loader)
+        print(f"test, seq: {test_statics[0]}, sample: {test_statics[1]}, accuracy: {test_statics[2]:<.4}")
         for epoch in range(1, num_epoch + 1):
             model.train()
             for batch in train_loader:
@@ -100,11 +108,22 @@ class KnowledgeTracingTrainer:
                   f"{valid_performance_str}train loss is {self.loss_record.get_str()}, test performance is "
                   f"{test_performance_str}")
 
-    def train_with_cl(self):
-        pass
-
-    def srs_train(self):
-        pass
+    @staticmethod
+    def statics_kt_dataset(data_loader):
+        num_seq = 0
+        sum_sample = 0
+        num_interaction = 0
+        num_correct = 0
+        with torch.no_grad():
+            for batch in data_loader:
+                mask_seq = batch["mask_seq"]
+                correct_seq = batch["correct_seq"]
+                mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+                num_seq += mask_seq.shape[0]
+                sum_sample += torch.sum(mask_seq[:, 1:]).item()
+                num_interaction += torch.sum(mask_seq).item()
+                num_correct += torch.sum(torch.masked_select(correct_seq, mask_bool_seq)).item()
+        return num_seq, sum_sample, num_correct / num_interaction
 
     @staticmethod
     def evaluate_kt_dataset(model, data_loader):

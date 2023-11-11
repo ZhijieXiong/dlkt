@@ -2,7 +2,6 @@ import os
 import re
 import time
 import pandas as pd
-import numpy as np
 
 from copy import deepcopy
 
@@ -268,7 +267,7 @@ class DataProcessor:
             seq_all = zip(question_seq, *(item_data[info_name] for info_name in seq_keys))
             for ele_all in seq_all:
                 q_id = ele_all[0]
-                c_ids = DataProcessor.get_concept_from_question(q_id, Q_table)
+                c_ids = parse.get_concept_from_question(q_id, Q_table)
                 len_c_ids = len(c_ids)
                 item_data_new["question_seq"] += [q_id] + [-1] * (len_c_ids - 1)
                 item_data_new["concept_seq"] += c_ids
@@ -277,11 +276,3 @@ class DataProcessor:
             item_data_new["seq_len"] = len(item_data_new["correct_seq"])
             seqs_new.append(item_data_new)
         return seqs_new
-
-    @staticmethod
-    def get_concept_from_question(question_id, Q_table):
-        return np.argwhere(Q_table[question_id] == 1).reshape(-1).tolist()
-
-    @staticmethod
-    def get_question_from_concept(concept_id, Q_table):
-        return np.argwhere(Q_table[:, concept_id] == 1).reshape(-1).tolist()

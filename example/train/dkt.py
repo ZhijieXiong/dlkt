@@ -15,6 +15,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="pykt_setting")
+    parser.add_argument("--data_type", type=str, default="multi_concept")
     parser.add_argument("--train_file_name", type=str, default="assist2012_train_fold_1.txt")
     parser.add_argument("--valid_file_name", type=str, default="assist2012_valid_fold_1.txt")
     parser.add_argument("--test_file_name", type=str, default="assist2012_test.txt")

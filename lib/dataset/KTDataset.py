@@ -28,10 +28,10 @@ class KTDataset(Dataset):
         file_name = dataset_config_this["file_name"]
         dataset_path = os.path.join(self.objects["file_manager"].get_setting_dir(setting_name), file_name)
         dataset_config = dataset_config_this["kt"]
-        unuseful_keys = dataset_config["unuseful_seq_keys"]
+        unuseful_keys = dataset_config_this["unuseful_seq_keys"]
         unuseful_keys = unuseful_keys - {"seq_len"}
         base_type = dataset_config["base_type"]
-        data_type = dataset_config["data_type"]
+        data_type = dataset_config_this["data_type"]
 
         if dataset_path != "":
             dataset_original = read_preprocessed_file(dataset_path)

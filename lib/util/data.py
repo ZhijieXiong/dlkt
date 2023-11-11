@@ -118,6 +118,38 @@ def dataset_agg_concept(data_uniformed):
     return data_new
 
 
+def data_agg_question(data_uniformed):
+    """
+    将multi concept的数据中question seq里的-1替换为对应的q id
+    :param data_uniformed:
+    :return:
+    """
+    id_keys, seq_keys = get_keys_from_uniform(data_uniformed)
+    if "question_seq" not in seq_keys:
+        return data_uniformed
+
+    data_converted = []
+    for item_data in data_uniformed:
+        item_data_new = {}
+        for k in id_keys:
+            item_data_new[k] = item_data[k]
+        for k in seq_keys:
+            if k == "question_seq":
+                question_seq = item_data["question_seq"]
+                question_seq_new = []
+                current_q = question_seq[0]
+                for q in question_seq:
+                    if q != -1:
+                        current_q = q
+                    question_seq_new.append(current_q)
+                item_data_new["question_seq"] = question_seq_new
+            else:
+                item_data_new[k] = deepcopy(item_data[k])
+        data_converted.append(item_data_new)
+
+    return data_converted
+
+
 def drop_qc(data_uniformed, num2drop=30):
     """
     丢弃练习次数少于指定值的习题，如DIMKT丢弃练习次数少于30次的习题

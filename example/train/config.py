@@ -56,8 +56,6 @@ def general_config(local_params, global_params, global_objects):
     # 数据集配置
     setting_name = local_params["setting_name"]
     train_file_name = local_params["train_file_name"]
-    # train_batch_size = local_params["train_batch_size"]
-    # evaluate_batch_size = local_params["evaluate_batch_size"]
     valid_file_name = local_params["valid_file_name"]
     test_file_name = local_params["test_file_name"]
 
@@ -67,11 +65,8 @@ def general_config(local_params, global_params, global_objects):
     datasets_config["valid"]["setting_name"] = setting_name
     if train_strategy["type"] == "valid_test":
         datasets_config["valid"]["file_name"] = valid_file_name
-        # datasets_config["valid"]["batch_size"] = evaluate_batch_size
     datasets_config["train"]["file_name"] = train_file_name
-    # datasets_config["train"]["batch_size"] = train_batch_size
     datasets_config["test"]["file_name"] = test_file_name
-    # datasets_config["test"]["batch_size"] = evaluate_batch_size
 
     # 优化器配置
     kt_optimizer_type = local_params["optimizer_type"]

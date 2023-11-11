@@ -1,5 +1,6 @@
 PARAMS = {
   "device": "cuda",
+  "seed": 0,
   "save_model": False,
   "preprocess_config": {
     "dataset_name": "assist2009",
@@ -24,7 +25,7 @@ PARAMS = {
   },
   "loss_config": {
     # rasch_loss: AKT
-    "rasch_loss": 0.00001
+    # "rasch_loss": 0.00001
   },
   "models_config": {
     "kt_model": {
@@ -138,26 +139,38 @@ PARAMS = {
     # 当前dataset的选择
     "dataset_this": "train",
     "train": {
-      # 两种数据格式，"kt" or "srs"，后者是序列推荐的格式
+      # "kt" or "kt4aug" or "srs"
       "type": "kt",
       "setting_name": "pykt_setting",
       "file_name": "assist2009_train_fold_0.txt",
-      # "batch_size": 64,
+      "data_type": "multi_concept",
+      "unuseful_seq_keys": {"user_id"},
       "kt": {
         # 配置KTDataset需要的参数
-        "data_type": "multi_concept",
-        "unuseful_seq_keys": {"user_id"},
         "base_type": "concept"
       },
+      "kt4aug": {
+        # "random_aug" or "semantic_aug"
+        "unuseful_seq_keys": {"user_id"},
+        "num_aug": 2,
+        "random_aug": {
+            # 配置随机增强
+            "mask_prob": 0.1,
+            "replace_prob": 0.1,
+            "crop_prob": 0.1,
+            "permute_prob": 0.1,
+            "hard_neg_prob": 1.0,
+            "aug_order": ["mask", "replace", "permute", "crop"]
+        }
+      }
     },
     "valid": {
       "type": "kt",
       "setting_name": "pykt_setting",
       "file_name": "assist2009_valid_fold_0.txt",
-      # "batch_size": 64,
+      "data_type": "multi_concept",
+      "unuseful_seq_keys": {"user_id"},
       "kt": {
-        "data_type": "multi_concept",
-        "unuseful_seq_keys": {"user_id"},
         "base_type": "concept"
       },
     },
@@ -165,12 +178,12 @@ PARAMS = {
       "type": "kt",
       "setting_name": "pykt_setting",
       "file_name": "assist2009_test.txt",
-      # "batch_size": 64,
+      "data_type": "multi_concept",
+      "unuseful_seq_keys": {"user_id"},
       "kt": {
-        "data_type": "multi_concept",
-        "unuseful_seq_keys": {"user_id"},
         "base_type": "concept"
       },
     }
-  }
+  },
+
 }

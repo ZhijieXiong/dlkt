@@ -16,6 +16,14 @@ def question2concept_from_Q(Q_table):
     return result
 
 
+def get_concept_from_question(question_id, Q_table):
+    return np.argwhere(Q_table[question_id] == 1).reshape(-1).tolist()
+
+
+def get_question_from_concept(concept_id, Q_table):
+    return np.argwhere(Q_table[:, concept_id] == 1).reshape(-1).tolist()
+
+
 def get_keys_from_uniform(data_uniformed):
     item_data = data_uniformed[0]
     id_keys = []

@@ -127,7 +127,7 @@ class KTDataRandomAug:
             if "question_seq" in sample.keys():
                 c_id_new = sample["concept_seq"][i]
                 sample["question_seq"][i] = (
-                    random.choice(parse.get_question_from_concept(c_id_new, self.objects["Q_table"])))
+                    random.choice(parse.get_question_from_concept(c_id_new, self.objects["data"]["Q_table"])))
 
         return sample
 

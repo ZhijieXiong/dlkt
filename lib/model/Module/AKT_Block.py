@@ -18,7 +18,7 @@ class Architecture(nn.Module):
         self.question_encoder = nn.ModuleList([TransformerLayer(params) for _ in range(num_block * 2)])
         self.knowledge_encoder = nn.ModuleList([TransformerLayer(params) for _ in range(num_block)])
 
-    def get_latent_cl4kt(self, batch):
+    def get_latent(self, batch):
         y = batch["interaction_emb"]
         for block in self.knowledge_encoder:
             y = block(y, y, y, batch["question_difficulty_emb"], apply_pos=False, mask_flag=True)

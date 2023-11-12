@@ -1,8 +1,7 @@
-import torch
-import torch.nn as nn
-
 from .Module.KTEmbedLayer import KTEmbedLayer
 from .Module.PredictorLayer import PredictorLayer
+from .loss_util import *
+from .util import *
 
 
 class qDKT(nn.Module):
@@ -65,14 +64,40 @@ class qDKT(nn.Module):
         batch_size = correct_seq.shape[0]
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
         qc_emb = self.get_qc_emb(batch)
-        interaction_emb = torch.cat((qc_emb[:, :-1], correct_emb), dim=2)
+        interaction_emb = torch.cat((qc_emb, correct_emb), dim=2)
 
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(interaction_emb)
 
         return latent
 
-    def get_loss(self, batch):
+    def get_duo_cl_loss(self, batch):
+        batch_ori = {
+            "concept_seq": batch["concept_seq"],
+            "question_seq": batch["question_seq"],
+            "correct_seq": batch["correct_seq"],
+            "mask_seq": batch["mask_seq"]
+        }
+        latent_ori = self.get_latent(batch_ori)
+        mask4last_ori = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
+        latent_ori = latent_ori[torch.where(mask4last_ori == 1)]
+
+        batch_aug = {
+            "concept_seq": batch["concept_seq_aug_0"],
+            "question_seq": batch["question_seq_aug_0"],
+            "correct_seq": batch["correct_seq_aug_0"],
+            "mask_seq": batch["mask_seq_aug_0"]
+        }
+        latent_aug = self.get_latent(batch_aug)
+        mask4last_aug = get_mask4last_or_penultimate(batch["mask_seq_aug_0"], penultimate=False)
+        latent_aug = latent_aug[torch.where(mask4last_aug == 1)]
+
+        temp = self.params["other"]["duo"]["temp"]
+        cl_loss = duo_info_nce(latent_ori, latent_aug, temp, sim_type="cos")
+
+        return cl_loss
+
+    def get_predict_loss(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         predict_score = self.get_predict_score(batch)
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])

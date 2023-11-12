@@ -64,9 +64,9 @@ class KnowledgeTracingTrainer:
                 optimizer.zero_grad()
 
                 num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
-                loss = model.get_loss(batch)
-                self.loss_record.add_loss("predict loss", loss.detach().cpu().item() * num_sample, num_sample)
-                loss.backward()
+                predict_loss = model.get_predict_loss(batch)
+                self.loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+                predict_loss.backward()
                 if grad_clip_config["use_clip"]:
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
                 self.objects["optimizers"]["kt_model"].step()

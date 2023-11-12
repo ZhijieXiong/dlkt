@@ -11,12 +11,12 @@ if __name__ == "__main__":
         "datasets_config": {
             # 当前dataset的选择
             "dataset_this": "train",
+            "data_type": "multi_concept",
             "train": {
                 # 两种数据格式，"kt" or "srs"，后者是序列推荐的格式
                 "type": "kt4aug",
                 "setting_name": "pykt_setting",
                 "file_name": "assist2009_train_fold_0.txt",
-                "data_type": "multi_concept",
                 "unuseful_seq_keys": {"user_id"},
                 "kt": {
                     # 配置KTDataset需要的参数
@@ -24,8 +24,8 @@ if __name__ == "__main__":
                 },
                 "kt4aug": {
                     # "random_aug" or "semantic_aug"
-                    "aug_type": "random_aug",
-                    "num_aug": 2,
+                    "aug_type": "semantic_aug",
+                    "num_aug": 1,
                     "random_aug": {
                         # 配置随机增强
                         "mask_prob": 0.1,
@@ -41,7 +41,6 @@ if __name__ == "__main__":
                 "type": "kt",
                 "setting_name": "pykt_setting",
                 "file_name": "assist2009_valid_fold_0.txt",
-                "data_type": "multi_concept",
                 "unuseful_seq_keys": {"user_id"},
                 "kt": {
                     "base_type": "concept"
@@ -51,7 +50,6 @@ if __name__ == "__main__":
                 "type": "kt",
                 "setting_name": "pykt_setting",
                 "file_name": "assist2009_test_fold_0.txt",
-                "data_type": "multi_concept",
                 "unuseful_seq_keys": {"user_id"},
                 "kt": {
                     "base_type": "concept"
@@ -60,11 +58,14 @@ if __name__ == "__main__":
         }
     }
     objects = {
-        "file_manager": FileManager(r"F:\code\myProjects\dlkt")
+        "file_manager": FileManager(r"F:\code\myProjects\dlkt"),
+        "data": {
+            "Q_table": FileManager(r"F:\code\myProjects\dlkt").get_q_table("assist2009", "multi_concept")
+        }
     }
 
     dataset = KTDataset4Aug(params, objects)
-    dataloader = DataLoader(dataset, batch_size=32)
+    dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 
     for batch in dataloader:
         print("")

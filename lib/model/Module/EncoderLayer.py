@@ -20,5 +20,5 @@ class EncoderLayer(nn.Module):
     def forward(self, batch):
         return self.encoder(batch)
 
-    def get_latent_cl4kt(self, batch):
-        return self.encoder.get_latent_cl4kt(batch)
+    def get_latent(self, batch):
+        return self.encoder.get_latent(batch)

@@ -95,6 +95,36 @@ class AKT(nn.Module):
 
         return predict_score
 
+    # def get_latent(self, batch):
+    #     encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
+    #     separate_qa = encoder_config["separate_qa"]
+    #     concept_seq = batch["concept_seq"]
+    #     question_seq = batch["question_seq"]
+    #     correct_seq = batch["correct_seq"]
+    #
+    #     # c_{c_t}和e_(ct, rt)
+    #     concept_emb, interaction_emb = self.base_emb(batch)
+    #     concept_variation_emb = self.embed_concept_variation(concept_seq)
+    #     question_difficulty_emb = self.embed_question_difficulty(question_seq)
+    #     # mu_{q_t} * d_ct + c_ct
+    #     question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
+    #     interaction_variation_emb = self.embed_interaction_variation(correct_seq)
+    #     if separate_qa:
+    #         # uq * f_(ct,rt) + e_(ct,rt)
+    #         interaction_emb = interaction_emb + question_difficulty_emb * interaction_variation_emb
+    #     else:
+    #         # + uq *(h_rt+d_ct) # （q-response emb diff + question emb diff）
+    #         interaction_emb = \
+    #             interaction_emb + question_difficulty_emb * (interaction_variation_emb + concept_variation_emb)
+    #     encoder_input = {
+    #         "question_emb": question_emb,
+    #         "interaction_emb": interaction_emb,
+    #         "question_difficulty_emb": question_difficulty_emb
+    #     }
+    #     latent = self.encoder_layer(encoder_input)
+    #
+    #     return latent
+
     def get_latent(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
         separate_qa = encoder_config["separate_qa"]
@@ -106,36 +136,6 @@ class AKT(nn.Module):
         concept_emb, interaction_emb = self.base_emb(batch)
         concept_variation_emb = self.embed_concept_variation(concept_seq)
         question_difficulty_emb = self.embed_question_difficulty(question_seq)
-        # mu_{q_t} * d_ct + c_ct
-        question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
-        interaction_variation_emb = self.embed_interaction_variation(correct_seq)
-        if separate_qa:
-            # uq * f_(ct,rt) + e_(ct,rt)
-            interaction_emb = interaction_emb + question_difficulty_emb * interaction_variation_emb
-        else:
-            # + uq *(h_rt+d_ct) # （q-response emb diff + question emb diff）
-            interaction_emb = \
-                interaction_emb + question_difficulty_emb * (interaction_variation_emb + concept_variation_emb)
-        encoder_input = {
-            "question_emb": question_emb,
-            "interaction_emb": interaction_emb,
-            "question_difficulty_emb": question_difficulty_emb
-        }
-        latent = self.encoder_layer(encoder_input)
-
-        return latent
-
-    def get_latent_cl4kt(self, batch):
-        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
-        separate_qa = encoder_config["separate_qa"]
-        concept_seq = batch["concept_seq"]
-        question_seq = batch["question_seq"]
-        correct_seq = batch["correct_seq"]
-
-        # c_{c_t}和e_(ct, rt)
-        concept_emb, interaction_emb = self.base_emb(batch)
-        concept_variation_emb = self.embed_concept_variation(concept_seq)
-        question_difficulty_emb = self.embed_question_difficulty(question_seq)
         interaction_variation_emb = self.embed_interaction_variation(correct_seq)
         if separate_qa:
             # uq * f_(ct,rt) + e_(ct,rt)
@@ -148,7 +148,7 @@ class AKT(nn.Module):
             "interaction_emb": interaction_emb,
             "question_difficulty_emb": question_difficulty_emb
         }
-        latent = self.encoder_layer.get_latent_cl4kt(encoder_input)
+        latent = self.encoder_layer.get_latent(encoder_input)
 
         return latent
 
@@ -158,7 +158,7 @@ class AKT(nn.Module):
 
         return (question_difficulty_emb ** 2.).sum()
 
-    def get_loss(self, batch):
+    def get_predict_loss(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         predict_score = self.get_predict_score(batch)
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])

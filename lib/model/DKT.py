@@ -53,7 +53,7 @@ class DKT(nn.Module):
 
         return latent
 
-    def get_loss(self, batch):
+    def get_predict_loss(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         predict_score = self.get_predict_score(batch)
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])

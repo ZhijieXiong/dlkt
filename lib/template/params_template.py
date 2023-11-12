@@ -24,8 +24,8 @@ PARAMS = {
     }
   },
   "loss_config": {
-    # rasch_loss: AKT
     # "rasch_loss": 0.00001
+    # "cl_loss": 0.1
   },
   "models_config": {
     "kt_model": {
@@ -138,12 +138,12 @@ PARAMS = {
   "datasets_config": {
     # 当前dataset的选择
     "dataset_this": "train",
+    "data_type": "multi_concept",
     "train": {
       # "kt" or "kt4aug" or "srs"
       "type": "kt",
       "setting_name": "pykt_setting",
       "file_name": "assist2009_train_fold_0.txt",
-      "data_type": "multi_concept",
       "unuseful_seq_keys": {"user_id"},
       "kt": {
         # 配置KTDataset需要的参数
@@ -151,7 +151,7 @@ PARAMS = {
       },
       "kt4aug": {
         # "random_aug" or "semantic_aug"
-        "unuseful_seq_keys": {"user_id"},
+        "aug_type": "semantic_aug",
         "num_aug": 2,
         "random_aug": {
             # 配置随机增强
@@ -168,7 +168,6 @@ PARAMS = {
       "type": "kt",
       "setting_name": "pykt_setting",
       "file_name": "assist2009_valid_fold_0.txt",
-      "data_type": "multi_concept",
       "unuseful_seq_keys": {"user_id"},
       "kt": {
         "base_type": "concept"
@@ -178,12 +177,15 @@ PARAMS = {
       "type": "kt",
       "setting_name": "pykt_setting",
       "file_name": "assist2009_test.txt",
-      "data_type": "multi_concept",
       "unuseful_seq_keys": {"user_id"},
       "kt": {
         "base_type": "concept"
       },
     }
   },
-
+  "other": {
+    "duo": {
+      "temp": 0.05
+    }
+  }
 }

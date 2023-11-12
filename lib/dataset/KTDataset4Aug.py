@@ -1,4 +1,6 @@
 import random
+
+import numpy as np
 import torch
 from torch.utils.data import Dataset
 
@@ -124,18 +126,21 @@ class KTDataset4Aug(Dataset):
 
     def load_dataset(self):
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
+        data_type = self.params["datasets_config"]["data_type"]
         setting_name = dataset_config_this["setting_name"]
         file_name = dataset_config_this["file_name"]
         dataset_path = os.path.join(self.objects["file_manager"].get_setting_dir(setting_name), file_name)
         unuseful_keys = dataset_config_this["unuseful_seq_keys"]
         unuseful_keys = unuseful_keys - {"seq_len"}
-        data_type = dataset_config_this["data_type"]
 
         if dataset_path != "":
             dataset_original = read_preprocessed_file(dataset_path)
         else:
             dataset_original = self.objects["dataset_this"]
-        self.data_uniformed = deepcopy(dataset_original)
+        if data_type == "multi_concept":
+            self.data_uniformed = data_agg_question(dataset_original)
+        else:
+            self.data_uniformed = deepcopy(dataset_original)
 
         id_keys, seq_keys = get_keys_from_uniform(dataset_original)
         all_keys = set(id_keys).union(seq_keys)
@@ -202,14 +207,22 @@ class KTDataset4Aug(Dataset):
         :return:
         """
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
-        setting_name = dataset_config_this["setting_name"]
-        file_name = dataset_config_this["file_name"]
-        semantic_aug_name = file_name.replace(".txt", "semantic_augmentation.npy")
-        semantic_aug_path = os.path.join(self.objects["file_manager"].get_setting_dir(setting_name), semantic_aug_name)
-
-        data_type = dataset_config_this["data_type"]
+        data_type = self.params["datasets_config"]["data_type"]
         data_srs = data_kt2srs(self.data_uniformed, data_type)
         self.data_srs = data_srs
+        setting_name = dataset_config_this["setting_name"]
+        file_name = dataset_config_this["file_name"]
+        setting_dir = self.objects["file_manager"].get_setting_dir(setting_name)
+        semantic_aug_name = file_name.replace(".txt", "_semantic_augmentation.npy")
+        semantic_aug_path = os.path.join(setting_dir, semantic_aug_name)
+        if os.path.exists(semantic_aug_path):
+            semantic_aug = np.load(semantic_aug_path, allow_pickle=True)
+            self.semantic_pos_seq_id = semantic_aug[0]
+            self.semantic_pos_index = semantic_aug[1]
+            self.semantic_hard_neg_seq_id = semantic_aug[2]
+            self.semantic_hard_neg_index = semantic_aug[3]
+            return
+
         target_q_all = np.array(list(map(lambda x: x["target_question"], data_srs)))
         for i, item_data in enumerate(self.data_uniformed):
             last_q = item_data["question_seq"][item_data["seq_len"]-1]
@@ -238,3 +251,10 @@ class KTDataset4Aug(Dataset):
                 list(map(lambda idx_sam_q: data_srs[idx_sam_q]["target_seq_id"], index2hard_neg)))
             self.semantic_hard_neg_index.append(
                 list(map(lambda idx_sam_q: data_srs[idx_sam_q]["target_seq_len"] + 1, index2hard_neg)))
+        self.semantic_pos_seq_id = np.array(self.semantic_pos_seq_id, dtype=object)
+        self.semantic_pos_index = np.array(self.semantic_pos_index, dtype=object)
+        self.semantic_hard_neg_seq_id = np.array(self.semantic_hard_neg_seq_id, dtype=object)
+        self.semantic_hard_neg_index = np.array(self.semantic_hard_neg_index, dtype=object)
+        semantic_aug = np.array([self.semantic_pos_seq_id, self.semantic_pos_index,
+                                 self.semantic_hard_neg_seq_id, self.semantic_hard_neg_index], dtype=object)
+        np.save(semantic_aug_path, semantic_aug)

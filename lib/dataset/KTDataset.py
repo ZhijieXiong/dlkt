@@ -71,8 +71,8 @@ class KTDataset(Dataset):
                         dataset_converted["question_seq_mask"].append(question_seq)
                     elif k == "time_seq":
                         interval_time_seq = [0]
-                        for i in range(1, len(item_data["time_seq"])):
-                            interval_time = (item_data["time_seq"][i] - item_data["time_seq"][i - 1]) // 60
+                        for time_i in range(1, len(item_data["time_seq"])):
+                            interval_time = (item_data["time_seq"][time_i] - item_data["time_seq"][time_i - 1]) // 60
                             interval_time = max(0, min(interval_time, 60 * 24 * 30))
                             interval_time_seq.append(interval_time)
                         dataset_converted["interval_time_seq"].append(interval_time_seq)
@@ -195,3 +195,13 @@ class KTDataset(Dataset):
         dataset_converted_result["interaction_index_seq"] = (
             torch.tensor(interaction_index_seq, device=self.params["device"], dtype=torch.int64))
         return dataset_converted_result
+
+    def get_statics_kt_dataset(self):
+        num_seq = len(self.dataset["mask_seq"])
+        with torch.no_grad():
+            num_sample = torch.sum(self.dataset["mask_seq"][:, 1:]).item()
+            num_interaction = torch.sum(self.dataset["mask_seq"]).item()
+            correct_seq = self.dataset["correct_seq"]
+            mask_bool_seq = torch.ne(self.dataset["mask_seq"], 0)
+            num_correct = torch.sum(torch.masked_select(correct_seq, mask_bool_seq)).item()
+        return num_seq, num_sample, num_correct / num_interaction

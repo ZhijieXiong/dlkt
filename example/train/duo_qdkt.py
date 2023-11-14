@@ -29,7 +29,7 @@ if __name__ == "__main__":
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test",
                         choices=("valid_test", "no_valid"))
-    parser.add_argument("--num_epoch", type=int, default=200)
+    parser.add_argument("--num_epoch", type=int, default=100)
     parser.add_argument("--use_early_stop", type=str2bool, default=False)
     parser.add_argument("--epoch_early_stop", type=int, default=10)
     parser.add_argument("--use_last_average", type=str2bool, default=True)
@@ -60,8 +60,8 @@ if __name__ == "__main__":
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
     # duo参数（对比学习）
-    parser.add_argument("--temp", type=float, default=0.1)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.01)
+    parser.add_argument("--temp", type=float, default=0.01)
+    parser.add_argument("--weight_cl_loss", type=float, default=1)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
@@ -97,3 +97,24 @@ if __name__ == "__main__":
     global_objects["models"]["kt_model"] = model
     trainer = DuoTrainer(global_params, global_objects)
     trainer.train()
+
+    # qdkt: valid performance by best valid epoch is main metric: 0.82321  , AUC: 0.82321  , ACC: 0.7986   , RMSE: 0.37518  , MAE: 0.25932  ,
+    # test performance by best valid epoch is main metric: 0.75265  , AUC: 0.75265  , ACC: 0.70112  , RMSE: 0.44902  , MAE: 0.34723  ,
+
+    # 0.1: valid performance by best valid epoch is main metric: 0.81771  , AUC: 0.81771  , ACC: 0.79763  , RMSE: 0.37802  , MAE: 0.26133  ,
+    # test performance by best valid epoch is main metric: 0.75061  , AUC: 0.75061  , ACC: 0.70207  , RMSE: 0.45023  , MAE: 0.34648  ,
+
+    # 0.01: valid performance by best valid epoch is main metric: 0.81569  , AUC: 0.81569  , ACC: 0.79841  , RMSE: 0.37707  , MAE: 0.26516  ,
+    # test performance by best valid epoch is main metric: 0.75408  , AUC: 0.75408  , ACC: 0.70545  , RMSE: 0.44591  , MAE: 0.34876  ,
+
+    # 0.001 (0.1): valid performance by best valid epoch is main metric: 0.81967  , AUC: 0.81967  , ACC: 0.79677  , RMSE: 0.37643  , MAE: 0.27156  ,
+    # test performance by best valid epoch is main metric: 0.75315  , AUC: 0.75315  , ACC: 0.70342  , RMSE: 0.44486  , MAE: 0.35334  ,
+
+    # 0.001 (0.05): valid performance by best valid epoch is main metric: 0.81961  , AUC: 0.81961  , ACC: 0.7966   , RMSE: 0.37643  , MAE: 0.27184  ,
+    # test performance by best valid epoch is main metric: 0.75252  , AUC: 0.75252  , ACC: 0.70402  , RMSE: 0.44497  , MAE: 0.35388  ,
+
+    # 0.1 (0.05): valid performance by best valid epoch is main metric: 0.82101  , AUC: 0.82101  , ACC: 0.79886  , RMSE: 0.37579  , MAE: 0.26533  ,
+    # test performance by best valid epoch is main metric: 0.75621  , AUC: 0.75621  , ACC: 0.70488  , RMSE: 0.44518  , MAE: 0.34853  ,
+
+    # 1 (0.05): valid performance by best valid epoch is main metric: 0.82443  , AUC: 0.82443  , ACC: 0.79814  , RMSE: 0.37546  , MAE: 0.26324  ,
+    # test performance by best valid epoch is main metric: 0.75122  , AUC: 0.75122  , ACC: 0.70214  , RMSE: 0.44949  , MAE: 0.34801  ,

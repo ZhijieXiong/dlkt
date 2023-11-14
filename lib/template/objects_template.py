@@ -18,6 +18,6 @@ OBJECTS = {
         "test_loader": None
     },
     "data": {
-
+        "Q_table": None,
     }
 }

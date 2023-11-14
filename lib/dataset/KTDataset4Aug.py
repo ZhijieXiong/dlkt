@@ -1,6 +1,3 @@
-import random
-
-import numpy as np
 import torch
 from torch.utils.data import Dataset
 
@@ -19,13 +16,14 @@ class KTDataset4Aug(Dataset):
         self.data_uniformed = None
         self.dataset = None
         # semantic aug 所需要的
-        self.semantic_pos_seq_id = []
-        self.semantic_pos_index = []
-        self.semantic_hard_neg_seq_id = []
-        self.semantic_hard_neg_index = []
+        self.semantic_pos_srs_index = []
+        self.semantic_hard_neg_srs_index = []
         self.data_srs = None
         # random aug 所需要的
         self.random_data_augmentor = None
+        # informative aug 所需要的
+        self.offline_sim = None
+        self.online_sim = None
 
         self.load_dataset()
         self.parse_aug()
@@ -51,6 +49,11 @@ class KTDataset4Aug(Dataset):
                 torch.tensor(correct_seq_neg + [0] * (max_seq_len - seq_len)).long().to(self.params["device"]))
         elif aug_type == "semantic_aug":
             datas_aug = self.get_semantic_aug(index)
+            data_hard_neg = self.get_semantic_hard_neg(index)
+            pad_len = max_seq_len - data_hard_neg["seq_len"]
+            for k, v in data_hard_neg.items():
+                if type(v) == list:
+                    result[f"{k}_hard_neg"] = torch.tensor(v + [0] * pad_len).long().to(self.params["device"])
         else:
             raise NotImplementedError()
 
@@ -94,7 +97,7 @@ class KTDataset4Aug(Dataset):
         return aug_result
 
     def get_semantic_aug(self, index):
-        cur_same_target = deepcopy(self.semantic_pos_seq_id[index])
+        cur_same_target = deepcopy(self.semantic_pos_srs_index[index])
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         num_aug = dataset_config_this["kt4aug"]["num_aug"]
         aug_result = []
@@ -112,7 +115,8 @@ class KTDataset4Aug(Dataset):
             else:
                 pos_chosen = np.random.choice(cur_same_target)
                 target_seq_id = self.data_srs[pos_chosen]["target_seq_id"]
-                target_seq_len = self.data_srs[pos_chosen]["target_seq_len"]
+                # 因为data_srs记录的是目标习题，而做对比学习时，是用的最后一刻，所以seq len要+1
+                target_seq_len = self.data_srs[pos_chosen]["target_seq_len"] + 1
                 item_data_aug = deepcopy(self.data_uniformed[target_seq_id])
                 for k, v in item_data_aug.items():
                     if type(v) == list:
@@ -123,6 +127,29 @@ class KTDataset4Aug(Dataset):
                 cur_same_target = np.delete(cur_same_target, delete_index)
             aug_result.append(item_data_aug)
         return aug_result
+
+    def get_semantic_hard_neg(self, index):
+        cur_same_target = deepcopy(self.semantic_hard_neg_srs_index[index])
+        if len(cur_same_target) == 0:
+            # 没有其他人和自己做相似习题且结果不一样，用CL4KT的hard neg，即将最后一个correct取反
+            item_data_hard_neg = deepcopy(self.data_uniformed[index])
+            seq_len = item_data_hard_neg["seq_len"]
+            last_correct = item_data_hard_neg["correct_seq"][seq_len-1]
+            item_data_hard_neg["correct_seq"][seq_len-1] = int(1 - last_correct)
+            for k, v in item_data_hard_neg.items():
+                if type(v) == list:
+                    item_data_hard_neg[k] = v[:seq_len]
+            item_data_hard_neg["seq_len"] = seq_len
+        else:
+            hard_neg_chosen = np.random.choice(cur_same_target)
+            target_seq_id = self.data_srs[hard_neg_chosen]["target_seq_id"]
+            target_seq_len = self.data_srs[hard_neg_chosen]["target_seq_len"] + 1
+            item_data_hard_neg = deepcopy(self.data_uniformed[target_seq_id])
+            for k, v in item_data_hard_neg.items():
+                if type(v) == list:
+                    item_data_hard_neg[k] = v[:target_seq_len]
+            item_data_hard_neg["seq_len"] = target_seq_len
+        return item_data_hard_neg
 
     def load_dataset(self):
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
@@ -157,7 +184,7 @@ class KTDataset4Aug(Dataset):
         if "time_seq" in seq_keys:
             dataset_converted["interval_time_seq"] = []
         dataset_converted["seq_id"] = []
-        for i, item_data in enumerate(dataset_original):
+        for seq_i, item_data in enumerate(dataset_original):
             for k in id_keys:
                 dataset_converted[k].append(item_data[k])
             for k in seq_keys:
@@ -173,14 +200,14 @@ class KTDataset4Aug(Dataset):
                     dataset_converted["question_seq_mask"].append(question_seq)
                 elif k == "time_seq":
                     interval_time_seq = [0]
-                    for i in range(1, len(item_data["time_seq"])):
-                        interval_time = (item_data["time_seq"][i] - item_data["time_seq"][i - 1]) // 60
+                    for time_j in range(1, len(item_data["time_seq"])):
+                        interval_time = (item_data["time_seq"][time_j] - item_data["time_seq"][time_j - 1]) // 60
                         interval_time = max(0, min(interval_time, 60 * 24 * 30))
                         interval_time_seq.append(interval_time)
                     dataset_converted["interval_time_seq"].append(interval_time_seq)
                 else:
                     dataset_converted[k].append(item_data[k])
-            dataset_converted["seq_id"].append(i)
+            dataset_converted["seq_id"].append(seq_i)
         if "time_seq" in dataset_converted.keys():
             del dataset_converted["time_seq"]
         if "question_seq_mask" in dataset_converted.keys():
@@ -198,6 +225,8 @@ class KTDataset4Aug(Dataset):
         elif aug_type == "random_aug":
             self.random_data_augmentor = KTDataRandomAug(self.params, self.objects)
             self.random_data_augmentor.parse_data(self.data_uniformed)
+        elif aug_type == "informative-aug":
+            self.informative_parse()
         else:
             raise NotImplementedError()
 
@@ -217,10 +246,8 @@ class KTDataset4Aug(Dataset):
         semantic_aug_path = os.path.join(setting_dir, semantic_aug_name)
         if os.path.exists(semantic_aug_path):
             semantic_aug = np.load(semantic_aug_path, allow_pickle=True)
-            self.semantic_pos_seq_id = semantic_aug[0]
-            self.semantic_pos_index = semantic_aug[1]
-            self.semantic_hard_neg_seq_id = semantic_aug[2]
-            self.semantic_hard_neg_index = semantic_aug[3]
+            self.semantic_pos_srs_index = semantic_aug[0]
+            self.semantic_hard_neg_srs_index = semantic_aug[1]
             return
 
         target_q_all = np.array(list(map(lambda x: x["target_question"], data_srs)))
@@ -232,29 +259,32 @@ class KTDataset4Aug(Dataset):
             index2hard_neg = []
             for k, idx in enumerate(all_index_same_q):
                 target_seq_id = data_srs[idx]["target_seq_id"]
-                target_seq_len = data_srs[idx]["target_seq_len"]
                 target_correct = data_srs[idx]["target_correct"]
-                if target_seq_id == i and target_seq_len == (item_data["seq_len"]-1):
+                if target_seq_id == i:
                     index2delete.append(k)
-                if target_correct != last_correct:
+                if (target_seq_id != i) and (target_correct != last_correct):
                     index2delete.append(k)
-                    index2hard_neg.append(k)
+                    index2hard_neg.append(idx)
 
             all_index_same_id_wo_self = np.delete(all_index_same_q, index2delete)
-            self.semantic_pos_seq_id.append(
-                list(map(lambda idx_sam_q: data_srs[idx_sam_q]["target_seq_id"], all_index_same_id_wo_self)))
-            # 因为data_srs记录的是目标习题，而做对比学习时，是用的最后一刻，所以seq len要+1
-            self.semantic_pos_index.append(
-                list(map(lambda idx_sam_q: data_srs[idx_sam_q]["target_seq_len"] + 1, all_index_same_id_wo_self)))
+            self.semantic_pos_srs_index.append(all_index_same_id_wo_self)
+            self.semantic_hard_neg_srs_index.append(np.array(index2hard_neg))
 
-            self.semantic_hard_neg_seq_id.append(
-                list(map(lambda idx_sam_q: data_srs[idx_sam_q]["target_seq_id"], index2hard_neg)))
-            self.semantic_hard_neg_index.append(
-                list(map(lambda idx_sam_q: data_srs[idx_sam_q]["target_seq_len"] + 1, index2hard_neg)))
-        self.semantic_pos_seq_id = np.array(self.semantic_pos_seq_id, dtype=object)
-        self.semantic_pos_index = np.array(self.semantic_pos_index, dtype=object)
-        self.semantic_hard_neg_seq_id = np.array(self.semantic_hard_neg_seq_id, dtype=object)
-        self.semantic_hard_neg_index = np.array(self.semantic_hard_neg_index, dtype=object)
-        semantic_aug = np.array([self.semantic_pos_seq_id, self.semantic_pos_index,
-                                 self.semantic_hard_neg_seq_id, self.semantic_hard_neg_index], dtype=object)
+        self.semantic_pos_srs_index = np.array(self.semantic_pos_srs_index, dtype=object)
+        self.semantic_hard_neg_srs_index = np.array(self.semantic_hard_neg_srs_index, dtype=object)
+        semantic_aug = np.array([self.semantic_pos_srs_index, self.semantic_hard_neg_srs_index], dtype=object)
         np.save(semantic_aug_path, semantic_aug)
+
+    def get_statics_kt_dataset(self):
+        num_seq = len(self.dataset["mask_seq"])
+        with torch.no_grad():
+            num_sample = torch.sum(self.dataset["mask_seq"][:, 1:]).item()
+            num_interaction = torch.sum(self.dataset["mask_seq"]).item()
+            correct_seq = self.dataset["correct_seq"]
+            mask_bool_seq = torch.ne(self.dataset["mask_seq"], 0)
+            num_correct = torch.sum(torch.masked_select(correct_seq, mask_bool_seq)).item()
+        return num_seq, num_sample, num_correct / num_interaction
+
+    def informative_parse(self):
+
+        pass

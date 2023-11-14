@@ -154,13 +154,20 @@ PARAMS = {
         "aug_type": "semantic_aug",
         "num_aug": 2,
         "random_aug": {
-            # 配置随机增强
-            "mask_prob": 0.1,
-            "replace_prob": 0.1,
-            "crop_prob": 0.1,
-            "permute_prob": 0.1,
-            "hard_neg_prob": 1.0,
-            "aug_order": ["mask", "replace", "permute", "crop"]
+          # 配置随机增强
+          "mask_prob": 0.1,
+          "replace_prob": 0.1,
+          "crop_prob": 0.1,
+          "permute_prob": 0.1,
+          "hard_neg_prob": 1.0,
+          "aug_order": ["mask", "replace", "permute", "crop"]
+        },
+        "informative_aug": {
+          # 配置info增强
+          "mask_prob": 0.1,
+          "replace_prob": 0.1,
+          "crop_prob": 0.1,
+          "offline_sim_type": "order"
         }
       }
     },
@@ -186,6 +193,10 @@ PARAMS = {
   "other": {
     "duo": {
       "temp": 0.05
+    },
+    "informative_aug_config": {
+      "num_concept": 123,
+      "num_question": 17751,
     }
   }
 }

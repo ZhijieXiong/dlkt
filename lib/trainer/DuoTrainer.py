@@ -19,12 +19,12 @@ class DuoTrainer(KnowledgeTracingTrainer):
         scheduler = self.objects["schedulers"]["kt_model"]
         model = self.objects["models"]["kt_model"]
 
-        train_statics = self.statics_kt_dataset(train_loader)
+        train_statics = train_loader.dataset.get_statics_kt_dataset()
         print(f"train, seq: {train_statics[0]}, sample: {train_statics[1]}, accuracy: {train_statics[2]:<.4}")
         if train_strategy["type"] == "valid_test":
-            valid_statics = self.statics_kt_dataset(self.objects["data_loaders"]["valid_loader"])
+            valid_statics = self.objects["data_loaders"]["valid_loader"].dataset.get_statics_kt_dataset()
             print(f"valid, seq: {valid_statics[0]}, sample: {valid_statics[1]}, accuracy: {valid_statics[2]:<.4}")
-        test_statics = self.statics_kt_dataset(test_loader)
+        test_statics = test_loader.dataset.get_statics_kt_dataset()
         print(f"test, seq: {test_statics[0]}, sample: {test_statics[1]}, accuracy: {test_statics[2]:<.4}")
 
         for epoch in range(1, num_epoch + 1):

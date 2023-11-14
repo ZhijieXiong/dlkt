@@ -89,11 +89,21 @@ class qDKT(nn.Module):
             "mask_seq": batch["mask_seq_aug_0"]
         }
         latent_aug = self.get_latent(batch_aug)
-        mask4last_aug = get_mask4last_or_penultimate(batch["mask_seq_aug_0"], penultimate=False)
+        mask4last_aug = get_mask4last_or_penultimate(batch_aug["mask_seq"], penultimate=False)
         latent_aug = latent_aug[torch.where(mask4last_aug == 1)]
 
+        batch_hard_neg = {
+            "concept_seq": batch["concept_seq_hard_neg"],
+            "question_seq": batch["question_seq_hard_neg"],
+            "correct_seq": batch["correct_seq_hard_neg"],
+            "mask_seq": batch["mask_seq_hard_neg"]
+        }
+        latent_hard_neg = self.get_latent(batch_hard_neg)
+        mask4last_hard_neg = get_mask4last_or_penultimate(batch_hard_neg["mask_seq"], penultimate=False)
+        latent_hard_neg = latent_hard_neg[torch.where(mask4last_hard_neg == 1)]
+
         temp = self.params["other"]["duo"]["temp"]
-        cl_loss = duo_info_nce(latent_ori, latent_aug, temp, sim_type="cos")
+        cl_loss = duo_info_nce(latent_ori, latent_aug, temp, sim_type="cos", z_hard_neg=latent_hard_neg)
 
         return cl_loss
 

@@ -2,37 +2,27 @@ import torch
 import torch.nn as nn
 
 
-def mask_correlated_samples(batch_size):
-    N = 2 * batch_size
-    mask = torch.ones((N, N), dtype=bool)
-    mask = mask.fill_diagonal_(0)
-    for i in range(batch_size):
-        mask[i, batch_size + i] = 0
-        mask[batch_size + i, i] = 0
-    return mask
+def trans2neg(one_view):
+    bs = one_view.shape[0]
+    neg_view = one_view.repeat(1, bs, 1).reshape(bs, bs, -1)
+    m = (torch.eye(bs) == 0)
+    return neg_view[m].reshape(bs, bs-1, -1)
 
 
 def duo_info_nce(z_i, z_j, temp, sim_type="cos", z_hard_neg=None):
     batch_size = z_i.shape[0]
-    N = 2 * batch_size
-    z = torch.cat((z_i, z_j), dim=0)
+    device = z_i.device
 
     if sim_type == 'cos':
-        sim = nn.functional.cosine_similarity(z.unsqueeze(1), z.unsqueeze(0), dim=2) / temp
-    elif sim_type == 'dot':
-        sim = torch.mm(z, z.T) / temp
+        sim = nn.functional.cosine_similarity(z_i.unsqueeze(1), z_j.unsqueeze(0), dim=2) / temp
     else:
         raise NotImplementedError()
 
-    sim_i_j = torch.diag(sim, batch_size)
-    sim_j_i = torch.diag(sim, -batch_size)
+    if z_hard_neg is not None:
+        neg_sim = nn.functional.cosine_similarity(z_i, z_hard_neg, dim=1) / temp
+        sim = torch.cat((sim, neg_sim.unsqueeze(1)), dim=1)
 
-    positive_samples = torch.cat((sim_i_j, sim_j_i), dim=0).reshape(N, 1)
-    mask = mask_correlated_samples(batch_size)
-    negative_samples = sim[mask].reshape(N, -1)
-
-    labels = torch.zeros(N).to(positive_samples.device).long()
-    logits = torch.cat((positive_samples, negative_samples), dim=1)
-    loss = nn.functional.cross_entropy(logits, labels)
+    labels = torch.arange(batch_size).long().to(device)
+    loss = nn.functional.cross_entropy(sim, labels)
 
     return loss

@@ -288,3 +288,6 @@ class KTDataset4Aug(Dataset):
     def informative_parse(self):
 
         pass
+
+    def update_online_sim4info_aug(self):
+        pass

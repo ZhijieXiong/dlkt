@@ -2,6 +2,7 @@ PARAMS = {
   "device": "cuda",
   "seed": 0,
   "save_model": False,
+  # 数据预处理部分配置
   "preprocess_config": {
     "dataset_name": "assist2009",
     "data_path": ""
@@ -23,6 +24,7 @@ PARAMS = {
       "epoch_last_average": 5
     }
   },
+  # 其它loss（joint loss）的权重配置
   "loss_config": {
     # "rasch_loss": 0.00001
     # "cl_loss": 0.1
@@ -133,7 +135,8 @@ PARAMS = {
     "kt_model": {
       "use_clip": False,
       "grad_clipped": 10.0
-    }
+    },
+    # "other_model1": {}
   },
   "datasets_config": {
     # 当前dataset的选择

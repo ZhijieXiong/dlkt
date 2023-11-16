@@ -33,8 +33,6 @@ class OfflineSimilarity:
         self.data = None
         self.question2concept = parse_util.question2concept_from_Q(self.objects["data"]["Q_table"])
         self.concept2question = parse_util.concept2question_from_Q(self.objects["data"]["Q_table"])
-        self.concept_high_distinction = []
-        self.question_high_distinction = []
         self.question_frequency = None
         self.concept_frequency = None
         self.low_frequency_q = None
@@ -65,25 +63,6 @@ class OfflineSimilarity:
         self.get_question_similarity_table()
         self.data = None
         gc.collect()
-
-    # def load_distinction_table(self):
-    #     distinct_table_path = self.envs.get("distinct_table", None)
-    #     if distinct_table_path is not None and os.path.exists(distinct_table_path):
-    #         distinct_table = load_json(distinct_table_path)
-    #
-    #         self.concept_high_distinction = distinct_table["concept"]
-    #         for i in range(len(self.concept_high_distinction)):
-    #             self.concept_high_distinction[i] = int(self.concept_high_distinction[i])
-    #
-    #         self.question_high_distinction = distinct_table["question"]
-    #         for i in range(len(self.question_high_distinction)):
-    #             self.question_high_distinction[i] = int(self.question_high_distinction[i])
-    #
-    #         return
-    #     self.cal_distinction()
-    #     if distinct_table_path is not None:
-    #         with open(distinct_table_path, "w") as f:
-    #             json.dump({"question": self.question_high_distinction, "concept": self.concept_high_distinction}, f)
 
     def get_question_similarity_table(self):
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
@@ -271,105 +250,12 @@ class OfflineSimilarity:
             if item not in item_frequency.keys():
                 item_frequency[item] = 0
 
-        frequency_sorted = list(map(lambda e: e[0], sorted(list(item_frequency.items()), reverse=True, key=lambda ele: ele[1])))
+        frequency_sorted = list(map(lambda e: e[0],
+                                    sorted(list(item_frequency.items()), reverse=True, key=lambda ele: ele[1])))
         low_frequency = set(frequency_sorted[freq_threshold:])
         high_frequency = set(frequency_sorted[:freq_threshold])
 
         return item_frequency, low_frequency, high_frequency
-
-    # def cal_distinction(self, min_seq_len=10):
-    #     # 公式：总分最高的27%学生（H）和总分最低的27%学生（L），计算H和L对某道题的通过率，之差为区分度，区分度大于0.4为高区分度习题，低于0.2表示区分度不好
-    #     def cal_diff(D, k):
-    #         # 计算正确率，习题或者知识点
-    #         seqs = [item[k] for item in D]
-    #         correct_seqs = [item["correct_seq"] for item in D]
-    #         corrects = defaultdict(int)
-    #         counts = defaultdict(int)
-    #
-    #         for seq, correct_seq in zip(seqs, correct_seqs):
-    #             for k_id, correct in zip(seq, correct_seq):
-    #                 corrects[k_id] += correct
-    #                 counts[k_id] += 1
-    #
-    #         # 丢弃练习次数少于min_count次的习题或者知识点
-    #         all_ids = list(counts.keys())
-    #         for k_id in all_ids:
-    #             if counts[k_id] < min_count_table[self.envs["dataset_name"]]:
-    #                 del counts[k_id]
-    #                 del corrects[k_id]
-    #
-    #         return {k_id: corrects[k_id] / float(counts[k_id]) for k_id in corrects}
-    #
-    #     def get_high_distinction(H, L, update_target):
-    #         intersection_H_L = set(H.keys()).intersection(set(L.keys()))
-    #         for k_id in intersection_H_L:
-    #             if H[k_id] - L[k_id] >= 0.35:
-    #                 update_target.append(k_id)
-    #
-    #     dataset_concept = delete_pad(self.data)
-    #     # 统计知识点正确率
-    #     accuracy_list = []
-    #     count_statics = 0
-    #     for item_data in dataset_concept:
-    #         seq_len = item_data["seq_len"]
-    #         if seq_len < min_seq_len:
-    #             continue
-    #         num_right = 0
-    #         num_wrong = 0
-    #         for i, m in enumerate(item_data["mask_seq"]):
-    #             if m == 0:
-    #                 break
-    #             num_right += item_data["correct_seq"][i]
-    #             num_wrong += (1 - item_data["correct_seq"][i])
-    #         accuracy = num_right / (num_right + num_wrong)
-    #         item_data["acc"] = accuracy
-    #         accuracy_list.append(accuracy)
-    #         count_statics += 1
-    #     accuracy_list = sorted(accuracy_list)
-    #     high_acc = accuracy_list[int(count_statics * (1 - 0.27))]
-    #     low_acc = accuracy_list[int(count_statics * 0.27)]
-    #     H_concept = list(filter(lambda item: item["seq_len"] >= min_seq_len and item["acc"] >= high_acc, dataset_concept))
-    #     L_concept = list(filter(lambda item: item["seq_len"] >= min_seq_len and item["acc"] <= low_acc, dataset_concept))
-    #     H_concept_diff = cal_diff(H_concept, "concept_seq")
-    #     L_concept_diff = cal_diff(L_concept, "concept_seq")
-    #     get_high_distinction(H_concept_diff, L_concept_diff, self.concept_high_distinction)
-    #
-    #     if self.num_question is not None:
-    #         if self.envs["dataset_name"] in datasets_multi_concept:
-    #             dataset_question = delete_pad(dataset_multi2single(self.data, self.envs["dataset_name"]))
-    #         else:
-    #             dataset_question = dataset_concept
-    #
-    #         # 统计习题正确率
-    #         if self.envs["dataset_name"] in datasets_multi_concept:
-    #             accuracy_list = []
-    #             count_statics = 0
-    #             for item_data in dataset_question:
-    #                 seq_len = item_data["seq_len"]
-    #                 if seq_len < min_seq_len:
-    #                     continue
-    #                 num_right = 0
-    #                 num_wrong = 0
-    #                 for i, m in enumerate(item_data["mask_seq"]):
-    #                     if m == 0:
-    #                         break
-    #                     num_right += item_data["correct_seq"][i]
-    #                     num_wrong += (1 - item_data["correct_seq"][i])
-    #                 accuracy = num_right / (num_right + num_wrong)
-    #                 item_data["acc"] = accuracy
-    #                 accuracy_list.append(accuracy)
-    #                 count_statics += 1
-    #             accuracy_list = sorted(accuracy_list)
-    #             high_acc = accuracy_list[int(count_statics * (1 - 0.27))]
-    #             low_acc = accuracy_list[int(count_statics * 0.27)]
-    #             H_question = list(filter(lambda item: item["seq_len"] >= min_seq_len and item["acc"] >= high_acc, dataset_question))
-    #             L_question = list(filter(lambda item: item["seq_len"] >= min_seq_len and item["acc"] <= low_acc, dataset_question))
-    #         else:
-    #             H_question = H_concept
-    #             L_question = L_concept
-    #         H_question_diff = cal_diff(H_question, "question_seq")
-    #         L_question_diff = cal_diff(L_question, "question_seq")
-    #         get_high_distinction(H_question_diff, L_question_diff, self.question_high_distinction)
 
     def cal_question_difficulty(self):
         self.question_difficulty = []
@@ -443,60 +329,19 @@ class OfflineSimilarity:
         index_selected = min(index_selected, num_qs - 1)
         return self.concept2question[concept_id][index_selected]
 
-    def get_high_distinct_concept(self):
-        return self.concept_high_distinction
-
-    def get_high_distinct_question(self):
-        concept_correspond = [random.choice(self.question2concept[q_id]) for q_id in self.question_high_distinction]
-        return self.question_high_distinction, concept_correspond
-
 
 class OnlineSimilarity:
-    def __init__(self, concept_embed, envs, question_embed=None):
-        self.envs = envs
-        self.question2concept = parse_util.question2concept_from_Q(self.envs["Q_table"])
-        self.concept2question = parse_util.concept2question_from_Q(self.envs["Q_table"])
-        self.concept_embed = concept_embed
-        self.question_embed = question_embed
+    def __init__(self):
         self.concept_similarity = None
-        self.question_similarity = None
         self.concept_similarity_table = {}
-        self.question_similarity_table = {}
 
-        self.analysis()
-
-    def analysis(self):
-        num_concept = len(self.concept_embed)
-        self.concept_similarity = cos_sim_self(self.concept_embed)
+    def analysis(self, concept_emb):
+        num_concept = len(concept_emb)
+        self.concept_similarity = cos_sim_self(concept_emb)
         self.concept_similarity += np.diag([1] * num_concept)
         for c in range(num_concept):
             self.concept_similarity_table[c] = np.argsort(self.concept_similarity[:, c])[::-1]
         self.concept_similarity = None
 
-        if self.question_embed is not None:
-            num_question = len(self.question_embed)
-            self.question_similarity = cos_sim_self(self.question_embed)
-            self.question_similarity += np.diag([1] * num_question)
-            for q in range(num_question):
-                c_correspond = random.choice(self.question2concept[q])
-                qs_share_concept = self.concept2question[c_correspond]
-                similarity_score = self.question_similarity[qs_share_concept, q]
-                sort_index = np.argsort(similarity_score)[::-1]
-                self.question_similarity_table[q] = np.array(qs_share_concept)[sort_index]
-            self.question_similarity = None
-
-        gc.collect()
-
-    def re_analysis(self, concept_embed, question_embed=None):
-        self.concept_embed = concept_embed
-        self.question_embed = question_embed
-        self.analysis()
-
     def get_similar_concept(self, concept_id, top_k=10):
         return self.concept_similarity_table[concept_id][1:top_k + 1]
-
-    def get_similar_question(self, question_id, top_k=10):
-        if len(self.question_similarity_table[question_id]) > 1:
-            return self.question_similarity_table[question_id][1:top_k + 1]
-        else:
-            return self.question_similarity_table[question_id]

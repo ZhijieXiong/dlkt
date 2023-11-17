@@ -56,9 +56,6 @@ if __name__ == "__main__":
     parser.add_argument("--dim_final_fc", type=int, default=256)
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--separate_qa", type=str2bool, default=False)
-    parser.add_argument("--num_predict_layer", type=int, default=3)
-    parser.add_argument("--dim_predict_mid", type=int, default=256)
-    parser.add_argument("--activate_type", type=str, default="relu")
     # 其它参数
     parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
     # 其它

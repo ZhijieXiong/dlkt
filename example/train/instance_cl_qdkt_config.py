@@ -88,7 +88,6 @@ def instance_cl_qdkt_config(local_params):
     instance_cl_config["use_warm_up4online_sim"] = local_params["use_warm_up4online_sim"]
     instance_cl_config["epoch_warm_up4online_sim"] = local_params["epoch_warm_up4online_sim"]
     instance_cl_config["cl_type"] = local_params["cl_type"]
-    instance_cl_config["use_adv_data"] = local_params["use_adv_data"]
 
     # max entropy adv aug参数
     max_entropy_aug_config = global_params["other"]["max_entropy_aug"]

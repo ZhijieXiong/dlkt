@@ -113,11 +113,11 @@ class qDKT(nn.Module):
         return cl_loss
 
     def get_instance_cl_loss_cl4kt(self, batch):
-        batch_ori = {
-            "concept_seq": batch["concept_seq"],
-            "question_seq": batch["question_seq"],
-            "correct_seq": batch["correct_seq"],
-            "mask_seq": batch["mask_seq"]
+        batch_aug0 = {
+            "concept_seq": batch["concept_seq_aug_0"],
+            "question_seq": batch["question_seq_aug_0"],
+            "correct_seq": batch["correct_seq_aug_0"],
+            "mask_seq": batch["mask_seq_aug_0"]
         }
         batch_aug1 = {
             "concept_seq": batch["concept_seq_aug_1"],
@@ -125,13 +125,38 @@ class qDKT(nn.Module):
             "correct_seq": batch["correct_seq_aug_1"],
             "mask_seq": batch["mask_seq_aug_1"]
         }
-        batch_aug2 = {
-            "concept_seq": batch["concept_seq_aug_2"],
-            "question_seq": batch["question_seq_aug_2"],
-            "correct_seq": batch["correct_seq_aug_2"],
-            "mask_seq": batch["mask_seq_aug_2"]
-        }
-        pass
+
+        latent_aug0 = self.get_latent(batch_aug0)
+        mask4last_aug0 = get_mask4last_or_penultimate(batch_aug0["mask_seq"], penultimate=False)
+        latent_aug0_last = latent_aug0[torch.where(mask4last_aug0 == 1)]
+
+        latent_aug1 = self.get_latent(batch_aug1)
+        mask4last_aug1 = get_mask4last_or_penultimate(batch_aug1["mask_seq"], penultimate=False)
+        latent_aug1_last = latent_aug1[torch.where(mask4last_aug1 == 1)]
+
+        temp = self.params["other"]["instance_cl"]["temp"]
+        cos_sim_aug = (
+                nn.functional.cosine_similarity(latent_aug0_last.unsqueeze(1), latent_aug1_last.unsqueeze(0)) / temp)
+        if "correct_seq_hard_neg" in batch.keys():
+            batch_hard_neg = {
+                "concept_seq": batch["concept_seq"],
+                "question_seq": batch["question_seq"],
+                "correct_seq": batch["correct_seq_hard_neg"],
+                "mask_seq": batch["mask_seq"]
+            }
+            latent_hard_neg = self.get_latent(batch_hard_neg)
+            mask4last_hard_neg = get_mask4last_or_penultimate(batch_hard_neg["mask_seq"], penultimate=False)
+            latent_hard_neg_last = latent_hard_neg[torch.where(mask4last_hard_neg == 1)]
+            cos_sim_neg = nn.functional.cosine_similarity(latent_aug0_last.unsqueeze(1),
+                                                          latent_hard_neg_last.unsqueeze(0)) / temp
+            cos_sim = torch.cat((cos_sim_aug, cos_sim_neg), dim=1)
+        else:
+            cos_sim = cos_sim_aug
+
+        labels = torch.arange(cos_sim.size(0)).long().to(self.params["device"])
+        cl_loss = nn.functional.cross_entropy(cos_sim, labels)
+
+        return cl_loss
 
     def get_instance_cl_loss_our(self, batch):
         batch_aug0 = {
@@ -163,7 +188,7 @@ class qDKT(nn.Module):
         neg_all = latent_aug1.repeat(bs, 1, 1).reshape(bs, bs, seq_len, -1)[m].reshape(bs, bs-1, seq_len, -1)
         mask_bool4neg = torch.ne(batch["mask_seq_aug_1"].repeat(bs, 1).reshape(bs, bs, -1)[m].reshape(bs, bs-1, -1), 0)
 
-        temp = self.params["other"]["duo"]["temp"]
+        temp = self.params["other"]["instance_cl"]["temp"]
         cos_sim_list = []
         for i in range(bs):
             anchor = latent_aug0_last[i]

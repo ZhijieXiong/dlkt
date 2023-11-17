@@ -41,6 +41,9 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
             self.do_online_sim()
             self.do_max_entropy_aug()
             use_adv_aug = max_entropy_aug_config["use_adv_aug"] and (epoch > epoch_warm_up4online_sim)
+            if use_adv_aug:
+                dataset_config_this = self.params["datasets_config"]["train"]
+                dataset_config_this["kt4aug"]["num_aug"] = 1
 
             model.train()
             for batch in train_loader:

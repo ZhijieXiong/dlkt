@@ -2,7 +2,7 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-import config
+from dkt_config import dkt_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = config.dkt_config(params)
+    global_params, global_objects = dkt_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)

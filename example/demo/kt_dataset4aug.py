@@ -23,9 +23,9 @@ if __name__ == "__main__":
                     "base_type": "concept"
                 },
                 "kt4aug": {
-                    # "random_aug" or "semantic_aug"
-                    "aug_type": "semantic_aug",
-                    "num_aug": 1,
+                    # "random_aug" or "semantic_aug" or "informative_aug"
+                    "aug_type": "informative_aug",
+                    "num_aug": 2,
                     "random_aug": {
                         # 配置随机增强
                         "mask_prob": 0.1,
@@ -34,8 +34,22 @@ if __name__ == "__main__":
                         "permute_prob": 0.1,
                         "hard_neg_prob": 1.0,
                         "aug_order": ["mask", "replace", "permute", "crop"]
+                    },
+                    "informative_aug": {
+                        # 配置info增强
+                        "mask_prob": 0.1,
+                        "replace_prob": 0.1,
+                        "crop_prob": 0.1,
+                        "insert_prob": 0.1,
+                        # "order" or "transmission"
+                        "offline_sim_type": "order",
+                        "num_concept": 123,
+                        "num_question": 17751,
+                        # "offline" or "online" or "hybrid"
+                        "sim_type": "off",
+                        "aug_order": ["mask", "crop", "replace", "insert"]
                     }
-                  }
+                }
             },
             "valid": {
                 "type": "kt",
@@ -54,6 +68,15 @@ if __name__ == "__main__":
                 "kt": {
                     "base_type": "concept"
                 },
+            }
+        },
+        "other": {
+            "duo": {
+              "temp": 0.05
+            },
+            "informative_aug_config": {
+              "num_concept": 123,
+              "num_question": 17751,
             }
         }
     }

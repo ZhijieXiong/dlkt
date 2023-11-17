@@ -2,14 +2,14 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-import config
+from duo_qdkt_config import duo_qdkt_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
 from lib.dataset.KTDataset4Aug import KTDataset4Aug
 from lib.model.qDKT import qDKT
-from lib.trainer.DuoTrainer import DuoTrainer
+from lib.trainer.DuoCLTrainer import DuoCLTrainer
 
 
 if __name__ == "__main__":
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = config.duo_qdkt_config(params)
+    global_params, global_objects = duo_qdkt_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     model = qDKT(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
-    trainer = DuoTrainer(global_params, global_objects)
+    trainer = DuoCLTrainer(global_params, global_objects)
     trainer.train()
 
     # qdkt: valid performance by best valid epoch is main metric: 0.82321  , AUC: 0.82321  , ACC: 0.7986   , RMSE: 0.37518  , MAE: 0.25932  ,

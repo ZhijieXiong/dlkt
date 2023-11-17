@@ -37,12 +37,12 @@ class TrainRecord:
 
         if update_type == "valid":
             self.record["performance_valid"].append(performance)
-            if (main_metric - self.record["best_valid_main_metric"]) > 0.0001:
+            if (main_metric - self.record["best_valid_main_metric"]) >= 0.001:
                 self.record["best_valid_main_metric"] = main_metric
                 self.record["best_epoch_by_valid"] = self.record["current_epoch"]
         elif update_type == "test":
             self.record["performance_test"].append(performance)
-            if (main_metric - self.record["best_test_main_metric"]) > 0.0001:
+            if (main_metric - self.record["best_test_main_metric"]) >= 0.001:
                 self.record["best_test_main_metric"] = main_metric
                 self.record["best_epoch_by_test"] = self.record["current_epoch"]
         else:

@@ -1,0 +1,154 @@
+import torch
+import torch.nn as nn
+
+from .KnowledgeTracingTrainer import KnowledgeTracingTrainer
+from .LossRecord import LossRecord
+
+
+class InstanceCLTrainer(KnowledgeTracingTrainer):
+    def __init__(self, params, objects):
+        super(InstanceCLTrainer, self).__init__(params, objects)
+        self.dataset_adv_generated = None
+        self.num_epoch_adv_gen = 0
+        self.adv_loss = LossRecord(["adv pred loss", "adv entropy", "adv mse loss"])
+
+    def train(self):
+        train_strategy = self.params["train_strategy"]
+        grad_clip_config = self.params["grad_clip_config"]["kt_model"]
+        schedulers_config = self.params["schedulers_config"]["kt_model"]
+        num_epoch = train_strategy["num_epoch"]
+        train_loader = self.objects["data_loaders"]["train_loader"]
+        test_loader = self.objects["data_loaders"]["test_loader"]
+        optimizer = self.objects["optimizers"]["kt_model"]
+        scheduler = self.objects["schedulers"]["kt_model"]
+        model = self.objects["models"]["kt_model"]
+        cl_type = self.params["other"]["instance_cl"]["cl_type"]
+        max_entropy_aug_config = self.params["other"]["max_entropy_aug"]
+
+        train_statics = train_loader.dataset.get_statics_kt_dataset()
+        print(f"train, seq: {train_statics[0]}, sample: {train_statics[1]}, accuracy: {train_statics[2]:<.4}")
+        if train_strategy["type"] == "valid_test":
+            valid_statics = self.objects["data_loaders"]["valid_loader"].dataset.get_statics_kt_dataset()
+            print(f"valid, seq: {valid_statics[0]}, sample: {valid_statics[1]}, accuracy: {valid_statics[2]:<.4}")
+        test_statics = test_loader.dataset.get_statics_kt_dataset()
+        print(f"test, seq: {test_statics[0]}, sample: {test_statics[1]}, accuracy: {test_statics[2]:<.4}")
+
+        use_warm_up4cl = self.params["other"]["instance_cl"]["use_warm_up4cl"]
+        epoch_warm_up4cl = self.params["other"]["instance_cl"]["epoch_warm_up4cl"]
+        epoch_warm_up4online_sim = self.params["other"]["instance_cl"]["epoch_warm_up4online_sim"]
+
+        for epoch in range(1, num_epoch + 1):
+            self.do_online_sim()
+            self.do_max_entropy_aug()
+            use_adv_aug = max_entropy_aug_config["use_adv_aug"] and (epoch > epoch_warm_up4online_sim)
+
+            model.train()
+            for batch in train_loader:
+                optimizer.zero_grad()
+
+                num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+                num_seq = batch["mask_seq"].shape[0]
+                loss = 0.
+
+                do_cl = (not use_warm_up4cl) or (use_warm_up4cl and (epoch >= epoch_warm_up4cl))
+                if do_cl:
+                    weight_cl_loss = self.params["loss_config"]["cl loss"]
+                    if cl_type == "CL4KT" and not use_adv_aug:
+                        cl_loss = model.get_instance_cl_loss_cl4kt(batch)
+                    elif cl_type == "CL4KT" and use_adv_aug:
+                        cl_loss = model.get_instance_cl_loss_cl4kt_adv(batch, self.dataset_adv_generated)
+                    elif cl_type == "our" and not use_adv_aug:
+                        cl_loss = model.get_instance_cl_loss_our(batch)
+                    elif cl_type == "our" and use_adv_aug:
+                        cl_loss = model.get_instance_cl_loss_our_adv(batch, self.dataset_adv_generated)
+                    else:
+                        raise NotImplementedError()
+                    self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)
+                    loss = loss + weight_cl_loss * cl_loss
+
+                predict_loss = model.get_predict_loss(batch)
+                self.loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+                loss = loss + predict_loss
+
+                loss.backward()
+
+                if grad_clip_config["use_clip"]:
+                    nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
+                self.objects["optimizers"]["kt_model"].step()
+            if schedulers_config["use_scheduler"]:
+                scheduler.step()
+            self.evaluate()
+            if self.stop_train():
+                break
+
+    def do_online_sim(self):
+        use_online_sim = self.params["other"]["instance_cl"]["use_online_sim"]
+        use_warm_up4online_sim = self.params["other"]["instance_cl"]["use_warm_up4online_sim"]
+        epoch_warm_up4online_sim = self.params["other"]["instance_cl"]["epoch_warm_up4online_sim"]
+        current_epoch = self.train_record.get_current_epoch()
+        after_warm_up = current_epoch >= epoch_warm_up4online_sim
+        dataset_config_this = self.params["datasets_config"]["train"]
+        aug_type = dataset_config_this["kt4aug"]["aug_type"]
+        model = self.objects["models"]["kt_model"]
+        train_loader = self.objects["data_loaders"]["train_loader"]
+
+        if aug_type == "informative_aug" and use_online_sim and (not use_warm_up4online_sim or after_warm_up):
+            concept_emb = model.get_concept_emb()
+            train_loader.dataset.online_similarity.analysis(concept_emb)
+
+    def do_max_entropy_aug(self):
+        max_entropy_aug_config = self.params["other"]["max_entropy_aug"]
+        use_adv_aug = max_entropy_aug_config["use_adv_aug"]
+        epoch_warm_up4online_sim = self.params["other"]["instance_cl"]["epoch_warm_up4online_sim"]
+        current_epoch = self.train_record.get_current_epoch()
+        epoch_interval_generate = max_entropy_aug_config["epoch_interval_generate"]
+        loop_adv = max_entropy_aug_config["loop_adv"]
+        epoch_generate = max_entropy_aug_config["epoch_generate"]
+        adv_learning_rate = max_entropy_aug_config["adv_learning_rate"]
+        eta = max_entropy_aug_config["eta"]
+        gamma = max_entropy_aug_config["gamma"]
+
+        do_generate = ((current_epoch - epoch_warm_up4online_sim) % epoch_interval_generate == 0)
+        do_generate = use_adv_aug and do_generate and (self.num_epoch_adv_gen < epoch_generate)
+        model = self.objects["models"]["kt_model"]
+        train_loader = self.objects["data_loaders"]["train_loader"]
+
+        if do_generate and (current_epoch >= epoch_warm_up4online_sim):
+            model.eval()
+            train_loader.dataset.set_not_use_aug()
+            torch.backends.cudnn.enabled = False
+
+            data_generated = {
+                "seq_id": [],
+                "emb_seq": []
+            }
+            for batch in train_loader:
+                num_seq = batch["mask_seq"].shape[0]
+                inputs_max, adv_predict_loss, adv_entropy, adv_mse_loss = (
+                    model.get_max_entropy_adv_aug_emb(batch, adv_learning_rate, loop_adv, eta, gamma))
+                self.adv_loss.add_loss("adv pred loss", adv_predict_loss * num_seq, num_seq)
+                self.adv_loss.add_loss("adv entropy", adv_entropy * num_seq, num_seq)
+                self.adv_loss.add_loss("adv mse loss", adv_mse_loss * num_seq, num_seq)
+                data_generated["seq_id"].append(batch["seq_id"].to("cpu"))
+                data_generated["emb_seq"].append(inputs_max.detach().clone().to("cpu"))
+
+            print(self.adv_loss.get_str())
+            self.adv_loss.clear_loss()
+            for k in data_generated:
+                data_generated[k] = torch.cat(data_generated[k], dim=0)
+            self.save_adv_data(data_generated)
+
+            train_loader.dataset.set_use_aug()
+            torch.backends.cudnn.enabled = True
+
+    def save_adv_data(self, data_adv):
+        train_dataset = self.objects["data_loaders"]["train_loader"].dataset
+        seq_len, dim_emb = data_adv["emb_seq"].shape[1], data_adv["emb_seq"].shape[2]
+        if self.dataset_adv_generated is None:
+            self.dataset_adv_generated = {
+                "emb_seq": torch.empty((len(train_dataset), seq_len, dim_emb), dtype=torch.float, device="cpu")
+            }
+
+        for k in data_adv.keys():
+            if k != "seq_id":
+                self.dataset_adv_generated[k][data_adv["seq_id"]] = data_adv[k]

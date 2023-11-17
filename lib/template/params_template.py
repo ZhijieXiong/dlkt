@@ -7,6 +7,7 @@ PARAMS = {
     "dataset_name": "assist2009",
     "data_path": ""
   },
+  # 训练策略部分配置
   "train_strategy": {
     # "valid_test" or "no_valid"
     "type": "valid_test",
@@ -29,6 +30,7 @@ PARAMS = {
     # "rasch_loss": 0.00001
     # "cl_loss": 0.1
   },
+  # 模型参数配置
   "models_config": {
     "kt_model": {
       "kt_embed_layer": {
@@ -85,6 +87,7 @@ PARAMS = {
     },
     # "other_model1": {}
   },
+  # 优化器配置
   "optimizers_config": {
     "kt_model": {
       # "adam" or "sgd"
@@ -100,6 +103,7 @@ PARAMS = {
       }
     },
     # "other_model1": {
+    #   "share": True,
     #   "type": "adam / sgd",
     #   "adam": {
     #     "lr": "0.001",
@@ -112,6 +116,7 @@ PARAMS = {
     #   }
     # }
   },
+  # 学习率衰减配置
   "schedulers_config": {
     "kt_model": {
       "use_scheduler": False,
@@ -123,6 +128,7 @@ PARAMS = {
       },
     },
     # "other_model1": {
+    #   "share": True,
     #   "use_scheduler": False,
     #   "type": "StepLR",
     #   "StepLR": {
@@ -131,13 +137,17 @@ PARAMS = {
     #   },
     # }
   },
+  # 学习率裁剪配置
   "grad_clip_config": {
     "kt_model": {
       "use_clip": False,
       "grad_clipped": 10.0
     },
-    # "other_model1": {}
+    # "other_model1": {
+    #   "share": True,
+    # }
   },
+  # 数据集配置（训练集、测试集、验证集）
   "datasets_config": {
     # 当前dataset的选择
     "dataset_this": "train",
@@ -153,7 +163,7 @@ PARAMS = {
         "base_type": "concept"
       },
       "kt4aug": {
-        # "random_aug" or "semantic_aug"
+        # "random_aug" or "semantic_aug" or "informative_aug"
         "aug_type": "semantic_aug",
         "num_aug": 2,
         "random_aug": {
@@ -168,9 +178,16 @@ PARAMS = {
         "informative_aug": {
           # 配置info增强
           "mask_prob": 0.1,
-          "replace_prob": 0.1,
+          "insert_prob": 0.1,
+          "replace_prob": 0.3,
           "crop_prob": 0.1,
-          "offline_sim_type": "order"
+          # "order" or ""
+          "offline_sim_type": "order",
+          "num_concept": 123,
+          "num_question": 17751,
+          # "offline" or "online" or "hybrid"
+          "sim_type": "off",
+          "aug_order": ["mask", "crop", "replace", "insert"]
         }
       }
     },
@@ -193,13 +210,30 @@ PARAMS = {
       },
     }
   },
+  # 其它参数配置，如对比学习中warm up设置
   "other": {
     "duo": {
       "temp": 0.05
     },
-    "informative_aug_config": {
-      "num_concept": 123,
-      "num_question": 17751,
+    "instance_cl": {
+      "temp": 0.05,
+      "use_warm_up4cl": False,
+      "epoch_warm_up4cl": 4,
+      "use_online_sim": True,
+      "use_warm_up4online_sim": True,
+      "epoch_warm_up4online_sim": 4,
+      # "our" or "CL4KT"
+      "cl_type": "CL4KT",
+      "use_adv_data": False
+    },
+    "max_entropy_aug": {
+      "use_adv_aug": False,
+      "epoch_interval_generate": 1,
+      "loop_adv": 3,
+      "epoch_generate": 40,
+      "adv_learning_rate": 10,
+      "eta": 5,
+      "gamma": 1
     }
   }
 }

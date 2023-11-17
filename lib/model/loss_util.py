@@ -26,3 +26,8 @@ def duo_info_nce(z_i, z_j, temp, sim_type="cos", z_hard_neg=None):
     loss = nn.functional.cross_entropy(sim, labels)
 
     return loss
+
+
+def binary_entropy(p):
+    out = -1.0 * (p * torch.log(p) + (1 - p) * torch.log((1 - p)))
+    return out.mean()

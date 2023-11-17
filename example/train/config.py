@@ -2,9 +2,7 @@ import json
 import sys
 import os
 import inspect
-from copy import deepcopy
-
-import torch.cuda
+import torch
 
 current_file_name = inspect.getfile(inspect.currentframe())
 current_dir = os.path.dirname(current_file_name)
@@ -14,9 +12,6 @@ with open(settings_path, "r") as f:
 FILE_MANAGER_ROOT = settings["FILE_MANAGER_ROOT"]
 sys.path.append(settings["LIB_PATH"])
 
-
-from lib.template.params_template import PARAMS
-from lib.template.objects_template import OBJECTS
 from lib.util.FileManager import FileManager
 
 
@@ -56,6 +51,7 @@ def general_config(local_params, global_params, global_objects):
 
     # 数据集配置
     setting_name = local_params["setting_name"]
+    data_type = local_params["data_type"]
     train_file_name = local_params["train_file_name"]
     valid_file_name = local_params["valid_file_name"]
     test_file_name = local_params["test_file_name"]
@@ -68,6 +64,7 @@ def general_config(local_params, global_params, global_objects):
         datasets_config["valid"]["file_name"] = valid_file_name
     datasets_config["train"]["file_name"] = train_file_name
     datasets_config["test"]["file_name"] = test_file_name
+    datasets_config["data_type"] = data_type
 
     # 优化器配置
     kt_optimizer_type = local_params["optimizer_type"]
@@ -104,185 +101,3 @@ def general_config(local_params, global_params, global_objects):
     grad_clip_config["use_clip"] = kt_enable_clip_grad
     if kt_enable_clip_grad:
         grad_clip_config["grad_clipped"] = kt_grad_clipped
-
-
-def dkt_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-
-    # 配置模型参数
-    num_concept = local_params["num_concept"]
-    dim_emb = local_params["dim_emb"]
-    dim_latent = local_params["dim_latent"]
-    rnn_type = local_params["rnn_type"]
-    num_rnn_layer = local_params["num_rnn_layer"]
-    dropout = local_params["dropout"]
-    num_predict_layer = local_params["num_predict_layer"]
-    dim_predict_mid = local_params["dim_predict_mid"]
-    activate_type = local_params["activate_type"]
-
-    # embed layer
-    kt_embed_layer_config = global_params["models_config"]["kt_model"]["kt_embed_layer"]
-    kt_embed_layer_config["interaction"] = [num_concept * 2, dim_emb]
-
-    # encoder layer
-    dkt_encoder_layer_config = global_params["models_config"]["kt_model"]["encoder_layer"]["DKT"]
-    dkt_encoder_layer_config["dim_emb"] = dim_emb
-    dkt_encoder_layer_config["dim_latent"] = dim_latent
-    dkt_encoder_layer_config["rnn_type"] = rnn_type
-    dkt_encoder_layer_config["num_rnn_layer"] = num_rnn_layer
-
-    # predict layer
-    predict_layer_config = global_params["models_config"]["kt_model"]["predict_layer"]
-    predict_layer_config["type"] = "direct"
-    predict_layer_config["direct"]["dropout"] = dropout
-    predict_layer_config["direct"]["num_predict_layer"] = num_predict_layer
-    predict_layer_config["direct"]["dim_predict_in"] = dim_latent
-    predict_layer_config["direct"]["dim_predict_mid"] = dim_predict_mid
-    predict_layer_config["direct"]["activate_type"] = activate_type
-    predict_layer_config["direct"]["dim_predict_out"] = num_concept
-
-    return global_params, global_objects
-
-
-def qdkt_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-
-    # 配置模型参数
-    num_concept = local_params["num_concept"]
-    num_question = local_params["num_question"]
-    dim_concept = local_params["dim_concept"]
-    dim_question = local_params["dim_question"]
-    dim_correct = local_params["dim_correct"]
-    dim_latent = local_params["dim_latent"]
-    rnn_type = local_params["rnn_type"]
-    num_rnn_layer = local_params["num_rnn_layer"]
-    dropout = local_params["dropout"]
-    num_predict_layer = local_params["num_predict_layer"]
-    dim_predict_mid = local_params["dim_predict_mid"]
-    activate_type = local_params["activate_type"]
-
-    # embed layer
-    kt_embed_layer_config = global_params["models_config"]["kt_model"]["kt_embed_layer"]
-    kt_embed_layer_config["concept"] = [num_concept, dim_concept]
-    kt_embed_layer_config["question"] = [num_question, dim_question]
-
-    # encoder layer
-    qdkt_encoder_layer_config = global_params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
-    qdkt_encoder_layer_config["dim_concept"] = dim_concept
-    qdkt_encoder_layer_config["dim_question"] = dim_question
-    qdkt_encoder_layer_config["dim_correct"] = dim_correct
-    qdkt_encoder_layer_config["dim_latent"] = dim_latent
-    qdkt_encoder_layer_config["rnn_type"] = rnn_type
-    qdkt_encoder_layer_config["num_rnn_layer"] = num_rnn_layer
-
-    # predict layer
-    predict_layer_config = global_params["models_config"]["kt_model"]["predict_layer"]
-    predict_layer_config["type"] = "direct"
-    predict_layer_config["direct"]["dropout"] = dropout
-    predict_layer_config["direct"]["num_predict_layer"] = num_predict_layer
-    predict_layer_config["direct"]["dim_predict_in"] = dim_latent + dim_concept + dim_question
-    predict_layer_config["direct"]["dim_predict_mid"] = dim_predict_mid
-    predict_layer_config["direct"]["activate_type"] = activate_type
-    predict_layer_config["direct"]["dim_predict_out"] = 1
-
-    return global_params, global_objects
-
-
-def akt_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-
-    global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "AKT"
-
-    # 配置模型参数
-    num_concept = local_params["num_concept"]
-    num_question = local_params["num_question"]
-    dim_model = local_params["dim_model"]
-    key_query_same = local_params["key_query_same"]
-    num_head = local_params["num_head"]
-    num_block = local_params["num_block"]
-    dim_ff = local_params["dim_ff"]
-    dim_final_fc = local_params["dim_final_fc"]
-    separate_qa = local_params["separate_qa"]
-    dropout = local_params["dropout"]
-
-    # encoder layer
-    akt_encoder_layer_config = global_params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
-    akt_encoder_layer_config["num_concept"] = num_concept
-    akt_encoder_layer_config["num_question"] = num_question
-    akt_encoder_layer_config["dim_model"] = dim_model
-    akt_encoder_layer_config["key_query_same"] = key_query_same
-    akt_encoder_layer_config["num_head"] = num_head
-    akt_encoder_layer_config["num_block"] = num_block
-    akt_encoder_layer_config["dim_ff"] = dim_ff
-    akt_encoder_layer_config["dim_final_fc"] = dim_final_fc
-    akt_encoder_layer_config["separate_qa"] = separate_qa
-    akt_encoder_layer_config["dropout"] = dropout
-
-    # 损失权重
-    global_params["loss_config"]["rasch_loss"] = local_params["weight_rasch_loss"]
-
-    return global_params, global_objects
-
-
-def duo_qdkt_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-
-    # 配置模型参数
-    num_concept = local_params["num_concept"]
-    num_question = local_params["num_question"]
-    dim_concept = local_params["dim_concept"]
-    dim_question = local_params["dim_question"]
-    dim_correct = local_params["dim_correct"]
-    dim_latent = local_params["dim_latent"]
-    rnn_type = local_params["rnn_type"]
-    num_rnn_layer = local_params["num_rnn_layer"]
-    dropout = local_params["dropout"]
-    num_predict_layer = local_params["num_predict_layer"]
-    dim_predict_mid = local_params["dim_predict_mid"]
-    activate_type = local_params["activate_type"]
-
-    # embed layer
-    kt_embed_layer_config = global_params["models_config"]["kt_model"]["kt_embed_layer"]
-    kt_embed_layer_config["concept"] = [num_concept, dim_concept]
-    kt_embed_layer_config["question"] = [num_question, dim_question]
-
-    # encoder layer
-    qdkt_encoder_layer_config = global_params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
-    qdkt_encoder_layer_config["dim_concept"] = dim_concept
-    qdkt_encoder_layer_config["dim_question"] = dim_question
-    qdkt_encoder_layer_config["dim_correct"] = dim_correct
-    qdkt_encoder_layer_config["dim_latent"] = dim_latent
-    qdkt_encoder_layer_config["rnn_type"] = rnn_type
-    qdkt_encoder_layer_config["num_rnn_layer"] = num_rnn_layer
-
-    # predict layer
-    predict_layer_config = global_params["models_config"]["kt_model"]["predict_layer"]
-    predict_layer_config["type"] = "direct"
-    predict_layer_config["direct"]["dropout"] = dropout
-    predict_layer_config["direct"]["num_predict_layer"] = num_predict_layer
-    predict_layer_config["direct"]["dim_predict_in"] = dim_latent + dim_concept + dim_question
-    predict_layer_config["direct"]["dim_predict_mid"] = dim_predict_mid
-    predict_layer_config["direct"]["activate_type"] = activate_type
-    predict_layer_config["direct"]["dim_predict_out"] = 1
-
-    # 配置数据集参数
-    datasets_train_config = global_params["datasets_config"]["train"]
-    datasets_train_config["type"] = "kt4aug"
-    datasets_train_config["kt4aug"]["aug_type"] = "semantic_aug"
-    datasets_train_config["kt4aug"]["num_aug"] = 1
-
-    # 损失权重
-    global_params["loss_config"]["cl loss"] = local_params["weight_cl_loss"]
-
-    # 对比学习温度系数
-    global_params["other"]["duo"]["temp"] = local_params["temp"]
-
-    return global_params, global_objects

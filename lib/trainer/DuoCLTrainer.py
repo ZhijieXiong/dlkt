@@ -4,9 +4,9 @@ import torch.nn as nn
 from .KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 
-class DuoTrainer(KnowledgeTracingTrainer):
+class DuoCLTrainer(KnowledgeTracingTrainer):
     def __init__(self, params, objects):
-        super().__init__(params, objects)
+        super(DuoCLTrainer, self).__init__(params, objects)
 
     def train(self):
         train_strategy = self.params["train_strategy"]
@@ -51,15 +51,5 @@ class DuoTrainer(KnowledgeTracingTrainer):
             if schedulers_config["use_scheduler"]:
                 scheduler.step()
             self.evaluate()
-
-            if self.train_record.stop_training():
-                if train_strategy["type"] == "no valid":
-                    pass
-                else:
-                    best_performance_str_by_valid = self.train_record.get_evaluate_result_str("valid", "valid")
-                    best_performance_str_by_test = self.train_record.get_evaluate_result_str("test", "valid")
-                    print(f"best valid epoch: {self.train_record.get_best_epoch('valid'):<3} , "
-                          f"best test epoch: {self.train_record.get_best_epoch('test')}\n"
-                          f"valid performance by best valid epoch is {best_performance_str_by_valid}\n"
-                          f"test performance by best valid epoch is {best_performance_str_by_test}")
+            if self.stop_train():
                 break

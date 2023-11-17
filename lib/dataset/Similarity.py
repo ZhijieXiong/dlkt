@@ -31,6 +31,7 @@ class OfflineSimilarity:
         self.objects = objects
 
         self.data = None
+        self.data_type = None
         self.question2concept = parse_util.question2concept_from_Q(self.objects["data"]["Q_table"])
         self.concept2question = parse_util.concept2question_from_Q(self.objects["data"]["Q_table"])
         self.question_frequency = None
@@ -49,14 +50,15 @@ class OfflineSimilarity:
         self.concept_similarity_table = None
         self.question_similarity_table = None
 
-    def parse(self, data):
-        informative_aug_config = self.params["other"]["informative_aug_config"]
-        num_concept = informative_aug_config["num_concept"]
-        num_question = informative_aug_config["num_question"]
+    def parse(self, data, data_type):
+        self.data_type = data_type
+        dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
+        num_concept = dataset_config_this["kt4aug"]["informative_aug"]["num_concept"]
+        num_question = dataset_config_this["kt4aug"]["informative_aug"]["num_question"]
         self.concept_similarity_table = {c_id: None for c_id in range(num_concept)}
         self.question_similarity_table = {q_id: None for q_id in range(num_question)}
 
-        self.data = deepcopy(data)
+        self.data = data
 
         if num_concept is not None:
             self.get_concept_similar_table()
@@ -72,14 +74,14 @@ class OfflineSimilarity:
         question_similar_table_name = file_name.replace(".txt", "_question_similar_table.json")
         similar_table_path = os.path.join(setting_dir, question_similar_table_name)
 
-        if similar_table_path is not None and os.path.exists(similar_table_path):
+        if os.path.exists(similar_table_path):
             question_similarity_table = data_util.load_json(similar_table_path)
             for k in question_similarity_table:
                 self.question_similarity_table[int(k)] = question_similarity_table[k]
             return
 
-        informative_aug_config = self.params["other"]["informative_aug_config"]
-        num_question = informative_aug_config["num_question"]
+        dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
+        num_question = dataset_config_this["kt4aug"]["informative_aug"]["num_question"]
 
         self.question_frequency, self.low_frequency_q, self.high_frequency_q = self.cal_frequency(
             int(num_question * 0.2), "question")
@@ -108,11 +110,11 @@ class OfflineSimilarity:
 
     def cal_concept_similarity_table_ItemCF_IUF(self):
         # 用推荐系统的公式计算知识点相似度
-        data = data_util.dataset_delete_pad(self.data)
-        informative_aug_config = self.params["other"]["informative_aug_config"]
-        num_concept = informative_aug_config["num_concept"]
+        dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
+        num_concept = dataset_config_this["kt4aug"]["informative_aug"]["num_concept"]
         C = dict()
         N = dict()
+        data = deepcopy(self.data)
         concept_seqs = list(map(lambda item_data: item_data["concept_seq"], data))
         for concept_seq in concept_seqs:
             for i in concept_seq:
@@ -136,8 +138,8 @@ class OfflineSimilarity:
             self.concept_similarity_table[c] = np.argsort(self.concept_dissimilarity[:, c])[::-1].tolist()
 
     def cal_concept_similarity_table_difficulty(self):
-        informative_aug_config = self.params["other"]["informative_aug_config"]
-        num_concept = informative_aug_config["num_concept"]
+        dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
+        num_concept = dataset_config_this["kt4aug"]["informative_aug"]["num_concept"]
         self.cal_concept_difficulty()
         # 计算两个知识点之间难度差值的绝对值，作为不相似度
         self.concept_dissimilarity = np.abs(
@@ -151,9 +153,12 @@ class OfflineSimilarity:
 
     def concept_order(self):
         # 从训练数据中统计知识点之间先后出现次数，并区分距离远近
-        data = data_util.dataset_delete_pad(data_util.dataset_agg_concept(self.data))
-        informative_aug_config = self.params["other"]["informative_aug_config"]
-        num_concept = informative_aug_config["num_concept"]
+        if self.data_type == "multi_concept":
+            data = data_util.dataset_agg_concept(self.data)
+        else:
+            data = self.data
+        dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
+        num_concept = dataset_config_this["kt4aug"]["informative_aug"]["num_concept"]
         self.concept_next_candidate = {}
         for i in range(num_concept):
             self.concept_next_candidate[i] = {}
@@ -177,21 +182,16 @@ class OfflineSimilarity:
 
     def cal_concept_similarity_table_order(self):
         self.concept_order()
-        informative_aug_config = self.params["other"]["informative_aug_config"]
-        num_concept = informative_aug_config["num_concept"]
+        dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
+        num_concept = dataset_config_this["kt4aug"]["informative_aug"]["num_concept"]
         for i in range(num_concept):
             concepts_related = []
             for j, tup in self.concept_next_candidate[i].items():
                 if j == i:
                     continue
+                # tup[0]表示j出现在i后面的次数，tup[0]-tup[1]表示j出现在i后面（非相邻）的次数
                 concepts_related.append((j, tup[0], tup[0]-tup[1]))
-            # 选出和目标知识点先后出现次数大于10的知识点，先按照先后次数排序，再按照相距较远的次数排序（打破分布）
-            concepts_related = list(filter(lambda three: three[1] > 10, concepts_related))
-            num_related = int(0.8 * len(concepts_related))
-            # 第一次排序选择
-            concepts_related = sorted(concepts_related, key=lambda three: three[1], reverse=True)[:num_related]
-            # 第二次排序
-            concepts_related = sorted(concepts_related, key=lambda three: three[2], reverse=True)
+            concepts_related = list(filter(lambda three: three[1] > 100 and three[2] > 10, concepts_related))
             self.concept_similarity_table[i] = [i]
             self.concept_similarity_table[i] += list(map(lambda three: three[0], concepts_related))
 
@@ -204,14 +204,14 @@ class OfflineSimilarity:
         offline_sim_type = informative_config["offline_sim_type"]
         concept_similar_table_name = file_name.replace(".txt", f"_concept_similar_table_by_{offline_sim_type}.json")
         similar_table_path = os.path.join(setting_dir, concept_similar_table_name)
-        if similar_table_path is not None and os.path.exists(similar_table_path):
+        if os.path.exists(similar_table_path):
             concept_similarity_table = data_util.load_json(similar_table_path)
             for k in concept_similarity_table:
                 self.concept_similarity_table[int(k)] = concept_similarity_table[k]
             return
 
-        informative_aug_config = self.params["other"]["informative_aug_config"]
-        num_concept = informative_aug_config["num_concept"]
+        dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
+        num_concept = dataset_config_this["kt4aug"]["informative_aug"]["num_concept"]
         self.concept_frequency, self.low_frequency_c, self.high_frequency_c = self.cal_frequency(
             int(num_concept * 0.8), "concept")
         if offline_sim_type == "difficulty":
@@ -229,16 +229,14 @@ class OfflineSimilarity:
 
     def cal_frequency(self, freq_threshold=30, target="question"):
         # 统计频率，对于低频率的知识点/习题，其难度和区分度赋值为中间水平
-        data_type = self.params["datasets_config"]["data_type"]
-        informative_aug_config = self.params["other"]["informative_aug_config"]
-        num_concept = informative_aug_config["num_concept"]
-        num_question = informative_aug_config["num_question"]
+        dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
+        num_concept = dataset_config_this["kt4aug"]["informative_aug"]["num_concept"]
+        num_question = dataset_config_this["kt4aug"]["informative_aug"]["num_question"]
 
         target_seq = "concept_seq" if target == "concept" else "question_seq"
-        data = deepcopy(self.data)
-        if data_type == "multi_concept" and target == "concept":
+        data = self.data
+        if self.data_type == "multi_concept" and target == "question":
             data = data_util.dataset_agg_concept(data)
-        data = data_util.dataset_delete_pad(data)
         num_item = num_concept if target == "concept" else num_question
         item_seqs = list(map(lambda item_data: item_data[target_seq], data))
         items = []
@@ -259,14 +257,12 @@ class OfflineSimilarity:
 
     def cal_question_difficulty(self):
         self.question_difficulty = []
-        data_type = self.params["datasets_config"]["data_type"]
-        informative_aug_config = self.params["other"]["informative_aug_config"]
-        num_question = informative_aug_config["num_question"]
+        dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
+        num_question = dataset_config_this["kt4aug"]["informative_aug"]["num_question"]
 
-        data = deepcopy(self.data)
-        if data_type == "multi_concept":
+        data = self.data
+        if self.data_type == "multi_concept":
             data = data_util.dataset_agg_concept(data)
-        data = data_util.dataset_delete_pad(data)
         count = {i: 0 for i in range(num_question)}
         correct = {i: 0 for i in range(num_question)}
         for item_data in data:
@@ -286,13 +282,12 @@ class OfflineSimilarity:
 
     def cal_concept_difficulty(self):
         self.concept_difficulty = []
-        informative_aug_config = self.params["other"]["informative_aug_config"]
-        num_concept = informative_aug_config["num_concept"]
+        dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
+        num_concept = dataset_config_this["kt4aug"]["informative_aug"]["num_concept"]
 
-        data = data_util.dataset_delete_pad(self.data)
         count = {i: 0 for i in range(num_concept)}
         correct = {i: 0 for i in range(num_concept)}
-        for item_data in data:
+        for item_data in self.data:
             for c_id, c in zip(item_data["concept_seq"], item_data["correct_seq"]):
                 count[c_id] += 1
                 if c == 1:

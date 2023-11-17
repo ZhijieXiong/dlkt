@@ -47,6 +47,10 @@ class KTEmbedLayer(nn.Module):
         assert self.emb_dict[emb_name] is not None, f"Embedding of {emb_name} is not initialized"
         return self.emb_dict[emb_name](emb_index)
 
+    def get_emb_all(self, emb_name):
+        assert self.emb_dict[emb_name] is not None, f"Embedding of {emb_name} is not initialized"
+        return self.emb_dict[emb_name].weight
+
     def get_emb_concatenated(self, seq_names2cat, emb_indices2cat):
         """
         获取拼接后的emb

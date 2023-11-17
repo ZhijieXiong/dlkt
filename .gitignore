@@ -2,18 +2,8 @@ notebook/.ipynb_checkpoints/
 .pytest_cache/
 result/
 lab/
-example/edi2020/
-example/edi2022/
-example/pyBKT-master/
-example/task/result/
-example/task/result_save/
-example/task/result_evaluate/
-example/task/result_average_evaluate/
-example/rask/result_cluster/
-example/task/result_tiaocan/
-example/task/result_cluster/
-example/task/script_cluster/
-example/task/pbs/
+example/script_cluster
+example/result_cluster
 .idea/
 
 /example/demo/*.csv

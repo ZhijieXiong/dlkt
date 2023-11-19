@@ -126,6 +126,10 @@ PARAMS = {
         "step_size": 10,
         "gamma": 0.1
       },
+      "MultiStepLR": {
+        "milestones": [5, 10],
+        "gamma": 0.1
+      }
     },
     # "other_model1": {
     #   "share": True,
@@ -212,7 +216,7 @@ PARAMS = {
   },
   # 其它参数配置，如对比学习中warm up设置
   "other": {
-    "duo": {
+    "duo_cl": {
       "temp": 0.05
     },
     "instance_cl": {
@@ -222,8 +226,8 @@ PARAMS = {
       "use_online_sim": True,
       "use_warm_up4online_sim": True,
       "epoch_warm_up4online_sim": 4,
-      # "our" or "CL4KT"
-      "cl_type": "CL4KT",
+      # "last_time" or "all_time" or "mean_pool"
+      "cl_type": "last_time",
       "use_adv_data": False
     },
     "max_entropy_aug": {
@@ -234,6 +238,16 @@ PARAMS = {
       "adv_learning_rate": 10,
       "eta": 5,
       "gamma": 1
+    },
+    "cluster_cl": {
+      "num_cluster": 32,
+      "temp": 0.05,
+      "use_warm_up4cl": False,
+      "epoch_warm_up4cl": 4,
+      "use_online_sim": True,
+      "use_warm_up4online_sim": True,
+      "epoch_warm_up4online_sim": 4,
+      "use_adv_data": False
     }
   }
 }

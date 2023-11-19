@@ -74,6 +74,7 @@ def general_config(local_params, global_params, global_objects):
     kt_enable_lr_schedule = local_params["enable_lr_schedule"]
     kt_lr_schedule_type = local_params["lr_schedule_type"]
     kt_lr_schedule_step = local_params["lr_schedule_step"]
+    kt_lr_schedule_milestones = eval(local_params["lr_schedule_milestones"])
     kt_lr_schedule_gamma = local_params["lr_schedule_gamma"]
     kt_enable_clip_grad = local_params["enable_clip_grad"]
     kt_grad_clipped = local_params["grad_clipped"]
@@ -91,6 +92,9 @@ def general_config(local_params, global_params, global_objects):
         scheduler_config["type"] = kt_lr_schedule_type
         if kt_lr_schedule_type == "StepLR":
             scheduler_config[kt_lr_schedule_type]["step_size"] = kt_lr_schedule_step
+            scheduler_config[kt_lr_schedule_type]["gamma"] = kt_lr_schedule_gamma
+        elif kt_lr_schedule_type == "MultiStepLR":
+            scheduler_config[kt_lr_schedule_type]["milestones"] = kt_lr_schedule_milestones
             scheduler_config[kt_lr_schedule_type]["gamma"] = kt_lr_schedule_gamma
         else:
             raise NotImplementedError()

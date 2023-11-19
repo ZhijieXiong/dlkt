@@ -2,14 +2,14 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from akt_config import akt_instance_cl_config
+from qdkt_config import qdkt_cluster_cl_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
 from lib.dataset.KTDataset4Aug import KTDataset4Aug
-from lib.model.AKT import AKT
-from lib.trainer.InstanceCLTrainer import InstanceCLTrainer
+from lib.model.qDKT import qDKT
+from lib.trainer.ClusterCLTrainer import ClusterCLTrainer
 
 
 if __name__ == "__main__":
@@ -38,11 +38,11 @@ if __name__ == "__main__":
     parser.add_argument("--main_metric", type=str, default="AUC")
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
-    parser.add_argument("--learning_rate", type=float, default=0.0003)
+    parser.add_argument("--learning_rate", type=float, default=0.0005)
     parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
-    parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
-    parser.add_argument("--lr_schedule_type", type=str, default="StepLR",
+    parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
+    parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
     parser.add_argument("--lr_schedule_milestones", type=str, default="[5, 10]")
@@ -52,25 +52,25 @@ if __name__ == "__main__":
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=123)
     parser.add_argument("--num_question", type=int, default=17751)
-    parser.add_argument("--dim_model", type=int, default=64)
-    parser.add_argument("--key_query_same", type=str2bool, default=True)
-    parser.add_argument("--num_head", type=int, default=8)
-    parser.add_argument("--num_block", type=int, default=2)
-    parser.add_argument("--dim_ff", type=int, default=128)
-    parser.add_argument("--dim_final_fc", type=int, default=256)
+    parser.add_argument("--dim_concept", type=int, default=64)
+    parser.add_argument("--dim_question", type=int, default=64)
+    parser.add_argument("--dim_correct", type=int, default=128)
+    parser.add_argument("--dim_latent", type=int, default=128)
+    parser.add_argument("--rnn_type", type=str, default="gru")
+    parser.add_argument("--num_rnn_layer", type=int, default=1)
     parser.add_argument("--dropout", type=float, default=0.1)
-    parser.add_argument("--separate_qa", type=str2bool, default=False)
-    parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
-    # instance cl参数（对比学习）
+    parser.add_argument("--num_predict_layer", type=int, default=3)
+    parser.add_argument("--dim_predict_mid", type=int, default=128)
+    parser.add_argument("--activate_type", type=str, default="relu")
+    # cluster CL参数（对比学习）
+    parser.add_argument("--num_cluster", type=int, default=32)
     parser.add_argument("--temp", type=float, default=0.05)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
-    parser.add_argument("--use_warm_up4cl", type=str2bool, default=False)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.001)
+    parser.add_argument("--use_warm_up4cl", type=str2bool, default=True)
     parser.add_argument("--epoch_warm_up4cl", type=float, default=4)
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)
-    parser.add_argument("--epoch_warm_up4online_sim", type=float, default=1)
-    parser.add_argument("--cl_type", type=str, default="last_time",
-                        choices=("last_time", "all_time", "mean_pool"))
+    parser.add_argument("--epoch_warm_up4online_sim", type=float, default=4)
     # random aug和informative aug参数
     parser.add_argument("--aug_type", type=str, default="informative_aug",
                         choices=("random_aug", "informative_aug"))
@@ -80,11 +80,13 @@ if __name__ == "__main__":
     parser.add_argument("--crop_prob", type=float, default=0.1)
     parser.add_argument("--permute_prob", type=float, default=0.1)
     parser.add_argument("--hard_neg_prob", type=float, default=1)
-    parser.add_argument("--aug_order", type=str, default="['mask', 'crop', 'replace', 'insert']")
+    parser.add_argument("--aug_order", type=str, default="['mask', 'crop', 'replace', 'insert']",
+                        help="CL4KT: ['mask', 'replace', 'permute', 'crop']"
+                             "info aug: ['mask', 'crop', 'replace', 'insert']")
     parser.add_argument("--offline_sim_type", type=str, default="order",
-                        choices=("order", ))
+                        choices=("order",))
     # max entropy adv aug参数
-    parser.add_argument("--use_adv_aug", type=str2bool, default=True)
+    parser.add_argument("--use_adv_aug", type=str2bool, default=False)
     parser.add_argument("--epoch_interval_generate", type=int, default=1)
     parser.add_argument("--loop_adv", type=int, default=3)
     parser.add_argument("--epoch_generate", type=int, default=40)
@@ -98,7 +100,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = akt_instance_cl_config(params)
+    global_params, global_objects = qdkt_cluster_cl_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)
@@ -122,7 +124,7 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = AKT(global_params, global_objects).to(global_params["device"])
+    model = qDKT(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
-    trainer = InstanceCLTrainer(global_params, global_objects)
+    trainer = ClusterCLTrainer(global_params, global_objects)
     trainer.train()

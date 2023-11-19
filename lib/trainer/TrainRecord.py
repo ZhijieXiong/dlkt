@@ -63,7 +63,7 @@ class TrainRecord:
         use_early_stop = train_strategy["valid_test"]["use_early_stop"]
         epoch_early_stop = train_strategy["valid_test"]["epoch_early_stop"]
         if train_strategy["type"] == "valid_test" and use_early_stop:
-            return (current_epoch - best_epoch_by_valid) >= epoch_early_stop
+            return (current_epoch >= num_epoch) or ((current_epoch - best_epoch_by_valid) >= epoch_early_stop)
         else:
             return current_epoch >= num_epoch
 

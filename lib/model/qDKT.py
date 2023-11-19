@@ -1,4 +1,5 @@
 import torch.optim as optim
+import numpy as np
 
 from .Module.KTEmbedLayer import KTEmbedLayer
 from .Module.PredictorLayer import PredictorLayer
@@ -76,6 +77,13 @@ class qDKT(nn.Module):
 
         return latent
 
+    def get_latent_last(self, batch):
+        latent = self.get_latent(batch)
+        mask4last = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
+        latent_last = latent[torch.where(mask4last == 1)]
+
+        return latent_last
+
     def get_duo_cl_loss(self, batch):
         batch_ori = {
             "concept_seq": batch["concept_seq"],
@@ -107,7 +115,7 @@ class qDKT(nn.Module):
         mask4last_hard_neg = get_mask4last_or_penultimate(batch_hard_neg["mask_seq"], penultimate=False)
         latent_hard_neg = latent_hard_neg[torch.where(mask4last_hard_neg == 1)]
 
-        temp = self.params["other"]["duo"]["temp"]
+        temp = self.params["other"]["duo_cl"]["temp"]
         cl_loss = duo_info_nce(latent_ori, latent_aug, temp, sim_type="cos", z_hard_neg=latent_hard_neg)
 
         return cl_loss
@@ -307,6 +315,55 @@ class qDKT(nn.Module):
             cl_loss = cl_loss + nn.functional.cross_entropy(cos_sim, labels)
 
         return cl_loss
+
+    def get_cluster_cl_loss(self, batch, clus):
+        batch_aug0 = {
+            "concept_seq": batch["concept_seq_aug_0"],
+            "question_seq": batch["question_seq_aug_0"],
+            "correct_seq": batch["correct_seq_aug_0"],
+            "mask_seq": batch["mask_seq_aug_0"]
+        }
+        batch_aug1 = {
+            "concept_seq": batch["concept_seq_aug_1"],
+            "question_seq": batch["question_seq_aug_1"],
+            "correct_seq": batch["correct_seq_aug_1"],
+            "mask_seq": batch["mask_seq_aug_1"]
+        }
+        latent_aug0 = self.get_latent(batch_aug0)
+        latent_aug1 = self.get_latent(batch_aug1)
+        mask4last_aug0 = get_mask4last_or_penultimate(batch_aug0["mask_seq"], penultimate=False)
+        mask4last_aug1 = get_mask4last_or_penultimate(batch_aug1["mask_seq"], penultimate=False)
+        latent_aug0_last = latent_aug0[torch.where(mask4last_aug0 == 1)]
+        latent_aug1_last = latent_aug1[torch.where(mask4last_aug1 == 1)]
+
+        batch_size = latent_aug0_last.shape[0]
+        batch_ori = {
+            "concept_seq": batch["concept_seq"],
+            "question_seq": batch["question_seq"],
+            "correct_seq": batch["correct_seq"],
+            "mask_seq": batch["mask_seq"]
+        }
+        latent_ori = self.get_latent(batch_ori)
+        mask4last_ori = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
+        latent_ori_last = latent_ori[torch.where(mask4last_ori == 1)]
+        state = np.array(latent_ori_last.detach().cpu().tolist())
+        intent_id, intent = clus.query(state)
+
+        intent_id1 = intent_id.contiguous().view(-1, 1)
+        intent_id2 = intent_id.contiguous().view(1, -1)
+        mask4inf = (intent_id1 == intent_id2) & torch.ne(torch.eye(batch_size), 1).to(self.params["device"])
+
+        temp = self.params["other"]["cluster_cl"]["temp"]
+        cos_sim_aug1 = nn.functional.cosine_similarity(intent.unsqueeze(1), latent_aug0_last.unsqueeze(0), dim=-1)
+        cos_sim_aug2 = nn.functional.cosine_similarity(intent.unsqueeze(1), latent_aug1_last.unsqueeze(0), dim=-1)
+        cos_sim_aug1[mask4inf] = -(1 / temp)
+        cos_sim_aug2[mask4inf] = -(1 / temp)
+
+        labels = torch.arange(cos_sim_aug1.size(0)).long().to(self.params["device"])
+        cl_loss1 = nn.functional.cross_entropy(cos_sim_aug1, labels)
+        cl_loss2 = nn.functional.cross_entropy(cos_sim_aug2, labels)
+
+        return (cl_loss1 + cl_loss2) / 2
 
     def get_predict_loss(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)

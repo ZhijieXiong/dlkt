@@ -51,6 +51,12 @@ class OfflineSimilarity:
         self.question_similarity_table = None
 
     def parse(self, data, data_type):
+        """
+        传入的data需要是去掉padding的
+        :param data:
+        :param data_type:
+        :return:
+        """
         self.data_type = data_type
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         num_concept = dataset_config_this["kt4aug"]["informative_aug"]["num_concept"]
@@ -64,7 +70,6 @@ class OfflineSimilarity:
             self.get_concept_similar_table()
         self.get_question_similarity_table()
         self.data = None
-        gc.collect()
 
     def get_question_similarity_table(self):
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]

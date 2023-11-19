@@ -73,3 +73,13 @@ def qdkt_duo_cl_config(local_params):
     duo_cl_config(local_params, global_params)
 
     return global_params, global_objects
+
+
+def qdkt_cluster_cl_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    qdkt_general_config(local_params, global_params)
+    cluster_cl_config(local_params, global_params, global_objects)
+
+    return global_params, global_objects

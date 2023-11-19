@@ -83,7 +83,8 @@ class KTDataset4Aug(Dataset):
         for i, data_aug in enumerate(datas_aug):
             pad_len = max_seq_len - data_aug["seq_len"]
             for k, v in data_aug.items():
-                if type(v) == list:
+                if type(v) == list and k not in ["time_seq", "use_time_seq", "interval_time_seq"]:
+                    # 数据增强不考虑时间
                     result[f"{k}_aug_{i}"] = torch.tensor(v + [0] * pad_len).long().to(self.params["device"])
 
         return result

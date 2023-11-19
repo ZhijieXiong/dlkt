@@ -2,7 +2,7 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from instance_cl_qdkt_config import instance_cl_qdkt_config
+from qdkt_config import qdkt_instance_cl_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
@@ -31,9 +31,9 @@ if __name__ == "__main__":
     parser.add_argument("--train_strategy", type=str, default="valid_test",
                         choices=("valid_test", "no_valid"))
     parser.add_argument("--num_epoch", type=int, default=100)
-    parser.add_argument("--use_early_stop", type=str2bool, default=False)
+    parser.add_argument("--use_early_stop", type=str2bool, default=True)
     parser.add_argument("--epoch_early_stop", type=int, default=10)
-    parser.add_argument("--use_last_average", type=str2bool, default=True)
+    parser.add_argument("--use_last_average", type=str2bool, default=False)
     parser.add_argument("--epoch_last_average", type=int, default=5)
     parser.add_argument("--main_metric", type=str, default="AUC")
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
@@ -65,21 +65,23 @@ if __name__ == "__main__":
     parser.add_argument("--weight_cl_loss", type=float, default=0.1)
     parser.add_argument("--use_warm_up4cl", type=str2bool, default=False)
     parser.add_argument("--epoch_warm_up4cl", type=float, default=4)
-    parser.add_argument("--use_online_sim", type=str2bool, default=False)
+    parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)
-    parser.add_argument("--epoch_warm_up4online_sim", type=float, default=4)
-    parser.add_argument("--cl_type", type=str, default="CL4KT",
-                        choices=("our", "CL4KT"))
+    parser.add_argument("--epoch_warm_up4online_sim", type=float, default=1)
+    parser.add_argument("--cl_type", type=str, default="last_time",
+                        choices=("last_time", "all_time", "mean_pool"))
     # random aug和informative aug参数
-    parser.add_argument("--aug_type", type=str, default="random_aug",
+    parser.add_argument("--aug_type", type=str, default="informative_aug",
                         choices=("random_aug", "informative_aug"))
     parser.add_argument("--mask_prob", type=float, default=0.1)
     parser.add_argument("--insert_prob", type=float, default=0.1)
     parser.add_argument("--replace_prob", type=float, default=0.3)
     parser.add_argument("--crop_prob", type=float, default=0.1)
     parser.add_argument("--permute_prob", type=float, default=0.1)
-    parser.add_argument("--hard_neg_prob", type=float, default=0.1)
-    parser.add_argument("--aug_order", type=str, default="['mask', 'replace', 'crop', 'permute']")
+    parser.add_argument("--hard_neg_prob", type=float, default=1)
+    parser.add_argument("--aug_order", type=str, default="['mask', 'crop', 'replace', 'insert']",
+                        help="CL4KT: ['mask', 'replace', 'permute', 'crop']"
+                             "info aug: ['mask', 'crop', 'replace', 'insert']")
     parser.add_argument("--offline_sim_type", type=str, default="order",
                         choices=("order", ))
     # max entropy adv aug参数
@@ -97,7 +99,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = instance_cl_qdkt_config(params)
+    global_params, global_objects = qdkt_instance_cl_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)

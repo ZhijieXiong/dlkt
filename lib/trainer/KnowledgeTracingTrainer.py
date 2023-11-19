@@ -88,7 +88,9 @@ class KnowledgeTracingTrainer:
                 print(f"best valid epoch: {self.train_record.get_best_epoch('valid'):<3} , "
                       f"best test epoch: {self.train_record.get_best_epoch('test')}\n"
                       f"valid performance by best valid epoch is {best_performance_str_by_valid}\n"
-                      f"test performance by best valid epoch is {best_performance_str_by_test}")
+                      f"test performance by best valid epoch is {best_performance_str_by_test}\n"
+                      f"test performance by best test epoch is "
+                      f"{self.train_record.get_evaluate_result_str('test', 'test')}\n")
         return stop_flag
 
     def evaluate(self):

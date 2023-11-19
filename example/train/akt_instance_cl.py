@@ -2,20 +2,21 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from duo_qdkt_config import duo_qdkt_config
+from akt_config import akt_instance_cl_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
 from lib.dataset.KTDataset4Aug import KTDataset4Aug
-from lib.model.qDKT import qDKT
-from lib.trainer.DuoCLTrainer import DuoCLTrainer
+from lib.model.AKT import AKT
+from lib.trainer.InstanceCLTrainer import InstanceCLTrainer
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="random_split_leave_multi_out_setting")
+    parser.add_argument("--dataset_name", type=str, default="assist2009")
     parser.add_argument("--data_type", type=str, default="multi_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
     parser.add_argument("--train_file_name", type=str, default="assist2009_train_split_6.txt")
@@ -30,14 +31,14 @@ if __name__ == "__main__":
     parser.add_argument("--train_strategy", type=str, default="valid_test",
                         choices=("valid_test", "no_valid"))
     parser.add_argument("--num_epoch", type=int, default=100)
-    parser.add_argument("--use_early_stop", type=str2bool, default=False)
+    parser.add_argument("--use_early_stop", type=str2bool, default=True)
     parser.add_argument("--epoch_early_stop", type=int, default=10)
-    parser.add_argument("--use_last_average", type=str2bool, default=True)
+    parser.add_argument("--use_last_average", type=str2bool, default=False)
     parser.add_argument("--epoch_last_average", type=int, default=5)
     parser.add_argument("--main_metric", type=str, default="AUC")
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
-    parser.add_argument("--learning_rate", type=float, default=0.0001)
+    parser.add_argument("--learning_rate", type=float, default=0.0003)
     parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
@@ -47,21 +48,47 @@ if __name__ == "__main__":
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=265)
-    parser.add_argument("--num_question", type=int, default=53091)
-    parser.add_argument("--dim_concept", type=int, default=64)
-    parser.add_argument("--dim_question", type=int, default=64)
-    parser.add_argument("--dim_correct", type=int, default=128)
-    parser.add_argument("--dim_latent", type=int, default=128)
-    parser.add_argument("--rnn_type", type=str, default="gru")
-    parser.add_argument("--num_rnn_layer", type=int, default=1)
+    parser.add_argument("--num_concept", type=int, default=123)
+    parser.add_argument("--num_question", type=int, default=17751)
+    parser.add_argument("--dim_model", type=int, default=64)
+    parser.add_argument("--key_query_same", type=str2bool, default=True)
+    parser.add_argument("--num_head", type=int, default=8)
+    parser.add_argument("--num_block", type=int, default=2)
+    parser.add_argument("--dim_ff", type=int, default=128)
+    parser.add_argument("--dim_final_fc", type=int, default=256)
     parser.add_argument("--dropout", type=float, default=0.1)
-    parser.add_argument("--num_predict_layer", type=int, default=3)
-    parser.add_argument("--dim_predict_mid", type=int, default=128)
-    parser.add_argument("--activate_type", type=str, default="relu")
-    # duo参数（对比学习）
-    parser.add_argument("--temp", type=float, default=0.01)
-    parser.add_argument("--weight_cl_loss", type=float, default=1)
+    parser.add_argument("--separate_qa", type=str2bool, default=False)
+    parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
+    # instance cl参数（对比学习）
+    parser.add_argument("--temp", type=float, default=0.05)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
+    parser.add_argument("--use_warm_up4cl", type=str2bool, default=False)
+    parser.add_argument("--epoch_warm_up4cl", type=float, default=4)
+    parser.add_argument("--use_online_sim", type=str2bool, default=True)
+    parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)
+    parser.add_argument("--epoch_warm_up4online_sim", type=float, default=1)
+    parser.add_argument("--cl_type", type=str, default="last_time",
+                        choices=("last_time", "all_time", "mean_pool"))
+    # random aug和informative aug参数
+    parser.add_argument("--aug_type", type=str, default="informative_aug",
+                        choices=("random_aug", "informative_aug"))
+    parser.add_argument("--mask_prob", type=float, default=0.1)
+    parser.add_argument("--insert_prob", type=float, default=0.1)
+    parser.add_argument("--replace_prob", type=float, default=0.3)
+    parser.add_argument("--crop_prob", type=float, default=0.1)
+    parser.add_argument("--permute_prob", type=float, default=0.1)
+    parser.add_argument("--hard_neg_prob", type=float, default=1)
+    parser.add_argument("--aug_order", type=str, default="['mask', 'crop', 'replace', 'insert']")
+    parser.add_argument("--offline_sim_type", type=str, default="order",
+                        choices=("order", ))
+    # max entropy adv aug参数
+    parser.add_argument("--use_adv_aug", type=str2bool, default=True)
+    parser.add_argument("--epoch_interval_generate", type=int, default=1)
+    parser.add_argument("--loop_adv", type=int, default=3)
+    parser.add_argument("--epoch_generate", type=int, default=40)
+    parser.add_argument("--adv_learning_rate", type=float, default=20.0)
+    parser.add_argument("--eta", type=float, default=5.0)
+    parser.add_argument("--gamma", type=float, default=1.0)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
@@ -69,7 +96,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = duo_qdkt_config(params)
+    global_params, global_objects = akt_instance_cl_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)
@@ -93,28 +120,7 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = qDKT(global_params, global_objects).to(global_params["device"])
+    model = AKT(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
-    trainer = DuoCLTrainer(global_params, global_objects)
+    trainer = InstanceCLTrainer(global_params, global_objects)
     trainer.train()
-
-    # qdkt: valid performance by best valid epoch is main metric: 0.82321  , AUC: 0.82321  , ACC: 0.7986   , RMSE: 0.37518  , MAE: 0.25932  ,
-    # test performance by best valid epoch is main metric: 0.75265  , AUC: 0.75265  , ACC: 0.70112  , RMSE: 0.44902  , MAE: 0.34723  ,
-
-    # 0.1: valid performance by best valid epoch is main metric: 0.81771  , AUC: 0.81771  , ACC: 0.79763  , RMSE: 0.37802  , MAE: 0.26133  ,
-    # test performance by best valid epoch is main metric: 0.75061  , AUC: 0.75061  , ACC: 0.70207  , RMSE: 0.45023  , MAE: 0.34648  ,
-
-    # 0.01: valid performance by best valid epoch is main metric: 0.81569  , AUC: 0.81569  , ACC: 0.79841  , RMSE: 0.37707  , MAE: 0.26516  ,
-    # test performance by best valid epoch is main metric: 0.75408  , AUC: 0.75408  , ACC: 0.70545  , RMSE: 0.44591  , MAE: 0.34876  ,
-
-    # 0.001 (0.1): valid performance by best valid epoch is main metric: 0.81967  , AUC: 0.81967  , ACC: 0.79677  , RMSE: 0.37643  , MAE: 0.27156  ,
-    # test performance by best valid epoch is main metric: 0.75315  , AUC: 0.75315  , ACC: 0.70342  , RMSE: 0.44486  , MAE: 0.35334  ,
-
-    # 0.001 (0.05): valid performance by best valid epoch is main metric: 0.81961  , AUC: 0.81961  , ACC: 0.7966   , RMSE: 0.37643  , MAE: 0.27184  ,
-    # test performance by best valid epoch is main metric: 0.75252  , AUC: 0.75252  , ACC: 0.70402  , RMSE: 0.44497  , MAE: 0.35388  ,
-
-    # 0.1 (0.05): valid performance by best valid epoch is main metric: 0.82101  , AUC: 0.82101  , ACC: 0.79886  , RMSE: 0.37579  , MAE: 0.26533  ,
-    # test performance by best valid epoch is main metric: 0.75621  , AUC: 0.75621  , ACC: 0.70488  , RMSE: 0.44518  , MAE: 0.34853  ,
-
-    # 1 (0.05): valid performance by best valid epoch is main metric: 0.82443  , AUC: 0.82443  , ACC: 0.79814  , RMSE: 0.37546  , MAE: 0.26324  ,
-    # test performance by best valid epoch is main metric: 0.75122  , AUC: 0.75122  , ACC: 0.70214  , RMSE: 0.44949  , MAE: 0.34801  ,

@@ -1,5 +1,5 @@
 from copy import deepcopy
-from config import general_config
+from _config import general_config
 
 
 from lib.template.params_template import PARAMS

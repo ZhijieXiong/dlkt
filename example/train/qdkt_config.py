@@ -1,15 +1,12 @@
 from copy import deepcopy
-from config import general_config
+from _config import general_config
+from _cl_config import *
 
 from lib.template.params_template import PARAMS
 from lib.template.objects_template import OBJECTS
 
 
-def qdkt_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-
+def qdkt_general_config(local_params, global_params):
     # 配置模型参数
     num_concept = local_params["num_concept"]
     num_question = local_params["num_question"]
@@ -47,5 +44,32 @@ def qdkt_config(local_params):
     predict_layer_config["direct"]["dim_predict_mid"] = dim_predict_mid
     predict_layer_config["direct"]["activate_type"] = activate_type
     predict_layer_config["direct"]["dim_predict_out"] = 1
+
+
+def qdkt_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    qdkt_general_config(local_params, global_params)
+
+    return global_params, global_objects
+
+
+def qdkt_instance_cl_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    qdkt_general_config(local_params, global_params)
+    instance_cl_general_config(local_params, global_params, global_objects)
+
+    return global_params, global_objects
+
+
+def qdkt_duo_cl_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    qdkt_general_config(local_params, global_params)
+    duo_cl_config(local_params, global_params)
 
     return global_params, global_objects

@@ -1,16 +1,13 @@
 from copy import deepcopy
-from config import general_config
+from _config import general_config
+from _cl_config import instance_cl_general_config
 
 
 from lib.template.params_template import PARAMS
 from lib.template.objects_template import OBJECTS
 
 
-def akt_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-
+def akt_general_config(local_params, global_params):
     global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "AKT"
 
     # 配置模型参数
@@ -40,5 +37,23 @@ def akt_config(local_params):
 
     # 损失权重
     global_params["loss_config"]["rasch_loss"] = local_params["weight_rasch_loss"]
+
+
+def akt_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+
+    akt_general_config(local_params, global_params)
+
+    return global_params, global_objects
+
+
+def akt_instance_cl_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    akt_general_config(local_params, global_params)
+    instance_cl_general_config(local_params, global_params, global_objects)
 
     return global_params, global_objects

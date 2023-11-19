@@ -40,13 +40,18 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
         for epoch in range(1, num_epoch + 1):
             self.do_online_sim()
             self.do_max_entropy_aug()
+
+            # 有对抗样本后，随机增强只需要生成一个view
             use_adv_aug = max_entropy_aug_config["use_adv_aug"] and (epoch > epoch_warm_up4online_sim)
             if use_adv_aug:
                 dataset_config_this = self.params["datasets_config"]["train"]
                 dataset_config_this["kt4aug"]["num_aug"] = 1
 
             model.train()
-            for batch in train_loader:
+            for batch_idx, batch in enumerate(train_loader):
+                # print(f"batch: {batch_idx}")
+                if epoch == 15 and batch_idx == 34:
+                    print("")
                 optimizer.zero_grad()
 
                 num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
@@ -56,14 +61,14 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
                 do_cl = (not use_warm_up4cl) or (use_warm_up4cl and (epoch >= epoch_warm_up4cl))
                 if do_cl:
                     weight_cl_loss = self.params["loss_config"]["cl loss"]
-                    if cl_type == "CL4KT" and not use_adv_aug:
-                        cl_loss = model.get_instance_cl_loss_cl4kt(batch)
-                    elif cl_type == "CL4KT" and use_adv_aug:
-                        cl_loss = model.get_instance_cl_loss_cl4kt_adv(batch, self.dataset_adv_generated)
-                    elif cl_type == "our" and not use_adv_aug:
-                        cl_loss = model.get_instance_cl_loss_our(batch)
-                    elif cl_type == "our" and use_adv_aug:
-                        cl_loss = model.get_instance_cl_loss_our_adv(batch, self.dataset_adv_generated)
+                    if cl_type in ["mean_pool", "last_time"] and not use_adv_aug:
+                        cl_loss = model.get_instance_cl_loss_one_seq(batch, cl_type)
+                    elif cl_type in ["mean_pool", "last_time"] and use_adv_aug:
+                        cl_loss = model.get_instance_cl_loss_one_seq_adv(batch, self.dataset_adv_generated, cl_type)
+                    elif cl_type == "all_time" and not use_adv_aug:
+                        cl_loss = model.get_instance_cl_loss_all_interaction(batch)
+                    elif cl_type == "all_time" and use_adv_aug:
+                        cl_loss = model.get_instance_cl_loss_all_interaction_adv(batch, self.dataset_adv_generated)
                     else:
                         raise NotImplementedError()
                     self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)
@@ -119,6 +124,7 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
         if do_generate and (current_epoch >= epoch_warm_up4online_sim):
             model.eval()
             train_loader.dataset.set_not_use_aug()
+            # RNN就需要加上torch.backends.cudnn.enabled = False，才能在eval模式下通过网络还能保留梯度
             torch.backends.cudnn.enabled = False
 
             data_generated = {

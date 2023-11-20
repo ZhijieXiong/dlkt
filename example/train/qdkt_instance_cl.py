@@ -41,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument("--learning_rate", type=float, default=0.0005)
     parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
-    parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
+    parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
@@ -63,20 +63,20 @@ if __name__ == "__main__":
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
     # instance cl参数（对比学习）
-    parser.add_argument("--temp", type=float, default=0.05)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.000001)
+    parser.add_argument("--temp", type=float, default=0.01)
+    parser.add_argument("--weight_cl_loss", type=float, default=1)
     parser.add_argument("--use_warm_up4cl", type=str2bool, default=False)
     parser.add_argument("--epoch_warm_up4cl", type=float, default=4)
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)
     parser.add_argument("--epoch_warm_up4online_sim", type=float, default=4)
-    parser.add_argument("--cl_type", type=str, default="all_time",
+    parser.add_argument("--cl_type", type=str, default="mean_pool",
                         choices=("last_time", "all_time", "mean_pool"))
     # random aug和informative aug参数
     parser.add_argument("--aug_type", type=str, default="informative_aug",
                         choices=("random_aug", "informative_aug"))
     parser.add_argument("--mask_prob", type=float, default=0.1)
-    parser.add_argument("--insert_prob", type=float, default=0.1)
+    parser.add_argument("--insert_prob", type=float, default=0.2)
     parser.add_argument("--replace_prob", type=float, default=0.3)
     parser.add_argument("--crop_prob", type=float, default=0.1)
     parser.add_argument("--permute_prob", type=float, default=0.1)
@@ -89,10 +89,10 @@ if __name__ == "__main__":
     # max entropy adv aug参数
     parser.add_argument("--use_adv_aug", type=str2bool, default=False)
     parser.add_argument("--epoch_interval_generate", type=int, default=1)
-    parser.add_argument("--loop_adv", type=int, default=3)
+    parser.add_argument("--loop_adv", type=int, default=5)
     parser.add_argument("--epoch_generate", type=int, default=40)
-    parser.add_argument("--adv_learning_rate", type=float, default=20.0)
-    parser.add_argument("--eta", type=float, default=5.0)
+    parser.add_argument("--adv_learning_rate", type=float, default=10.0)
+    parser.add_argument("--eta", type=float, default=1.0)
     parser.add_argument("--gamma", type=float, default=1.0)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)

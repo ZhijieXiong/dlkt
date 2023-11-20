@@ -63,6 +63,8 @@ if __name__ == "__main__":
     parser.add_argument("--activate_type", type=str, default="relu")
     # duo参数（对比学习）
     parser.add_argument("--temp", type=float, default=0.01)
+    parser.add_argument("--cl_type", type=str, default="mean_pool",
+                        choices=("last_time", "mean_pool"))
     parser.add_argument("--weight_cl_loss", type=float, default=1)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)

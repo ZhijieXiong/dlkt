@@ -18,6 +18,7 @@ class DuoCLTrainer(KnowledgeTracingTrainer):
         optimizer = self.objects["optimizers"]["kt_model"]
         scheduler = self.objects["schedulers"]["kt_model"]
         model = self.objects["models"]["kt_model"]
+        cl_type = self.params["other"]["duo_cl"]["cl_type"]
 
         train_statics = train_loader.dataset.get_statics_kt_dataset()
         print(f"train, seq: {train_statics[0]}, sample: {train_statics[1]}, accuracy: {train_statics[2]:<.4}")
@@ -38,7 +39,7 @@ class DuoCLTrainer(KnowledgeTracingTrainer):
                 predict_loss = model.get_predict_loss(batch)
                 self.loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
 
-                duo_cl_loss = model.get_duo_cl_loss(batch)
+                duo_cl_loss = model.get_duo_cl_loss(batch, cl_type)
                 self.loss_record.add_loss("cl loss", duo_cl_loss.detach().cpu().item() * num_seq, num_seq)
 
                 weight_duo_cl_loss = self.params["loss_config"]["cl loss"]
@@ -47,7 +48,7 @@ class DuoCLTrainer(KnowledgeTracingTrainer):
 
                 if grad_clip_config["use_clip"]:
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
-                self.objects["optimizers"]["kt_model"].step()
+                optimizer.step()
             if schedulers_config["use_scheduler"]:
                 scheduler.step()
             self.evaluate()

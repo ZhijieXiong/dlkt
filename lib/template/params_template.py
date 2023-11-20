@@ -217,7 +217,8 @@ PARAMS = {
   # 其它参数配置，如对比学习中warm up设置
   "other": {
     "duo_cl": {
-      "temp": 0.05
+      "temp": 0.05,
+      "cl_type": "last_time",
     },
     "instance_cl": {
       "temp": 0.05,
@@ -247,6 +248,7 @@ PARAMS = {
       "use_online_sim": True,
       "use_warm_up4online_sim": True,
       "epoch_warm_up4online_sim": 4,
+      "cl_type": "last_time",
       "use_adv_data": False
     }
   }

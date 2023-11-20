@@ -49,9 +49,6 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
 
             model.train()
             for batch_idx, batch in enumerate(train_loader):
-                # print(f"batch: {batch_idx}")
-                if epoch == 15 and batch_idx == 34:
-                    print("")
                 optimizer.zero_grad()
 
                 num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
@@ -79,10 +76,10 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
                 loss = loss + predict_loss
 
                 loss.backward()
-
                 if grad_clip_config["use_clip"]:
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
-                self.objects["optimizers"]["kt_model"].step()
+
+                optimizer.step()
             if schedulers_config["use_scheduler"]:
                 scheduler.step()
             self.evaluate()
@@ -131,7 +128,7 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
                 "seq_id": [],
                 "emb_seq": []
             }
-            for batch in train_loader:
+            for batch_idx, batch in enumerate(train_loader):
                 num_seq = batch["mask_seq"].shape[0]
                 inputs_max, adv_predict_loss, adv_entropy, adv_mse_loss = (
                     model.get_max_entropy_adv_aug_emb(batch, adv_learning_rate, loop_adv, eta, gamma))

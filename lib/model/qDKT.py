@@ -84,39 +84,41 @@ class qDKT(nn.Module):
 
         return latent_last
 
-    def get_duo_cl_loss(self, batch):
-        batch_ori = {
-            "concept_seq": batch["concept_seq"],
-            "question_seq": batch["question_seq"],
-            "correct_seq": batch["correct_seq"],
-            "mask_seq": batch["mask_seq"]
-        }
-        latent_ori = self.get_latent(batch_ori)
-        mask4last_ori = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
-        latent_ori = latent_ori[torch.where(mask4last_ori == 1)]
+    def get_latent_mean(self, batch):
+        latent = self.get_latent(batch)
+        mask_seq = batch["mask_seq"]
+        latent_mean = (latent * mask_seq.unsqueeze(-1)).sum(1) / mask_seq.sum(-1).unsqueeze(-1)
 
+        return latent_mean
+
+    def get_duo_cl_loss(self, batch, latent_type):
         batch_aug = {
             "concept_seq": batch["concept_seq_aug_0"],
             "question_seq": batch["question_seq_aug_0"],
             "correct_seq": batch["correct_seq_aug_0"],
             "mask_seq": batch["mask_seq_aug_0"]
         }
-        latent_aug = self.get_latent(batch_aug)
-        mask4last_aug = get_mask4last_or_penultimate(batch_aug["mask_seq"], penultimate=False)
-        latent_aug = latent_aug[torch.where(mask4last_aug == 1)]
-
         batch_hard_neg = {
             "concept_seq": batch["concept_seq_hard_neg"],
             "question_seq": batch["question_seq_hard_neg"],
             "correct_seq": batch["correct_seq_hard_neg"],
             "mask_seq": batch["mask_seq_hard_neg"]
         }
-        latent_hard_neg = self.get_latent(batch_hard_neg)
-        mask4last_hard_neg = get_mask4last_or_penultimate(batch_hard_neg["mask_seq"], penultimate=False)
-        latent_hard_neg = latent_hard_neg[torch.where(mask4last_hard_neg == 1)]
+
+        if latent_type == "last_time":
+            latent_ori_pooled = self.get_latent_last(batch)
+            latent_aug_pooled = self.get_latent_last(batch_aug)
+            latent_hard_neg_pooled = self.get_latent_last(batch_hard_neg)
+        elif latent_type == "mean_pool":
+            latent_ori_pooled = self.get_latent_mean(batch)
+            latent_aug_pooled = self.get_latent_mean(batch_aug)
+            latent_hard_neg_pooled = self.get_latent_mean(batch_hard_neg)
+        else:
+            raise NotImplementedError()
 
         temp = self.params["other"]["duo_cl"]["temp"]
-        cl_loss = duo_info_nce(latent_ori, latent_aug, temp, sim_type="cos", z_hard_neg=latent_hard_neg)
+        cl_loss = duo_info_nce(latent_ori_pooled, latent_aug_pooled, temp,
+                               sim_type="cos", z_hard_neg=latent_hard_neg_pooled)
 
         return cl_loss
 
@@ -134,24 +136,18 @@ class qDKT(nn.Module):
             "mask_seq": batch["mask_seq_aug_1"]
         }
 
-        latent_aug0 = self.get_latent(batch_aug0)
-        latent_aug1 = self.get_latent(batch_aug1)
         if latent_type == "last_time":
-            mask4last_aug0 = get_mask4last_or_penultimate(batch_aug0["mask_seq"], penultimate=False)
-            mask4last_aug1 = get_mask4last_or_penultimate(batch_aug1["mask_seq"], penultimate=False)
-            latent_aug0_pooled = latent_aug0[torch.where(mask4last_aug0 == 1)]
-            latent_aug1_pooled = latent_aug1[torch.where(mask4last_aug1 == 1)]
+            latent_aug0_pooled = self.get_latent_last(batch_aug0)
+            latent_aug1_pooled = self.get_latent_last(batch_aug1)
         elif latent_type == "mean_pool":
-            mask_seq_aug0 = batch["mask_seq_aug_0"]
-            mask_seq_aug1 = batch["mask_seq_aug_1"]
-            latent_aug0_pooled = (latent_aug0 * mask_seq_aug0.unsqueeze(-1)).sum(1) / mask_seq_aug0.sum(-1).unsqueeze(-1)
-            latent_aug1_pooled = (latent_aug1 * mask_seq_aug1.unsqueeze(-1)).sum(1) / mask_seq_aug1.sum(-1).unsqueeze(-1)
+            latent_aug0_pooled = self.get_latent_mean(batch_aug0)
+            latent_aug1_pooled = self.get_latent_mean(batch_aug1)
         else:
             raise NotImplementedError()
 
         temp = self.params["other"]["instance_cl"]["temp"]
-        cos_sim_aug = nn.functional.cosine_similarity(latent_aug0_pooled.unsqueeze(1), latent_aug1_pooled.unsqueeze(0),
-                                                      dim=-1) / temp
+        cos_sim_aug = torch.cosine_similarity(latent_aug0_pooled.unsqueeze(1), latent_aug1_pooled.unsqueeze(0),
+                                              dim=-1) / temp
 
         if "correct_seq_hard_neg" in batch.keys():
             batch_hard_neg = {
@@ -160,18 +156,14 @@ class qDKT(nn.Module):
                 "correct_seq": batch["correct_seq_hard_neg"],
                 "mask_seq": batch["mask_seq"]
             }
-            latent_hard_neg = self.get_latent(batch_hard_neg)
             if latent_type == "last_time":
-                mask4last_hard_neg = get_mask4last_or_penultimate(batch_hard_neg["mask_seq"], penultimate=False)
-                latent_hard_neg_pooled = latent_hard_neg[torch.where(mask4last_hard_neg == 1)]
+                latent_hard_neg_pooled = self.get_latent_last(batch_hard_neg)
             elif latent_type == "mean_pool":
-                mask_seq_hard_neg = batch["mask_seq"]
-                latent_hard_neg_pooled = ((latent_hard_neg * mask_seq_hard_neg.unsqueeze(-1)).sum(1) /
-                                          mask_seq_hard_neg.sum(-1).unsqueeze(-1))
+                latent_hard_neg_pooled = self.get_latent_mean(batch_hard_neg)
             else:
                 raise NotImplementedError()
-            cos_sim_neg = nn.functional.cosine_similarity(latent_aug0_pooled.unsqueeze(1),
-                                                          latent_hard_neg_pooled.unsqueeze(0), dim=-1) / temp
+            cos_sim_neg = torch.cosine_similarity(latent_aug0_pooled.unsqueeze(1),
+                                                  latent_hard_neg_pooled.unsqueeze(0), dim=-1) / temp
             cos_sim = torch.cat((cos_sim_aug, cos_sim_neg), dim=1)
         else:
             cos_sim = cos_sim_aug
@@ -217,7 +209,7 @@ class qDKT(nn.Module):
             anchor = latent_aug0_last[i]
             pos = latent_aug1_last[i]
             neg = neg_all[i][:, 1:][mask_bool4neg[i][:, 1:]]
-            sim_i = nn.functional.cosine_similarity(anchor, torch.cat((pos.unsqueeze(dim=0), neg), dim=0)) / temp
+            sim_i = torch.cosine_similarity(anchor, torch.cat((pos.unsqueeze(dim=0), neg), dim=0)) / temp
             cos_sim_list.append(sim_i.unsqueeze(dim=0))
 
         labels = torch.tensor([0]).long().to(self.params["device"])
@@ -235,7 +227,6 @@ class qDKT(nn.Module):
             "correct_seq": batch["correct_seq_aug_0"],
             "mask_seq": batch["mask_seq_aug_0"]
         }
-        latent_aug0 = self.get_latent(batch_aug0)[:, 1:]
 
         seq_ids = batch["seq_id"]
         emb_seq_aug1 = dataset_adv["emb_seq"][seq_ids.to("cpu")].to(self.params["device"])
@@ -247,21 +238,19 @@ class qDKT(nn.Module):
         _, latent_aug1 = self.forward_from_input_emb(emb_seq_aug1[:, :-1], concept_emb, question_emb)
 
         if latent_type == "last_time":
-            mask4last_aug0 = get_mask4last_or_penultimate(batch_aug0["mask_seq"], penultimate=False)[:, 1:]
             mask4last_aug1 = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)[:, 1:]
-            latent_aug0_pooled = latent_aug0[torch.where(mask4last_aug0 == 1)]
+            latent_aug0_pooled = self.get_latent_last(batch_aug0)
             latent_aug1_pooled = latent_aug1[torch.where(mask4last_aug1 == 1)]
         elif latent_type == "mean_pool":
-            mask_seq_aug0 = batch["mask_seq_aug_0"][:, 1:]
             mask_seq_aug1 = batch["mask_seq"][:, 1:]
-            latent_aug0_pooled = (latent_aug0 * mask_seq_aug0.unsqueeze(-1)).sum(1) / mask_seq_aug0.sum(-1).unsqueeze(-1)
+            latent_aug0_pooled = self.get_latent_mean(batch_aug0)
             latent_aug1_pooled = (latent_aug1 * mask_seq_aug1.unsqueeze(-1)).sum(1) / mask_seq_aug1.sum(-1).unsqueeze(-1)
         else:
             raise NotImplementedError()
 
         temp = self.params["other"]["instance_cl"]["temp"]
-        cos_sim_aug = nn.functional.cosine_similarity(latent_aug0_pooled.unsqueeze(1), latent_aug1_pooled.unsqueeze(0),
-                                                      dim=-1) / temp
+        cos_sim_aug = torch.cosine_similarity(latent_aug0_pooled.unsqueeze(1), latent_aug1_pooled.unsqueeze(0),
+                                              dim=-1) / temp
 
         labels = torch.arange(cos_sim_aug.size(0)).long().to(self.params["device"])
         cl_loss = nn.functional.cross_entropy(cos_sim_aug, labels)
@@ -299,13 +288,13 @@ class qDKT(nn.Module):
         mask_bool4neg = (
             torch.ne(batch["mask_seq"][:, 1:].repeat(bs, 1).reshape(bs, bs, -1)[m].reshape(bs, bs - 1, -1), 0))
 
-        temp = self.params["other"]["duo"]["temp"]
+        temp = self.params["other"]["instance_cl"]["temp"]
         cos_sim_list = []
         for i in range(bs):
             anchor = latent_aug0_last[i]
             pos = latent_aug1_last[i]
             neg = neg_all[i][:, 1:][mask_bool4neg[i][:, 1:]]
-            sim_i = nn.functional.cosine_similarity(anchor, torch.cat((pos.unsqueeze(dim=0), neg), dim=0)) / temp
+            sim_i = torch.cosine_similarity(anchor, torch.cat((pos.unsqueeze(dim=0), neg), dim=0)) / temp
             cos_sim_list.append(sim_i.unsqueeze(dim=0))
 
         labels = torch.tensor([0]).long().to(self.params["device"])
@@ -316,7 +305,7 @@ class qDKT(nn.Module):
 
         return cl_loss
 
-    def get_cluster_cl_loss(self, batch, clus):
+    def get_cluster_cl_loss_one_seq(self, batch, clus, latent_type):
         batch_aug0 = {
             "concept_seq": batch["concept_seq_aug_0"],
             "question_seq": batch["question_seq_aug_0"],
@@ -330,40 +319,36 @@ class qDKT(nn.Module):
             "mask_seq": batch["mask_seq_aug_1"]
         }
         latent_aug0 = self.get_latent(batch_aug0)
-        latent_aug1 = self.get_latent(batch_aug1)
-        mask4last_aug0 = get_mask4last_or_penultimate(batch_aug0["mask_seq"], penultimate=False)
-        mask4last_aug1 = get_mask4last_or_penultimate(batch_aug1["mask_seq"], penultimate=False)
-        latent_aug0_last = latent_aug0[torch.where(mask4last_aug0 == 1)]
-        latent_aug1_last = latent_aug1[torch.where(mask4last_aug1 == 1)]
+        batch_size = latent_aug0.shape[0]
 
-        batch_size = latent_aug0_last.shape[0]
-        batch_ori = {
-            "concept_seq": batch["concept_seq"],
-            "question_seq": batch["question_seq"],
-            "correct_seq": batch["correct_seq"],
-            "mask_seq": batch["mask_seq"]
-        }
-        latent_ori = self.get_latent(batch_ori)
-        mask4last_ori = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
-        latent_ori_last = latent_ori[torch.where(mask4last_ori == 1)]
-        state = np.array(latent_ori_last.detach().cpu().tolist())
+        if latent_type == "last_time":
+            latent_aug0_pooled = self.get_latent_last(batch_aug0)
+            latent_aug1_pooled = self.get_latent_last(batch_aug1)
+            latent_ori_pooled = self.get_latent_last(batch)
+        elif latent_type == "mean_pool":
+            latent_aug0_pooled = self.get_latent_mean(batch_aug0)
+            latent_aug1_pooled = self.get_latent_mean(batch_aug1)
+            latent_ori_pooled = self.get_latent_mean(batch)
+        else:
+            raise NotImplementedError()
+        state = np.array(latent_ori_pooled.detach().cpu().tolist())
         intent_id, intent = clus.query(state)
 
-        intent_id1 = intent_id.contiguous().view(-1, 1)
-        intent_id2 = intent_id.contiguous().view(1, -1)
-        mask4inf = (intent_id1 == intent_id2) & torch.ne(torch.eye(batch_size), 1).to(self.params["device"])
+        intent_id0 = intent_id.contiguous().view(-1, 1)
+        intent_id1 = intent_id.contiguous().view(1, -1)
+        mask4inf = (intent_id0 == intent_id1) & torch.ne(torch.eye(batch_size), 1).to(self.params["device"])
 
         temp = self.params["other"]["cluster_cl"]["temp"]
-        cos_sim_aug1 = nn.functional.cosine_similarity(intent.unsqueeze(1), latent_aug0_last.unsqueeze(0), dim=-1)
-        cos_sim_aug2 = nn.functional.cosine_similarity(intent.unsqueeze(1), latent_aug1_last.unsqueeze(0), dim=-1)
+        cos_sim_aug0 = torch.cosine_similarity(intent.unsqueeze(1), latent_aug0_pooled.unsqueeze(0), dim=-1) / temp
+        cos_sim_aug1 = torch.cosine_similarity(intent.unsqueeze(1), latent_aug1_pooled.unsqueeze(0), dim=-1) / temp
+        cos_sim_aug0[mask4inf] = -(1 / temp)
         cos_sim_aug1[mask4inf] = -(1 / temp)
-        cos_sim_aug2[mask4inf] = -(1 / temp)
 
-        labels = torch.arange(cos_sim_aug1.size(0)).long().to(self.params["device"])
+        labels = torch.arange(batch_size).long().to(self.params["device"])
+        cl_loss0 = nn.functional.cross_entropy(cos_sim_aug0, labels)
         cl_loss1 = nn.functional.cross_entropy(cos_sim_aug1, labels)
-        cl_loss2 = nn.functional.cross_entropy(cos_sim_aug2, labels)
 
-        return (cl_loss1 + cl_loss2) / 2
+        return (cl_loss0 + cl_loss1) / 2
 
     def get_predict_loss(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)

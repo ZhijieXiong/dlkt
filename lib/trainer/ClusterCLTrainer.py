@@ -25,6 +25,7 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
         optimizer = self.objects["optimizers"]["kt_model"]
         scheduler = self.objects["schedulers"]["kt_model"]
         model = self.objects["models"]["kt_model"]
+        cl_type = self.params["other"]["cluster_cl"]["cl_type"]
         max_entropy_aug_config = self.params["other"]["max_entropy_aug"]
 
         train_statics = train_loader.dataset.get_statics_kt_dataset()
@@ -71,19 +72,17 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
                     if use_adv_aug:
                         cl_loss = model.get_cluster_cl_loss_adv(batch, self.clus, self.dataset_adv_generated)
                     else:
-                        cl_loss = model.get_cluster_cl_loss(batch, self.clus)
+                        cl_loss = model.get_cluster_cl_loss_one_seq(batch, self.clus, cl_type)
                     self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)
                     loss = loss + weight_cl_loss * cl_loss
-
                 predict_loss = model.get_predict_loss(batch)
                 self.loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
                 loss = loss + predict_loss
 
                 loss.backward()
-
                 if grad_clip_config["use_clip"]:
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
-                self.objects["optimizers"]["kt_model"].step()
+                optimizer.step()
             if schedulers_config["use_scheduler"]:
                 scheduler.step()
             self.evaluate()
@@ -96,6 +95,7 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
         current_epoch = self.train_record.get_current_epoch()
         after_warm_up = current_epoch >= epoch_warm_up4cl
         model = self.objects["models"]["kt_model"]
+        cl_type = self.params["other"]["cluster_cl"]["cl_type"]
         train_loader = self.objects["data_loaders"]["train_loader"]
 
         if not use_warm_up4cl or after_warm_up:
@@ -103,7 +103,13 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
             model.eval()
             with torch.no_grad():
                 for batch in train_loader:
-                    latent_all.append(model.get_latent_last(batch))
+                    if cl_type == "last_time":
+                        latent = model.get_latent_last(batch)
+                    elif cl_type == "mean_pool":
+                        latent = model.get_latent_mean(batch)
+                    else:
+                        raise NotImplementedError()
+                    latent_all.append(latent)
             latent_all = np.array(torch.cat(latent_all, dim=0).detach().cpu().tolist())
             self.clus.train(latent_all)
 

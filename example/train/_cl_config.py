@@ -60,21 +60,22 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     global_objects["data"]["Q_table"] = global_objects["file_manager"].get_q_table(dataset_name, data_type)
 
 
-def duo_cl_config(local_params, global_params):
+def duo_cl_general_config(local_params, global_params):
     # 配置数据集参数
     datasets_train_config = global_params["datasets_config"]["train"]
     datasets_train_config["type"] = "kt4aug"
     datasets_train_config["kt4aug"]["aug_type"] = "semantic_aug"
     datasets_train_config["kt4aug"]["num_aug"] = 1
 
+    # duo CL参数
+    global_params["other"]["duo_cl"]["temp"] = local_params["temp"]
+    global_params["other"]["duo_cl"]["cl_type"] = local_params["cl_type"]
+
     # 损失权重
     global_params["loss_config"]["cl loss"] = local_params["weight_cl_loss"]
 
-    # 对比学习温度系数
-    global_params["other"]["duo_cl"]["temp"] = local_params["temp"]
 
-
-def cluster_cl_config(local_params, global_params, global_objects):
+def cluster_cl_general_config(local_params, global_params, global_objects):
     # 配置数据集参数
     aug_type = local_params["aug_type"]
     mask_prob = local_params["mask_prob"]
@@ -108,14 +109,15 @@ def cluster_cl_config(local_params, global_params, global_objects):
         raise NotImplementedError()
 
     # cluster CL参数
-    instance_cl_config = global_params["other"]["cluster_cl"]
-    instance_cl_config["temp"] = local_params["temp"]
-    instance_cl_config["use_warm_up4cl"] = local_params["use_warm_up4cl"]
-    instance_cl_config["epoch_warm_up4cl"] = local_params["epoch_warm_up4cl"]
-    instance_cl_config["use_online_sim"] = local_params["use_online_sim"]
-    instance_cl_config["use_warm_up4online_sim"] = local_params["use_warm_up4online_sim"]
-    instance_cl_config["epoch_warm_up4online_sim"] = local_params["epoch_warm_up4online_sim"]
-    instance_cl_config["num_cluster"] = local_params["num_cluster"]
+    cluster_cl_config = global_params["other"]["cluster_cl"]
+    cluster_cl_config["temp"] = local_params["temp"]
+    cluster_cl_config["use_warm_up4cl"] = local_params["use_warm_up4cl"]
+    cluster_cl_config["epoch_warm_up4cl"] = local_params["epoch_warm_up4cl"]
+    cluster_cl_config["use_online_sim"] = local_params["use_online_sim"]
+    cluster_cl_config["use_warm_up4online_sim"] = local_params["use_warm_up4online_sim"]
+    cluster_cl_config["epoch_warm_up4online_sim"] = local_params["epoch_warm_up4online_sim"]
+    cluster_cl_config["num_cluster"] = local_params["num_cluster"]
+    cluster_cl_config["cl_type"] = local_params["cl_type"]
 
     # max entropy adv aug参数
     max_entropy_aug_config = global_params["other"]["max_entropy_aug"]

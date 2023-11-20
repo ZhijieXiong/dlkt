@@ -1,6 +1,6 @@
 from copy import deepcopy
 from _config import general_config
-from _cl_config import instance_cl_general_config, duo_cl_config
+from _cl_config import *
 
 
 from lib.template.params_template import PARAMS
@@ -53,7 +53,7 @@ def akt_duo_cl_config(local_params):
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
     akt_general_config(local_params, global_params)
-    duo_cl_config(local_params, global_params)
+    duo_cl_general_config(local_params, global_params)
 
     return global_params, global_objects
 
@@ -64,5 +64,15 @@ def akt_instance_cl_config(local_params):
     general_config(local_params, global_params, global_objects)
     akt_general_config(local_params, global_params)
     instance_cl_general_config(local_params, global_params, global_objects)
+
+    return global_params, global_objects
+
+
+def akt_cluster_cl_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    akt_general_config(local_params, global_params)
+    cluster_cl_general_config(local_params, global_params, global_objects)
 
     return global_params, global_objects

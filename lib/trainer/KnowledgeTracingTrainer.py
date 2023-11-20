@@ -69,7 +69,7 @@ class KnowledgeTracingTrainer:
                 predict_loss.backward()
                 if grad_clip_config["use_clip"]:
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
-                self.objects["optimizers"]["kt_model"].step()
+                optimizer.step()
             if schedulers_config["use_scheduler"]:
                 scheduler.step()
             self.evaluate()

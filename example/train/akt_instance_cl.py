@@ -63,7 +63,7 @@ if __name__ == "__main__":
     parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
     # instance cl参数（对比学习）
     parser.add_argument("--temp", type=float, default=0.01)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.5)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.3)
     parser.add_argument("--use_warm_up4cl", type=str2bool, default=False)
     parser.add_argument("--epoch_warm_up4cl", type=float, default=4)
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
@@ -139,4 +139,9 @@ if __name__ == "__main__":
     # AUC: 0.7679   , ACC: 0.71221  , RMSE: 0.44401  , MAE: 0.33493
     # AUC: 0.77576  , ACC: 0.71696  , RMSE: 0.43316  , MAE: 0.34646
 
-    # temp: 0.01, weight: 10
+    # temp: 0.01, weight: 0.5
+    # AUC: 0.85255  , ACC: 0.81372  , RMSE: 0.36023  , MAE: 0.24305
+    # AUC: 0.76886  , ACC: 0.71273  , RMSE: 0.44304  , MAE: 0.33496
+    # AUC: 0.77644  , ACC: 0.71594  , RMSE: 0.434    , MAE: 0.34602
+
+    # temp: 0.01, weight: 0.3

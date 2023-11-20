@@ -30,9 +30,9 @@ if __name__ == "__main__":
     parser.add_argument("--train_strategy", type=str, default="valid_test",
                         choices=("valid_test", "no_valid"))
     parser.add_argument("--num_epoch", type=int, default=100)
-    parser.add_argument("--use_early_stop", type=str2bool, default=False)
+    parser.add_argument("--use_early_stop", type=str2bool, default=True)
     parser.add_argument("--epoch_early_stop", type=int, default=10)
-    parser.add_argument("--use_last_average", type=str2bool, default=True)
+    parser.add_argument("--use_last_average", type=str2bool, default=False)
     parser.add_argument("--epoch_last_average", type=int, default=5)
     parser.add_argument("--main_metric", type=str, default="AUC")
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
@@ -40,8 +40,8 @@ if __name__ == "__main__":
     parser.add_argument("--learning_rate", type=float, default=0.0001)
     parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
-    parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
-    parser.add_argument("--lr_schedule_type", type=str, default="StepLR",
+    parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
+    parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
     parser.add_argument("--lr_schedule_milestones", type=str, default="[5, 10]")
@@ -62,10 +62,10 @@ if __name__ == "__main__":
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
     # duo参数（对比学习）
-    parser.add_argument("--temp", type=float, default=0.01)
+    parser.add_argument("--temp", type=float, default=0.05)
     parser.add_argument("--cl_type", type=str, default="mean_pool",
                         choices=("last_time", "mean_pool"))
-    parser.add_argument("--weight_cl_loss", type=float, default=1)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)

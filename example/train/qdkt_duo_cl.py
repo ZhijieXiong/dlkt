@@ -37,7 +37,7 @@ if __name__ == "__main__":
     parser.add_argument("--main_metric", type=str, default="AUC")
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
-    parser.add_argument("--learning_rate", type=float, default=0.0001)
+    parser.add_argument("--learning_rate", type=float, default=0.0005)
     parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
@@ -62,10 +62,10 @@ if __name__ == "__main__":
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
     # duo参数（对比学习）
-    parser.add_argument("--temp", type=float, default=0.05)
+    parser.add_argument("--temp", type=float, default=0.01)
     parser.add_argument("--cl_type", type=str, default="mean_pool",
                         choices=("last_time", "mean_pool"))
-    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.5)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
@@ -102,23 +102,22 @@ if __name__ == "__main__":
     trainer = DuoCLTrainer(global_params, global_objects)
     trainer.train()
 
-    # qdkt: valid performance by best valid epoch is main metric: 0.82321  , AUC: 0.82321  , ACC: 0.7986   , RMSE: 0.37518  , MAE: 0.25932  ,
-    # test performance by best valid epoch is main metric: 0.75265  , AUC: 0.75265  , ACC: 0.70112  , RMSE: 0.44902  , MAE: 0.34723  ,
+    # temp: 0.01, weight: 0.01
+    # AUC: 0.83285  , ACC: 0.80513  , RMSE: 0.37069  , MAE: 0.25545
+    # AUC: 0.75358  , ACC: 0.70416  , RMSE: 0.44996  , MAE: 0.34471
+    # AUC: 0.76353  , ACC: 0.71108  , RMSE: 0.43925  , MAE: 0.3522
 
-    # 0.1: valid performance by best valid epoch is main metric: 0.81771  , AUC: 0.81771  , ACC: 0.79763  , RMSE: 0.37802  , MAE: 0.26133  ,
-    # test performance by best valid epoch is main metric: 0.75061  , AUC: 0.75061  , ACC: 0.70207  , RMSE: 0.45023  , MAE: 0.34648  ,
+    # temp: 0.01, weight: 0.1
+    # AUC: 0.83509  , ACC: 0.80345  , RMSE: 0.37089  , MAE: 0.2553
+    # AUC: 0.75521  , ACC: 0.70492  , RMSE: 0.4511   , MAE: 0.34229
+    # AUC: 0.76264  , ACC: 0.71094  , RMSE: 0.44056  , MAE: 0.35121
 
-    # 0.01: valid performance by best valid epoch is main metric: 0.81569  , AUC: 0.81569  , ACC: 0.79841  , RMSE: 0.37707  , MAE: 0.26516  ,
-    # test performance by best valid epoch is main metric: 0.75408  , AUC: 0.75408  , ACC: 0.70545  , RMSE: 0.44591  , MAE: 0.34876  ,
+    # temp: 0.01, weight: 0.3
+    # AUC: 0.83147  , ACC: 0.80381  , RMSE: 0.37036  , MAE: 0.26171
+    # AUC: 0.75624  , ACC: 0.70515  , RMSE: 0.44571  , MAE: 0.34899
+    # AUC: 0.75885  , ACC: 0.70697  , RMSE: 0.44147  , MAE: 0.35562
 
-    # 0.001 (0.1): valid performance by best valid epoch is main metric: 0.81967  , AUC: 0.81967  , ACC: 0.79677  , RMSE: 0.37643  , MAE: 0.27156  ,
-    # test performance by best valid epoch is main metric: 0.75315  , AUC: 0.75315  , ACC: 0.70342  , RMSE: 0.44486  , MAE: 0.35334  ,
-
-    # 0.001 (0.05): valid performance by best valid epoch is main metric: 0.81961  , AUC: 0.81961  , ACC: 0.7966   , RMSE: 0.37643  , MAE: 0.27184  ,
-    # test performance by best valid epoch is main metric: 0.75252  , AUC: 0.75252  , ACC: 0.70402  , RMSE: 0.44497  , MAE: 0.35388  ,
-
-    # 0.1 (0.05): valid performance by best valid epoch is main metric: 0.82101  , AUC: 0.82101  , ACC: 0.79886  , RMSE: 0.37579  , MAE: 0.26533  ,
-    # test performance by best valid epoch is main metric: 0.75621  , AUC: 0.75621  , ACC: 0.70488  , RMSE: 0.44518  , MAE: 0.34853  ,
-
-    # 1 (0.05): valid performance by best valid epoch is main metric: 0.82443  , AUC: 0.82443  , ACC: 0.79814  , RMSE: 0.37546  , MAE: 0.26324  ,
-    # test performance by best valid epoch is main metric: 0.75122  , AUC: 0.75122  , ACC: 0.70214  , RMSE: 0.44949  , MAE: 0.34801  ,
+    # temp: 0.01, weight: 0.5
+    # AUC: 0.82977  , ACC: 0.79945  , RMSE: 0.37317  , MAE: 0.26569
+    # AUC: 0.75293  , ACC: 0.70168  , RMSE: 0.44845  , MAE: 0.35129
+    # AUC: 0.75417  , ACC: 0.70407  , RMSE: 0.4444   , MAE: 0.35624

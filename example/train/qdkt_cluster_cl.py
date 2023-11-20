@@ -63,8 +63,8 @@ if __name__ == "__main__":
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
     # cluster CL参数（对比学习）
-    parser.add_argument("--num_cluster", type=int, default=32)
-    parser.add_argument("--temp", type=float, default=0.05)
+    parser.add_argument("--num_cluster", type=int, default=512)
+    parser.add_argument("--temp", type=float, default=0.01)
     parser.add_argument("--weight_cl_loss", type=float, default=0.3)
     parser.add_argument("--use_warm_up4cl", type=str2bool, default=True)
     parser.add_argument("--epoch_warm_up4cl", type=float, default=4)
@@ -130,3 +130,42 @@ if __name__ == "__main__":
     global_objects["models"]["kt_model"] = model
     trainer = ClusterCLTrainer(global_params, global_objects)
     trainer.train()
+
+    # 0.0005, [5, 10]
+    # temp: 0.01 weight: 0.1 cluster: 16
+    # AUC: 0.83834  , ACC: 0.80322  , RMSE: 0.36876  , MAE: 0.26343
+    # AUC: 0.75014  , ACC: 0.70175  , RMSE: 0.44868  , MAE: 0.35168
+    # AUC: 0.75481  , ACC: 0.70649  , RMSE: 0.44183  , MAE: 0.35942
+
+    # temp: 0.01 weight: 0.1 cluster: 32
+    # AUC: 0.83716  , ACC: 0.80406  , RMSE: 0.3682   , MAE: 0.26537
+    # AUC: 0.75247  , ACC: 0.70354  , RMSE: 0.44625  , MAE: 0.35234
+    # AUC: 0.75768  , ACC: 0.7088   , RMSE: 0.44151  , MAE: 0.35408
+
+    # # temp: 0.01 weight: 0.01 cluster: 32
+
+    # temp: 0.01 weight: 0.1 cluster: 64
+    # AUC: 0.83705  , ACC: 0.80075  , RMSE: 0.37074  , MAE: 0.26477
+    # AUC: 0.75036  , ACC: 0.70211  , RMSE: 0.4496   , MAE: 0.35056
+    # AUC: 0.75531  , ACC: 0.7086   , RMSE: 0.44134  , MAE: 0.35766
+
+    # temp: 0.01 weight: 0.1 cluster: 128
+    # AUC: 0.83491  , ACC: 0.80322  , RMSE: 0.36912  , MAE: 0.2691
+    # AUC: 0.75366  , ACC: 0.70423  , RMSE: 0.44443  , MAE: 0.35405
+    # AUC: 0.75768  , ACC: 0.70796  , RMSE: 0.44022  , MAE: 0.35639
+
+    # temp: 0.01 weight: 0.1 cluster: 256
+    # AUC: 0.83353  , ACC: 0.80346  , RMSE: 0.37001  , MAE: 0.26929
+    # AUC: 0.75377  , ACC: 0.70608  , RMSE: 0.44445  , MAE: 0.35276
+    # AUC: 0.75683  , ACC: 0.70833  , RMSE: 0.44085  , MAE: 0.3555
+
+    # temp: 0.01 weight: 0.3 cluster: 512
+    # AUC: 0.83098  , ACC: 0.80219  , RMSE: 0.37066  , MAE: 0.26467
+    # AUC: 0.75355  , ACC: 0.7054   , RMSE: 0.44564  , MAE: 0.34991
+    # AUC: 0.75493  , ACC: 0.70685  , RMSE: 0.44112  , MAE: 0.36104
+
+    # 0.001, [5]
+    # temp: 0.01 weight: 0.1 cluster: 32
+    # AUC: 0.83857  , ACC: 0.80598  , RMSE: 0.36845  , MAE: 0.25611
+    # AUC: 0.75213  , ACC: 0.70443  , RMSE: 0.44931  , MAE: 0.34655
+    # AUC: 0.75754  , ACC: 0.70849  , RMSE: 0.44063  , MAE: 0.35714

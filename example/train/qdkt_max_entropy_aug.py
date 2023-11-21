@@ -2,13 +2,13 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from qdkt_config import qdkt_config
+from qdkt_config import qdkt_max_entropy_adv_aug_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
 from lib.model.qDKT import qDKT
-from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
+from lib.trainer.MaxEntropyAdvAugTrainer import MaxEntropyAdvAugTrainer
 
 
 if __name__ == "__main__":
@@ -17,9 +17,9 @@ if __name__ == "__main__":
     parser.add_argument("--setting_name", type=str, default="random_split_leave_multi_out_setting")
     parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2012_train_split_7.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2012_valid_split_7.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2012_test_split_7.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2012_train_split_5.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2012_valid_split_5.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2012_test_split_5.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam",
                         choices=("adam", "sgd"))
@@ -28,10 +28,10 @@ if __name__ == "__main__":
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test",
                         choices=("valid_test", "no_valid"))
-    parser.add_argument("--num_epoch", type=int, default=50)
+    parser.add_argument("--num_epoch", type=int, default=100)
     parser.add_argument("--use_early_stop", type=str2bool, default=True)
     parser.add_argument("--epoch_early_stop", type=int, default=10)
-    parser.add_argument("--use_last_average", type=str2bool, default=True)
+    parser.add_argument("--use_last_average", type=str2bool, default=False)
     parser.add_argument("--epoch_last_average", type=int, default=5)
     parser.add_argument("--main_metric", type=str, default="AUC")
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
@@ -60,6 +60,16 @@ if __name__ == "__main__":
     parser.add_argument("--num_predict_layer", type=int, default=3)
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
+    # max entropy adv aug参数
+    parser.add_argument("--use_warm_up", type=str2bool, default=False)
+    parser.add_argument("--epoch_interval_generate", type=int, default=1)
+    parser.add_argument("--epoch_generate", type=int, default=100)
+    parser.add_argument("--epoch_warm_up", type=int, default=4)
+    parser.add_argument("--weight_adv_pred_loss", type=float, default=10)
+    parser.add_argument("--loop_adv", type=int, default=3)
+    parser.add_argument("--adv_learning_rate", type=float, default=10.0)
+    parser.add_argument("--eta", type=float, default=20.0)
+    parser.add_argument("--gamma", type=float, default=10.0)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
@@ -67,7 +77,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = qdkt_config(params)
+    global_params, global_objects = qdkt_max_entropy_adv_aug_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)
@@ -93,37 +103,16 @@ if __name__ == "__main__":
 
     model = qDKT(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
-    trainer = KnowledgeTracingTrainer(global_params, global_objects)
+    trainer = MaxEntropyAdvAugTrainer(global_params, global_objects)
     trainer.train()
 
     # assist2009
-    # domain 0
-    # AUC: 0.81119  , ACC: 0.79384  , RMSE: 0.37954  , MAE: 0.27214
-    # AUC: 0.77465  , ACC: 0.74729  , RMSE: 0.41712  , MAE: 0.31898
-    # AUC: 0.77684  , ACC: 0.75089  , RMSE: 0.41347  , MAE: 0.32403
-
-    # domain 6
-    # AUC: 0.82585  , ACC: 0.79635  , RMSE: 0.37493  , MAE: 0.27575
-    # AUC: 0.75559  , ACC: 0.70579  , RMSE: 0.44308  , MAE: 0.35698
-    # AUC: 0.76119  , ACC: 0.71178  , RMSE: 0.43823  , MAE: 0.35405
-
-    # domain 8
-    # AUC: 0.8208   , ACC: 0.79526  , RMSE: 0.37639  , MAE: 0.27545
-    # AUC: 0.7795   , ACC: 0.75079  , RMSE: 0.41285  , MAE: 0.321
-    # AUC: 0.78009  , ACC: 0.75401  , RMSE: 0.41033  , MAE: 0.32242
-
-    # assist2012
-    # domain 3
-    # AUC: 0.7519   , ACC: 0.74583  , RMSE: 0.41656  , MAE: 0.33534
-    # AUC: 0.73136  , ACC: 0.72575  , RMSE: 0.43021  , MAE: 0.34996
-    # AUC: 0.73272  , ACC: 0.72827  , RMSE: 0.42791  , MAE: 0.35358
-
-    # domain 5
-    # AUC: 0.75289  , ACC: 0.74444  , RMSE: 0.41755  , MAE: 0.33546
-    # AUC: 0.72747  , ACC: 0.73588  , RMSE: 0.42485  , MAE: 0.34082
-    # AUC: 0.72928  , ACC: 0.73765  , RMSE: 0.42284  , MAE: 0.34624
-
-    # domain 7
-    # AUC: 0.75361  , ACC: 0.74894  , RMSE: 0.41435  , MAE: 0.33418
-    # AUC: 0.72822  , ACC: 0.72162  , RMSE: 0.43225  , MAE: 0.35816
-    # AUC: 0.72857  , ACC: 0.7218   , RMSE: 0.43171  , MAE: 0.35931
+    # parser.add_argument("--use_warm_up", type=str2bool, default=True)
+    # parser.add_argument("--epoch_interval_generate", type=int, default=1)
+    # parser.add_argument("--epoch_generate", type=int, default=100)
+    # parser.add_argument("--epoch_warm_up", type=int, default=4)
+    # parser.add_argument("--weight_adv_pred_loss", type=float, default=5)
+    # parser.add_argument("--loop_adv", type=int, default=3)
+    # parser.add_argument("--adv_learning_rate", type=float, default=10.0)
+    # parser.add_argument("--eta", type=float, default=20.0)
+    # parser.add_argument("--gamma", type=float, default=10.0)

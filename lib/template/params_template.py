@@ -250,6 +250,16 @@ PARAMS = {
       "epoch_warm_up4online_sim": 4,
       "cl_type": "last_time",
       "use_adv_data": False
+    },
+    "max_entropy_adv_aug": {
+      "use_warm_up": True,
+      "epoch_warm_up": 4,
+      "epoch_interval_generate": 1,
+      "loop_adv": 3,
+      "epoch_generate": 40,
+      "adv_learning_rate": 10,
+      "eta": 5,
+      "gamma": 1
     }
   }
 }

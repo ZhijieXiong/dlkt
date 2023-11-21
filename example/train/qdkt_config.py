@@ -1,6 +1,7 @@
 from copy import deepcopy
 from _config import general_config
 from _cl_config import *
+from _data_aug_config import *
 
 from lib.template.params_template import PARAMS
 from lib.template.objects_template import OBJECTS
@@ -81,5 +82,15 @@ def qdkt_cluster_cl_config(local_params):
     general_config(local_params, global_params, global_objects)
     qdkt_general_config(local_params, global_params)
     cluster_cl_general_config(local_params, global_params, global_objects)
+
+    return global_params, global_objects
+
+
+def qdkt_max_entropy_adv_aug_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    qdkt_general_config(local_params, global_params)
+    max_entropy_adv_aug_general_config(local_params, global_params)
 
     return global_params, global_objects

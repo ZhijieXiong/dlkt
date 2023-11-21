@@ -55,7 +55,8 @@ class KTDataset(Dataset):
                 dataset_converted["question_seq_mask"] = []
             if "time_seq" in seq_keys:
                 dataset_converted["interval_time_seq"] = []
-            for item_data in dataset_original:
+            dataset_converted["seq_id"] = []
+            for seq_i, item_data in enumerate(dataset_original):
                 for k in id_keys:
                     dataset_converted[k].append(item_data[k])
                 for k in seq_keys:
@@ -78,6 +79,7 @@ class KTDataset(Dataset):
                         dataset_converted["interval_time_seq"].append(interval_time_seq)
                     else:
                         dataset_converted[k].append(item_data[k])
+                dataset_converted["seq_id"].append(seq_i)
             if "time_seq" in dataset_converted.keys():
                 del dataset_converted["time_seq"]
             if "question_seq_mask" in dataset_converted.keys():

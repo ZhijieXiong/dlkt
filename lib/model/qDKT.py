@@ -386,6 +386,29 @@ class qDKT(nn.Module):
 
         return predict_score, latent
 
+    def get_predict_score_from_input_emb(self, batch, dataset_adv):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        seq_ids = batch["seq_id"]
+        input_emb = dataset_adv["emb_seq"][seq_ids.to("cpu")].to(self.params["device"])
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
+        dim_concept = encoder_config["dim_concept"]
+        dim_question = encoder_config["dim_question"]
+        concept_emb = input_emb[:, 1:, :dim_concept]
+        question_emb = input_emb[:, 1:, dim_concept:(dim_concept + dim_question)]
+        predict_score, _ = self.forward_from_input_emb(input_emb[:, :-1], concept_emb, question_emb)
+        predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
+
+        return predict_score
+
+    def get_predict_loss_from_input_emb(self, batch, dataset_adv):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+
+        predict_score = self.get_predict_score_from_input_emb(batch, dataset_adv)
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+        loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+
+        return loss
+
     def get_max_entropy_adv_aug_emb(self, batch, adv_learning_rate, loop_adv, eta, gamma):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
         dim_concept = encoder_config["dim_concept"]

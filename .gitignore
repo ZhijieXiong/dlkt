@@ -2,6 +2,7 @@ notebook/.ipynb_checkpoints/
 .pytest_cache/
 result/
 lab/
+tmp/
 example/script_cluster
 example/result_cluster
 example/script_local

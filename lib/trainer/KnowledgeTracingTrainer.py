@@ -1,4 +1,5 @@
 import torch
+import os
 import torch.nn as nn
 from sklearn.metrics import roc_auc_score, accuracy_score, mean_absolute_error, mean_squared_error
 
@@ -80,40 +81,55 @@ class KnowledgeTracingTrainer:
         train_strategy = self.params["train_strategy"]
         stop_flag = self.train_record.stop_training()
         if stop_flag:
-            if train_strategy["type"] == "no valid":
+            if train_strategy["type"] == "no_valid":
                 pass
             else:
-                best_performance_str_by_valid = self.train_record.get_evaluate_result_str("valid", "valid")
-                best_performance_str_by_test = self.train_record.get_evaluate_result_str("test", "valid")
+                best_train_performance_by_valid = self.train_record.get_evaluate_result_str("train", "valid")
+                best_valid_performance_by_valid = self.train_record.get_evaluate_result_str("valid", "valid")
+                best_test_performance_by_valid = self.train_record.get_evaluate_result_str("test", "valid")
                 print(f"best valid epoch: {self.train_record.get_best_epoch('valid'):<3} , "
                       f"best test epoch: {self.train_record.get_best_epoch('test')}\n"
-                      f"valid performance by best valid epoch is {best_performance_str_by_valid}\n"
-                      f"test performance by best valid epoch is {best_performance_str_by_test}\n"
+                      f"train performance by best valid epoch is {best_train_performance_by_valid}\n"
+                      f"valid performance by best valid epoch is {best_valid_performance_by_valid}\n"
+                      f"test performance by best valid epoch is {best_test_performance_by_valid}\n"
+                      f"{'-'*100}"
+                      f"train performance by best train epoch is "
+                      f"{self.train_record.get_evaluate_result_str('train', 'train')}\n"
                       f"test performance by best test epoch is "
                       f"{self.train_record.get_evaluate_result_str('test', 'test')}\n")
         return stop_flag
 
     def evaluate(self):
         train_strategy = self.params["train_strategy"]
+        save_model = self.params["save_model"]
         data_loaders = self.objects["data_loaders"]
+        train_loader = data_loaders["train_loader"]
         model = self.objects["models"]["kt_model"]
-        if train_strategy["type"] == "no valid":
+        train_performance = self.evaluate_kt_dataset(model, train_loader)
+        if train_strategy["type"] == "no_valid":
             # 无验证集，只有测试集
             data_loader = data_loaders["test_loader"]
             test_performance = self.evaluate_kt_dataset(model, data_loader)
-            self.train_record.next_epoch(test_performance)
+            self.train_record.next_epoch(train_performance, test_performance)
         else:
             # 有验证集，同时在验证集和测试集上测试
             data_loader = data_loaders["valid_loader"]
             valid_performance = self.evaluate_kt_dataset(model, data_loader)
             data_loader = data_loaders["test_loader"]
             test_performance = self.evaluate_kt_dataset(model, data_loader)
-            self.train_record.next_epoch(test_performance, valid_performance)
+            self.train_record.next_epoch(train_performance, test_performance, valid_performance)
             valid_performance_str = self.train_record.get_performance_str("valid")
             test_performance_str = self.train_record.get_performance_str("test")
             print(f"{get_now_time()} epoch {self.train_record.get_current_epoch():<3} , valid performance is "
                   f"{valid_performance_str}train loss is {self.loss_record.get_str()}, test performance is "
                   f"{test_performance_str}")
+            if save_model:
+                save_model_dir = self.params["save_model_dir"]
+                model_path = os.path.join(save_model_dir, "kt_model.pth")
+                best_epoch = self.train_record.get_best_epoch("valid")
+                current_epoch = self.train_record.get_current_epoch()
+                if best_epoch == current_epoch:
+                    torch.save(model, model_path)
 
     @staticmethod
     def evaluate_kt_dataset(model, data_loader):

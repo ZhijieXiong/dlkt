@@ -2,6 +2,7 @@ PARAMS = {
   "device": "cuda",
   "seed": 0,
   "save_model": False,
+  "save_model_dir": "",
   # 数据预处理部分配置
   "preprocess_config": {
     "dataset_name": "assist2009",

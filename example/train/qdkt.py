@@ -15,11 +15,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="random_split_leave_multi_out_setting")
-    parser.add_argument("--data_type", type=str, default="single_concept",
+    parser.add_argument("--data_type", type=str, default="multi_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2012_train_split_7.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2012_valid_split_7.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2012_test_split_7.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2009_train_split_6.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_split_6.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2009_test_split_6.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam",
                         choices=("adam", "sgd"))
@@ -36,14 +36,14 @@ if __name__ == "__main__":
     parser.add_argument("--main_metric", type=str, default="AUC")
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
-    parser.add_argument("--learning_rate", type=float, default=0.0005)
+    parser.add_argument("--learning_rate", type=float, default=0.001)
     parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
-    parser.add_argument("--lr_schedule_milestones", type=str, default="[5, 10]")
+    parser.add_argument("--lr_schedule_milestones", type=str, default="[5]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
     # 其它
-    parser.add_argument("--save_model", type=str2bool, default=False)
+    parser.add_argument("--save_model", type=str2bool, default=True)
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()

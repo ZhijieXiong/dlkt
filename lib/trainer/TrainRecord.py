@@ -4,17 +4,21 @@ class TrainRecord:
         self.objects = objects
         self.record = {
             "current_epoch": 0,
+            "best_train_main_metric": 0,
             "best_valid_main_metric": 0,
             "best_test_main_metric": 0,
+            "best_epoch_by_train": 1,
             "best_epoch_by_valid": 1,
             "best_epoch_by_test": 1,
+            "performance_train": [],
             "performance_valid": [],
             "performance_test": []
         }
 
-    def next_epoch(self, test_performance, valid_performance=None):
+    def next_epoch(self, train_performance, test_performance, valid_performance=None):
         self.record["current_epoch"] += 1
         train_strategy = self.params["train_strategy"]
+        self.update_best_metric(train_performance, update_type="train")
         if train_strategy["type"] == "valid_test":
             self.update_best_metric(valid_performance, update_type="valid")
         self.update_best_metric(test_performance, update_type="test")
@@ -23,8 +27,12 @@ class TrainRecord:
         return self.record["current_epoch"]
 
     def get_best_epoch(self, performance_by):
-        performance_index = self.record["best_epoch_by_valid"] if (performance_by == "valid") else (
-            self.record)["best_epoch_by_test"]
+        if performance_by == "train":
+            performance_index = self.record["best_epoch_by_train"]
+        elif performance_by == "valid":
+            performance_index = self.record["best_epoch_by_valid"]
+        else:
+            performance_index = self.record["best_epoch_by_test"]
         return performance_index
 
     def update_best_metric(self, performance, update_type):
@@ -35,7 +43,12 @@ class TrainRecord:
             performance)[main_metric_key]
         performance["main_metric"] = main_metric
 
-        if update_type == "valid":
+        if update_type == "train":
+            self.record["performance_train"].append(performance)
+            if (main_metric - self.record["best_train_main_metric"]) >= 0.001:
+                self.record["best_train_main_metric"] = main_metric
+                self.record["best_epoch_by_train"] = self.record["current_epoch"]
+        elif update_type == "valid":
             self.record["performance_valid"].append(performance)
             if (main_metric - self.record["best_valid_main_metric"]) >= 0.001:
                 self.record["best_valid_main_metric"] = main_metric
@@ -49,8 +62,12 @@ class TrainRecord:
             raise NotImplementedError()
 
     def get_performance_str(self, performance_type, index=-1):
-        performance = self.record["performance_valid"][index] if (performance_type == "valid") else \
-            self.record["performance_test"][index]
+        if performance_type == "train":
+            performance = self.record["performance_train"][index]
+        elif performance_type == "valid":
+            performance = self.record["performance_valid"][index]
+        else:
+            performance = self.record["performance_test"][index]
         result = (f"main metric: {performance['main_metric']:<9.5}, AUC: {performance['AUC']:<9.5}, "
                   f"ACC: {performance['ACC']:<9.5}, RMSE: {performance['RMSE']:<9.5}, MAE: {performance['MAE']:<9.5}, ")
         return result
@@ -68,10 +85,18 @@ class TrainRecord:
             return current_epoch >= num_epoch
 
     def get_evaluate_result_str(self, performance_type, performance_by):
-        all_performance = self.record["performance_valid"] if (performance_type == "valid") else (
-            self.record)["performance_test"]
-        performance_index = (self.record["best_epoch_by_valid"] - 1) if (performance_by == "valid") else \
-            (self.record["best_epoch_by_test"] - 1)
+        if performance_type == "train":
+            all_performance = self.record["performance_train"]
+        elif performance_type == "valid":
+            all_performance = self.record["performance_valid"]
+        else:
+            all_performance = self.record["performance_test"]
+        if performance_by == "train":
+            performance_index = self.record["best_epoch_by_train"] - 1
+        elif performance_by == "valid":
+            performance_index = self.record["best_epoch_by_valid"] - 1
+        else:
+            performance_index = self.record["best_epoch_by_test"] - 1
         performance = all_performance[performance_index]
         result = (f"main metric: {performance['main_metric']:<9.5}, AUC: {performance['AUC']:<9.5}, "
                   f"ACC: {performance['ACC']:<9.5}, RMSE: {performance['RMSE']:<9.5}, MAE: {performance['MAE']:<9.5}, ")

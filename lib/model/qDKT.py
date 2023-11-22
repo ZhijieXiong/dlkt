@@ -365,6 +365,9 @@ class qDKT(nn.Module):
 
         return predict_score
 
+    def get_predict_score_seq_len_minus1(self, batch):
+        return self.forward(batch)
+
     def get_input_emb(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
         dim_correct = encoder_config["dim_correct"]

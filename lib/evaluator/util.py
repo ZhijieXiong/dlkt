@@ -18,16 +18,8 @@ def record_dis4seq_len(ground_truth, prediction, mask):
 
 
 def evaluate4seq_len(label_dis, score_dis, split_len, split_percent=None):
-    if split_percent is None:
-        split_percent = [0, 0.25, 0.5, 0.75, 1]
     label_dis4len = [[] for _ in range(len(split_len) - 1)]
     score_dis4len = [[] for _ in range(len(split_len) - 1)]
-    label_dis4percent = [[] for _ in range(len(split_percent) - 1)]
-    score_dis4percent = [[] for _ in range(len(split_percent) - 1)]
-    label_dis4len_every = [[] for _ in range(len(split_len) - 1)]
-    score_dis4len_every = [[] for _ in range(len(split_len) - 1)]
-    max_seq_len = len(label_dis)
-
     indices4len = []
     for i in range(len(split_len)):
         if i == len(split_len) - 1:
@@ -46,9 +38,19 @@ def evaluate4seq_len(label_dis, score_dis, split_len, split_percent=None):
         g = np.array(label_dis4len[i])
         p = np.array(score_dis4len[i])
         p_label = [1 if _ >= 0.5 else 0 for _ in p]
-        print(f"{indices4len[i]}, num of samples is {g.size}: : "
-              f"auc is {metrics.roc_auc_score(y_true=g, y_score=p)}, acc is {metrics.accuracy_score(g, p_label)}")
+        answer_acc = g.sum() / len(g)
+        print(f"({indices4len[i][0]:<3}, {indices4len[i][1]:<3}), num of samples is {g.size:<10}, "
+              f"acc of answer is {answer_acc*100:<9.3}%: "
+              f"auc is {metrics.roc_auc_score(y_true=g, y_score=p):<9.5}, "
+              f"acc is {metrics.accuracy_score(g, p_label):<9.5}")
 
+    # if split_percent is None:
+    #     split_percent = [0, 0.25, 0.5, 0.75, 1]
+    # label_dis4percent = [[] for _ in range(len(split_percent) - 1)]
+    # score_dis4percent = [[] for _ in range(len(split_percent) - 1)]
+    # label_dis4len_every = [[] for _ in range(len(split_len) - 1)]
+    # score_dis4len_every = [[] for _ in range(len(split_len) - 1)]
+    # max_seq_len = len(label_dis)
     # if max_seq_len < 20:
     #     return
     # indices4percent = []

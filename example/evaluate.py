@@ -8,6 +8,7 @@ from evaluate_config import evaluate_general_config
 
 from lib.dataset.KTDataset import KTDataset
 from lib.evaluator.Evaluator import Evaluator
+from lib.util.set_up import set_seed
 
 
 if __name__ == "__main__":
@@ -25,11 +26,12 @@ if __name__ == "__main__":
 
     # 细粒度配置
     parser.add_argument("--max_seq_len", type=int, default=200)
-    parser.add_argument("--seq_len_absolute", type=str, default="[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]")
+    parser.add_argument("--seq_len_absolute", type=str, default="[0, 1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 80, 100, 120, 140, 160, 180, 200]")
     parser.add_argument("--seq_len_percent", type=str, default="[0, .05, 1, .2, .5, .7, .9, 1]")
 
     args = parser.parse_args()
     params = vars(args)
+    set_seed(0)
 
     global_params, global_objects = evaluate_general_config(params)
     dataset_test = KTDataset(global_params, global_objects)

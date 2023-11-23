@@ -47,7 +47,5 @@ class Evaluator:
             MAE = mean_absolute_error(y_true=ground_truth_all, y_pred=predict_score_all)
             RMSE = mean_squared_error(y_true=ground_truth_all, y_pred=predict_score_all) ** 0.5
 
+        print(f"AUC: {AUC:<9.5}, ACC: {ACC:<9.5}, RMSE: {MAE:<9.5}, MAE: {RMSE:<9.5}")
         evaluate4seq_len(all_label_dis, all_score_dis, seq_len_absolute, seq_len_percent)
-        return {
-            "overall": {"AUC": AUC, "ACC": ACC, "MAE": MAE, "RMSE": RMSE},
-        }

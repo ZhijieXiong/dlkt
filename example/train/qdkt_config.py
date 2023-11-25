@@ -97,6 +97,8 @@ def qdkt_instance_cl_config(local_params):
     qdkt_general_config(local_params, global_params)
     instance_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT_instance_cl@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -109,6 +111,8 @@ def qdkt_duo_cl_config(local_params):
     qdkt_general_config(local_params, global_params)
     duo_cl_general_config(local_params, global_params)
     if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT_duo_cl@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -121,6 +125,8 @@ def qdkt_cluster_cl_config(local_params):
     qdkt_general_config(local_params, global_params)
     cluster_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT_cluster_cl@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -131,8 +137,11 @@ def qdkt_max_entropy_adv_aug_config(local_params):
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
     qdkt_general_config(local_params, global_params)
-    max_entropy_adv_aug_general_config(local_params, global_params)
+    params_str = max_entropy_adv_aug_general_config(local_params, global_params)
     if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT_max_entropy_adv_aug@@"))
+        global_params["save_model_dir_name"] += f"@@{params_str}"
         save_params(global_params, global_objects)
 
     return global_params, global_objects

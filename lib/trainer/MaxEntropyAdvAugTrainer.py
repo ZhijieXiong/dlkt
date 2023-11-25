@@ -3,6 +3,7 @@ import torch.nn as nn
 
 from .KnowledgeTracingTrainer import KnowledgeTracingTrainer
 from .LossRecord import LossRecord
+from ..model.Module.KTEmbedLayer import KTEmbedLayer
 
 
 class MaxEntropyAdvAugTrainer(KnowledgeTracingTrainer):
@@ -149,15 +150,15 @@ class MaxEntropyAdvAugTrainer(KnowledgeTracingTrainer):
             torch.backends.cudnn.enabled = False
             self.init_data_generated()
             for batch_idx, batch in enumerate(train_loader):
-                num_seq = batch["mask_seq"].shape[0]
+                num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
                 adv_predict_loss, adv_entropy, adv_mse_loss = (
                     model.max_entropy_adv_aug(
                         self.dataset_adv_generated, batch, adv_learning_rate, loop_adv, eta, gamma
                     )
                 )
-                self.adv_loss.add_loss("gen pred loss", adv_predict_loss * num_seq, num_seq)
-                self.adv_loss.add_loss("gen entropy loss", adv_entropy * num_seq, num_seq)
-                self.adv_loss.add_loss("gen mse loss", adv_mse_loss * num_seq, num_seq)
+                self.adv_loss.add_loss("gen pred loss", adv_predict_loss * num_sample, num_sample)
+                self.adv_loss.add_loss("gen entropy loss", adv_entropy * num_sample, num_sample)
+                self.adv_loss.add_loss("gen mse loss", adv_mse_loss * num_sample, num_sample)
 
             print(self.adv_loss.get_str())
             self.adv_loss.clear_loss()
@@ -168,15 +169,16 @@ class MaxEntropyAdvAugTrainer(KnowledgeTracingTrainer):
     def init_data_generated(self):
         model = self.objects["models"]["kt_model"]
         model_name = model.model_name
-        encoder_layer_type = self.params["models_config"]["kt_model"]["encoder_layer"]["type"]
-        encoder_layer_config = self.params["models_config"]["kt_model"]["encoder_layer"][encoder_layer_type]
-        num_concept = encoder_layer_config["num_concept"]
-        num_question = encoder_layer_config["num_question"]
 
         self.dataset_adv_generated = {}
         if model_name == "qDKT":
-            pass
+            self.dataset_adv_generated["embed_layer"] = (
+                KTEmbedLayer(self.params, self.objects).to(self.params["device"]))
         elif model_name == "AKT":
+            encoder_layer_type = self.params["models_config"]["kt_model"]["encoder_layer"]["type"]
+            encoder_layer_config = self.params["models_config"]["kt_model"]["encoder_layer"][encoder_layer_type]
+            num_concept = encoder_layer_config["num_concept"]
+            num_question = encoder_layer_config["num_question"]
             encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
             dim_emb = encoder_config["dim_model"]
             separate_qa = encoder_config["separate_qa"]

@@ -63,7 +63,7 @@ if __name__ == "__main__":
     # max entropy adv aug参数
     parser.add_argument("--use_warm_up", type=str2bool, default=False)
     parser.add_argument("--epoch_interval_generate", type=int, default=1)
-    parser.add_argument("--epoch_generate", type=int, default=100)
+    parser.add_argument("--epoch_generate", type=int, default=200)
     parser.add_argument("--epoch_warm_up", type=int, default=4)
     parser.add_argument("--weight_adv_pred_loss", type=float, default=10)
     parser.add_argument("--loop_adv", type=int, default=3)
@@ -105,14 +105,3 @@ if __name__ == "__main__":
     global_objects["models"]["kt_model"] = model
     trainer = MaxEntropyAdvAugTrainer(global_params, global_objects)
     trainer.train()
-
-    # assist2009
-    # parser.add_argument("--use_warm_up", type=str2bool, default=True)
-    # parser.add_argument("--epoch_interval_generate", type=int, default=1)
-    # parser.add_argument("--epoch_generate", type=int, default=100)
-    # parser.add_argument("--epoch_warm_up", type=int, default=4)
-    # parser.add_argument("--weight_adv_pred_loss", type=float, default=5)
-    # parser.add_argument("--loop_adv", type=int, default=3)
-    # parser.add_argument("--adv_learning_rate", type=float, default=10.0)
-    # parser.add_argument("--eta", type=float, default=20.0)
-    # parser.add_argument("--gamma", type=float, default=10.0)

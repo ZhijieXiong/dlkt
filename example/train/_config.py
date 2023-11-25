@@ -110,17 +110,16 @@ def general_config(local_params, global_params, global_objects):
 
 
 def save_params(global_params, global_objects):
-    if global_params["save_model"]:
-        file_manager = global_objects["file_manager"]
-        model_root_dir = file_manager.get_models_dir()
-        model_dir_name = global_params["save_model_dir_name"]
-        model_dir = os.path.join(model_root_dir, model_dir_name)
-        global_params["save_model_dir"] = model_dir
-        if not os.path.exists(model_dir):
-            os.mkdir(model_dir)
-        else:
-            assert False, f"{model_dir} exists"
+    file_manager = global_objects["file_manager"]
+    model_root_dir = file_manager.get_models_dir()
+    model_dir_name = global_params["save_model_dir_name"]
+    model_dir = os.path.join(model_root_dir, model_dir_name)
+    global_params["save_model_dir"] = model_dir
+    if not os.path.exists(model_dir):
+        os.mkdir(model_dir)
+    else:
+        assert False, f"{model_dir} exists"
 
-        params_path = os.path.join(model_dir, "params.json")
-        params_json = params2str(global_params)
-        write_json(params_json, params_path)
+    params_path = os.path.join(model_dir, "params.json")
+    params_json = params2str(global_params)
+    write_json(params_json, params_path)

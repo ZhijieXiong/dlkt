@@ -84,7 +84,8 @@ def qdkt_config(local_params):
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
     qdkt_general_config(local_params, global_params)
-    save_params(global_params, global_objects)
+    if local_params["save_model"]:
+        save_params(global_params, global_objects)
 
     return global_params, global_objects
 
@@ -95,7 +96,8 @@ def qdkt_instance_cl_config(local_params):
     general_config(local_params, global_params, global_objects)
     qdkt_general_config(local_params, global_params)
     instance_cl_general_config(local_params, global_params, global_objects)
-    save_params(global_params, global_objects)
+    if local_params["save_model"]:
+        save_params(global_params, global_objects)
 
     return global_params, global_objects
 
@@ -106,7 +108,8 @@ def qdkt_duo_cl_config(local_params):
     general_config(local_params, global_params, global_objects)
     qdkt_general_config(local_params, global_params)
     duo_cl_general_config(local_params, global_params)
-    save_params(global_params, global_objects)
+    if local_params["save_model"]:
+        save_params(global_params, global_objects)
 
     return global_params, global_objects
 
@@ -117,7 +120,8 @@ def qdkt_cluster_cl_config(local_params):
     general_config(local_params, global_params, global_objects)
     qdkt_general_config(local_params, global_params)
     cluster_cl_general_config(local_params, global_params, global_objects)
-    save_params(global_params, global_objects)
+    if local_params["save_model"]:
+        save_params(global_params, global_objects)
 
     return global_params, global_objects
 
@@ -128,6 +132,7 @@ def qdkt_max_entropy_adv_aug_config(local_params):
     general_config(local_params, global_params, global_objects)
     qdkt_general_config(local_params, global_params)
     max_entropy_adv_aug_general_config(local_params, global_params)
-    save_params(global_params, global_objects)
+    if local_params["save_model"]:
+        save_params(global_params, global_objects)
 
     return global_params, global_objects

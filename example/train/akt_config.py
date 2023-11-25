@@ -1,6 +1,7 @@
 from copy import deepcopy
 from _config import *
 from _cl_config import *
+from _data_aug_config import *
 
 from lib.template.params_template import PARAMS
 from lib.template.objects_template import OBJECTS
@@ -86,7 +87,10 @@ def akt_duo_cl_config(local_params):
     general_config(local_params, global_params, global_objects)
     akt_general_config(local_params, global_params)
     duo_cl_general_config(local_params, global_params)
-    save_params(global_params, global_objects)
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT_duo_cl@@"))
+        save_params(global_params, global_objects)
 
     return global_params, global_objects
 
@@ -96,8 +100,12 @@ def akt_instance_cl_config(local_params):
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
     akt_general_config(local_params, global_params)
-    instance_cl_general_config(local_params, global_params, global_objects)
-    save_params(global_params, global_objects)
+    params_str = instance_cl_general_config(local_params, global_params, global_objects)
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT_instance_cl@@"))
+        global_params["save_model_dir_name"] += f"@@{params_str}"
+        save_params(global_params, global_objects)
 
     return global_params, global_objects
 
@@ -108,7 +116,25 @@ def akt_cluster_cl_config(local_params):
     general_config(local_params, global_params, global_objects)
     akt_general_config(local_params, global_params)
     cluster_cl_general_config(local_params, global_params, global_objects)
-    save_params(global_params, global_objects)
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT_cluster_cl@@"))
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects
+
+
+def akt_max_entropy_adv_aug_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    akt_general_config(local_params, global_params)
+    params_str = max_entropy_adv_aug_general_config(local_params, global_params)
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT_max_entropy_adv_aug@@"))
+        global_params["save_model_dir_name"] += f"@@{params_str}"
+        save_params(global_params, global_objects)
 
     return global_params, global_objects
 
@@ -131,8 +157,10 @@ def akt4cold_start_config(local_params):
     encoder_config_cold_start["cold_start_step1"] = cold_start_step1
     encoder_config_cold_start["cold_start_step2"] = cold_start_step2
     encoder_config_cold_start["effect_start_step2"] = effect_start_step2
-    global_params["save_model_dir_name"] = global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT4cold_start@@")
-    global_params["save_model_dir_name"] += f"@@{cold_start_step1}-{cold_start_step2}-{effect_start_step2}"
-    save_params(global_params, global_objects)
+
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT4cold_start@@")
+        global_params["save_model_dir_name"] += f"@@{cold_start_step1}-{cold_start_step2}-{effect_start_step2}"
+        save_params(global_params, global_objects)
 
     return global_params, global_objects

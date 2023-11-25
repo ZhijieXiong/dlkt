@@ -32,32 +32,74 @@ def instance_cl_general_config(local_params, global_params, global_objects):
         raise NotImplementedError()
 
     # instance CL参数
+    temp = local_params["temp"]
+    use_warm_up4cl = local_params["use_warm_up4cl"]
+    epoch_warm_up4cl = local_params["epoch_warm_up4cl"]
+    use_online_sim = local_params["use_online_sim"]
+    use_warm_up4online_sim = local_params["use_warm_up4online_sim"]
+    epoch_warm_up4online_sim = local_params["epoch_warm_up4online_sim"]
+    cl_type = local_params["cl_type"]
+
     instance_cl_config = global_params["other"]["instance_cl"]
-    instance_cl_config["temp"] = local_params["temp"]
-    instance_cl_config["use_warm_up4cl"] = local_params["use_warm_up4cl"]
-    instance_cl_config["epoch_warm_up4cl"] = local_params["epoch_warm_up4cl"]
-    instance_cl_config["use_online_sim"] = local_params["use_online_sim"]
-    instance_cl_config["use_warm_up4online_sim"] = local_params["use_warm_up4online_sim"]
-    instance_cl_config["epoch_warm_up4online_sim"] = local_params["epoch_warm_up4online_sim"]
-    instance_cl_config["cl_type"] = local_params["cl_type"]
+    instance_cl_config["temp"] = temp
+    instance_cl_config["use_warm_up4cl"] = use_warm_up4cl
+    instance_cl_config["epoch_warm_up4cl"] = epoch_warm_up4cl
+    instance_cl_config["use_online_sim"] = use_online_sim
+    instance_cl_config["use_warm_up4online_sim"] = use_warm_up4online_sim
+    instance_cl_config["epoch_warm_up4online_sim"] = epoch_warm_up4online_sim
+    instance_cl_config["cl_type"] = cl_type
 
     # max entropy adv aug参数
+    use_adv_aug = local_params["use_adv_aug"]
+    epoch_interval_generate = local_params["epoch_interval_generate"]
+    loop_adv = local_params["loop_adv"]
+    epoch_generate = local_params["epoch_generate"]
+    adv_learning_rate = local_params["adv_learning_rate"]
+    eta = local_params["eta"]
+    gamma = local_params["gamma"]
+
     max_entropy_aug_config = global_params["other"]["max_entropy_aug"]
-    max_entropy_aug_config["use_adv_aug"] = local_params["use_adv_aug"]
-    max_entropy_aug_config["epoch_interval_generate"] = local_params["epoch_interval_generate"]
-    max_entropy_aug_config["loop_adv"] = local_params["loop_adv"]
-    max_entropy_aug_config["epoch_generate"] = local_params["epoch_generate"]
-    max_entropy_aug_config["adv_learning_rate"] = local_params["adv_learning_rate"]
-    max_entropy_aug_config["eta"] = local_params["eta"]
-    max_entropy_aug_config["gamma"] = local_params["gamma"]
+    max_entropy_aug_config["use_adv_aug"] = use_adv_aug
+    max_entropy_aug_config["epoch_interval_generate"] = epoch_interval_generate
+    max_entropy_aug_config["loop_adv"] = loop_adv
+    max_entropy_aug_config["epoch_generate"] = epoch_generate
+    max_entropy_aug_config["adv_learning_rate"] = adv_learning_rate
+    max_entropy_aug_config["eta"] = eta
+    max_entropy_aug_config["gamma"] = gamma
 
     # 损失权重
-    global_params["loss_config"]["cl loss"] = local_params["weight_cl_loss"]
+    weight_cl_loss = local_params["weight_cl_loss"]
+    global_params["loss_config"]["cl loss"] = weight_cl_loss
 
     # Q_table
     dataset_name = local_params["dataset_name"]
     data_type = local_params["data_type"]
     global_objects["data"]["Q_table"] = global_objects["file_manager"].get_q_table(dataset_name, data_type)
+
+    aug_table = {
+        "mask": mask_prob,
+        "crop": crop_prob,
+        "replace": replace_prob,
+        "insert": insert_prob,
+        "permute": permute_prob
+    }
+    if aug_type == "random_aug":
+        params_str = "random_aug"
+    elif aug_type == "informative_aug":
+        params_str = f"informative_aug"
+    else:
+        raise NotImplementedError()
+
+    for aug in aug_order:
+        params_str += f"-{aug}-{aug_table[aug]}"
+
+    if local_params["use_adv_aug"]:
+        params_str += (f"-adv_aug-{f'warm_up-{epoch_warm_up4online_sim}' if use_warm_up4online_sim else ''}-"
+                       f"{epoch_interval_generate}-{loop_adv}-{epoch_generate}-{adv_learning_rate}-{eta}-{gamma}")
+
+    params_str += f"wight_cl-{weight_cl_loss}"
+
+    return params_str
 
 
 def duo_cl_general_config(local_params, global_params):

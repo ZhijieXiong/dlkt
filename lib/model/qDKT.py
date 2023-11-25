@@ -8,6 +8,8 @@ from .util import *
 
 
 class qDKT(nn.Module):
+    model_name = "qDKT"
+
     def __init__(self, params, objects):
         super(qDKT, self).__init__()
         self.params = params

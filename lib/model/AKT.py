@@ -9,6 +9,8 @@ from .util import get_mask4last_or_penultimate
 
 
 class AKT(nn.Module):
+    model_name = "AKT"
+
     def __init__(self, params, objects):
         super(AKT, self).__init__()
         self.params = params
@@ -53,95 +55,6 @@ class AKT(nn.Module):
 
     def get_concept_emb(self):
         return self.embed_concept.weight
-
-    def base_emb(self, batch):
-        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
-        separate_qa = encoder_config["separate_qa"]
-        concept_seq = batch["concept_seq"]
-        correct_seq = batch["correct_seq"]
-
-        # c_ct
-        concept_emb = self.embed_concept(concept_seq)
-        if separate_qa:
-            interaction_seq = concept_seq + self.num_concept * correct_seq
-            interaction_emb = self.embed_interaction(interaction_seq)
-        else:
-            # e_{(c_t, r_t)} = c_{c_t} + r_{r_t}
-            interaction_emb = self.embed_interaction(correct_seq) + concept_emb
-        return concept_emb, interaction_emb
-
-    def forward(self, batch):
-        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
-        separate_qa = encoder_config["separate_qa"]
-        concept_seq = batch["concept_seq"]
-        question_seq = batch["question_seq"]
-        correct_seq = batch["correct_seq"]
-
-        # c_{c_t}和e_(ct, rt)
-        concept_emb, interaction_emb = self.base_emb(batch)
-        concept_variation_emb = self.embed_concept_variation(concept_seq)
-        question_difficulty_emb = self.embed_question_difficulty(question_seq)
-        # mu_{q_t} * d_ct + c_ct
-        question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
-        interaction_variation_emb = self.embed_interaction_variation(correct_seq)
-        if separate_qa:
-            # uq * f_(ct,rt) + e_(ct,rt)
-            interaction_emb = interaction_emb + question_difficulty_emb * interaction_variation_emb
-        else:
-            # + uq *(h_rt+d_ct) # （q-response emb diff + question emb diff）
-            interaction_emb = \
-                interaction_emb + question_difficulty_emb * (interaction_variation_emb + concept_variation_emb)
-        encoder_input = {
-            "question_emb": question_emb,
-            "interaction_emb": interaction_emb,
-            "question_difficulty_emb": question_difficulty_emb
-        }
-        latent = self.encoder_layer(encoder_input)
-        predict_layer_input = torch.cat((latent, question_emb), dim=2)
-        predict_score = self.predict_layer(predict_layer_input).squeeze(dim=-1)
-
-        return predict_score
-
-    def get_latent(self, batch):
-        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
-        separate_qa = encoder_config["separate_qa"]
-        concept_seq = batch["concept_seq"]
-        question_seq = batch["question_seq"]
-        correct_seq = batch["correct_seq"]
-
-        # c_{c_t}和e_(ct, rt)
-        concept_emb, interaction_emb = self.base_emb(batch)
-        concept_variation_emb = self.embed_concept_variation(concept_seq)
-        question_difficulty_emb = self.embed_question_difficulty(question_seq)
-        interaction_variation_emb = self.embed_interaction_variation(correct_seq)
-        if separate_qa:
-            # uq * f_(ct,rt) + e_(ct,rt)
-            interaction_emb = interaction_emb + question_difficulty_emb * interaction_variation_emb
-        else:
-            # + uq *(h_rt+d_ct) # （q-response emb diff + question emb diff）
-            interaction_emb = \
-                interaction_emb + question_difficulty_emb * (interaction_variation_emb + concept_variation_emb)
-        encoder_input = {
-            "interaction_emb": interaction_emb,
-            "question_difficulty_emb": question_difficulty_emb
-        }
-        latent = self.encoder_layer.get_latent(encoder_input)
-
-        return latent
-
-    def get_latent_last(self, batch):
-        latent = self.get_latent(batch)
-        mask4last = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
-        latent_last = latent[torch.where(mask4last == 1)]
-
-        return latent_last
-
-    def get_latent_mean(self, batch):
-        latent = self.get_latent(batch)
-        mask_seq = batch["mask_seq"]
-        latent_mean = (latent * mask_seq.unsqueeze(-1)).sum(1) / mask_seq.sum(-1).unsqueeze(-1)
-
-        return latent_mean
 
     def get_duo_cl_loss(self, batch, latent_type):
         batch_aug = {
@@ -273,96 +186,6 @@ class AKT(nn.Module):
 
         return cl_loss
 
-    # def get_instance_cl_loss_one_seq_adv(self, batch, dataset_adv, latent_type):
-    #     batch_aug0 = {
-    #         "concept_seq": batch["concept_seq_aug_0"],
-    #         "question_seq": batch["question_seq_aug_0"],
-    #         "correct_seq": batch["correct_seq_aug_0"],
-    #         "mask_seq": batch["mask_seq_aug_0"]
-    #     }
-    #     latent_aug0 = self.get_latent(batch_aug0)[:, 1:]
-    #
-    #     seq_ids = batch["seq_id"]
-    #     emb_seq_aug1 = dataset_adv["emb_seq"][seq_ids.to("cpu")].to(self.params["device"])
-    #     encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
-    #     dim_concept = encoder_config["dim_concept"]
-    #     dim_question = encoder_config["dim_question"]
-    #     concept_emb = emb_seq_aug1[:, 1:, :dim_concept]
-    #     question_emb = emb_seq_aug1[:, 1:, dim_concept:(dim_concept + dim_question)]
-    #     _, latent_aug1 = self.forward_from_input_emb(emb_seq_aug1[:, :-1], concept_emb, question_emb)
-    #
-    #     if latent_type == "last_time":
-    #         mask4last_aug0 = get_mask4last_or_penultimate(batch_aug0["mask_seq"], penultimate=False)[:, 1:]
-    #         mask4last_aug1 = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)[:, 1:]
-    #         latent_aug0_pooled = latent_aug0[torch.where(mask4last_aug0 == 1)]
-    #         latent_aug1_pooled = latent_aug1[torch.where(mask4last_aug1 == 1)]
-    #     elif latent_type == "mean_pool":
-    #         mask_seq_aug0 = batch["mask_seq_aug_0"][:, 1:]
-    #         mask_seq_aug1 = batch["mask_seq"][:, 1:]
-    #         latent_aug0_pooled = (latent_aug0 * mask_seq_aug0.unsqueeze(-1)).sum(1) / mask_seq_aug0.sum(-1).unsqueeze(
-    #             -1)
-    #         latent_aug1_pooled = (latent_aug1 * mask_seq_aug1.unsqueeze(-1)).sum(1) / mask_seq_aug1.sum(-1).unsqueeze(
-    #             -1)
-    #     else:
-    #         raise NotImplementedError()
-    #
-    #     temp = self.params["other"]["instance_cl"]["temp"]
-    #     cos_sim_aug = torch.cosine_similarity(latent_aug0_pooled.unsqueeze(1), latent_aug1_pooled.unsqueeze(0),
-    #                                           dim=-1) / temp
-    #
-    #     labels = torch.arange(cos_sim_aug.size(0)).long().to(self.params["device"])
-    #     cl_loss = nn.functional.cross_entropy(cos_sim_aug, labels)
-    #
-    #     return cl_loss
-
-    # def get_instance_cl_loss_all_interaction_adv(self, batch, dataset_adv):
-    #     batch_aug0 = {
-    #         "concept_seq": batch["concept_seq_aug_0"],
-    #         "question_seq": batch["question_seq_aug_0"],
-    #         "correct_seq": batch["correct_seq_aug_0"],
-    #         "mask_seq": batch["mask_seq_aug_0"]
-    #     }
-    #     latent_aug0 = self.get_latent(batch_aug0)[:, 1:]
-    #     mask4last_aug0 = get_mask4last_or_penultimate(batch_aug0["mask_seq"], penultimate=False)[:, 1:]
-    #     latent_aug0_last = latent_aug0[torch.where(mask4last_aug0 == 1)]
-    #
-    #     seq_ids = batch["seq_id"]
-    #     emb_seq_aug1 = dataset_adv["emb_seq"][seq_ids.to("cpu")].to(self.params["device"])
-    #     encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
-    #     dim_concept = encoder_config["dim_concept"]
-    #     dim_question = encoder_config["dim_question"]
-    #     concept_emb = emb_seq_aug1[:, 1:, :dim_concept]
-    #     question_emb = emb_seq_aug1[:, 1:, dim_concept:(dim_concept + dim_question)]
-    #     _, latent_aug1 = self.forward_from_input_emb(emb_seq_aug1[:, :-1], concept_emb, question_emb)
-    #     mask4last_aug1 = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)[:, 1:]
-    #     latent_aug1_last = latent_aug1[torch.where(mask4last_aug1 == 1)]
-    #
-    #     bs = latent_aug0.shape[0]
-    #     seq_len = latent_aug0.shape[1]
-    #     m = (torch.eye(bs) == 0)
-    #
-    #     # 将另一增强序列的每个时刻都作为一个neg
-    #     neg_all = latent_aug1.repeat(bs, 1, 1).reshape(bs, bs, seq_len, -1)[m].reshape(bs, bs - 1, seq_len, -1)
-    #     mask_bool4neg = (
-    #         torch.ne(batch["mask_seq"][:, 1:].repeat(bs, 1).reshape(bs, bs, -1)[m].reshape(bs, bs - 1, -1), 0))
-    #
-    #     temp = self.params["other"]["instance_cl"]["temp"]
-    #     cos_sim_list = []
-    #     for i in range(bs):
-    #         anchor = latent_aug0_last[i]
-    #         pos = latent_aug1_last[i]
-    #         neg = neg_all[i][:, 1:][mask_bool4neg[i][:, 1:]]
-    #         sim_i = torch.cosine_similarity(anchor, torch.cat((pos.unsqueeze(dim=0), neg), dim=0)) / temp
-    #         cos_sim_list.append(sim_i.unsqueeze(dim=0))
-    #
-    #     labels = torch.tensor([0]).long().to(self.params["device"])
-    #     cl_loss = 0.
-    #     for i in range(bs):
-    #         cos_sim = cos_sim_list[i]
-    #         cl_loss = cl_loss + nn.functional.cross_entropy(cos_sim, labels)
-    #
-    #     return cl_loss
-
     def get_cluster_cl_loss_one_seq(self, batch, clus, latent_type):
         batch_aug0 = {
             "concept_seq": batch["concept_seq_aug_0"],
@@ -408,11 +231,104 @@ class AKT(nn.Module):
 
         return (cl_loss0 + cl_loss1) / 2
 
-    def get_rasch_loss(self, batch):
-        question_seq = batch["question_seq"]
-        question_difficulty_emb = self.embed_question_difficulty(question_seq)
+    def base_emb(self, batch):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
+        separate_qa = encoder_config["separate_qa"]
+        concept_seq = batch["concept_seq"]
+        correct_seq = batch["correct_seq"]
 
-        return (question_difficulty_emb ** 2.).sum()
+        # c_ct
+        concept_emb = self.embed_concept(concept_seq)
+        if separate_qa:
+            interaction_seq = concept_seq + self.num_concept * correct_seq
+            interaction_emb = self.embed_interaction(interaction_seq)
+        else:
+            # e_{(c_t, r_t)} = c_{c_t} + r_{r_t}
+            interaction_emb = self.embed_interaction(correct_seq) + concept_emb
+        return concept_emb, interaction_emb
+
+    def forward(self, batch):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
+        separate_qa = encoder_config["separate_qa"]
+        concept_seq = batch["concept_seq"]
+        question_seq = batch["question_seq"]
+        correct_seq = batch["correct_seq"]
+
+        # c_{c_t}和e_(ct, rt)
+        concept_emb, interaction_emb = self.base_emb(batch)
+        concept_variation_emb = self.embed_concept_variation(concept_seq)
+        question_difficulty_emb = self.embed_question_difficulty(question_seq)
+        # mu_{q_t} * d_ct + c_ct
+        question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
+        interaction_variation_emb = self.embed_interaction_variation(correct_seq)
+        if separate_qa:
+            # uq * f_(ct,rt) + e_(ct,rt)
+            interaction_emb = interaction_emb + question_difficulty_emb * interaction_variation_emb
+        else:
+            # + uq *(h_rt+d_ct) # （q-response emb diff + question emb diff）
+            interaction_emb = \
+                interaction_emb + question_difficulty_emb * (interaction_variation_emb + concept_variation_emb)
+        encoder_input = {
+            "question_emb": question_emb,
+            "interaction_emb": interaction_emb,
+            "question_difficulty_emb": question_difficulty_emb
+        }
+        latent = self.encoder_layer(encoder_input)
+        predict_layer_input = torch.cat((latent, question_emb), dim=2)
+        predict_score = self.predict_layer(predict_layer_input).squeeze(dim=-1)
+
+        return predict_score
+
+    def get_latent(self, batch, latent_cl4kt=False):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
+        separate_qa = encoder_config["separate_qa"]
+        concept_seq = batch["concept_seq"]
+        question_seq = batch["question_seq"]
+        correct_seq = batch["correct_seq"]
+
+        # c_{c_t}和e_(ct, rt)
+        concept_emb, interaction_emb = self.base_emb(batch)
+        concept_variation_emb = self.embed_concept_variation(concept_seq)
+        question_difficulty_emb = self.embed_question_difficulty(question_seq)
+        interaction_variation_emb = self.embed_interaction_variation(correct_seq)
+        if separate_qa:
+            # uq * f_(ct,rt) + e_(ct,rt)
+            interaction_emb = interaction_emb + question_difficulty_emb * interaction_variation_emb
+        else:
+            # + uq *(h_rt+d_ct) # （q-response emb diff + question emb diff）
+            interaction_emb = \
+                interaction_emb + question_difficulty_emb * (interaction_variation_emb + concept_variation_emb)
+        encoder_input = {
+            "interaction_emb": interaction_emb,
+            "question_difficulty_emb": question_difficulty_emb
+        }
+        if latent_cl4kt:
+            latent = self.encoder_layer.get_latent(encoder_input)
+        else:
+            latent = self.encoder_layer(encoder_input)
+
+        return latent
+
+    def get_latent_last(self, batch, latent_cl4kt=False):
+        latent = self.get_latent(batch, latent_cl4kt)
+        mask4last = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
+        latent_last = latent[torch.where(mask4last == 1)]
+
+        return latent_last
+
+    def get_latent_mean(self, batch, latent_cl4kt=False):
+        latent = self.get_latent(batch, latent_cl4kt)
+        mask_seq = batch["mask_seq"]
+        latent_mean = (latent * mask_seq.unsqueeze(-1)).sum(1) / mask_seq.sum(-1).unsqueeze(-1)
+
+        return latent_mean
+
+    def get_predict_score(self, batch):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        predict_score = self.forward(batch)
+        predict_score = torch.masked_select(predict_score[:, 1:], mask_bool_seq[:, 1:])
+
+        return predict_score
 
     def get_predict_loss(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
@@ -424,60 +340,164 @@ class AKT(nn.Module):
 
         return loss
 
-    def get_predict_score(self, batch):
-        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-        predict_score = self.forward(batch)
-        predict_score = torch.masked_select(predict_score[:, 1:], mask_bool_seq[:, 1:])
+    def get_rasch_loss(self, batch):
+        question_seq = batch["question_seq"]
+        question_difficulty_emb = self.embed_question_difficulty(question_seq)
 
-        return predict_score
+        return (question_difficulty_emb ** 2.).sum()
 
     def get_predict_score_seq_len_minus1(self, batch):
         return self.forward(batch)[:, 1:]
 
-    # def get_input_emb(self, batch):
-    #     pass
-    #
-    # def forward_from_input_emb(self, input_emb, concept_emb, question_emb):
-    #     pass
-    #
-    # def get_max_entropy_adv_aug_emb(self, batch, adv_learning_rate, loop_adv, eta, gamma):
-    #     encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
-    #     dim_concept = encoder_config["dim_concept"]
-    #     dim_question = encoder_config["dim_question"]
-    #
-    #     correct_seq = batch["correct_seq"]
-    #     mask4last = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
-    #     mask4penultimate = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=True)
-    #     ground_truth = correct_seq[torch.where(mask4last == 1)]
-    #
-    #     latent = self.get_latent(batch)
-    #     latent_penultimate = latent[torch.where(mask4penultimate == 1)].detach().clone()
-    #
-    #     inputs_max = self.get_input_emb(batch).detach().clone()
-    #     latent_penultimate.requires_grad_(False)
-    #     inputs_max.requires_grad_(True)
-    #     optimizer = optim.SGD(params=[inputs_max], lr=adv_learning_rate)
-    #     adv_predict_loss = 0.
-    #     adv_entropy = 0.
-    #     adv_mse_loss = 0.
-    #     for ite_max in range(loop_adv):
-    #         concept_emb = inputs_max[:, 1:, :dim_concept]
-    #         question_emb = inputs_max[:, 1:, dim_concept:(dim_concept + dim_question)]
-    #         predict_score, latent = self.forward_from_input_emb(inputs_max[:, :-1], concept_emb, question_emb)
-    #         predict_score = predict_score[torch.where(mask4last[:, 1:] == 1)]
-    #         adv_pred_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
-    #         entropy_loss = binary_entropy(predict_score)
-    #         latent_mse_loss = (
-    #             nn.functional.mse_loss(latent[torch.where(mask4penultimate[:, :-1] == 1)], latent_penultimate))
-    #
-    #         if ite_max == (loop_adv - 1):
-    #             adv_predict_loss += adv_pred_loss.detach().cpu().item()
-    #             adv_entropy += entropy_loss.detach().cpu().item()
-    #             adv_mse_loss += latent_mse_loss.detach().cpu().item()
-    #         loss = adv_pred_loss + eta * entropy_loss - gamma * latent_mse_loss
-    #         self.zero_grad()
-    #         optimizer.zero_grad()
-    #         (-loss).backward()
-    #         optimizer.step()
-    #
-    #     return inputs_max, adv_predict_loss, adv_entropy, adv_mse_loss
+    def base_emb_from_adv_data(self, dataset, batch):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
+        separate_qa = encoder_config["separate_qa"]
+        concept_seq = batch["concept_seq"]
+        correct_seq = batch["correct_seq"]
+
+        # c_ct
+        concept_emb = dataset["embed_concept"](concept_seq)
+        if separate_qa:
+            interaction_seq = concept_seq + self.num_concept * correct_seq
+            interaction_emb = dataset["embed_interaction"](interaction_seq)
+        else:
+            # e_{(c_t, r_t)} = c_{c_t} + r_{r_t}
+            interaction_emb = dataset["embed_interaction"](correct_seq) + concept_emb
+        return concept_emb, interaction_emb
+
+    def forward_from_adv_data(self, dataset, batch):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
+        separate_qa = encoder_config["separate_qa"]
+        concept_seq = batch["concept_seq"]
+        question_seq = batch["question_seq"]
+        correct_seq = batch["correct_seq"]
+
+        # c_{c_t}和e_(ct, rt)
+        concept_emb, interaction_emb = self.base_emb_from_adv_data(dataset, batch)
+        concept_variation_emb = dataset["embed_concept_variation"](concept_seq)
+        question_difficulty_emb = dataset["embed_question_difficulty"](question_seq)
+        # mu_{q_t} * d_ct + c_ct
+        question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
+        interaction_variation_emb = dataset["embed_interaction_variation"](correct_seq)
+        if separate_qa:
+            # uq * f_(ct,rt) + e_(ct,rt)
+            interaction_emb = interaction_emb + question_difficulty_emb * interaction_variation_emb
+        else:
+            # + uq *(h_rt+d_ct) # （q-response emb diff + question emb diff）
+            interaction_emb = \
+                interaction_emb + question_difficulty_emb * (interaction_variation_emb + concept_variation_emb)
+        encoder_input = {
+            "question_emb": question_emb,
+            "interaction_emb": interaction_emb,
+            "question_difficulty_emb": question_difficulty_emb
+        }
+        latent = self.encoder_layer(encoder_input)
+        predict_layer_input = torch.cat((latent, question_emb), dim=2)
+        predict_score = self.predict_layer(predict_layer_input).squeeze(dim=-1)
+
+        return predict_score
+
+    def get_latent_from_adv_data(self, dataset, batch, latent_cl4kt=False):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
+        separate_qa = encoder_config["separate_qa"]
+        concept_seq = batch["concept_seq"]
+        question_seq = batch["question_seq"]
+        correct_seq = batch["correct_seq"]
+
+        # c_{c_t}和e_(ct, rt)
+        concept_emb, interaction_emb = self.base_emb_from_adv_data(dataset, batch)
+        concept_variation_emb = dataset["embed_concept_variation"](concept_seq)
+        question_difficulty_emb = dataset["embed_question_difficulty"](question_seq)
+        # mu_{q_t} * d_ct + c_ct
+        question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
+        interaction_variation_emb = dataset["embed_interaction_variation"](correct_seq)
+        if separate_qa:
+            # uq * f_(ct,rt) + e_(ct,rt)
+            interaction_emb = interaction_emb + question_difficulty_emb * interaction_variation_emb
+        else:
+            # + uq *(h_rt+d_ct) # （q-response emb diff + question emb diff）
+            interaction_emb = \
+                interaction_emb + question_difficulty_emb * (interaction_variation_emb + concept_variation_emb)
+        encoder_input = {
+            "question_emb": question_emb,
+            "interaction_emb": interaction_emb,
+            "question_difficulty_emb": question_difficulty_emb
+        }
+        if latent_cl4kt:
+            latent = self.encoder_layer.get_latent(encoder_input)
+        else:
+            latent = self.encoder_layer(encoder_input)
+
+        return latent
+
+    def get_latent_last_from_adv_data(self, dataset, batch, latent_cl4kt=False):
+        latent = self.get_latent_from_adv_data(dataset, batch, latent_cl4kt)
+        mask4last = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
+        latent_last = latent[torch.where(mask4last == 1)]
+
+        return latent_last
+
+    def get_latent_mean_from_adv_data(self, dataset, batch, latent_cl4kt=False):
+        latent = self.get_latent_from_adv_data(dataset, batch, latent_cl4kt)
+        mask_seq = batch["mask_seq"]
+        latent_mean = (latent * mask_seq.unsqueeze(-1)).sum(1) / mask_seq.sum(-1).unsqueeze(-1)
+
+        return latent_mean
+
+    def get_predict_score_from_adv_data(self, dataset, batch):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        predict_score = self.forward_from_adv_data(dataset, batch)
+        predict_score = torch.masked_select(predict_score[:, 1:], mask_bool_seq[:, 1:])
+
+        return predict_score
+
+    def get_predict_loss_from_adv_data(self, dataset, batch):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        predict_score = self.get_predict_score_from_adv_data(dataset, batch)
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+        predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+        rasch_loss = self.get_rasch_loss(batch)
+        loss = predict_loss + rasch_loss * self.params["loss_config"]["rasch_loss"]
+
+        return loss
+
+    def max_entropy_adv_aug(self, dataset, batch, adv_learning_rate, loop_adv, eta, gamma):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+
+        latent_ori = self.get_latent_from_adv_data(dataset, batch).detach().clone()
+        latent_ori = latent_ori[mask_bool_seq]
+        latent_ori.requires_grad_(False)
+        optimizer = optim.SGD(params=[
+            dataset["embed_question_difficulty"].weight,
+            dataset["embed_concept_variation"].weight,
+            dataset["embed_interaction_variation"].weight,
+            dataset["embed_concept"].weight,
+            dataset["embed_interaction"].weight
+        ], lr=adv_learning_rate)
+        adv_predict_loss = 0.
+        adv_entropy = 0.
+        adv_mse_loss = 0.
+        for ite_max in range(loop_adv):
+            predict_score = self.get_predict_score_from_adv_data(dataset, batch)
+            predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+            question_seq = batch["question_seq"]
+            question_difficulty_emb = dataset["embed_question_difficulty"](question_seq)
+            rasch_loss = (question_difficulty_emb ** 2.).sum()
+            predict_loss = predict_loss + rasch_loss * self.params["loss_config"]["rasch_loss"]
+            entropy_loss = binary_entropy(predict_score)
+            latent = self.get_latent_from_adv_data(dataset, batch)
+            latent = latent[mask_bool_seq]
+            latent_mse_loss = nn.functional.mse_loss(latent, latent_ori)
+
+            if ite_max == (loop_adv - 1):
+                adv_predict_loss += predict_loss.detach().cpu().item()
+                adv_entropy += entropy_loss.detach().cpu().item()
+                adv_mse_loss += latent_mse_loss.detach().cpu().item()
+            loss = predict_loss + eta * entropy_loss - gamma * latent_mse_loss
+            self.zero_grad()
+            optimizer.zero_grad()
+            (-loss).backward()
+            optimizer.step()
+
+        return adv_predict_loss, adv_entropy, adv_mse_loss

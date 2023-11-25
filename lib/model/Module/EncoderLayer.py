@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 
 
-from .AKT_Block import Architecture
+from .AKT_Block import Architecture as AKT_Architecture
+from .AKT_Block4clod_start import Architecture as AKT_Architecture4cold_start
 
 
 class EncoderLayer(nn.Module):
@@ -13,7 +14,9 @@ class EncoderLayer(nn.Module):
 
         self.encoder_type = params["models_config"]["kt_model"]["encoder_layer"]["type"]
         if self.encoder_type == "AKT":
-            self.encoder = Architecture(self.params)
+            self.encoder = AKT_Architecture(self.params)
+        elif self.encoder_type == "AKT4cold_start":
+            self.encoder = AKT_Architecture4cold_start(self.params)
         else:
             raise NotImplementedError()
 

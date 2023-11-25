@@ -92,7 +92,7 @@ class KnowledgeTracingTrainer:
                       f"train performance by best valid epoch is {best_train_performance_by_valid}\n"
                       f"valid performance by best valid epoch is {best_valid_performance_by_valid}\n"
                       f"test performance by best valid epoch is {best_test_performance_by_valid}\n"
-                      f"{'-'*100}"
+                      f"{'-'*100}\n"
                       f"train performance by best train epoch is "
                       f"{self.train_record.get_evaluate_result_str('train', 'train')}\n"
                       f"test performance by best test epoch is "

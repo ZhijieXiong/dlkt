@@ -13,6 +13,8 @@ FILE_MANAGER_ROOT = settings["FILE_MANAGER_ROOT"]
 sys.path.append(settings["LIB_PATH"])
 
 from lib.util.FileManager import FileManager
+from lib.util.basic import *
+from lib.util.data import write_json
 
 
 def general_config(local_params, global_params, global_objects):
@@ -105,3 +107,20 @@ def general_config(local_params, global_params, global_objects):
     grad_clip_config["use_clip"] = kt_enable_clip_grad
     if kt_enable_clip_grad:
         grad_clip_config["grad_clipped"] = kt_grad_clipped
+
+
+def save_params(global_params, global_objects):
+    if global_params["save_model"]:
+        file_manager = global_objects["file_manager"]
+        model_root_dir = file_manager.get_models_dir()
+        model_dir_name = global_params["save_model_dir_name"]
+        model_dir = os.path.join(model_root_dir, model_dir_name)
+        global_params["save_model_dir"] = model_dir
+        if not os.path.exists(model_dir):
+            os.mkdir(model_dir)
+        else:
+            assert False, f"{model_dir} exists"
+
+        params_path = os.path.join(model_dir, "params.json")
+        params_json = params2str(global_params)
+        write_json(params_json, params_path)

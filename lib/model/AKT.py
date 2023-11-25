@@ -431,6 +431,9 @@ class AKT(nn.Module):
 
         return predict_score
 
+    def get_predict_score_seq_len_minus1(self, batch):
+        return self.forward(batch)[:, 1:]
+
     # def get_input_emb(self, batch):
     #     pass
     #

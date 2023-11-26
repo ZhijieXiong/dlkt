@@ -27,6 +27,7 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
         model = self.objects["models"]["kt_model"]
         cl_type = self.params["other"]["cluster_cl"]["cl_type"]
         max_entropy_aug_config = self.params["other"]["max_entropy_aug"]
+        random_select_aug_len = self.params["other"]["cluster_cl"]["random_select_aug_len"]
 
         train_statics = train_loader.dataset.get_statics_kt_dataset()
         print(f"train, seq: {train_statics[0]}, sample: {train_statics[1]}, accuracy: {train_statics[2]:<.4}")
@@ -72,7 +73,7 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
                     if use_adv_aug:
                         cl_loss = model.get_cluster_cl_loss_adv(batch, self.clus, self.dataset_adv_generated)
                     else:
-                        cl_loss = model.get_cluster_cl_loss_one_seq(batch, self.clus, cl_type)
+                        cl_loss = model.get_cluster_cl_loss_one_seq(batch, self.clus, cl_type, random_select_aug_len)
                     self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)
                     loss = loss + weight_cl_loss * cl_loss
                 predict_loss = model.get_predict_loss(batch)
@@ -97,13 +98,18 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
         model = self.objects["models"]["kt_model"]
         cl_type = self.params["other"]["cluster_cl"]["cl_type"]
         train_loader = self.objects["data_loaders"]["train_loader"]
+        random_select_aug_len = self.params["other"]["cluster_cl"]["random_select_aug_len"]
 
         if not use_warm_up4cl or after_warm_up:
             latent_all = []
             model.eval()
             with torch.no_grad():
                 for batch in train_loader:
-                    if cl_type == "last_time":
+                    if random_select_aug_len:
+                        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+                        latent = model.get_latent(batch)
+                        latent = latent[:, 2:][mask_bool_seq[:, 2:]]
+                    elif cl_type == "last_time":
                         latent = model.get_latent_last(batch)
                     elif cl_type == "mean_pool":
                         latent = model.get_latent_mean(batch)

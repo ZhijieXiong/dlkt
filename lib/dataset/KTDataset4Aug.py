@@ -59,12 +59,32 @@ class KTDataset4Aug(Dataset):
 
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         aug_type = dataset_config_this["kt4aug"]["aug_type"]
+        item_data2aug = deepcopy(self.data_uniformed[index])
+        if aug_type in ["random_aug", "informative_aug"]:
+            random_select_aug_len = dataset_config_this["kt4aug"][aug_type]["random_select_aug_len"]
+            seq_len = item_data2aug["seq_len"]
+            if random_select_aug_len and seq_len > 3:
+                seq_len = random.randint(3, seq_len)
+            for k, v in item_data2aug.items():
+                if type(v) == list:
+                    item_data2aug[k] = v[:seq_len]
+                    if random_select_aug_len and k not in ["time_seq", "use_time_seq", "interval_time_seq"]:
+                        result[f"{k}_random_len"] = torch.tensor(
+                            item_data2aug[k] + [0] * (max_seq_len - seq_len)
+                        ).long().to(self.params["device"])
+            item_data2aug["seq_len"] = seq_len
         if aug_type == "random_aug":
             random_aug_config = dataset_config_this["kt4aug"]["random_aug"]
-            datas_aug = self.get_random_aug(index)
+            datas_aug = self.get_random_aug(item_data2aug)
+            # 负样本
             hard_neg_prob = random_aug_config["hard_neg_prob"]
-            seq_len = self.data_uniformed[index]["seq_len"]
-            correct_seq_neg = KTDataRandomAug.negative_seq(self.data_uniformed[index]["correct_seq"][:seq_len], hard_neg_prob)
+            if random_aug_config["random_select_aug_len"]:
+                seq_len = item_data2aug["seq_len"]
+                correct_seq_neg = KTDataRandomAug.negative_seq(item_data2aug["correct_seq"], hard_neg_prob)
+            else:
+                seq_len = self.data_uniformed[index]["seq_len"]
+                correct_seq_neg = (
+                    KTDataRandomAug.negative_seq(self.data_uniformed[index]["correct_seq"][:seq_len], hard_neg_prob))
             result["correct_seq_hard_neg"] = (
                 torch.tensor(correct_seq_neg + [0] * (max_seq_len - seq_len)).long().to(self.params["device"]))
         elif aug_type == "semantic_aug":
@@ -75,7 +95,7 @@ class KTDataset4Aug(Dataset):
                 if type(v) == list:
                     result[f"{k}_hard_neg"] = torch.tensor(v + [0] * pad_len).long().to(self.params["device"])
         elif aug_type == "informative_aug":
-            datas_aug = self.get_informative_aug(index)
+            datas_aug = self.get_informative_aug(item_data2aug)
         else:
             raise NotImplementedError()
 
@@ -89,7 +109,7 @@ class KTDataset4Aug(Dataset):
 
         return result
 
-    def get_random_aug(self, index):
+    def get_random_aug(self, item_data2aug):
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         num_aug = dataset_config_this["kt4aug"]["num_aug"]
         random_aug_config = dataset_config_this["kt4aug"]["random_aug"]
@@ -100,11 +120,7 @@ class KTDataset4Aug(Dataset):
         crop_prob = random_aug_config["crop_prob"]
         aug_result = []
         for _ in range(num_aug):
-            item_data_aug = deepcopy(self.data_uniformed[index])
-            seq_len = item_data_aug["seq_len"]
-            for k, v in item_data_aug.items():
-                if type(v) == list:
-                    item_data_aug[k] = v[:seq_len]
+            item_data_aug = deepcopy(item_data2aug)
             for aug_type in aug_order:
                 if aug_type == "mask":
                     item_data_aug = KTDataRandomAug.mask_seq(item_data_aug, mask_prob, 10)
@@ -116,6 +132,7 @@ class KTDataset4Aug(Dataset):
                     item_data_aug = KTDataRandomAug.crop_seq(item_data_aug, crop_prob, 10)
                 else:
                     raise NotImplementedError()
+            item_data_aug["seq_len"] = len(item_data_aug["mask_seq"])
             aug_result.append(item_data_aug)
         return aug_result
 
@@ -174,7 +191,7 @@ class KTDataset4Aug(Dataset):
             item_data_hard_neg["seq_len"] = target_seq_len
         return item_data_hard_neg
 
-    def get_informative_aug(self, index):
+    def get_informative_aug(self, item_data2aug):
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         num_aug = dataset_config_this["kt4aug"]["num_aug"]
         informative_aug_config = dataset_config_this["kt4aug"]["informative_aug"]
@@ -185,11 +202,7 @@ class KTDataset4Aug(Dataset):
         crop_prob = informative_aug_config["crop_prob"]
         aug_result = []
         for _ in range(num_aug):
-            item_data_aug = deepcopy(self.data_uniformed[index])
-            seq_len = item_data_aug["seq_len"]
-            for k, v in item_data_aug.items():
-                if type(v) == list:
-                    item_data_aug[k] = v[:seq_len]
+            item_data_aug = deepcopy(item_data2aug)
             for aug_type in aug_order:
                 if aug_type == "mask":
                     item_data_aug = self.informative_mask(item_data_aug, mask_prob, 10)

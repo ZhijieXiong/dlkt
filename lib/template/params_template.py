@@ -83,6 +83,21 @@ PARAMS = {
           "cold_start_step1": 5,
           "cold_start_step2": 10,
           "effect_start_step2": 0.5
+        },
+        "AT_DKT": {
+          "num_concept": 123,
+          "num_question": 17751,
+          "dim_emb": 64,
+          "dim_latent": 64,
+          "rnn_type": "lstm",
+          "num_rnn_layer": 1,
+          # "transformer" or "rnn"
+          "QT_net_type": "transformer",
+          "QT_rnn_type": "lstm",
+          "QT_num_rnn_layer": 1,
+          "QT_transformer_num_block": 2,
+          "QT_transformer_num_head": 8,
+          "dropout": 0.3
         }
       },
       "predict_layer": {
@@ -188,6 +203,8 @@ PARAMS = {
         "num_aug": 2,
         "random_aug": {
           # 配置随机增强
+          # 为True的话，在原序列基础上随机选一段做增强，如concept seq会产生concept_seq_ori,concept_seq_aug_0, concept_seq_aug_1, ...
+          "random_select_aug_len": False,
           "mask_prob": 0.1,
           "replace_prob": 0.1,
           "crop_prob": 0.1,
@@ -197,6 +214,7 @@ PARAMS = {
         },
         "informative_aug": {
           # 配置info增强
+          "random_select_aug_len": False,
           "mask_prob": 0.1,
           "insert_prob": 0.1,
           "replace_prob": 0.3,
@@ -257,6 +275,7 @@ PARAMS = {
       "gamma": 1
     },
     "cluster_cl": {
+      "random_select_aug_len": False,
       "num_cluster": 32,
       "temp": 0.05,
       "use_warm_up4cl": False,

@@ -31,7 +31,6 @@ class qDKT(nn.Module):
             self.encoder_layer = nn.LSTM(dim_emb, dim_latent, batch_first=True, num_layers=num_rnn_layer)
         else:
             self.encoder_layer = nn.GRU(dim_emb, dim_latent, batch_first=True, num_layers=num_rnn_layer)
-        self.encoder_layer = self.encoder_layer
 
         self.predict_layer = PredictorLayer(self.params, self.objects)
 
@@ -252,7 +251,16 @@ class qDKT(nn.Module):
 
         return cl_loss
 
-    def get_cluster_cl_loss_one_seq(self, batch, clus, latent_type):
+    def get_cluster_cl_loss_one_seq(self, batch, clus, latent_type, use_random_seq_len=False):
+        if use_random_seq_len:
+            batch_ori = {
+                "concept_seq": batch["concept_seq_random_len"],
+                "question_seq": batch["question_seq_random_len"],
+                "correct_seq": batch["correct_seq_random_len"],
+                "mask_seq": batch["mask_seq_random_len"]
+            }
+        else:
+            batch_ori = batch
         batch_aug0 = {
             "concept_seq": batch["concept_seq_aug_0"],
             "question_seq": batch["question_seq_aug_0"],
@@ -265,17 +273,16 @@ class qDKT(nn.Module):
             "correct_seq": batch["correct_seq_aug_1"],
             "mask_seq": batch["mask_seq_aug_1"]
         }
-        latent_aug0 = self.get_latent(batch_aug0)
-        batch_size = latent_aug0.shape[0]
+        batch_size = batch["mask_seq"].shape[0]
 
-        if latent_type == "last_time":
+        if latent_type == "last_time" or use_random_seq_len:
             latent_aug0_pooled = self.get_latent_last(batch_aug0)
             latent_aug1_pooled = self.get_latent_last(batch_aug1)
-            latent_ori_pooled = self.get_latent_last(batch)
+            latent_ori_pooled = self.get_latent_last(batch_ori)
         elif latent_type == "mean_pool":
             latent_aug0_pooled = self.get_latent_mean(batch_aug0)
             latent_aug1_pooled = self.get_latent_mean(batch_aug1)
-            latent_ori_pooled = self.get_latent_mean(batch)
+            latent_ori_pooled = self.get_latent_mean(batch_ori)
         else:
             raise NotImplementedError()
         state = np.array(latent_ori_pooled.detach().cpu().tolist())

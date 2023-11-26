@@ -75,6 +75,7 @@ if __name__ == "__main__":
     # random aug和informative aug参数
     parser.add_argument("--aug_type", type=str, default="informative_aug",
                         choices=("random_aug", "informative_aug"))
+    parser.add_argument("--use_random_select_aug_len", type=str2bool, default=False)
     parser.add_argument("--mask_prob", type=float, default=0.1)
     parser.add_argument("--insert_prob", type=float, default=0.2)
     parser.add_argument("--replace_prob", type=float, default=0.3)

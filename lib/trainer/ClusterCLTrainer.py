@@ -5,6 +5,7 @@ import numpy as np
 from .KnowledgeTracingTrainer import KnowledgeTracingTrainer
 from .Cluster import Cluster
 from .LossRecord import LossRecord
+from ..util.basic import *
 
 
 class ClusterCLTrainer(KnowledgeTracingTrainer):
@@ -101,6 +102,7 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
         random_select_aug_len = self.params["other"]["cluster_cl"]["random_select_aug_len"]
 
         if not use_warm_up4cl or after_warm_up:
+            t_start = get_now_time()
             latent_all = []
             model.eval()
             with torch.no_grad():
@@ -129,6 +131,8 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
             # latent_all.requires_grad_(False)
 
             self.clus.train(latent_all)
+            t_end = get_now_time()
+            print(f"cluster: from {t_start} to {t_end}")
 
     def do_online_sim(self):
         use_online_sim = self.params["other"]["cluster_cl"]["use_online_sim"]
@@ -142,8 +146,11 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
         train_loader = self.objects["data_loaders"]["train_loader"]
 
         if aug_type == "informative_aug" and use_online_sim and (not use_warm_up4online_sim or after_warm_up):
+            t_start = get_now_time()
             concept_emb = model.get_concept_emb()
             train_loader.dataset.online_similarity.analysis(concept_emb)
+            t_end = get_now_time()
+            print(f"online similarity analysis: from {t_start} to {t_end}")
 
     def do_max_entropy_aug(self):
         max_entropy_aug_config = self.params["other"]["max_entropy_aug"]
@@ -163,6 +170,7 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
         train_loader = self.objects["data_loaders"]["train_loader"]
 
         if do_generate and (current_epoch >= epoch_warm_up4online_sim):
+            t_start = get_now_time()
             model.eval()
             train_loader.dataset.set_not_use_aug()
             # RNN就需要加上torch.backends.cudnn.enabled = False，才能在eval模式下通过网络还能保留梯度
@@ -182,14 +190,15 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
                 data_generated["seq_id"].append(batch["seq_id"].to("cpu"))
                 data_generated["emb_seq"].append(inputs_max.detach().clone().to("cpu"))
 
-            print(self.adv_loss.get_str())
-            self.adv_loss.clear_loss()
             for k in data_generated:
                 data_generated[k] = torch.cat(data_generated[k], dim=0)
             self.save_adv_data(data_generated)
 
             train_loader.dataset.set_use_aug()
             torch.backends.cudnn.enabled = True
+            t_end = get_now_time()
+            print(f"max entropy adversarial data augment: from {t_start} to {t_end}, {self.adv_loss.get_str()}")
+            self.adv_loss.clear_loss()
 
     def save_adv_data(self, data_adv):
         train_dataset = self.objects["data_loaders"]["train_loader"].dataset

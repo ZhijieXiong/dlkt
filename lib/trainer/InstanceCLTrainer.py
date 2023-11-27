@@ -3,6 +3,7 @@ import torch.nn as nn
 
 from .KnowledgeTracingTrainer import KnowledgeTracingTrainer
 from .LossRecord import LossRecord
+from ..util.basic import *
 
 
 class InstanceCLTrainer(KnowledgeTracingTrainer):
@@ -98,8 +99,11 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
         train_loader = self.objects["data_loaders"]["train_loader"]
 
         if aug_type == "informative_aug" and use_online_sim and (not use_warm_up4online_sim or after_warm_up):
+            t_start = get_now_time()
             concept_emb = model.get_concept_emb()
             train_loader.dataset.online_similarity.analysis(concept_emb)
+            t_end = get_now_time()
+            print(f"online similarity analysis: from {t_start} to {t_end}")
 
     def do_max_entropy_aug(self):
         max_entropy_aug_config = self.params["other"]["max_entropy_aug"]
@@ -119,6 +123,7 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
         train_loader = self.objects["data_loaders"]["train_loader"]
 
         if do_generate and (current_epoch >= epoch_warm_up4online_sim):
+            t_start = get_now_time()
             model.eval()
             train_loader.dataset.set_not_use_aug()
             # RNN就需要加上torch.backends.cudnn.enabled = False，才能在eval模式下通过网络还能保留梯度
@@ -138,14 +143,15 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
                 data_generated["seq_id"].append(batch["seq_id"].to("cpu"))
                 data_generated["emb_seq"].append(inputs_max.detach().clone().to("cpu"))
 
-            print(self.adv_loss.get_str())
-            self.adv_loss.clear_loss()
             for k in data_generated:
                 data_generated[k] = torch.cat(data_generated[k], dim=0)
             self.save_adv_data(data_generated)
 
             train_loader.dataset.set_use_aug()
             torch.backends.cudnn.enabled = True
+            t_end = get_now_time()
+            print(f"max entropy adversarial data augment: from {t_start} to {t_end}, {self.adv_loss.get_str()}")
+            self.adv_loss.clear_loss()
 
     def save_adv_data(self, data_adv):
         train_dataset = self.objects["data_loaders"]["train_loader"].dataset

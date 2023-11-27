@@ -39,7 +39,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
     parser.add_argument("--learning_rate", type=float, default=0.0004)
-    parser.add_argument("--train_batch_size", type=int, default=32)
+    parser.add_argument("--train_batch_size", type=int, default=4)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
@@ -69,12 +69,12 @@ if __name__ == "__main__":
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)
     parser.add_argument("--epoch_warm_up4online_sim", type=float, default=4)
-    parser.add_argument("--cl_type", type=str, default="mean_pool",
+    parser.add_argument("--cl_type", type=str, default="last_time",
                         choices=("last_time", "all_time", "mean_pool"))
     # random aug和informative aug参数
     parser.add_argument("--aug_type", type=str, default="informative_aug",
                         choices=("random_aug", "informative_aug"))
-    parser.add_argument("--use_random_select_aug_len", type=str2bool, default=False)
+    parser.add_argument("--use_random_select_aug_len", type=str2bool, default=True)
     parser.add_argument("--mask_prob", type=float, default=0.1)
     parser.add_argument("--insert_prob", type=float, default=0.2)
     parser.add_argument("--replace_prob", type=float, default=0.3)

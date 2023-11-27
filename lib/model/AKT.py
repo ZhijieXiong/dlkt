@@ -298,6 +298,8 @@ class AKT(nn.Module):
         concept_emb, interaction_emb = self.base_emb(batch)
         concept_variation_emb = self.embed_concept_variation(concept_seq)
         question_difficulty_emb = self.embed_question_difficulty(question_seq)
+        # mu_{q_t} * d_ct + c_ct
+        question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
         interaction_variation_emb = self.embed_interaction_variation(correct_seq)
         if separate_qa:
             # uq * f_(ct,rt) + e_(ct,rt)
@@ -307,6 +309,7 @@ class AKT(nn.Module):
             interaction_emb = \
                 interaction_emb + question_difficulty_emb * (interaction_variation_emb + concept_variation_emb)
         encoder_input = {
+            "question_emb": question_emb,
             "interaction_emb": interaction_emb,
             "question_difficulty_emb": question_difficulty_emb
         }

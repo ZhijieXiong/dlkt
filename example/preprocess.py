@@ -1,5 +1,4 @@
 import argparse
-import os
 
 import config
 
@@ -10,7 +9,7 @@ from lib.util.data import *
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="assist2012")
+    parser.add_argument("--dataset_name", type=str, default="edi2020-task34")
 
     args = parser.parse_args()
     params = vars(args)
@@ -36,3 +35,6 @@ if __name__ == "__main__":
             k = "multi_concept"
         objects["file_manager"].save_data_statics_processed(data_statics_preprocessed[k], dataset_name, k)
         objects["file_manager"].save_q_table(Q_table[k], dataset_name, k)
+
+    all_id_maps = data_processor.get_all_id_maps()
+    objects["file_manager"].save_data_id_map(all_id_maps, dataset_name)

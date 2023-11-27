@@ -1,6 +1,6 @@
 def datasets_treatable(datasets_merged=None):
-    result = ["assist2009", "assist2009-new", "assist2012", "assist2015", "assist2017", "edi2020-task1", "edi2020-task4"
-              , "SLP-bio", "SLP-mat", "slepemapy", "statics2011", "ednet-kt1"]
+    result = ["assist2009", "assist2009-new", "assist2012", "assist2015", "assist2017", "edi2020-task1", "edi2020-task2"
+              , "edi2020-task34",  "SLP-bio", "SLP-mat", "slepemapy", "statics2011", "ednet-kt1"]
     if datasets_merged is None:
         return result
     return result.extend(datasets_merged)
@@ -8,8 +8,8 @@ def datasets_treatable(datasets_merged=None):
 
 def datasets_useful_cols(datasets_merged=None):
     result = {
-        "assist2009": ["order_id", "user_id", "problem_id", "correct", "skill_id", "school_id"],
-        "assist2012": ["problem_id", "user_id", "end_time", "correct", "skill_id", "overlap_time", "school_id"],
+        "assist2009": ["order_id", "user_id", "problem_id", "correct", "skill_id", "school_id", "skill_name"],
+        "assist2012": ["problem_id", "user_id", "end_time", "correct", "skill_id", "overlap_time", "school_id", "skill"],
         "assist2017": ["studentId", "MiddleSchoolId", "problemId", "skill", "timeTaken", "startTime", "correct"],
         "slepemapy": ["user", "item_asked", "item_answered", "context_name", "type", "time", "response_time",
                       "ip_country"],
@@ -72,8 +72,8 @@ def datasets_seq_keys(datasets_merged=None):
         "assist2015": ["question_seq", "correct_seq"],
         "assist2017": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],
         "edi2020-task1": ["question_seq", "concept_seq", "correct_seq", "time_seq", "age_seq"],
-        "edi2020-task12": ["question_seq", "concept_seq", "correct_seq", "time_seq"],
-        "edi2020-task4": ["question_seq", "concept_seq", "correct_seq", "time_seq", "age_seq"],
+        "edi2020-task2": ["question_seq", "concept_seq", "correct_seq", "time_seq"],
+        "edi2020-task34": ["question_seq", "concept_seq", "correct_seq", "time_seq", "age_seq"],
         "SLP-bio": ["question_seq", "concept_seq", "correct_seq"],
         "SLP-mat": ["question_seq", "concept_seq", "correct_seq"],
         "slepemapy": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],

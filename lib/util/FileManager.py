@@ -1,6 +1,7 @@
 import os
 import json
 import platform
+import pandas as pd
 import numpy as np
 
 
@@ -15,8 +16,8 @@ class FileManager:
         "assist2015": "lab/dataset_raw/assist2015/2015_100_skill_builders_main_problems.csv",
         "assist2017": "lab/dataset_raw/assist2017/anonymized_full_release_competition_dataset.csv",
         "edi2020-task1": "lab/dataset_raw/edi2020",
-        "edi2020-task12": "lab/dataset_raw/edi2020",
-        "edi2020-task4": "lab/dataset_raw/edi2020",
+        "edi2020-task2": "lab/dataset_raw/edi2020",
+        "edi2020-task34": "lab/dataset_raw/edi2020",
         "edi2022": "lab/dataset_raw/edi2022",
         "SLP-bio": "lab/dataset_raw/SLP",
         "SLP-chi": "lab/dataset_raw/SLP",
@@ -37,8 +38,8 @@ class FileManager:
         "assist2015": "lab/dataset_preprocessed/assist2015",
         "assist2017": "lab/dataset_preprocessed/assist2017",
         "edi2020-task1": "lab/dataset_preprocessed/edi2020-task1",
-        "edi2020-task12": "lab/dataset_preprocessed/edi2020-task12",
-        "edi2020-task4": "lab/dataset_preprocessed/edi2020-task4",
+        "edi2020-task2": "lab/dataset_preprocessed/edi2020-task12",
+        "edi2020-task34": "lab/dataset_preprocessed/edi2020-task34",
         "edi2022": "lab/dataset_preprocessed/edi2020",
         "SLP-bio": "lab/dataset_preprocessed/SLP-bio",
         "SLP-chi": "lab/dataset_preprocessed/SLP-chi",
@@ -54,7 +55,7 @@ class FileManager:
     }
 
     builtin_datasets = ["assist2009", "assist2009-new", "assist2012", "assist2015", "assist2017", "statics2011",
-                        "junyi2015", "ednet-kt1", "edi2020", "edi2020-task1", "edi2020-task12", "edi2020-task4",
+                        "junyi2015", "ednet-kt1", "edi2020", "edi2020-task1", "edi2020-task2", "edi2020-task34",
                         "edi2022", "SLP-bio", "SLP-mat", "slepemapy"]
 
     setting_dir_in_lab = "lab/settings"
@@ -92,8 +93,8 @@ class FileManager:
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "assist2017"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "statics2011"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "edi2020-task1"),
-            os.path.join(self.root_dir, "lab", "dataset_preprocessed", "edi2020-task12"),
-            os.path.join(self.root_dir, "lab", "dataset_preprocessed", "edi2020-task4"),
+            os.path.join(self.root_dir, "lab", "dataset_preprocessed", "edi2020-task2"),
+            os.path.join(self.root_dir, "lab", "dataset_preprocessed", "edi2020-task34"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "junyi2015"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "ednet-kt1"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "kdd_cup2010"),
@@ -143,6 +144,13 @@ class FileManager:
         preprocessed_dir = self.get_preprocessed_dir(dataset_name)
         statics_path = os.path.join(preprocessed_dir, f"statics_raw.json")
         write_json(statics, statics_path)
+
+    def save_data_id_map(self, all_id_maps, dataset_name):
+        preprocessed_dir = self.get_preprocessed_dir(dataset_name)
+        for data_type, id_maps in all_id_maps.items():
+            for id_map_name, id_map in id_maps.items():
+                id_map_path = os.path.join(preprocessed_dir, f"{id_map_name}_{data_type}.csv")
+                id_map.to_csv(id_map_path, index=False)
 
     def get_q_table(self, dataset_name, data_type):
         assert data_type in ["multi_concept", "single_concept", "only_question"]

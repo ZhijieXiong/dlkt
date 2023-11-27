@@ -26,13 +26,30 @@ def qc_id_remap(dataset_name, df):
             correspond_c = pd.unique(group_info["concept_id"]).tolist()
             Q_table[[question_id] * len(correspond_c), correspond_c] = [1] * len(correspond_c)
 
-        return {"data_processed": df, "Q_table": Q_table,
-                "concept_id_map": concept_id_map, "question_id_map": question_id_map}
+        return {
+            "data_processed": df,
+            "Q_table": Q_table,
+            "concept_id_map": pd.DataFrame({
+                "concept_id": concept_id_map.keys(),
+                "concept_mapped_id": concept_id_map.values()
+            }),
+            "question_id_map": pd.DataFrame({
+                "question_id": question_id_map.keys(),
+                "question_mapped_id": question_id_map.values()
+            })
+        }
+
     else:
         question_ids = pd.unique(df["question_id"])
         question_id_map = {q_id: i for i, q_id in enumerate(question_ids)}
         df["question_id"] = df["question_id"].map(question_id_map)
-        return {"data_processed": df, "question_id_map": question_id_map}
+        return {
+            "data_processed": df,
+            "question_id_map": pd.DataFrame({
+                "question_id": question_id_map.keys(),
+                "question_mapped_id": question_id_map.values()
+            })
+        }
 
 
 def multi_concept2single_concept4assist2009(df):

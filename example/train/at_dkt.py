@@ -2,24 +2,25 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from qdkt_config import qdkt_config
+from at_dkt_config import at_dkt_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
+from lib.dataset.KTDataset4AT_DKT import KTDataset4AT_DKT
 from lib.dataset.KTDataset import KTDataset
-from lib.model.qDKT import qDKT
+from lib.model.AT_DKT import AT_DKT
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
-    parser.add_argument("--setting_name", type=str, default="random_split_leave_multi_out_setting")
+    parser.add_argument("--setting_name", type=str, default="pykt_setting")
     parser.add_argument("--data_type", type=str, default="multi_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2009_train_split_6.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_split_6.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2009_test_split_6.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2009_test.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam",
                         choices=("adam", "sgd"))
@@ -50,17 +51,23 @@ if __name__ == "__main__":
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=123)
     parser.add_argument("--num_question", type=int, default=17751)
-    parser.add_argument("--dim_concept", type=int, default=64)
-    parser.add_argument("--dim_question", type=int, default=64)
-    parser.add_argument("--dim_correct", type=int, default=128)
-    parser.add_argument("--dim_latent", type=int, default=128)
+    parser.add_argument("--dim_emb", type=int, default=256)
+    parser.add_argument("--dim_latent", type=int, default=256)
     parser.add_argument("--rnn_type", type=str, default="gru",
                         choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=1)
     parser.add_argument("--dropout", type=float, default=0.1)
-    parser.add_argument("--num_predict_layer", type=int, default=3)
-    parser.add_argument("--dim_predict_mid", type=int, default=128)
-    parser.add_argument("--activate_type", type=str, default="relu")
+    parser.add_argument("--QT_net_type", type=str, default="transformer",
+                        choices=("transformer", "rnn"))
+    parser.add_argument("--QT_rnn_type", type=str, default="gru",
+                        choices=("rnn", "lstm", "gru"))
+    parser.add_argument("--QT_num_rnn_layer", type=int, default=4)
+    parser.add_argument("--QT_transformer_num_block", type=int, default=4)
+    parser.add_argument("--QT_transformer_num_head", type=int, default=8)
+    parser.add_argument("--IK_start", type=int, default=100)
+    # 损失权重
+    parser.add_argument("--weight_QT_loss", type=float, default=1)
+    parser.add_argument("--weight_IK_loss", type=float, default=1)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
@@ -68,7 +75,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = qdkt_config(params)
+    global_params, global_objects = at_dkt_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)
@@ -80,7 +87,7 @@ if __name__ == "__main__":
 
     train_params = deepcopy(global_params)
     train_params["datasets_config"]["dataset_this"] = "train"
-    dataset_train = KTDataset(train_params, global_objects)
+    dataset_train = KTDataset4AT_DKT(train_params, global_objects)
     dataloader_train = DataLoader(dataset_train, batch_size=params["train_batch_size"], shuffle=True)
 
     test_params = deepcopy(global_params)
@@ -92,39 +99,8 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = qDKT(global_params, global_objects).to(global_params["device"])
+    model = AT_DKT(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
     trainer = KnowledgeTracingTrainer(global_params, global_objects)
     trainer.train()
 
-    # assist2009
-    # domain 0
-    # AUC: 0.81119  , ACC: 0.79384  , RMSE: 0.37954  , MAE: 0.27214
-    # AUC: 0.77465  , ACC: 0.74729  , RMSE: 0.41712  , MAE: 0.31898
-    # AUC: 0.77684  , ACC: 0.75089  , RMSE: 0.41347  , MAE: 0.32403
-
-    # domain 6
-    # AUC: 0.82585  , ACC: 0.79635  , RMSE: 0.37493  , MAE: 0.27575
-    # AUC: 0.75559  , ACC: 0.70579  , RMSE: 0.44308  , MAE: 0.35698
-    # AUC: 0.76119  , ACC: 0.71178  , RMSE: 0.43823  , MAE: 0.35405
-
-    # domain 8
-    # AUC: 0.8208   , ACC: 0.79526  , RMSE: 0.37639  , MAE: 0.27545
-    # AUC: 0.7795   , ACC: 0.75079  , RMSE: 0.41285  , MAE: 0.321
-    # AUC: 0.78009  , ACC: 0.75401  , RMSE: 0.41033  , MAE: 0.32242
-
-    # assist2012
-    # domain 3
-    # AUC: 0.7519   , ACC: 0.74583  , RMSE: 0.41656  , MAE: 0.33534
-    # AUC: 0.73136  , ACC: 0.72575  , RMSE: 0.43021  , MAE: 0.34996
-    # AUC: 0.73272  , ACC: 0.72827  , RMSE: 0.42791  , MAE: 0.35358
-
-    # domain 5
-    # AUC: 0.75289  , ACC: 0.74444  , RMSE: 0.41755  , MAE: 0.33546
-    # AUC: 0.72747  , ACC: 0.73588  , RMSE: 0.42485  , MAE: 0.34082
-    # AUC: 0.72928  , ACC: 0.73765  , RMSE: 0.42284  , MAE: 0.34624
-
-    # domain 7
-    # AUC: 0.75361  , ACC: 0.74894  , RMSE: 0.41435  , MAE: 0.33418
-    # AUC: 0.72822  , ACC: 0.72162  , RMSE: 0.43225  , MAE: 0.35816
-    # AUC: 0.72857  , ACC: 0.7218   , RMSE: 0.43171  , MAE: 0.35931

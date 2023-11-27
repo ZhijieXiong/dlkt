@@ -18,18 +18,16 @@ class AT_DKT(nn.Module):
         self.params = params
         self.objects = objects
 
+        self.embed_layer = KTEmbedLayer(self.params, self.objects)
+
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AT_DKT"]
-        num_question = encoder_config["num_question"]
         num_concept = encoder_config["num_concept"]
         dim_emb = encoder_config["dim_emb"]
-        self.embed_concept = nn.Embedding(num_concept, dim_emb)
-        self.embed_question = nn.Embedding(num_question, dim_emb)
-        self.embed_interaction = nn.Embedding(num_concept * 2, dim_emb)
-
         dim_latent = encoder_config["dim_latent"]
         rnn_type = encoder_config["rnn_type"]
         num_rnn_layer = encoder_config["num_rnn_layer"]
         dropout = encoder_config["dropout"]
+
         if rnn_type == "rnn":
             self.dkt_encoder = nn.RNN(dim_emb, dim_latent, batch_first=True, num_layers=num_rnn_layer)
         elif rnn_type == "lstm":
@@ -37,10 +35,12 @@ class AT_DKT(nn.Module):
         else:
             self.dkt_encoder = nn.GRU(dim_emb, dim_latent, batch_first=True, num_layers=num_rnn_layer)
         self.dkt_classifier = nn.Sequential(
+            nn.Dropout(dropout),
             nn.Linear(dim_latent, dim_latent // 2),
             nn.ReLU(),
             nn.Dropout(dropout),
-            nn.Linear(dim_latent // 2, num_concept)
+            nn.Linear(dim_latent // 2, num_concept),
+            nn.Sigmoid()
         )
 
         QT_net_type = encoder_config["QT_net_type"]
@@ -72,7 +72,8 @@ class AT_DKT(nn.Module):
             nn.Linear(dim_latent, dim_latent // 2),
             nn.ReLU(),
             nn.Dropout(dropout),
-            nn.Linear(dim_latent // 2, 1)
+            nn.Linear(dim_latent // 2, 1),
+            nn.Sigmoid()
         )
 
     def forward(self, batch):
@@ -83,11 +84,11 @@ class AT_DKT(nn.Module):
         question_seq = batch["question_seq"]
         concept_seq = batch["concept_seq"]
         correct_seq = batch["correct_seq"]
-        interaction_seq = concept_seq[:, 0:-1] + num_concept * correct_seq[:, 0:-1]
+        interaction_seq = concept_seq + num_concept * correct_seq
 
-        interaction_emb = self.embed_interaction(interaction_seq)
-        question_emb = self.embed_question(question_seq)
-        concept_emb = self.embed_concept(concept_seq)
+        interaction_emb = self.embed_layer.get_emb("interaction", interaction_seq)
+        question_emb = self.embed_layer.get_emb("question", question_seq)
+        concept_emb = self.embed_layer.get_emb("concept", concept_seq)
         cate_emb = interaction_emb + question_emb + concept_emb
         seq_len = cate_emb.shape[1]
 
@@ -95,15 +96,66 @@ class AT_DKT(nn.Module):
         if QT_net_type == "rnn":
             qh, _ = self.QT_rnn(cate_emb)
         elif QT_net_type == "transformer":
-            mask = ut_mask(seq_len)
+            mask = ut_mask(seq_len).to(self.params["device"])
             qh = self.QT_transformer(cate_emb.transpose(0, 1), mask).transpose(0, 1)
         else:
             raise NotImplementedError()
-        concept_predict_score = self.QT_classifier(qh)
+        QT_predict_score = self.QT_classifier(qh)
+
+        # predict right or wrong
+        interaction_emb = interaction_emb + qh + concept_emb + question_emb
+        latent, _ = self.dkt_encoder(interaction_emb)
+        KT_predict_score = self.dkt_classifier(latent)
 
         # predict student's history accuracy
+        IK_predict_score = self.IK_predictor(latent).squeeze(-1)
 
+        return KT_predict_score, QT_predict_score, IK_predict_score
 
+    def get_latent(self, batch):
+        pass
 
+    def get_predict_score(self, batch):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AT_DKT"]
+        num_concept = encoder_config["num_concept"]
+        concept_seq = batch["concept_seq"]
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
 
+        KT_predict_score, QT_predict_score, IK_predict_score = self.forward(batch)
+        KT_predict_score = (KT_predict_score[:, :-1] * nn.functional.one_hot(concept_seq[:, 1:], num_concept)).sum(-1)
 
+        return KT_predict_score[mask_bool_seq[:, 1:]]
+
+    def get_predict_loss(self, batch, loss_record):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AT_DKT"]
+        num_concept = encoder_config["num_concept"]
+        IK_start = encoder_config["IK_start"]
+        concept_seq = batch["concept_seq"]
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+        num_sample_IK = torch.sum(batch["mask_seq"][:, IK_start+1:]).item()
+
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+        KT_predict_score, QT_predict_score, IK_predict_score = self.forward(batch)
+        KT_predict_score = (KT_predict_score[:, :-1] * nn.functional.one_hot(concept_seq[:, 1:], num_concept)).sum(-1)
+
+        KT_predict_loss = nn.functional.binary_cross_entropy(
+            KT_predict_score[mask_bool_seq[:, 1:]].double(),
+            ground_truth.double()
+        )
+        QT_predict_loss = nn.functional.cross_entropy(
+            QT_predict_score[:, :-1][mask_bool_seq[:, :-1]],
+            concept_seq[:, :-1][mask_bool_seq[:, :-1]]
+        )
+        IK_predict_loss = nn.functional.mse_loss(
+            IK_predict_score[:, IK_start+1:][mask_bool_seq[:, IK_start+1:]],
+            batch["history_acc_seq"][:, IK_start+1:][mask_bool_seq[:, IK_start+1:]]
+        )
+
+        loss_record.add_loss("predict loss", KT_predict_loss.detach().cpu().item() * num_sample, num_sample)
+        loss_record.add_loss("QT_loss", QT_predict_loss.detach().cpu().item() * num_sample, num_sample)
+        loss_record.add_loss("IK_loss", IK_predict_loss.detach().cpu().item() * num_sample_IK, num_sample_IK)
+
+        return (KT_predict_loss +
+                QT_predict_loss * self.params["loss_config"]["QT_loss"] +
+                IK_predict_loss * self.params["loss_config"]["IK_loss"])

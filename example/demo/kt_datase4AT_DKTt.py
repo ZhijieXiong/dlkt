@@ -2,7 +2,8 @@ import torch.cuda
 from torch.utils.data import DataLoader
 
 from lib.util.FileManager import FileManager
-from lib.dataset.KTDataset import KTDataset
+from lib.dataset.KTDataset4AT_DKT import KTDataset4AT_DKT
+
 
 if __name__ == "__main__":
     params = {
@@ -50,7 +51,7 @@ if __name__ == "__main__":
         "file_manager": FileManager(r"F:\code\myProjects\dlkt")
     }
 
-    dataset = KTDataset(params, objects)
+    dataset = KTDataset4AT_DKT(params, objects)
     dataloader = DataLoader(dataset, batch_size=32)
 
     for batch in dataloader:

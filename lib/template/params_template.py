@@ -97,7 +97,8 @@ PARAMS = {
           "QT_num_rnn_layer": 1,
           "QT_transformer_num_block": 2,
           "QT_transformer_num_head": 8,
-          "dropout": 0.3
+          "dropout": 0.3,
+          "IK_start": 50
         }
       },
       "predict_layer": {

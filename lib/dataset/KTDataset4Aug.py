@@ -63,8 +63,8 @@ class KTDataset4Aug(Dataset):
         if aug_type in ["random_aug", "informative_aug"]:
             random_select_aug_len = dataset_config_this["kt4aug"][aug_type]["random_select_aug_len"]
             seq_len = item_data2aug["seq_len"]
-            if random_select_aug_len and seq_len > 3:
-                seq_len = random.randint(3, seq_len)
+            if random_select_aug_len and seq_len > 10:
+                seq_len = random.randint(10, seq_len)
             for k, v in item_data2aug.items():
                 if type(v) == list:
                     item_data2aug[k] = v[:seq_len]

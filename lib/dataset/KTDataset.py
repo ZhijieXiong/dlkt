@@ -7,6 +7,7 @@ from ..util.parse import *
 
 class KTDataset(Dataset):
     def __init__(self, params, objects):
+        super(KTDataset, self).__init__()
         self.params = params
         self.objects = objects
         self.dataset = None

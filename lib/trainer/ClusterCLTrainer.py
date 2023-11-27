@@ -117,6 +117,8 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
                         raise NotImplementedError()
                     latent_all.append(latent)
             latent_all = np.array(torch.cat(latent_all, dim=0).detach().cpu().tolist())
+            # latent_all = torch.cat(latent_all, dim=0).detach().cpu()
+            # latent_all.requires_grad_(False)
             self.clus.train(latent_all)
 
     def do_online_sim(self):

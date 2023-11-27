@@ -65,7 +65,7 @@ def akt_general_config(local_params, global_params):
             raise NotImplementedError()
 
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '-').replace(':', '-')}@@AKT@@{setting_name}@@"
+            f"{get_now_time().replace(' ', '-').replace(':', '-')}@@AKT@@seed_{local_params['seed']}@@{setting_name}@@"
             f"{train_file_name.replace('.txt', '')}@@{train_strategy}@@{pick_up_model_str}"
             f"@@{num_concept}-{num_question}-{dim_model}-{key_query_same}-{num_block}-{num_head}-"
             f"{dim_ff}-{dim_final_fc}-{separate_qa}-{dropout}")

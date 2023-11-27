@@ -107,8 +107,13 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
                 for batch in train_loader:
                     if random_select_aug_len:
                         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+                        batch_size = mask_bool_seq.shape[0]
+                        seq_len = mask_bool_seq.shape[1]
+                        mask4select = torch.zeros(seq_len).to(self.params["device"])
+                        mask4select[2::3] = 1
+                        mask4select = mask4select.bool().repeat(batch_size, 1) & mask_bool_seq
                         latent = model.get_latent(batch)
-                        latent = latent[:, 2:][mask_bool_seq[:, 2:]]
+                        latent = latent[:, 2:][mask4select[:, 2:]]
                     elif cl_type == "last_time":
                         latent = model.get_latent_last(batch)
                     elif cl_type == "mean_pool":
@@ -116,9 +121,13 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
                     else:
                         raise NotImplementedError()
                     latent_all.append(latent)
+            # Cluster
             latent_all = np.array(torch.cat(latent_all, dim=0).detach().cpu().tolist())
-            # latent_all = torch.cat(latent_all, dim=0).detach().cpu()
+
+            # ClusterTorch
+            # latent_all = torch.cat(latent_all, dim=0).detach().clone()
             # latent_all.requires_grad_(False)
+
             self.clus.train(latent_all)
 
     def do_online_sim(self):

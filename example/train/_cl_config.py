@@ -101,10 +101,9 @@ def instance_cl_general_config(local_params, global_params, global_objects):
         params_str += f"-{aug}-{aug_table[aug]}"
 
     if local_params["use_adv_aug"]:
-        params_str += (f"-adv_aug-{f'warm_up-{epoch_warm_up4online_sim}' if use_warm_up4online_sim else ''}-"
-                       f"{epoch_interval_generate}-{loop_adv}-{epoch_generate}-{adv_learning_rate}-{eta}-{gamma}")
+        params_str += f"-adv_aug-{epoch_interval_generate}-{loop_adv}-{epoch_generate}-{adv_learning_rate}-{eta}-{gamma}"
 
-    params_str += f"wight_cl-{weight_cl_loss}"
+    params_str += f"@@temp_{temp}-wight_cl-{weight_cl_loss}"
 
     return params_str
 
@@ -117,11 +116,18 @@ def duo_cl_general_config(local_params, global_params):
     datasets_train_config["kt4aug"]["num_aug"] = 1
 
     # duo CL参数
-    global_params["other"]["duo_cl"]["temp"] = local_params["temp"]
-    global_params["other"]["duo_cl"]["cl_type"] = local_params["cl_type"]
+    temp = local_params["temp"]
+    cl_type = local_params["cl_type"]
+    global_params["other"]["duo_cl"]["temp"] = temp
+    global_params["other"]["duo_cl"]["cl_type"] = cl_type
 
     # 损失权重
-    global_params["loss_config"]["cl loss"] = local_params["weight_cl_loss"]
+    weight_cl_loss = local_params["weight_cl_loss"]
+    global_params["loss_config"]["cl loss"] = weight_cl_loss
+
+    params_str = f"temp_{temp}-wight_cl-{weight_cl_loss}"
+
+    return params_str
 
 
 def cluster_cl_general_config(local_params, global_params, global_objects):
@@ -230,9 +236,8 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
         params_str += f"-{aug}-{aug_table[aug]}"
 
     if local_params["use_adv_aug"]:
-        params_str += (f"-adv_aug-{f'warm_up-{epoch_warm_up4online_sim}' if use_warm_up4online_sim else ''}-"
-                       f"{epoch_interval_generate}-{loop_adv}-{epoch_generate}-{adv_learning_rate}-{eta}-{gamma}")
+        params_str += f"-adv_aug-{epoch_interval_generate}-{loop_adv}-{epoch_generate}-{adv_learning_rate}-{eta}-{gamma}"
 
-    params_str += f"wight_cl-{weight_cl_loss}"
+    params_str += f"@@temp_{temp}-wight_cl-{weight_cl_loss}"
 
     return params_str

@@ -126,14 +126,12 @@ class AT_DKT(nn.Module):
 
         return KT_predict_score[mask_bool_seq[:, 1:]]
 
-    def get_predict_loss(self, batch, loss_record):
+    def get_predict_loss(self, batch, loss_record=None):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AT_DKT"]
         num_concept = encoder_config["num_concept"]
         IK_start = encoder_config["IK_start"]
         concept_seq = batch["concept_seq"]
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-        num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
-        num_sample_IK = torch.sum(batch["mask_seq"][:, IK_start+1:]).item()
 
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
         KT_predict_score, QT_predict_score, IK_predict_score = self.forward(batch)
@@ -152,9 +150,12 @@ class AT_DKT(nn.Module):
             batch["history_acc_seq"][:, IK_start+1:][mask_bool_seq[:, IK_start+1:]]
         )
 
-        loss_record.add_loss("predict loss", KT_predict_loss.detach().cpu().item() * num_sample, num_sample)
-        loss_record.add_loss("QT_loss", QT_predict_loss.detach().cpu().item() * num_sample, num_sample)
-        loss_record.add_loss("IK_loss", IK_predict_loss.detach().cpu().item() * num_sample_IK, num_sample_IK)
+        if loss_record is not None:
+            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+            num_sample_IK = torch.sum(batch["mask_seq"][:, IK_start + 1:]).item()
+            loss_record.add_loss("predict loss", KT_predict_loss.detach().cpu().item() * num_sample, num_sample)
+            loss_record.add_loss("QT_loss", QT_predict_loss.detach().cpu().item() * num_sample, num_sample)
+            loss_record.add_loss("IK_loss", IK_predict_loss.detach().cpu().item() * num_sample_IK, num_sample_IK)
 
         return (KT_predict_loss +
                 QT_predict_loss * self.params["loss_config"]["QT_loss"] +

@@ -40,7 +40,7 @@ if __name__ == "__main__":
     parser.add_argument("--learning_rate", type=float, default=0.001)
     parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
-    parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
+    parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     parser.add_argument("--rnn_type", type=str, default="gru",
                         choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=1)
-    parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument("--dropout", type=float, default=0.3)
     parser.add_argument("--QT_net_type", type=str, default="transformer",
                         choices=("transformer", "rnn"))
     parser.add_argument("--QT_rnn_type", type=str, default="gru",
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     parser.add_argument("--QT_num_rnn_layer", type=int, default=4)
     parser.add_argument("--QT_transformer_num_block", type=int, default=4)
     parser.add_argument("--QT_transformer_num_head", type=int, default=8)
-    parser.add_argument("--IK_start", type=int, default=100)
+    parser.add_argument("--IK_start", type=int, default=50)
     # 损失权重
     parser.add_argument("--weight_QT_loss", type=float, default=1)
     parser.add_argument("--weight_IK_loss", type=float, default=1)

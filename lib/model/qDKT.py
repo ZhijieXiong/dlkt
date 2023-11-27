@@ -366,14 +366,16 @@ class qDKT(nn.Module):
 
         return predict_score
 
-    def get_predict_loss(self, batch, loss_record):
+    def get_predict_loss(self, batch, loss_record=None):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-        num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
 
         predict_score = self.get_predict_score(batch)
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
         predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
-        loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+
+        if loss_record is not None:
+            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
 
         return predict_loss
 

@@ -256,6 +256,7 @@ PARAMS = {
       "cl_type": "last_time",
     },
     "instance_cl": {
+      "random_select_aug_len": False,
       "temp": 0.05,
       "use_warm_up4cl": False,
       "epoch_warm_up4cl": 4,

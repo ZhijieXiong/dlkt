@@ -68,7 +68,7 @@ class qDKT(nn.Module):
 
         return cl_loss
 
-    def get_instance_cl_loss_one_seq(self, batch, latent_type):
+    def get_instance_cl_loss_one_seq(self, batch, latent_type, use_random_seq_len=False):
         batch_aug0 = {
             "concept_seq": batch["concept_seq_aug_0"],
             "question_seq": batch["question_seq_aug_0"],
@@ -96,12 +96,20 @@ class qDKT(nn.Module):
                                               dim=-1) / temp
 
         if "correct_seq_hard_neg" in batch.keys():
-            batch_hard_neg = {
-                "concept_seq": batch["concept_seq"],
-                "question_seq": batch["question_seq"],
-                "correct_seq": batch["correct_seq_hard_neg"],
-                "mask_seq": batch["mask_seq"]
-            }
+            if use_random_seq_len:
+                batch_hard_neg = {
+                    "concept_seq": batch["concept_seq_random_len"],
+                    "question_seq": batch["question_seq_random_len"],
+                    "correct_seq": batch["correct_seq_random_len"],
+                    "mask_seq": batch["mask_seq_random_len"]
+                }
+            else:
+                batch_hard_neg = {
+                    "concept_seq": batch["concept_seq"],
+                    "question_seq": batch["question_seq"],
+                    "correct_seq": batch["correct_seq_hard_neg"],
+                    "mask_seq": batch["mask_seq"]
+                }
             if latent_type == "last_time":
                 latent_hard_neg_pooled = self.get_latent_last(batch_hard_neg)
             elif latent_type == "mean_pool":

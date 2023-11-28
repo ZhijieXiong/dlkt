@@ -13,9 +13,11 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     insert_prob = local_params["insert_prob"]
     permute_prob = local_params["permute_prob"]
     replace_prob = local_params["replace_prob"]
+    use_hard_neg = local_params["use_hard_neg"]
     hard_neg_prob = local_params["hard_neg_prob"]
     aug_order = eval(local_params["aug_order"])
     random_select_aug_len = local_params["use_random_select_aug_len"]
+
     datasets_train_config = global_params["datasets_config"]["train"]
     datasets_train_config["type"] = "kt4aug"
     datasets_train_config["kt4aug"]["aug_type"] = aug_type
@@ -26,6 +28,7 @@ def instance_cl_general_config(local_params, global_params, global_objects):
         datasets_train_config["kt4aug"]["random_aug"]["crop_prob"] = crop_prob
         datasets_train_config["kt4aug"]["random_aug"]["permute_prob"] = permute_prob
         datasets_train_config["kt4aug"]["random_aug"]["replace_prob"] = replace_prob
+        datasets_train_config["kt4aug"]["random_aug"]["use_hard_neg"] = use_hard_neg
         datasets_train_config["kt4aug"]["random_aug"]["hard_neg_prob"] = hard_neg_prob
         datasets_train_config["kt4aug"]["random_aug"]["random_select_aug_len"] = random_select_aug_len
     elif aug_type == "informative_aug":
@@ -34,6 +37,8 @@ def instance_cl_general_config(local_params, global_params, global_objects):
         datasets_train_config["kt4aug"]["informative_aug"]["crop_prob"] = crop_prob
         datasets_train_config["kt4aug"]["informative_aug"]["insert_prob"] = insert_prob
         datasets_train_config["kt4aug"]["informative_aug"]["replace_prob"] = replace_prob
+        datasets_train_config["kt4aug"]["informative_aug"]["use_hard_neg"] = use_hard_neg
+        datasets_train_config["kt4aug"]["informative_aug"]["hard_neg_prob"] = hard_neg_prob
         datasets_train_config["kt4aug"]["informative_aug"]["num_concept"] = local_params["num_concept"]
         datasets_train_config["kt4aug"]["informative_aug"]["num_question"] = local_params["num_question"]
         datasets_train_config["kt4aug"]["informative_aug"]["offline_sim_type"] = local_params["offline_sim_type"]
@@ -58,6 +63,7 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     instance_cl_config["use_warm_up4online_sim"] = use_warm_up4online_sim
     instance_cl_config["epoch_warm_up4online_sim"] = epoch_warm_up4online_sim
     instance_cl_config["cl_type"] = cl_type
+    instance_cl_config["random_select_aug_len"] = random_select_aug_len
 
     # max entropy adv aug参数
     use_adv_aug = local_params["use_adv_aug"]
@@ -148,6 +154,7 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
     hard_neg_prob = local_params["hard_neg_prob"]
     aug_order = eval(local_params["aug_order"])
     random_select_aug_len = local_params["use_random_select_aug_len"]
+
     datasets_train_config = global_params["datasets_config"]["train"]
     datasets_train_config["type"] = "kt4aug"
     datasets_train_config["kt4aug"]["aug_type"] = aug_type

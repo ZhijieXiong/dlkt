@@ -25,6 +25,7 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
         model = self.objects["models"]["kt_model"]
         cl_type = self.params["other"]["instance_cl"]["cl_type"]
         max_entropy_aug_config = self.params["other"]["max_entropy_aug"]
+        random_select_aug_len = self.params["other"]["instance_cl"]["random_select_aug_len"]
 
         train_statics = train_loader.dataset.get_statics_kt_dataset()
         print(f"train, seq: {train_statics[0]}, sample: {train_statics[1]}, accuracy: {train_statics[2]:<.4}")
@@ -60,7 +61,7 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
                 if do_cl:
                     weight_cl_loss = self.params["loss_config"]["cl loss"]
                     if cl_type in ["mean_pool", "last_time"] and not use_adv_aug:
-                        cl_loss = model.get_instance_cl_loss_one_seq(batch, cl_type)
+                        cl_loss = model.get_instance_cl_loss_one_seq(batch, cl_type, random_select_aug_len)
                     elif cl_type in ["mean_pool", "last_time"] and use_adv_aug:
                         cl_loss = model.get_instance_cl_loss_one_seq_adv(batch, self.dataset_adv_generated, cl_type)
                     elif cl_type == "all_time" and not use_adv_aug:

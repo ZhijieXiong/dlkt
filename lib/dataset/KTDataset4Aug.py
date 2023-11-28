@@ -73,20 +73,16 @@ class KTDataset4Aug(Dataset):
                             item_data2aug[k] + [0] * (max_seq_len - seq_len)
                         ).long().to(self.params["device"])
             item_data2aug["seq_len"] = seq_len
+            # 使用hard neg
+            use_hard_neg = dataset_config_this["kt4aug"][aug_type]["use_hard_neg"]
+            hard_neg_prob = dataset_config_this["kt4aug"][aug_type]["hard_neg_prob"]
+            if use_hard_neg:
+                correct_seq_neg = KTDataRandomAug.negative_seq(item_data2aug["correct_seq"][:seq_len], hard_neg_prob)
+                result["correct_seq_hard_neg"] = (
+                    torch.tensor(correct_seq_neg + [0] * (max_seq_len - seq_len)).long().to(self.params["device"]))
+
         if aug_type == "random_aug":
-            random_aug_config = dataset_config_this["kt4aug"]["random_aug"]
             datas_aug = self.get_random_aug(item_data2aug)
-            # 负样本
-            hard_neg_prob = random_aug_config["hard_neg_prob"]
-            if random_aug_config["random_select_aug_len"]:
-                seq_len = item_data2aug["seq_len"]
-                correct_seq_neg = KTDataRandomAug.negative_seq(item_data2aug["correct_seq"], hard_neg_prob)
-            else:
-                seq_len = self.data_uniformed[index]["seq_len"]
-                correct_seq_neg = (
-                    KTDataRandomAug.negative_seq(self.data_uniformed[index]["correct_seq"][:seq_len], hard_neg_prob))
-            result["correct_seq_hard_neg"] = (
-                torch.tensor(correct_seq_neg + [0] * (max_seq_len - seq_len)).long().to(self.params["device"]))
         elif aug_type == "semantic_aug":
             datas_aug = self.get_semantic_aug(index)
             data_hard_neg = self.get_semantic_hard_neg(index)

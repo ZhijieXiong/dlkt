@@ -30,12 +30,17 @@ class KnowledgeTracingTrainer:
         optimizers = self.objects["optimizers"]
         schedulers = self.objects["schedulers"]
         optimizers_config = self.params["optimizers_config"]
+        kt_optimizer_config = self.params["optimizers_config"]["kt_model"]
         schedulers_config = self.params["schedulers_config"]
+        kt_schedulers_config = self.params["schedulers_config"]["kt_model"]
 
         for model_name, optimizer_config in optimizers_config.items():
+            scheduler_config = schedulers_config[model_name]
+            if model_name != "kt_model" and optimizer_config["share_params_with_kt"]:
+                optimizer_config = kt_optimizer_config
+                scheduler_config = kt_schedulers_config
             optimizers[model_name] = create_optimizer(models[model_name].parameters(), optimizer_config)
 
-            scheduler_config = schedulers_config[model_name]
             if scheduler_config["use_scheduler"]:
                 schedulers[model_name] = create_scheduler(optimizers[model_name], scheduler_config)
             else:

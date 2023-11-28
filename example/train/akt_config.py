@@ -1,14 +1,16 @@
-from copy import deepcopy
 from _config import *
 from _cl_config import *
 from _data_aug_config import *
 
 from lib.template.params_template import PARAMS
 from lib.template.objects_template import OBJECTS
+from lib.template.params_template_v2 import PARAMS as PARAMS2
+from lib.template.model.AKT import MODEL_PARAMS as AKT_MODEL_PARAMS
 from lib.util.basic import *
 
 
 def akt_general_config(local_params, global_params):
+    global_params["models_config"]["kt_model"] = deepcopy(AKT_MODEL_PARAMS)
     global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "AKT"
 
     # 配置模型参数
@@ -115,10 +117,11 @@ def akt_cluster_cl_config(local_params):
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
     akt_general_config(local_params, global_params)
-    cluster_cl_general_config(local_params, global_params, global_objects)
+    params_str = cluster_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
             global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT_cluster_cl@@"))
+        global_params["save_model_dir_name"] += f"@@{params_str}"
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -161,6 +164,21 @@ def akt4cold_start_config(local_params):
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT4cold_start@@")
         global_params["save_model_dir_name"] += f"@@{cold_start_step1}-{cold_start_step2}-{effect_start_step2}"
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects
+
+
+def akt_meta_optimize_cl_config(local_params):
+    global_params = deepcopy(PARAMS2)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    akt_general_config(local_params, global_params)
+    params_str = meta_optimize_cl_general_config(local_params, global_params, global_objects)
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT_meta_optimize_cl@@"))
+        global_params["save_model_dir_name"] += f"@@{params_str}"
         save_params(global_params, global_objects)
 
     return global_params, global_objects

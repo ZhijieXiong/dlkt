@@ -21,5 +21,5 @@ def max_entropy_adv_aug_general_config(local_params, global_params):
     max_entropy_adv_aug_config["gamma"] = gamma
     global_params["loss_config"]["adv predict loss"] = weight_adv_pred_loss
 
-    return (f"{epoch_interval_generate}-{loop_adv}-{epoch_generate}-{adv_learning_rate}"
+    return (f"{epoch_interval_generate}-{loop_adv}-{epoch_generate}-{adv_learning_rate}-"
             f"{eta}-{gamma}-{weight_adv_pred_loss}")

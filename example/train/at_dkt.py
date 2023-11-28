@@ -16,11 +16,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="pykt_setting")
-    parser.add_argument("--data_type", type=str, default="multi_concept",
+    parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2009_test.txt")
+    parser.add_argument("--train_file_name", type=str, default="edi2020-task34_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="edi2020-task34_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="edi2020-task34_test.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam",
                         choices=("adam", "sgd"))
@@ -49,25 +49,25 @@ if __name__ == "__main__":
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=123)
-    parser.add_argument("--num_question", type=int, default=17751)
+    parser.add_argument("--num_concept", type=int, default=53)
+    parser.add_argument("--num_question", type=int, default=948)
     parser.add_argument("--dim_emb", type=int, default=256)
     parser.add_argument("--dim_latent", type=int, default=256)
-    parser.add_argument("--rnn_type", type=str, default="gru",
+    parser.add_argument("--rnn_type", type=str, default="lstm",
                         choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=1)
     parser.add_argument("--dropout", type=float, default=0.3)
     parser.add_argument("--QT_net_type", type=str, default="transformer",
                         choices=("transformer", "rnn"))
-    parser.add_argument("--QT_rnn_type", type=str, default="gru",
+    parser.add_argument("--QT_rnn_type", type=str, default="lstm",
                         choices=("rnn", "lstm", "gru"))
     parser.add_argument("--QT_num_rnn_layer", type=int, default=4)
-    parser.add_argument("--QT_transformer_num_block", type=int, default=4)
-    parser.add_argument("--QT_transformer_num_head", type=int, default=8)
-    parser.add_argument("--IK_start", type=int, default=50)
+    parser.add_argument("--QT_transformer_num_block", type=int, default=1)
+    parser.add_argument("--QT_transformer_num_head", type=int, default=4)
+    parser.add_argument("--IK_start", type=int, default=100)
     # 损失权重
     parser.add_argument("--weight_QT_loss", type=float, default=1)
-    parser.add_argument("--weight_IK_loss", type=float, default=1)
+    parser.add_argument("--weight_IK_loss", type=float, default=0.5)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)

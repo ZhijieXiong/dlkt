@@ -135,7 +135,7 @@ PARAMS = {
       }
     },
     # "other_model1": {
-    #   "share": True,
+    #   "share_params_with_kt": False,
     #   "type": "adam / sgd",
     #   "adam": {
     #     "lr": "0.001",
@@ -164,7 +164,7 @@ PARAMS = {
       }
     },
     # "other_model1": {
-    #   "share": True,
+    #   "share_params_with_kt": False,
     #   "use_scheduler": False,
     #   "type": "StepLR",
     #   "StepLR": {
@@ -180,7 +180,7 @@ PARAMS = {
       "grad_clipped": 10.0
     },
     # "other_model1": {
-    #   "share": True,
+    #   "share_params_with_kt": False,
     # }
   },
   # 数据集配置（训练集、测试集、验证集）
@@ -263,8 +263,7 @@ PARAMS = {
       "use_warm_up4online_sim": True,
       "epoch_warm_up4online_sim": 4,
       # "last_time" or "all_time" or "mean_pool"
-      "cl_type": "last_time",
-      "use_adv_data": False
+      "cl_type": "last_time"
     },
     "max_entropy_aug": {
       "use_adv_aug": False,

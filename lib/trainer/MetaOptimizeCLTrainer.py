@@ -16,14 +16,29 @@ class MetaOptimizeCLTrainer(KnowledgeTracingTrainer):
 
     def train(self):
         train_strategy = self.params["train_strategy"]
-        grad_clip_config = self.params["grad_clip_config"]["kt_model"]
-        schedulers_config = self.params["schedulers_config"]["kt_model"]
         num_epoch = train_strategy["num_epoch"]
         train_loader = self.objects["data_loaders"]["train_loader"]
         test_loader = self.objects["data_loaders"]["test_loader"]
-        optimizer = self.objects["optimizers"]["kt_model"]
-        scheduler = self.objects["schedulers"]["kt_model"]
-        model = self.objects["models"]["kt_model"]
+
+        # kt model
+        kt_model = self.objects["models"]["kt_model"]
+        kt_grad_clip_config = self.params["grad_clip_config"]["kt_model"]
+        kt_schedulers_config = self.params["schedulers_config"]["kt_model"]
+        kt_optimizer = self.objects["optimizers"]["kt_model"]
+        kt_scheduler = self.objects["schedulers"]["kt_model"]
+
+        # extractor
+        extractor1_model = self.objects["models"]["extractor1"]
+        extractor1_grad_clip_config = self.params["grad_clip_config"]["extractor1"]
+        extractor1_schedulers_config = self.params["schedulers_config"]["extractor1"]
+        extractor1_optimizer = self.objects["optimizers"]["extractor1"]
+        extractor1_scheduler = self.objects["schedulers"]["extractor1"]
+        extractor2_model = self.objects["models"]["extractor2"]
+        extractor2_grad_clip_config = self.params["grad_clip_config"]["extractor2"]
+        extractor2_schedulers_config = self.params["schedulers_config"]["extractor2"]
+        extractor2_optimizer = self.objects["optimizers"]["extractor2"]
+        extractor2_scheduler = self.objects["schedulers"]["extractor2"]
+
         cl_type = self.params["other"]["instance_cl"]["cl_type"]
         max_entropy_aug_config = self.params["other"]["max_entropy_aug"]
 
@@ -47,9 +62,9 @@ class MetaOptimizeCLTrainer(KnowledgeTracingTrainer):
                 dataset_config_this = self.params["datasets_config"]["train"]
                 dataset_config_this["kt4aug"]["num_aug"] = 1
 
-            model.train()
+            kt_model.train()
             for batch_idx, batch in enumerate(train_loader):
-                optimizer.zero_grad()
+                kt_optimizer.zero_grad()
 
                 num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
                 num_seq = batch["mask_seq"].shape[0]
@@ -72,17 +87,17 @@ class MetaOptimizeCLTrainer(KnowledgeTracingTrainer):
                     # loss = loss + weight_cl_loss * cl_loss
                     pass
 
-                predict_loss = model.get_predict_loss(batch)
+                predict_loss = kt_model.get_predict_loss(batch)
                 self.loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
                 loss = loss + predict_loss
 
                 loss.backward()
-                if grad_clip_config["use_clip"]:
-                    nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
+                if kt_grad_clip_config["use_clip"]:
+                    nn.utils.clip_grad_norm_(kt_model.parameters(), max_norm=kt_grad_clip_config["grad_clipped"])
 
-                optimizer.step()
-            if schedulers_config["use_scheduler"]:
-                scheduler.step()
+                kt_optimizer.step()
+            if kt_schedulers_config["use_scheduler"]:
+                kt_scheduler.step()
             self.evaluate()
             if self.stop_train():
                 break

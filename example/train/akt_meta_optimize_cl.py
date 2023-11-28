@@ -9,6 +9,7 @@ from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
 from lib.dataset.KTDataset4Aug import KTDataset4Aug
 from lib.model.AKT import AKT
+from lib.model.Extractor import Extractor
 from lib.trainer.MetaOptimizeCLTrainer import MetaOptimizeCLTrainer
 
 
@@ -130,8 +131,12 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = AKT(global_params, global_objects).to(global_params["device"])
+    kt_model = AKT(global_params, global_objects).to(global_params["device"])
+    extractor1 = Extractor(global_params)
+    extractor2 = Extractor(global_params)
 
-    global_objects["models"]["kt_model"] = model
+    global_objects["models"]["kt_model"] = kt_model
+    global_objects["models"]["extractor1"] = extractor1
+    global_objects["models"]["extractor2"] = extractor2
     trainer = MetaOptimizeCLTrainer(global_params, global_objects)
     trainer.train()

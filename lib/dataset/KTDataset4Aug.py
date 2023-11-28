@@ -77,7 +77,7 @@ class KTDataset4Aug(Dataset):
             use_hard_neg = dataset_config_this["kt4aug"][aug_type]["use_hard_neg"]
             hard_neg_prob = dataset_config_this["kt4aug"][aug_type]["hard_neg_prob"]
             if use_hard_neg:
-                correct_seq_neg = KTDataRandomAug.negative_seq(item_data2aug["correct_seq"][:seq_len], hard_neg_prob)
+                correct_seq_neg = KTDataRandomAug.negative_seq(item_data2aug["correct_seq"], hard_neg_prob)
                 result["correct_seq_hard_neg"] = (
                     torch.tensor(correct_seq_neg + [0] * (max_seq_len - seq_len)).long().to(self.params["device"]))
 
@@ -119,13 +119,13 @@ class KTDataset4Aug(Dataset):
             item_data_aug = deepcopy(item_data2aug)
             for aug_type in aug_order:
                 if aug_type == "mask":
-                    item_data_aug = KTDataRandomAug.mask_seq(item_data_aug, mask_prob, 10)
+                    item_data_aug = KTDataRandomAug.mask_seq(item_data_aug, mask_prob, 6)
                 elif aug_type == "replace":
                     item_data_aug = self.random_data_augmentor.replace_seq(item_data_aug, replace_prob)
                 elif aug_type == "permute":
-                    item_data_aug = KTDataRandomAug.permute_seq(item_data_aug, permute_prob, 10)
+                    item_data_aug = KTDataRandomAug.permute_seq(item_data_aug, permute_prob, 6)
                 elif aug_type == "crop":
-                    item_data_aug = KTDataRandomAug.crop_seq(item_data_aug, crop_prob, 10)
+                    item_data_aug = KTDataRandomAug.crop_seq(item_data_aug, crop_prob, 6)
                 else:
                     raise NotImplementedError()
             item_data_aug["seq_len"] = len(item_data_aug["mask_seq"])
@@ -145,9 +145,9 @@ class KTDataset4Aug(Dataset):
                 for k, v in item_data_aug.items():
                     if type(v) == list:
                         item_data_aug[k] = v[:seq_len]
-                item_data_aug = KTDataRandomAug.mask_seq(item_data_aug, 0.2, 10)
-                item_data_aug = KTDataRandomAug.crop_seq(item_data_aug, 0.1, 10)
-                item_data_aug = KTDataRandomAug.permute_seq(item_data_aug, 0.2, 10)
+                item_data_aug = KTDataRandomAug.mask_seq(item_data_aug, 0.2, 6)
+                item_data_aug = KTDataRandomAug.crop_seq(item_data_aug, 0.1, 6)
+                item_data_aug = KTDataRandomAug.permute_seq(item_data_aug, 0.2, 6)
             else:
                 pos_chosen = np.random.choice(cur_same_target)
                 target_seq_id = self.data_srs[pos_chosen]["target_seq_id"]
@@ -201,13 +201,13 @@ class KTDataset4Aug(Dataset):
             item_data_aug = deepcopy(item_data2aug)
             for aug_type in aug_order:
                 if aug_type == "mask":
-                    item_data_aug = self.informative_mask(item_data_aug, mask_prob, 10)
+                    item_data_aug = self.informative_mask(item_data_aug, mask_prob, 6)
                 elif aug_type == "insert":
                     item_data_aug = self.informative_insert(item_data_aug, insert_prob)
                 elif aug_type == "replace":
                     item_data_aug = self.informative_replace(item_data_aug, replace_prob)
                 elif aug_type == "crop":
-                    item_data_aug = KTDataRandomAug.crop_seq(item_data_aug, crop_prob, 10)
+                    item_data_aug = KTDataRandomAug.crop_seq(item_data_aug, crop_prob, 6)
                 else:
                     raise NotImplementedError()
             item_data_aug["seq_len"] = len(item_data_aug["mask_seq"])

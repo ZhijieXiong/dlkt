@@ -114,7 +114,7 @@ class KTDataRandomAug:
     def replace_seq(self, sample, replace_prob):
         sample = deepcopy(sample)
         seq_len = sample["seq_len"]
-        replace_idx = random.sample(list(range(seq_len)), k=int(seq_len * replace_prob))
+        replace_idx = random.sample(list(range(seq_len)), k=max(1, int(seq_len * replace_prob)))
         for i in replace_idx:
             c_id = sample["concept_seq"][i]
             correct = sample["correct_seq"][i]
@@ -161,12 +161,12 @@ class KTDataRandomAug:
         for k in sample.keys():
             if type(sample[k]) == list:
                 seq_keys.append(k)
-        reorder_seq_len = math.floor(perm_prob * seq_len)
+        reorder_seq_len = max(2, math.floor(perm_prob * seq_len))
         # count和not_permute用于控制while True的循环次数，当循环次数超过一定次数，都没能得到合适的start_pos时，跳出循环，不做置换
         count = 0
         not_permute = False
         while True:
-            if count >= 30:
+            if count >= 50:
                 not_permute = True
                 break
             count += 1
@@ -195,11 +195,11 @@ class KTDataRandomAug:
         for k in sample.keys():
             if type(sample[k]) == list:
                 seq_keys.append(k)
-        cropped_seq_len = math.floor((1 - crop_prob) * seq_len)
+        cropped_seq_len = min(seq_len - 1, math.floor((1 - crop_prob) * seq_len))
         count = 0
         not_crop = False
         while True:
-            if count >= 30:
+            if count >= 50:
                 not_crop = True
                 break
             count += 1

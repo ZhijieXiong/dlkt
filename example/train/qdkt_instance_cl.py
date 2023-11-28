@@ -64,13 +64,13 @@ if __name__ == "__main__":
     parser.add_argument("--activate_type", type=str, default="relu")
     # instance cl参数（对比学习）
     parser.add_argument("--temp", type=float, default=0.01)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.01)
     parser.add_argument("--use_warm_up4cl", type=str2bool, default=False)
     parser.add_argument("--epoch_warm_up4cl", type=float, default=4)
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)
     parser.add_argument("--epoch_warm_up4online_sim", type=float, default=4)
-    parser.add_argument("--cl_type", type=str, default="last_time",
+    parser.add_argument("--cl_type", type=str, default="mean_pool",
                         choices=("last_time", "all_time", "mean_pool"))
     # random aug和informative aug参数
     parser.add_argument("--aug_type", type=str, default="informative_aug",
@@ -81,9 +81,9 @@ if __name__ == "__main__":
     parser.add_argument("--replace_prob", type=float, default=0.3)
     parser.add_argument("--crop_prob", type=float, default=0.1)
     parser.add_argument("--permute_prob", type=float, default=0.1)
-    parser.add_argument("--use_hard_neg", type=str2bool, default=False)
+    parser.add_argument("--use_hard_neg", type=str2bool, default=True)
     parser.add_argument("--hard_neg_prob", type=float, default=1)
-    parser.add_argument("--aug_order", type=str, default="['replace', 'insert']",
+    parser.add_argument("--aug_order", type=str, default="['crop', 'replace', 'insert']",
                         help="CL4KT: ['mask', 'replace', 'permute', 'crop']"
                              "info aug: ['mask', 'crop', 'replace', 'insert']")
     parser.add_argument("--offline_sim_type", type=str, default="order",
@@ -131,3 +131,39 @@ if __name__ == "__main__":
     global_objects["models"]["kt_model"] = model
     trainer = InstanceCLTrainer(global_params, global_objects)
     trainer.train()
+
+    # LMO as09 domain 6, use online sim, use warm up 4 online sim (4), random aug len, use hard neg, crop: 0.1, replace: 0.3, insert: 0.3, last time, weight cl: 0.1
+    # best valid epoch: 26  , best test epoch: 10
+    # train performance by best valid epoch is main metric: 0.9144   , AUC: 0.9144   , ACC: 0.83542  , RMSE: 0.3358   , MAE: 0.24055  ,
+    # valid performance by best valid epoch is main metric: 0.83598  , AUC: 0.83598  , ACC: 0.80159  , RMSE: 0.36995  , MAE: 0.2612   ,
+    # test performance by best valid epoch is main metric: 0.74825  , AUC: 0.74825  , ACC: 0.69697  , RMSE: 0.44866  , MAE: 0.35422  ,
+    # ----------------------------------------------------------------------------------------------------
+    # train performance by best train epoch is main metric: 0.93723  , AUC: 0.93723  , ACC: 0.8602   , RMSE: 0.31316  , MAE: 0.21566  ,
+    # test performance by best test epoch is main metric: 0.75813  , AUC: 0.75813  , ACC: 0.70747  , RMSE: 0.43868  , MAE: 0.36597  ,
+
+    # LMO as09 domain 6, use online sim, use warm up 4 online sim (4), random aug len, use hard neg, crop: 0.1, replace: 0.3, insert: 0.3, last time, weight cl: 0.01
+    # best valid epoch: 16  , best test epoch: 10
+    # train performance by best valid epoch is main metric: 0.91123  , AUC: 0.91123  , ACC: 0.83412  , RMSE: 0.33866  , MAE: 0.24477  ,
+    # valid performance by best valid epoch is main metric: 0.83555  , AUC: 0.83555  , ACC: 0.7985   , RMSE: 0.3723   , MAE: 0.26877  ,
+    # test performance by best valid epoch is main metric: 0.75274  , AUC: 0.75274  , ACC: 0.6996   , RMSE: 0.44742  , MAE: 0.35539  ,
+    # ----------------------------------------------------------------------------------------------------
+    # train performance by best train epoch is main metric: 0.94697  , AUC: 0.94697  , ACC: 0.87282  , RMSE: 0.29994  , MAE: 0.19976  ,
+    # test performance by best test epoch is main metric: 0.76326  , AUC: 0.76326  , ACC: 0.70373  , RMSE: 0.43997  , MAE: 0.36447  ,
+
+    # LMO as09 domain 6, use online sim, use warm up 4 online sim (4), random aug len, use hard neg, crop: 0.1, replace: 0.3, insert: 0.3, mean pool, weight cl: 0.1
+    # best valid epoch: 19  , best test epoch: 8
+    # train performance by best valid epoch is main metric: 0.91952  , AUC: 0.91952  , ACC: 0.84227  , RMSE: 0.32967  , MAE: 0.22858  ,
+    # valid performance by best valid epoch is main metric: 0.83044  , AUC: 0.83044  , ACC: 0.79938  , RMSE: 0.37376  , MAE: 0.2586   ,
+    # test performance by best valid epoch is main metric: 0.75645  , AUC: 0.75645  , ACC: 0.70673  , RMSE: 0.4479   , MAE: 0.34415  ,
+    # ----------------------------------------------------------------------------------------------------
+    # train performance by best train epoch is main metric: 0.95398  , AUC: 0.95398  , ACC: 0.88157  , RMSE: 0.28926  , MAE: 0.18382  ,
+    # test performance by best test epoch is main metric: 0.76453  , AUC: 0.76453  , ACC: 0.71154  , RMSE: 0.43696  , MAE: 0.3582   ,
+
+    # LMO as09 domain 6, use online sim, use warm up 4 online sim (4), random aug len, use hard neg, crop: 0.1, replace: 0.3, insert: 0.3, mean pool, weight cl: 0.01
+    # best valid epoch: 12  , best test epoch: 6
+    # train performance by best valid epoch is main metric: 0.90836  , AUC: 0.90836  , ACC: 0.83372  , RMSE: 0.33876  , MAE: 0.23734  ,
+    # valid performance by best valid epoch is main metric: 0.82965  , AUC: 0.82965  , ACC: 0.80105  , RMSE: 0.37276  , MAE: 0.26164  ,
+    # test performance by best valid epoch is main metric: 0.75965  , AUC: 0.75965  , ACC: 0.70835  , RMSE: 0.44417  , MAE: 0.34575  ,
+    # ----------------------------------------------------------------------------------------------------
+    # train performance by best train epoch is main metric: 0.95443  , AUC: 0.95443  , ACC: 0.8839   , RMSE: 0.28731  , MAE: 0.18206  ,
+    # test performance by best test epoch is main metric: 0.7649   , AUC: 0.7649   , ACC: 0.7143   , RMSE: 0.43566  , MAE: 0.35651  ,

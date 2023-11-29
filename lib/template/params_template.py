@@ -264,7 +264,8 @@ PARAMS = {
       "use_warm_up4online_sim": True,
       "epoch_warm_up4online_sim": 4,
       # "last_time" or "all_time" or "mean_pool"
-      "cl_type": "last_time"
+      "cl_type": "last_time",
+      "akt_seq_representation": "encoder_output"
     },
     "max_entropy_aug": {
       "use_adv_aug": False,

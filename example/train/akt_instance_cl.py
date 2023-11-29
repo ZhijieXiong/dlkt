@@ -71,6 +71,9 @@ if __name__ == "__main__":
     parser.add_argument("--epoch_warm_up4online_sim", type=float, default=4)
     parser.add_argument("--cl_type", type=str, default="mean_pool",
                         choices=("last_time", "all_time", "mean_pool"))
+    parser.add_argument("--akt_seq_representation", type=str, default="encoder_output",
+                        help="choose the representation of sequence in AKT, knowledge_encoder_output is the choice of CL4KT",
+                        choices=("encoder_output", "knowledge_encoder_output"))
     # random aug和informative aug参数
     parser.add_argument("--aug_type", type=str, default="informative_aug",
                         choices=("random_aug", "informative_aug"))

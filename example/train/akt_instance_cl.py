@@ -63,26 +63,26 @@ if __name__ == "__main__":
     parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
     # instance cl参数（对比学习）
     parser.add_argument("--temp", type=float, default=0.01)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.3)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
     parser.add_argument("--use_warm_up4cl", type=str2bool, default=False)
     parser.add_argument("--epoch_warm_up4cl", type=float, default=4)
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)
     parser.add_argument("--epoch_warm_up4online_sim", type=float, default=4)
-    parser.add_argument("--cl_type", type=str, default="last_time",
+    parser.add_argument("--cl_type", type=str, default="mean_pool",
                         choices=("last_time", "all_time", "mean_pool"))
     # random aug和informative aug参数
     parser.add_argument("--aug_type", type=str, default="informative_aug",
                         choices=("random_aug", "informative_aug"))
     parser.add_argument("--use_random_select_aug_len", type=str2bool, default=True)
     parser.add_argument("--mask_prob", type=float, default=0.1)
-    parser.add_argument("--insert_prob", type=float, default=0.2)
+    parser.add_argument("--insert_prob", type=float, default=0.3)
     parser.add_argument("--replace_prob", type=float, default=0.3)
     parser.add_argument("--crop_prob", type=float, default=0.1)
     parser.add_argument("--permute_prob", type=float, default=0.1)
     parser.add_argument("--use_hard_neg", type=str2bool, default=False)
     parser.add_argument("--hard_neg_prob", type=float, default=1)
-    parser.add_argument("--aug_order", type=str, default="['mask', 'crop', 'replace', 'insert']",
+    parser.add_argument("--aug_order", type=str, default="['crop', 'replace', 'insert']",
                         help="CL4KT: ['mask', 'replace', 'permute', 'crop']"
                              "info aug: ['mask', 'crop', 'replace', 'insert']")
     parser.add_argument("--offline_sim_type", type=str, default="order",

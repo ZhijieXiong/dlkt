@@ -64,7 +64,7 @@ if __name__ == "__main__":
     parser.add_argument("--QT_num_rnn_layer", type=int, default=4)
     parser.add_argument("--QT_transformer_num_block", type=int, default=1)
     parser.add_argument("--QT_transformer_num_head", type=int, default=4)
-    parser.add_argument("--IK_start", type=int, default=100)
+    parser.add_argument("--IK_start", type=int, default=120)
     # 损失权重
     parser.add_argument("--weight_QT_loss", type=float, default=1)
     parser.add_argument("--weight_IK_loss", type=float, default=0.5)

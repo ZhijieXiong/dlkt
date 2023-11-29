@@ -4,8 +4,8 @@ import re
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--file_path", type=str, default=r"/Users/dream/Desktop/code/projects/dlkt/tmp/huizong/qdkt_info_aug_cluster_cl_LMO_as12_pre.txt")
-    parser.add_argument("--key_words", type=str, default="test performance by best valid epoch is main")
+    parser.add_argument("--file_path", type=str, default=r"F:\code\myProjects\dlkt\example\result_local\akt_max_entropy_adv_aug_LMO_as12_save.txt")
+    parser.add_argument("--key_words", type=str, default="test performance by best test epoch")
     parser.add_argument("--n", help="隔几个做一次平均", type=int, default=5)
     args = parser.parse_args()
     params = vars(args)
@@ -33,5 +33,6 @@ if __name__ == "__main__":
         RMSE_ave += results[i][3]
         MAE_ave += results[i][4]
         if i == (len(results) - 1):
+            m = i % n + 1
             print(f"result {len(results) // n}:")
-            print(f"AUC: {AUC_ave / n:<8.4}, ACC: {ACC_ave / n:<8.4}, RMSE: {RMSE_ave / n:<8.4}, MAE: {MAE_ave / n:<8.4}")
+            print(f"AUC: {AUC_ave / m:<8.4}, ACC: {ACC_ave / m:<8.4}, RMSE: {RMSE_ave / m:<8.4}, MAE: {MAE_ave / m:<8.4}")

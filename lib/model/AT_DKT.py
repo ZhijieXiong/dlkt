@@ -89,7 +89,7 @@ class AT_DKT(nn.Module):
         interaction_emb = self.embed_layer.get_emb("interaction", interaction_seq)
         question_emb = self.embed_layer.get_emb("question", question_seq)
         concept_emb = self.embed_layer.get_emb("concept", concept_seq)
-        cate_emb = interaction_emb + question_emb + concept_emb
+        cate_emb = question_emb + concept_emb
         seq_len = cate_emb.shape[1]
 
         # predict concept corresponding to question

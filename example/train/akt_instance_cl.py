@@ -64,8 +64,6 @@ if __name__ == "__main__":
     # instance cl参数（对比学习）
     parser.add_argument("--temp", type=float, default=0.01)
     parser.add_argument("--weight_cl_loss", type=float, default=0.1)
-    parser.add_argument("--use_warm_up4cl", type=str2bool, default=False)
-    parser.add_argument("--epoch_warm_up4cl", type=float, default=4)
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)
     parser.add_argument("--epoch_warm_up4online_sim", type=float, default=4)

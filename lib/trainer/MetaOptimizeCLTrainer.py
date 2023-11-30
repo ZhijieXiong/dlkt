@@ -49,7 +49,7 @@ class MetaOptimizeCLTrainer(KnowledgeTracingTrainer):
         extractor1_scheduler = self.objects["schedulers"]["extractor1"]
 
         cl_type = self.params["other"]["instance_cl"]["cl_type"]
-        use_adv_aug = self.params["other"]["max_entropy_aug"]["use_adv_aug"]
+        use_adv_aug = self.params["other"]["instance_cl"]["use_adv_aug"]
         use_regularization = self.params["other"]["meta_cl"]["use_regularization"]
 
         self.print_data_statics()
@@ -162,8 +162,8 @@ class MetaOptimizeCLTrainer(KnowledgeTracingTrainer):
             print(f"online similarity analysis: from {t_start} to {t_end}")
 
     def do_max_entropy_aug(self):
-        use_adv_aug = self.params["other"]["max_entropy_aug"]["instance cl"]["use_adv_aug"]
-        max_entropy_adv_aug_config = self.params["other"]["max_entropy_aug"]
+        use_adv_aug = self.params["other"]["instance_cl"]["use_adv_aug"]
+        max_entropy_adv_aug_config = self.params["other"]["max_entropy_adv_aug"]
         current_epoch = self.train_record.get_current_epoch()
         epoch_interval_generate = max_entropy_adv_aug_config["epoch_interval_generate"]
         loop_adv = max_entropy_adv_aug_config["loop_adv"]

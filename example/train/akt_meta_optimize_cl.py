@@ -76,7 +76,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)
     parser.add_argument("--epoch_warm_up4online_sim", type=float, default=4)
-    parser.add_argument("--cl_type", type=str, default="last_time",
+    parser.add_argument("--cl_type", type=str, default="mean_pool",
                         choices=("last_time", "mean_pool"))
     # random aug和informative aug参数
     parser.add_argument("--aug_type", type=str, default="informative_aug",

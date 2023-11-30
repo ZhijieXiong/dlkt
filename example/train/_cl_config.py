@@ -313,8 +313,7 @@ def meta_optimize_cl_general_config(local_params, global_params, global_objects)
     # meta CL参数
     use_regularization = local_params["use_regularization"]
     global_params["other"]["meta_cl"] = deepcopy(META_OPTIMIZE_CL_PARAMS)
-    meta_cl_config = global_params["other"]["meta_cl"]
-    meta_cl_config["use_regularization"] = use_regularization
+    global_params["other"]["meta_cl"]["use_regularization"] = use_regularization
 
     # instance CL参数
     temp = local_params["temp"]
@@ -341,7 +340,7 @@ def meta_optimize_cl_general_config(local_params, global_params, global_objects)
     gamma = local_params["gamma"]
 
     global_params["other"]["max_entropy_adv_aug"] = deepcopy(MAX_ENTROPY_ADV_AUG)
-    max_entropy_aug_config = global_params["other"]["max_entropy_aug"]
+    max_entropy_aug_config = global_params["other"]["max_entropy_adv_aug"]
     instance_cl_config["use_adv_aug"] = use_adv_aug
     if use_adv_aug:
         max_entropy_aug_config["epoch_interval_generate"] = epoch_interval_generate

@@ -60,10 +60,8 @@ if __name__ == "__main__":
     parser.add_argument("--separate_qa", type=str2bool, default=False)
     parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
     # max entropy adv aug参数
-    parser.add_argument("--use_warm_up", type=str2bool, default=False)
     parser.add_argument("--epoch_interval_generate", type=int, default=2)
     parser.add_argument("--epoch_generate", type=int, default=200)
-    parser.add_argument("--epoch_warm_up", type=int, default=4)
     parser.add_argument("--weight_adv_pred_loss", type=float, default=1)
     parser.add_argument("--loop_adv", type=int, default=3)
     parser.add_argument("--adv_learning_rate", type=float, default=10.0)

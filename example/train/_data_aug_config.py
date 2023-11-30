@@ -1,7 +1,5 @@
 def max_entropy_adv_aug_general_config(local_params, global_params):
     # adv aug相关参数
-    use_warm_up = local_params["use_warm_up"]
-    epoch_warm_up = local_params["epoch_warm_up"]
     epoch_interval_generate = local_params["epoch_interval_generate"]
     loop_adv = local_params["loop_adv"]
     epoch_generate = local_params["epoch_generate"]
@@ -11,8 +9,6 @@ def max_entropy_adv_aug_general_config(local_params, global_params):
     weight_adv_pred_loss = local_params["weight_adv_pred_loss"]
 
     max_entropy_adv_aug_config = global_params["other"]["max_entropy_adv_aug"]
-    max_entropy_adv_aug_config["use_warm_up"] = use_warm_up
-    max_entropy_adv_aug_config["epoch_warm_up"] = epoch_warm_up
     max_entropy_adv_aug_config["epoch_interval_generate"] = epoch_interval_generate
     max_entropy_adv_aug_config["loop_adv"] = loop_adv
     max_entropy_adv_aug_config["epoch_generate"] = epoch_generate

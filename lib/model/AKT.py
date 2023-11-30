@@ -4,7 +4,7 @@ import torch.optim as optim
 import numpy as np
 
 from .Module.EncoderLayer import EncoderLayer
-from .loss_util import duo_info_nce, binary_entropy
+from .loss_util import duo_info_nce, binary_entropy, meta_contrast_rl
 from .util import get_mask4last_or_penultimate
 
 
@@ -247,6 +247,64 @@ class AKT(nn.Module):
 
         return (cl_loss0 + cl_loss1) / 2
 
+    def meta_contrast(self, batch, latent_type, meta_extractors, use_regularization):
+        batch_size = batch["mask_seq"].shape[0]
+        extractor0, extractor1 = meta_extractors
+
+        batch_aug0 = {
+            "concept_seq": batch["concept_seq_aug_0"],
+            "question_seq": batch["question_seq_aug_0"],
+            "correct_seq": batch["correct_seq_aug_0"],
+            "mask_seq": batch["mask_seq_aug_0"]
+        }
+        batch_aug1 = {
+            "concept_seq": batch["concept_seq_aug_1"],
+            "question_seq": batch["question_seq_aug_1"],
+            "correct_seq": batch["correct_seq_aug_1"],
+            "mask_seq": batch["mask_seq_aug_1"]
+        }
+
+        if latent_type == "last_time":
+            latent_aug0_pooled = self.get_latent_last(batch_aug0)
+            latent_aug1_pooled = self.get_latent_last(batch_aug1)
+        elif latent_type == "mean_pool":
+            latent_aug0_pooled = self.get_latent_mean(batch_aug0)
+            latent_aug1_pooled = self.get_latent_mean(batch_aug1)
+        else:
+            raise NotImplementedError()
+        latent_aug0_extracted = extractor0(latent_aug0_pooled)
+        latent_aug1_extracted = extractor1(latent_aug1_pooled)
+
+        temp = self.params["other"]["instance_cl"]["temp"]
+        labels = torch.arange(batch_size).long().to(self.params["device"])
+        # 随机增强的对比损失
+        cos_sim_0 = torch.cosine_similarity(latent_aug0_pooled.unsqueeze(1), latent_aug1_pooled.unsqueeze(0),
+                                            dim=-1) / temp
+        cl_loss_0 = nn.functional.cross_entropy(cos_sim_0, labels)
+
+        # 计算meta cl loss
+        cos_sim_1 = torch.cosine_similarity(latent_aug0_pooled.unsqueeze(1), latent_aug0_extracted.unsqueeze(0),
+                                            dim=-1) / temp
+        cl_loss_1 = nn.functional.cross_entropy(cos_sim_1, labels)
+
+        cos_sim_2 = torch.cosine_similarity(latent_aug1_pooled.unsqueeze(1), latent_aug1_extracted.unsqueeze(0),
+                                            dim=-1) / temp
+        cl_loss_2 = nn.functional.cross_entropy(cos_sim_2, labels)
+
+        cos_sim_3 = torch.cosine_similarity(latent_aug0_extracted.unsqueeze(1), latent_aug1_extracted.unsqueeze(0),
+                                            dim=-1) / temp
+        cl_loss_3 = nn.functional.cross_entropy(cos_sim_3, labels)
+
+        if use_regularization:
+            rl_loss = 0.
+            rl_loss += meta_contrast_rl(latent_aug0_pooled, latent_aug1_extracted, temp, "dot")
+            rl_loss += meta_contrast_rl(latent_aug1_pooled, latent_aug0_extracted, temp, "dot")
+            rl_loss += meta_contrast_rl(latent_aug0_extracted, latent_aug1_extracted, temp, "dot")
+        else:
+            rl_loss = None
+
+        return cl_loss_0, cl_loss_1 + cl_loss_2 + cl_loss_3, rl_loss
+
     def base_emb(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
         separate_qa = encoder_config["separate_qa"]
@@ -487,20 +545,13 @@ class AKT(nn.Module):
 
         return loss
 
-    def max_entropy_adv_aug(self, dataset, batch, adv_learning_rate, loop_adv, eta, gamma):
+    def max_entropy_adv_aug(self, dataset, batch, optimizer, loop_adv, eta, gamma):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
 
         latent_ori = self.get_latent_from_adv_data(dataset, batch).detach().clone()
         latent_ori = latent_ori[mask_bool_seq]
         latent_ori.requires_grad_(False)
-        optimizer = optim.SGD(params=[
-            dataset["embed_question_difficulty"].weight,
-            dataset["embed_concept_variation"].weight,
-            dataset["embed_interaction_variation"].weight,
-            dataset["embed_concept"].weight,
-            dataset["embed_interaction"].weight
-        ], lr=adv_learning_rate)
         adv_predict_loss = 0.
         adv_entropy = 0.
         adv_mse_loss = 0.

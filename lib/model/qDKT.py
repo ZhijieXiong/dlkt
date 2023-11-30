@@ -458,14 +458,13 @@ class qDKT(nn.Module):
 
         return loss
 
-    def max_entropy_adv_aug(self, dataset, batch, adv_learning_rate, loop_adv, eta, gamma):
+    def max_entropy_adv_aug(self, dataset, batch, optimizer, loop_adv, eta, gamma):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
 
         latent_ori = self.get_latent_from_adv_data(dataset, batch).detach().clone()
         latent_ori = latent_ori[mask_bool_seq[:, :-1]]
         latent_ori.requires_grad_(False)
-        optimizer = optim.SGD(dataset["embed_layer"].parameters(), lr=adv_learning_rate)
         adv_predict_loss = 0.
         adv_entropy = 0.
         adv_mse_loss = 0.

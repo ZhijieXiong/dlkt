@@ -16,13 +16,16 @@ class KnowledgeTracingTrainer:
         self.objects["optimizers"] = {}
         self.objects["schedulers"] = {}
 
+        self.loss_record = self.init_loss_record()
+        self.train_record = TrainRecord(params, objects)
+        self.init_trainer()
+
+    def init_loss_record(self):
         used_losses = ["predict loss"]
         loss_config = self.params["loss_config"]
         for loss_name in loss_config:
             used_losses.append(loss_name)
-        self.loss_record = LossRecord(used_losses)
-        self.train_record = TrainRecord(params, objects)
-        self.init_trainer()
+        return LossRecord(used_losses)
 
     def init_trainer(self):
         # 初始化optimizer和scheduler
@@ -30,15 +33,10 @@ class KnowledgeTracingTrainer:
         optimizers = self.objects["optimizers"]
         schedulers = self.objects["schedulers"]
         optimizers_config = self.params["optimizers_config"]
-        kt_optimizer_config = self.params["optimizers_config"]["kt_model"]
         schedulers_config = self.params["schedulers_config"]
-        kt_schedulers_config = self.params["schedulers_config"]["kt_model"]
 
         for model_name, optimizer_config in optimizers_config.items():
             scheduler_config = schedulers_config[model_name]
-            if model_name != "kt_model" and optimizer_config["share_params_with_kt"]:
-                optimizer_config = kt_optimizer_config
-                scheduler_config = kt_schedulers_config
             optimizers[model_name] = create_optimizer(models[model_name].parameters(), optimizer_config)
 
             if scheduler_config["use_scheduler"]:
@@ -52,18 +50,12 @@ class KnowledgeTracingTrainer:
         schedulers_config = self.params["schedulers_config"]["kt_model"]
         num_epoch = train_strategy["num_epoch"]
         train_loader = self.objects["data_loaders"]["train_loader"]
-        test_loader = self.objects["data_loaders"]["test_loader"]
         optimizer = self.objects["optimizers"]["kt_model"]
         scheduler = self.objects["schedulers"]["kt_model"]
         model = self.objects["models"]["kt_model"]
 
-        train_statics = train_loader.dataset.get_statics_kt_dataset()
-        print(f"train, seq: {train_statics[0]}, sample: {train_statics[1]}, accuracy: {train_statics[2]:<.4}")
-        if train_strategy["type"] == "valid_test":
-            valid_statics = self.objects["data_loaders"]["valid_loader"].dataset.get_statics_kt_dataset()
-            print(f"valid, seq: {valid_statics[0]}, sample: {valid_statics[1]}, accuracy: {valid_statics[2]:<.4}")
-        test_statics = test_loader.dataset.get_statics_kt_dataset()
-        print(f"test, seq: {test_statics[0]}, sample: {test_statics[1]}, accuracy: {test_statics[2]:<.4}")
+        self.print_data_statics()
+
         for epoch in range(1, num_epoch + 1):
             model.train()
             for batch in train_loader:
@@ -132,6 +124,19 @@ class KnowledgeTracingTrainer:
                 current_epoch = self.train_record.get_current_epoch()
                 if best_epoch == current_epoch:
                     torch.save(model, model_path)
+
+    def print_data_statics(self):
+        train_strategy = self.params["train_strategy"]
+        train_loader = self.objects["data_loaders"]["train_loader"]
+        test_loader = self.objects["data_loaders"]["test_loader"]
+
+        train_statics = train_loader.dataset.get_statics_kt_dataset()
+        print(f"train, seq: {train_statics[0]}, sample: {train_statics[1]}, accuracy: {train_statics[2]:<.4}")
+        if train_strategy["type"] == "valid_test":
+            valid_statics = self.objects["data_loaders"]["valid_loader"].dataset.get_statics_kt_dataset()
+            print(f"valid, seq: {valid_statics[0]}, sample: {valid_statics[1]}, accuracy: {valid_statics[2]:<.4}")
+        test_statics = test_loader.dataset.get_statics_kt_dataset()
+        print(f"test, seq: {test_statics[0]}, sample: {test_statics[1]}, accuracy: {test_statics[2]:<.4}")
 
     @staticmethod
     def evaluate_kt_dataset(model, data_loader):

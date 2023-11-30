@@ -22,7 +22,6 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
         schedulers_config = self.params["schedulers_config"]["kt_model"]
         num_epoch = train_strategy["num_epoch"]
         train_loader = self.objects["data_loaders"]["train_loader"]
-        test_loader = self.objects["data_loaders"]["test_loader"]
         optimizer = self.objects["optimizers"]["kt_model"]
         scheduler = self.objects["schedulers"]["kt_model"]
         model = self.objects["models"]["kt_model"]
@@ -30,13 +29,7 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
         max_entropy_aug_config = self.params["other"]["max_entropy_aug"]
         random_select_aug_len = self.params["other"]["cluster_cl"]["random_select_aug_len"]
 
-        train_statics = train_loader.dataset.get_statics_kt_dataset()
-        print(f"train, seq: {train_statics[0]}, sample: {train_statics[1]}, accuracy: {train_statics[2]:<.4}")
-        if train_strategy["type"] == "valid_test":
-            valid_statics = self.objects["data_loaders"]["valid_loader"].dataset.get_statics_kt_dataset()
-            print(f"valid, seq: {valid_statics[0]}, sample: {valid_statics[1]}, accuracy: {valid_statics[2]:<.4}")
-        test_statics = test_loader.dataset.get_statics_kt_dataset()
-        print(f"test, seq: {test_statics[0]}, sample: {test_statics[1]}, accuracy: {test_statics[2]:<.4}")
+        self.print_data_statics()
 
         use_warm_up4cl = self.params["other"]["cluster_cl"]["use_warm_up4cl"]
         epoch_warm_up4cl = self.params["other"]["cluster_cl"]["epoch_warm_up4cl"]

@@ -256,10 +256,9 @@ PARAMS = {
       "cl_type": "last_time",
     },
     "instance_cl": {
+      "use_adv_aug": False,
       "random_select_aug_len": False,
       "temp": 0.05,
-      "use_warm_up4cl": False,
-      "epoch_warm_up4cl": 4,
       "use_online_sim": True,
       "use_warm_up4online_sim": True,
       "epoch_warm_up4online_sim": 4,
@@ -267,21 +266,11 @@ PARAMS = {
       "cl_type": "last_time",
       "akt_seq_representation": "encoder_output"
     },
-    "max_entropy_aug": {
-      "use_adv_aug": False,
-      "epoch_interval_generate": 1,
-      "loop_adv": 3,
-      "epoch_generate": 40,
-      "adv_learning_rate": 10,
-      "eta": 5,
-      "gamma": 1
-    },
     "cluster_cl": {
+      "use_adv_aug": False,
       "random_select_aug_len": False,
       "num_cluster": 32,
       "temp": 0.05,
-      "use_warm_up4cl": False,
-      "epoch_warm_up4cl": 4,
       "use_online_sim": True,
       "use_warm_up4online_sim": True,
       "epoch_warm_up4online_sim": 4,
@@ -289,8 +278,6 @@ PARAMS = {
       "use_adv_data": False
     },
     "max_entropy_adv_aug": {
-      "use_warm_up": True,
-      "epoch_warm_up": 4,
       "epoch_interval_generate": 1,
       "loop_adv": 3,
       "epoch_generate": 40,

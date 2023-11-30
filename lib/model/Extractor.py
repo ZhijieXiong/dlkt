@@ -40,8 +40,8 @@ class Extractor(nn.Module):
         super(Extractor, self).__init__()
 
         self.params = params
-        layers = self.params["models"]["extractor"]["layers"]
-        activation = self.params["models"]["extractor"]["active_func"]
+        layers = self.params["models_config"]["extractor"]["layers"]
+        activation = self.params["models_config"]["extractor"]["active_func"]
 
         self.dense_1 = nn.Linear(layers[0], layers[1])
         self.dense_2 = nn.Linear(layers[1], layers[2])

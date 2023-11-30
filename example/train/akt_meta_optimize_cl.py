@@ -40,7 +40,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
     parser.add_argument("--learning_rate", type=float, default=0.0004)
-    parser.add_argument("--train_batch_size", type=int, default=4)
+    parser.add_argument("--train_batch_size", type=int, default=32)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
@@ -68,10 +68,11 @@ if __name__ == "__main__":
                         choices=("relu", "gelu", "swish"))
     # instance cl参数（对比学习）
     parser.add_argument("--temp", type=float, default=0.01)
-    parser.add_argument("--weight_lambda", type=float, help="weight of original cl", default=0.3)
-    parser.add_argument("--weight_beta", type=float, help="weight of meta cl", default=0.3)
-    parser.add_argument("--use_warm_up4cl", type=str2bool, default=False)
-    parser.add_argument("--epoch_warm_up4cl", type=float, default=4)
+    parser.add_argument("--weight_lambda", type=float, help="weight of original cl", default=0.1)
+    parser.add_argument("--weight_beta", type=float, help="weight of meta cl", default=0.1)
+    parser.add_argument("--use_regularization", type=str2bool, default=True)
+    parser.add_argument("--weight_gamma", type=float, default=0.0001,
+                        help="weight of contrastive regularization, 论文代码实现里gamma直接设成0.1")
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)
     parser.add_argument("--epoch_warm_up4online_sim", type=float, default=4)
@@ -86,6 +87,7 @@ if __name__ == "__main__":
     parser.add_argument("--replace_prob", type=float, default=0.3)
     parser.add_argument("--crop_prob", type=float, default=0.1)
     parser.add_argument("--permute_prob", type=float, default=0.1)
+    parser.add_argument("--use_hard_neg", type=str2bool, default=False)
     parser.add_argument("--hard_neg_prob", type=float, default=1)
     parser.add_argument("--aug_order", type=str, default="['mask', 'crop', 'replace', 'insert']",
                         help="CL4KT: ['mask', 'replace', 'permute', 'crop']"
@@ -132,11 +134,11 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
     kt_model = AKT(global_params, global_objects).to(global_params["device"])
-    extractor1 = Extractor(global_params)
-    extractor2 = Extractor(global_params)
+    extractor1 = Extractor(global_params).to(global_params["device"])
+    extractor2 = Extractor(global_params).to(global_params["device"])
 
     global_objects["models"]["kt_model"] = kt_model
-    global_objects["models"]["extractor1"] = extractor1
-    global_objects["models"]["extractor2"] = extractor2
+    global_objects["models"]["extractor0"] = extractor1
+    global_objects["models"]["extractor1"] = extractor2
     trainer = MetaOptimizeCLTrainer(global_params, global_objects)
     trainer.train()

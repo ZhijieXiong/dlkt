@@ -74,8 +74,8 @@ class KTDataset4Aug(Dataset):
                         ).long().to(self.params["device"])
             item_data2aug["seq_len"] = seq_len
             # 使用hard neg
-            use_hard_neg = dataset_config_this["kt4aug"][aug_type]["use_hard_neg"]
-            hard_neg_prob = dataset_config_this["kt4aug"][aug_type]["hard_neg_prob"]
+            use_hard_neg = dataset_config_this["kt4aug"][aug_type].get("use_hard_neg", False)
+            hard_neg_prob = dataset_config_this["kt4aug"][aug_type].get("hard_neg_prob", 1)
             if use_hard_neg:
                 correct_seq_neg = KTDataRandomAug.negative_seq(item_data2aug["correct_seq"], hard_neg_prob)
                 result["correct_seq_hard_neg"] = (

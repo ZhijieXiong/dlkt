@@ -58,6 +58,9 @@ if __name__ == "__main__":
     parser.add_argument("--dim_final_fc", type=int, default=512)
     parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--separate_qa", type=str2bool, default=False)
+    parser.add_argument("--seq_representation", type=str, default="encoder_output",
+                        help="choose the representation of sequence in AKT, knowledge_encoder_output is the choice of CL4KT",
+                        choices=("encoder_output", "knowledge_encoder_output"))
     # 其它参数
     parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
     # 其它

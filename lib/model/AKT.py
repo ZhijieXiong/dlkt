@@ -352,7 +352,7 @@ class AKT(nn.Module):
 
         return predict_score
 
-    def get_latent(self, batch, latent_cl4kt=False):
+    def get_latent(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
         separate_qa = encoder_config["separate_qa"]
         concept_seq = batch["concept_seq"]
@@ -378,22 +378,22 @@ class AKT(nn.Module):
             "interaction_emb": interaction_emb,
             "question_difficulty_emb": question_difficulty_emb
         }
-        if latent_cl4kt:
+        if encoder_config["seq_representation"] == "knowledge_encoder_output":
             latent = self.encoder_layer.get_latent(encoder_input)
         else:
             latent = self.encoder_layer(encoder_input)
 
         return latent
 
-    def get_latent_last(self, batch, latent_cl4kt=False):
-        latent = self.get_latent(batch, latent_cl4kt)
+    def get_latent_last(self, batch):
+        latent = self.get_latent(batch)
         mask4last = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
         latent_last = latent[torch.where(mask4last == 1)]
 
         return latent_last
 
-    def get_latent_mean(self, batch, latent_cl4kt=False):
-        latent = self.get_latent(batch, latent_cl4kt)
+    def get_latent_mean(self, batch):
+        latent = self.get_latent(batch)
         mask_seq = batch["mask_seq"]
         latent_mean = (latent * mask_seq.unsqueeze(-1)).sum(1) / mask_seq.sum(-1).unsqueeze(-1)
 
@@ -480,7 +480,7 @@ class AKT(nn.Module):
 
         return predict_score
 
-    def get_latent_from_adv_data(self, dataset, batch, latent_cl4kt=False):
+    def get_latent_from_adv_data(self, dataset, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
         separate_qa = encoder_config["separate_qa"]
         concept_seq = batch["concept_seq"]
@@ -506,22 +506,22 @@ class AKT(nn.Module):
             "interaction_emb": interaction_emb,
             "question_difficulty_emb": question_difficulty_emb
         }
-        if latent_cl4kt:
+        if encoder_config["seq_representation"] == "knowledge_encoder_output":
             latent = self.encoder_layer.get_latent(encoder_input)
         else:
             latent = self.encoder_layer(encoder_input)
 
         return latent
 
-    def get_latent_last_from_adv_data(self, dataset, batch, latent_cl4kt=False):
-        latent = self.get_latent_from_adv_data(dataset, batch, latent_cl4kt)
+    def get_latent_last_from_adv_data(self, dataset, batch):
+        latent = self.get_latent_from_adv_data(dataset, batch)
         mask4last = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
         latent_last = latent[torch.where(mask4last == 1)]
 
         return latent_last
 
-    def get_latent_mean_from_adv_data(self, dataset, batch, latent_cl4kt=False):
-        latent = self.get_latent_from_adv_data(dataset, batch, latent_cl4kt)
+    def get_latent_mean_from_adv_data(self, dataset, batch):
+        latent = self.get_latent_from_adv_data(dataset, batch)
         mask_seq = batch["mask_seq"]
         latent_mean = (latent * mask_seq.unsqueeze(-1)).sum(1) / mask_seq.sum(-1).unsqueeze(-1)
 

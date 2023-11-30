@@ -59,6 +59,9 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--separate_qa", type=str2bool, default=False)
     parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
+    parser.add_argument("--seq_representation", type=str, default="encoder_output",
+                        help="choose the representation of sequence in AKT, knowledge_encoder_output is the choice of CL4KT",
+                        choices=("encoder_output", "knowledge_encoder_output"))
     # cold start
     parser.add_argument("--cold_start_step1", type=int, default=5)
     parser.add_argument("--cold_start_step2", type=int, default=10)

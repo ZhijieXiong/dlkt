@@ -61,6 +61,9 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--separate_qa", type=str2bool, default=False)
     parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
+    parser.add_argument("--seq_representation", type=str, default="knowledge_encoder_output",
+                        help="choose the representation of sequence in AKT, knowledge_encoder_output is the choice of CL4KT",
+                        choices=("encoder_output", "knowledge_encoder_output"))
     # instance cl参数（对比学习）
     parser.add_argument("--temp", type=float, default=0.01)
     parser.add_argument("--weight_cl_loss", type=float, default=0.1)
@@ -69,9 +72,6 @@ if __name__ == "__main__":
     parser.add_argument("--epoch_warm_up4online_sim", type=float, default=4)
     parser.add_argument("--cl_type", type=str, default="mean_pool",
                         choices=("last_time", "all_time", "mean_pool"))
-    parser.add_argument("--akt_seq_representation", type=str, default="encoder_output",
-                        help="choose the representation of sequence in AKT, knowledge_encoder_output is the choice of CL4KT",
-                        choices=("encoder_output", "knowledge_encoder_output"))
     # random aug和informative aug参数
     parser.add_argument("--aug_type", type=str, default="informative_aug",
                         choices=("random_aug", "informative_aug"))
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     parser.add_argument("--replace_prob", type=float, default=0.3)
     parser.add_argument("--crop_prob", type=float, default=0.1)
     parser.add_argument("--permute_prob", type=float, default=0.1)
-    parser.add_argument("--use_hard_neg", type=str2bool, default=False)
+    parser.add_argument("--use_hard_neg", type=str2bool, default=True)
     parser.add_argument("--hard_neg_prob", type=float, default=1)
     parser.add_argument("--aug_order", type=str, default="['crop', 'replace', 'insert']",
                         help="CL4KT: ['mask', 'replace', 'permute', 'crop']"

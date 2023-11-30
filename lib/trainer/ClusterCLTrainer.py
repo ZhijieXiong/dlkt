@@ -27,13 +27,14 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
         optimizer = self.objects["optimizers"]["kt_model"]
         scheduler = self.objects["schedulers"]["kt_model"]
         model = self.objects["models"]["kt_model"]
-        cl_type = self.params["other"]["cluster_cl"]["cl_type"]
-        max_entropy_aug_config = self.params["other"]["max_entropy_aug"]
-        random_select_aug_len = self.params["other"]["cluster_cl"]["random_select_aug_len"]
 
         self.print_data_statics()
 
-        epoch_warm_up4online_sim = self.params["other"]["cluster_cl"]["epoch_warm_up4online_sim"]
+        use_warm_up4cluster_cl = self.params["other"]["cluster_cl"]["use_warm_up4cluster_cl"]
+        epoch_warm_up4cluster_cl = self.params["other"]["cluster_cl"]["epoch_warm_up4cluster_cl"]
+        cl_type = self.params["other"]["cluster_cl"]["cl_type"]
+        random_select_aug_len = self.params["other"]["cluster_cl"]["random_select_aug_len"]
+        use_adv_aug = self.params["other"]["cluster_cl"]["use_adv_aug"]
         weight_cl_loss = self.params["loss_config"]["cl loss"]
 
         for epoch in range(1, num_epoch + 1):
@@ -42,7 +43,12 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
             self.do_cluster()
 
             # 有对抗样本后，随机增强只需要生成一个view
-            use_adv_aug = max_entropy_aug_config["use_adv_aug"] and (epoch > epoch_warm_up4online_sim)
+
+            do_cluster_cl = (not use_warm_up4cluster_cl) or (use_warm_up4cluster_cl and epoch > epoch_warm_up4cluster_cl)
+            if do_cluster_cl:
+                train_loader.dataset.set_use_aug()
+            else:
+                train_loader.dataset.set_not_use_aug()
 
             model.train()
             for batch_idx, batch in enumerate(train_loader):
@@ -52,12 +58,13 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
                 num_seq = batch["mask_seq"].shape[0]
                 loss = 0.
 
-                if use_adv_aug:
-                    cl_loss = model.get_cluster_cl_loss_adv(batch, self.clus, self.dataset_adv_generated)
-                else:
-                    cl_loss = model.get_cluster_cl_loss_one_seq(batch, self.clus, cl_type, random_select_aug_len)
-                self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)
-                loss = loss + weight_cl_loss * cl_loss
+                if do_cluster_cl:
+                    if use_adv_aug:
+                        cl_loss = model.get_cluster_cl_loss_adv(batch, self.clus, self.dataset_adv_generated)
+                    else:
+                        cl_loss = model.get_cluster_cl_loss_one_seq(batch, self.clus, cl_type, random_select_aug_len)
+                    self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)
+                    loss = loss + weight_cl_loss * cl_loss
 
                 predict_loss = model.get_predict_loss(batch)
                 self.loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
@@ -74,16 +81,16 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
                 break
 
     def do_cluster(self):
-        use_warm_up4cl = self.params["other"]["cluster_cl"]["use_warm_up4cl"]
-        epoch_warm_up4cl = self.params["other"]["cluster_cl"]["epoch_warm_up4cl"]
+        use_warm_up4cluster_cl = self.params["other"]["cluster_cl"]["use_warm_up4cluster_cl"]
+        epoch_warm_up4cluster_cl = self.params["other"]["cluster_cl"]["epoch_warm_up4cluster_cl"]
         current_epoch = self.train_record.get_current_epoch()
-        after_warm_up = current_epoch >= epoch_warm_up4cl
+        after_warm_up = current_epoch >= epoch_warm_up4cluster_cl
         model = self.objects["models"]["kt_model"]
         cl_type = self.params["other"]["cluster_cl"]["cl_type"]
         train_loader = self.objects["data_loaders"]["train_loader"]
         random_select_aug_len = self.params["other"]["cluster_cl"]["random_select_aug_len"]
 
-        if not use_warm_up4cl or after_warm_up:
+        if not use_warm_up4cluster_cl or after_warm_up:
             t_start = get_now_time()
             latent_all = []
             model.eval()
@@ -93,20 +100,25 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
                         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
                         batch_size = mask_bool_seq.shape[0]
                         seq_len = mask_bool_seq.shape[1]
+                        latent = model.get_latent(batch).detach()
+                        if cl_type == "mean_pool":
+                            with torch.no_grad():
+                                mask4mean_pool = torch.ones_like(mask_bool_seq).to(self.params["device"])
+                                mask4mean_pool = torch.cumsum(mask4mean_pool, dim=-1)
+                                latent = torch.cumsum(latent, dim=-2) / mask4mean_pool.unsqueeze(2)
                         mask4select = torch.zeros(seq_len).to(self.params["device"])
-                        mask4select[2::3] = 1
+                        mask4select[5::5] = 1
                         mask4select = mask4select.bool().repeat(batch_size, 1) & mask_bool_seq
-                        latent = model.get_latent(batch)
-                        latent = latent[:, 2:][mask4select[:, 2:]]
+                        latent = latent[:, 3:][mask4select[:, 3:]]
                     elif cl_type == "last_time":
-                        latent = model.get_latent_last(batch)
+                        latent = model.get_latent_last(batch).detach().cpu()
                     elif cl_type == "mean_pool":
-                        latent = model.get_latent_mean(batch)
+                        latent = model.get_latent_mean(batch).detach().cpu()
                     else:
                         raise NotImplementedError()
                     latent_all.append(latent)
             # Cluster
-            latent_all = np.array(torch.cat(latent_all, dim=0).detach().cpu().tolist())
+            latent_all = np.array(torch.cat(latent_all, dim=0).tolist())
 
             # ClusterTorch
             # latent_all = torch.cat(latent_all, dim=0).detach().clone()

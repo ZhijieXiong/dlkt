@@ -59,6 +59,9 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--separate_qa", type=str2bool, default=False)
     parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
+    parser.add_argument("--seq_representation", type=str, default="encoder_output",
+                        help="choose the representation of sequence in AKT, knowledge_encoder_output is the choice of CL4KT",
+                        choices=("encoder_output", "knowledge_encoder_output"))
     # max entropy adv aug参数
     parser.add_argument("--epoch_interval_generate", type=int, default=2)
     parser.add_argument("--epoch_generate", type=int, default=200)

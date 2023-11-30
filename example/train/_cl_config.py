@@ -178,6 +178,8 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
         raise NotImplementedError()
 
     # cluster CL参数
+    use_warm_up4cluster_cl = local_params["use_warm_up4cluster_cl"]
+    epoch_warm_up4cluster_cl = local_params["epoch_warm_up4cluster_cl"]
     temp = local_params["temp"]
     use_online_sim = local_params["use_online_sim"]
     use_warm_up4online_sim = local_params["use_warm_up4online_sim"]
@@ -186,6 +188,8 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
     cl_type = local_params["cl_type"]
 
     cluster_cl_config = global_params["other"]["cluster_cl"]
+    cluster_cl_config["use_warm_up4cluster_cl"] = use_warm_up4cluster_cl
+    cluster_cl_config["epoch_warm_up4cluster_cl"] = epoch_warm_up4cluster_cl
     cluster_cl_config["temp"] = temp
     cluster_cl_config["use_online_sim"] = use_online_sim
     cluster_cl_config["use_warm_up4online_sim"] = use_warm_up4online_sim

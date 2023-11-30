@@ -24,24 +24,17 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
         optimizer = self.objects["optimizers"]["kt_model"]
         scheduler = self.objects["schedulers"]["kt_model"]
         model = self.objects["models"]["kt_model"]
-        cl_type = self.params["other"]["instance_cl"]["cl_type"]
-        max_entropy_aug_config = self.params["other"]["max_entropy_aug"]
-        random_select_aug_len = self.params["other"]["instance_cl"]["random_select_aug_len"]
 
         self.print_data_statics()
 
-        epoch_warm_up4online_sim = self.params["other"]["instance_cl"]["epoch_warm_up4online_sim"]
         weight_cl_loss = self.params["loss_config"]["cl loss"]
+        cl_type = self.params["other"]["instance_cl"]["cl_type"]
+        random_select_aug_len = self.params["other"]["instance_cl"]["random_select_aug_len"]
+        use_adv_aug = self.params["other"]["instance_cl"]["use_adv_aug"]
 
         for epoch in range(1, num_epoch + 1):
             self.do_online_sim()
             self.do_max_entropy_aug()
-
-            # 有对抗样本后，随机增强只需要生成一个view
-            use_adv_aug = max_entropy_aug_config["use_adv_aug"] and (epoch > epoch_warm_up4online_sim)
-            if use_adv_aug:
-                dataset_config_this = self.params["datasets_config"]["train"]
-                dataset_config_this["kt4aug"]["num_aug"] = 1
 
             model.train()
             for batch_idx, batch in enumerate(train_loader):

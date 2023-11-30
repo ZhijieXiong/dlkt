@@ -24,6 +24,7 @@ def akt_general_config(local_params, global_params):
     dim_final_fc = local_params["dim_final_fc"]
     separate_qa = local_params["separate_qa"]
     dropout = local_params["dropout"]
+    seq_representation = local_params["seq_representation"]
 
     # encoder layer
     akt_encoder_layer_config = global_params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
@@ -37,6 +38,7 @@ def akt_general_config(local_params, global_params):
     akt_encoder_layer_config["dim_final_fc"] = dim_final_fc
     akt_encoder_layer_config["separate_qa"] = separate_qa
     akt_encoder_layer_config["dropout"] = dropout
+    akt_encoder_layer_config["seq_representation"] = seq_representation
 
     # 损失权重
     global_params["loss_config"]["rasch_loss"] = local_params["weight_rasch_loss"]

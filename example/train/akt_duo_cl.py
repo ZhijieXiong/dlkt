@@ -60,6 +60,9 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--separate_qa", type=str2bool, default=False)
     parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
+    parser.add_argument("--seq_representation", type=str, default="encoder_output",
+                        help="choose the representation of sequence in AKT, knowledge_encoder_output is the choice of CL4KT",
+                        choices=("encoder_output", "knowledge_encoder_output"))
     # duo参数（对比学习）
     parser.add_argument("--temp", type=float, default=0.01)
     parser.add_argument("--cl_type", type=str, default="mean_pool",

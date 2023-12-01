@@ -65,11 +65,11 @@ if __name__ == "__main__":
                         help="choose the representation of sequence in AKT, knowledge_encoder_output is the choice of CL4KT",
                         choices=("encoder_output", "knowledge_encoder_output"))
     # cluster CL参数（对比学习）
-    parser.add_argument("--use_warm_up4cluster_cl", type=str2bool, default=False)
+    parser.add_argument("--use_warm_up4cluster_cl", type=str2bool, default=True)
     parser.add_argument("--epoch_warm_up4cluster_cl", type=float, default=4)
     parser.add_argument("--num_cluster", type=int, default=256)
     parser.add_argument("--temp", type=float, default=0.01)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.01)
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)
     parser.add_argument("--epoch_warm_up4online_sim", type=float, default=4)
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     parser.add_argument("--gamma", type=float, default=1.0)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
-    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--seed", type=int, default=1)
 
     args = parser.parse_args()
     params = vars(args)

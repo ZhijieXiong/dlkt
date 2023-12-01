@@ -96,24 +96,36 @@ def instance_cl_general_config(local_params, global_params, global_objects):
         "insert": insert_prob,
         "permute": permute_prob
     }
-    if aug_type == "random_aug":
-        params_str = "random_aug"
-    elif aug_type == "informative_aug":
-        params_str = f"informative_aug"
+
+    # v1表示last time，v2表示mean pool，v3表示all interaction
+    if cl_type == "last_time":
+        cl_type_str = "v1"
+    elif cl_type == "mean_pool":
+        cl_type_str = "v2"
+    elif cl_type == "all_time":
+        cl_type_str = "v3"
     else:
         raise NotImplementedError()
-    if random_select_aug_len:
-        params_str += "-random_seq_len"
-    else:
-        params_str += "-original_seq_len"
-
-    for aug in aug_order:
-        params_str += f"-{aug}-{aug_table[aug]}"
-
+    params_str = f"{temp}-{weight_cl_loss}-{cl_type_str}@@"
     if local_params["use_adv_aug"]:
-        params_str += f"-adv_aug-{epoch_interval_generate}-{loop_adv}-{epoch_generate}-{adv_learning_rate}-{eta}-{gamma}"
+        params_str += f"adv_aug-{epoch_interval_generate}-{loop_adv}-{epoch_generate}-{adv_learning_rate}-{eta}-{gamma}@@"
+    if aug_type in ["random_aug", "informative_aug"]:
+        if aug_type == "random_aug":
+            params_str += "random_aug"
+        elif aug_type == "informative_aug":
+            params_str += f"informative_aug"
+        else:
+            raise NotImplementedError()
+        # v1使用序列随机长度部分做增强；v2使用完整序列做增强
+        if random_select_aug_len:
+            params_str += "-v1"
+        else:
+            params_str += "-v2"
 
-    params_str += f"@@temp_{temp}-wight_cl-{weight_cl_loss}"
+        for aug in aug_order:
+            params_str += f"-{aug}-{aug_table[aug]}"
+    else:
+        raise NotImplementedError()
 
     return params_str
 
@@ -135,7 +147,13 @@ def duo_cl_general_config(local_params, global_params):
     weight_cl_loss = local_params["weight_cl_loss"]
     global_params["loss_config"]["cl loss"] = weight_cl_loss
 
-    params_str = f"temp_{temp}-wight_cl-{weight_cl_loss}"
+    if cl_type == "last_time":
+        cl_type_str = "v1"
+    elif cl_type == "mean_pool":
+        cl_type_str = "v2"
+    else:
+        raise NotImplementedError()
+    params_str = f"{temp}-{weight_cl_loss}-{cl_type_str}"
 
     return params_str
 
@@ -233,24 +251,33 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
         "insert": insert_prob,
         "permute": permute_prob
     }
-    if aug_type == "random_aug":
-        params_str = "random_aug"
-    elif aug_type == "informative_aug":
-        params_str = f"informative_aug"
+
+    if cl_type == "last_time":
+        cl_type_str = "v1"
+    elif cl_type == "mean_pool":
+        cl_type_str = "v2"
     else:
         raise NotImplementedError()
-    if random_select_aug_len:
-        params_str += "-random_seq_len"
-    else:
-        params_str += "-original_seq_len"
-
-    for aug in aug_order:
-        params_str += f"-{aug}-{aug_table[aug]}"
-
+    params_str = f"{temp}-{weight_cl_loss}-{cl_type_str}-{num_cluster}@@"
     if local_params["use_adv_aug"]:
-        params_str += f"-adv_aug-{epoch_interval_generate}-{loop_adv}-{epoch_generate}-{adv_learning_rate}-{eta}-{gamma}"
+        params_str += f"adv_aug-{epoch_interval_generate}-{loop_adv}-{epoch_generate}-{adv_learning_rate}-{eta}-{gamma}@@"
+    if aug_type in ["random_aug", "informative_aug"]:
+        if aug_type == "random_aug":
+            params_str += "random_aug"
+        elif aug_type == "informative_aug":
+            params_str += f"informative_aug"
+        else:
+            raise NotImplementedError()
+        # v1使用序列随机长度部分做增强；v2使用完整序列做增强
+        if random_select_aug_len:
+            params_str += "-v1"
+        else:
+            params_str += "-v2"
 
-    params_str += f"@@temp_{temp}-wight_cl-{weight_cl_loss}"
+        for aug in aug_order:
+            params_str += f"-{aug}-{aug_table[aug]}"
+    else:
+        raise NotImplementedError()
 
     return params_str
 
@@ -375,23 +402,32 @@ def meta_optimize_cl_general_config(local_params, global_params, global_objects)
         "insert": insert_prob,
         "permute": permute_prob
     }
-    if aug_type == "random_aug":
-        params_str = "random_aug"
-    elif aug_type == "informative_aug":
-        params_str = f"informative_aug"
+
+    if cl_type == "last_time":
+        cl_type_str = "v1"
+    elif cl_type == "mean_pool":
+        cl_type_str = "v2"
     else:
         raise NotImplementedError()
-    if random_select_aug_len:
-        params_str += "-random_seq_len"
+    params_str = f"{temp}-{weight_lambda}-{weight_beta}-{weight_gamma}-{cl_type_str}@@"
+    if local_params["use_adv_aug"]:
+        params_str += f"adv_aug-{epoch_interval_generate}-{loop_adv}-{epoch_generate}-{adv_learning_rate}-{eta}-{gamma}@@"
+    if aug_type in ["random_aug", "informative_aug"]:
+        if aug_type == "random_aug":
+            params_str += "random_aug"
+        elif aug_type == "informative_aug":
+            params_str += f"informative_aug"
+        else:
+            raise NotImplementedError()
+        # v1使用序列随机长度部分做增强；v2使用完整序列做增强
+        if random_select_aug_len:
+            params_str += "-v1"
+        else:
+            params_str += "-v2"
+
+        for aug in aug_order:
+            params_str += f"-{aug}-{aug_table[aug]}"
     else:
-        params_str += "-original_seq_len"
-
-    for aug in aug_order:
-        params_str += f"-{aug}-{aug_table[aug]}"
-
-    if use_adv_aug:
-        params_str += f"-adv_aug-{epoch_interval_generate}-{loop_adv}-{epoch_generate}-{adv_learning_rate}-{eta}-{gamma}"
-
-    params_str += f"@@temp_{temp}-wight_original_cl-{weight_lambda}-wight_meta_cl-{weight_beta}"
+        raise NotImplementedError()
 
     return params_str

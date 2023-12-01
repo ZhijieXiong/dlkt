@@ -46,33 +46,11 @@ def akt_general_config(local_params, global_params):
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]
-        train_strategy = local_params["train_strategy"]
-        use_early_stop = local_params["use_early_stop"]
-        epoch_early_stop = local_params["epoch_early_stop"]
-        use_last_average = local_params["use_last_average"]
-        epoch_last_average = local_params["epoch_last_average"]
-        num_epoch = local_params["num_epoch"]
-        # main_metric = local_params["main_metric"]
-        # use_multi_metrics = local_params["use_multi_metrics"]
-        # mutil_metrics = local_params["multi_metrics"]
-        if train_strategy == "valid_test":
-            if use_early_stop:
-                pick_up_model_str = f"early_stop_{num_epoch}_{epoch_early_stop}"
-            else:
-                pick_up_model_str = f"num_epoch_{num_epoch}"
-        elif train_strategy == "no_valid":
-            if use_last_average:
-                pick_up_model_str = f"last_average_{num_epoch}_{epoch_last_average}"
-            else:
-                pick_up_model_str = f"last_average_{num_epoch}"
-        else:
-            raise NotImplementedError()
 
         global_params["save_model_dir_name"] = (
             f"{get_now_time().replace(' ', '-').replace(':', '-')}@@AKT@@seed_{local_params['seed']}@@{setting_name}@@"
-            f"{train_file_name.replace('.txt', '')}@@{train_strategy}@@{pick_up_model_str}"
-            f"@@{num_concept}-{num_question}-{dim_model}-{key_query_same}-{num_block}-{num_head}-"
-            f"{dim_ff}-{dim_final_fc}-{separate_qa}-{dropout}")
+            f"{train_file_name.replace('.txt', '')}@@{num_concept}-{num_question}-{dim_model}-{key_query_same}-"
+            f"{num_block}-{num_head}-{dim_ff}-{dim_final_fc}-{separate_qa}-{dropout}")
 
 
 def akt_config(local_params):
@@ -93,7 +71,7 @@ def akt_duo_cl_config(local_params):
     duo_cl_general_config(local_params, global_params)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT_duo_cl@@"))
+            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT-duo_cl@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -107,7 +85,7 @@ def akt_instance_cl_config(local_params):
     params_str = instance_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT_instance_cl@@"))
+            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT-instance_cl@@"))
         global_params["save_model_dir_name"] += f"@@{params_str}"
         save_params(global_params, global_objects)
 
@@ -122,7 +100,7 @@ def akt_cluster_cl_config(local_params):
     params_str = cluster_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT_cluster_cl@@"))
+            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT-cluster_cl@@"))
         global_params["save_model_dir_name"] += f"@@{params_str}"
         save_params(global_params, global_objects)
 
@@ -137,7 +115,7 @@ def akt_max_entropy_adv_aug_config(local_params):
     params_str = max_entropy_adv_aug_general_config(local_params, global_params)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT_max_entropy_adv_aug@@"))
+            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT-ME_adv_aug@@"))
         global_params["save_model_dir_name"] += f"@@{params_str}"
         save_params(global_params, global_objects)
 
@@ -179,7 +157,7 @@ def akt_meta_optimize_cl_config(local_params):
     params_str = meta_optimize_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT_meta_optimize_cl@@"))
+            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT-meta_optimize_cl@@"))
         global_params["save_model_dir_name"] += f"@@{params_str}"
         save_params(global_params, global_objects)
 

@@ -61,7 +61,7 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--separate_qa", type=str2bool, default=False)
     parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
-    parser.add_argument("--seq_representation", type=str, default="knowledge_encoder_output",
+    parser.add_argument("--seq_representation", type=str, default="encoder_output",
                         help="choose the representation of sequence in AKT, knowledge_encoder_output is the choice of CL4KT",
                         choices=("encoder_output", "knowledge_encoder_output"))
     # instance cl参数（对比学习）
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     parser.add_argument("--replace_prob", type=float, default=0.3)
     parser.add_argument("--crop_prob", type=float, default=0.1)
     parser.add_argument("--permute_prob", type=float, default=0.1)
-    parser.add_argument("--use_hard_neg", type=str2bool, default=True)
+    parser.add_argument("--use_hard_neg", type=str2bool, default=False)
     parser.add_argument("--hard_neg_prob", type=float, default=1)
     parser.add_argument("--aug_order", type=str, default="['crop', 'replace', 'insert']",
                         help="CL4KT: ['mask', 'replace', 'permute', 'crop']"

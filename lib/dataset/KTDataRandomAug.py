@@ -141,12 +141,14 @@ class KTDataRandomAug:
         for k in sample.keys():
             if type(sample[k]) == list:
                 seq_keys.append(k)
-        sample_new = {k: [] if (k in seq_keys) else sample[k] for k in sample.keys()}
-        for i in range(seq_len):
-            prob = random.random()
-            if prob >= mask_prob:
-                for k in seq_keys:
-                    sample_new[k].append(sample[k][i])
+
+        sample_new = deepcopy(sample)
+        mask_idx = random.sample(list(range(seq_len)), k=max(1, int(seq_len * mask_prob)))
+        for i in mask_idx:
+            for k in seq_keys:
+                sample_new[k][i] = -1
+        for k in seq_keys:
+            sample_new[k] = list(filter(lambda x: x != -1, sample_new[k]))
         sample_new["seq_len"] = len(sample_new["correct_seq"])
 
         return sample_new

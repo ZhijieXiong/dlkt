@@ -303,17 +303,22 @@ class KTDataset4Aug(Dataset):
             if type(v) == list:
                 seq_keys.append(k)
         sample_new = {k: [] for k in seq_keys}
+        mask_idx = random.sample(list(range(seq_len)), k=max(1, int(seq_len * mask_prob)))
         replace_func = self.replace_aug[self.similarity_type]
-        for i in range(seq_len):
-            prob = random.random()
-            condition1 = prob < mask_prob
-            condition2 = i < (seq_len - 1)
-            # 相对无关的知识点可以被mask，即如果当前知识点和后一个知识点关联较大，则不能mask
-            condition3 = condition2 and sample["concept_seq"][i+1] not in replace_func(sample["concept_seq"][i], target="concept")
-            if condition1 and condition2 and condition3:
+        for j, i in enumerate(mask_idx):
+            if i == 0 or i == (seq_len - 1):
                 continue
+            # 相对无关的知识点可以被mask，即如果当前知识点和前后知识点关联较大，则不能mask
+            condition1 = sample["concept_seq"][i] not in replace_func(sample["concept_seq"][i-1], target="concept")
+            condition2 = sample["concept_seq"][i+1] not in replace_func(sample["concept_seq"][i], target="concept")
+            if condition1 and condition2:
+                mask_idx[j] = -1
+        mask_idx = list(filter(lambda x: x != -1, mask_idx))
+        for i in mask_idx:
             for k in seq_keys:
-                sample_new[k].append(sample[k][i])
+                sample_new[k][i] = -1
+        for k in seq_keys:
+            sample_new[k] = list(filter(lambda x: x != -1, sample_new[k]))
         sample_new["seq_len"] = len(sample_new["correct_seq"])
 
         return sample_new

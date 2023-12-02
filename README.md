@@ -17,7 +17,8 @@
 
 - 单知识点数据集：`assist2012` `assist2017` `edi2020` `SLP` `slepemapy`
   - `edi2020`是层级知识点，且最低一级都是单知识点。只使用最细粒度的知识点，所以算单知识点数据集
-- 多知识点数据集：`assist2009` `ednet-kt1` `xes3g5m`
+- 多知识点数据集：`assist2009` `assist2009-new` `ednet-kt1` `xes3g5m`
+  - `assist2009-new`是最新版本（从数据源网站可以获取）
   - 对于多知识点数据集，如果知识点不是层级的，则会有两种预处理，分别产生`multi_concept`和`single_concept`；多知识点数据集的`only_question`是对应`multi_concept`的，只是没有拆分习题，因为不用知识点序列
   - `xes3g5m`的知识点是层级的，但是最细粒度的知识点是多个的，所以当成多知识点数据集处理
   - 下面是`xes3g5m`的一个例子

@@ -56,8 +56,10 @@ class DataProcessor:
             self.process_assist2017()
         elif dataset_name == "edi2020-task34":
             self.load_process_edi2020_task34()
+        elif dataset_name == "ednet-kt1":
+            self.load_process_ednet_kt1()
         elif dataset_name == "xes3g5m":
-            self.load_process_xes3g5m()
+            self.load_process_uniform_xes3g5m()
         else:
             raise NotImplementedError()
 
@@ -66,7 +68,7 @@ class DataProcessor:
 
     def process_assist2009(self):
         data_path = self.params["preprocess_config"]["data_path"]
-        dataset_name = self.params["preprocess_config"]["dataset_name"]
+        dataset_name = "assist2009"
         useful_cols = CONSTANT.datasets_useful_cols()[dataset_name]
         rename_cols = CONSTANT.datasets_renamed()[dataset_name]
         self.data_raw = load_raw.load_csv(data_path, useful_cols, rename_cols)
@@ -100,7 +102,7 @@ class DataProcessor:
             return int(time.mktime(time.strptime(time_str[:19], "%Y-%m-%d %H:%M:%S")))
 
         data_path = self.params["preprocess_config"]["data_path"]
-        dataset_name = self.params["preprocess_config"]["dataset_name"]
+        dataset_name = "assist2012"
         useful_cols = CONSTANT.datasets_useful_cols()[dataset_name]
         rename_cols = CONSTANT.datasets_renamed()[dataset_name]
         self.data_raw = load_raw.load_csv(data_path, useful_cols, rename_cols)
@@ -124,7 +126,7 @@ class DataProcessor:
 
     def process_assist2015(self):
         data_path = self.params["preprocess_config"]["data_path"]
-        dataset_name = self.params["preprocess_config"]["dataset_name"]
+        dataset_name = "assist2015"
         useful_cols = CONSTANT.datasets_useful_cols()[dataset_name]
         rename_cols = CONSTANT.datasets_renamed()[dataset_name]
         self.data_raw = load_raw.load_csv(data_path, useful_cols, rename_cols)
@@ -313,7 +315,49 @@ class DataProcessor:
             Q_table[[q_id] * len(correspond_c), correspond_c] = [1] * len(correspond_c)
         self.Q_table["single_concept"] = Q_table
 
-    def load_process_xes3g5m(self):
+    def load_process_ednet_kt1(self):
+        data_dir = self.params["preprocess_config"]["data_path"]
+        # ednet-kt1共有72000多名学生的记录，通常的处理是随机取5000名学生记录
+        # data_dir下每个文件存放了5000名学生（随机但每个文件下学生不重复）的记录，num_file指定要读取几个文件，按照常规处理就取1
+        self.data_raw = load_raw.load_ednet_kt1(data_dir, num_file=1)
+        dataset_name = "ednet-kt1"
+        rename_cols = CONSTANT.datasets_renamed()[dataset_name]
+        self.data_raw.rename(columns=rename_cols, inplace=True)
+
+        df = deepcopy(self.data_raw)
+        df["use_time"] = df["use_time"].map(lambda t: min(max(1, int(t) // 1000), 60 * 60))
+
+        # 习题id重映射
+        question_ids = list(pd.unique(df["question_id"]))
+        df["question_id"] = df["question_id"].map({q_id: i for i, q_id in enumerate(question_ids)})
+        self.question_id_map["single_concept"] = pd.DataFrame({
+            "question_id": question_ids,
+            "question_id_map": range(len(question_ids))
+        })
+
+        # 知识点id重映射
+        concept_ids = list(pd.unique(df["concept_id"]))
+        df["concept_id"] = df["concept_id"].map({c_id: i for i, c_id in enumerate(concept_ids)})
+        self.concept_id_map["single_concept"] = pd.DataFrame({
+            "concept_id": concept_ids,
+            "concept_id_map": range(len(concept_ids))
+        })
+
+        df_new = pd.DataFrame({
+            "question_id": map(int, df["question_id"].tolist()),
+            "concept_id": map(int, df["concept_id"].tolist())
+        })
+        Q_table = np.zeros((len(question_ids), len(concept_ids)), dtype=int)
+        for question_id, group_info in df_new[["question_id", "concept_id"]].groupby("question_id"):
+            correspond_c = pd.unique(group_info["concept_id"]).tolist()
+            Q_table[[question_id] * len(correspond_c), correspond_c] = [1] * len(correspond_c)
+
+        self.data_preprocessed["single_concept"] = df
+        self.statics_preprocessed["single_concept"] = DataProcessor.get_basic_info(df)
+        self.statics_preprocessed["single_concept"]["num_concept"] = len(concept_ids)
+        self.Q_table["single_concept"] = Q_table
+
+    def load_process_uniform_xes3g5m(self):
         # 习题类型：单选和填空
         data_dir = self.params["preprocess_config"]["data_path"]
         # kc_level和question_level的数据是一样的，前者是multi_concept，后者是only_question（对于多知识点习题用 _ 拼接知识点）
@@ -433,19 +477,60 @@ class DataProcessor:
                 if k != "concept_seq":
                     item_data_only_question[k] = deepcopy(item_data[k])
             data_only_question.append(item_data_only_question)
-        self.data_preprocessed["only_question"] = data_only_question
-        self.data_preprocessed["multi_concept"] = DataProcessor.single2multi(data_only_question, Q_table_multi_concept)
+        self.data_uniformed["only_question"] = data_only_question
+        self.data_uniformed["multi_concept"] = DataProcessor.single2multi(data_only_question, Q_table_multi_concept)
 
         self.statics_preprocessed["multi_concept"] = {}
-        self.statics_preprocessed["num_user"] = len(data_only_question)
+        self.statics_preprocessed["multi_concept"]["num_user"] = len(data_only_question)
         self.statics_preprocessed["multi_concept"]["num_interaction"] = (
-            sum(list(map(lambda x: x["seq_len"], data_only_question))))
+            sum(list(map(lambda x: x["seq_len"], self.data_uniformed["multi_concept"]))))
         self.statics_preprocessed["multi_concept"]["num_concept"] = len(concept_ids)
         self.statics_preprocessed["multi_concept"]["num_question"] = len(question_ids)
         self.statics_preprocessed["multi_concept"]["num_max_concept"] = (int(max(Q_table_multi_concept.sum(axis=1))))
 
         # 处理为single_concept，即多知识点看成新的单知识点
-        print("")
+        def process_c_ids(_c_ids):
+            # 统一表示成id小的在前面，如多知识点组合[2,1,3]表示为"1_2_3"
+            _c_ids_str = list(map(str, sorted(list(map(int, _c_ids)))))
+            return "_".join(_c_ids_str)
+
+        for item_data in data_uniformed:
+            for i in range(item_data["seq_len"]):
+                item_data["concept_seq"][i] = process_c_ids(item_data["concept_seq"][i])
+
+        result_remap = util.id_remap4data_uniformed(data_uniformed, ["concept_seq"])
+        self.data_uniformed["single_concept"] = result_remap[0]
+        self.concept_id_map["single_concept"] = pd.DataFrame({
+            "concept_id": result_remap[1]["concept_seq"].keys(),
+            "concept_id_map": result_remap[1]["concept_seq"].values()
+        })
+
+        # 获取single concept的Q table
+        question_ids = []
+        concept_ids = []
+        question_concept_map = {}
+        for item_data in self.data_uniformed["single_concept"]:
+            for i in range(item_data["seq_len"]):
+                q_id = item_data["question_seq"][i]
+                c_id = item_data["concept_seq"][i]
+                question_concept_map.setdefault(q_id, [c_id])
+                question_ids.append(q_id)
+                concept_ids.append(c_id)
+
+        question_ids = sorted(list(set(question_ids)))
+        concept_ids = sorted(list(set(concept_ids)))
+        Q_table_single_concept = np.zeros((len(question_ids) + 1, len(concept_ids)), dtype=int)
+        for q_id in question_concept_map.keys():
+            correspond_c = question_concept_map[q_id]
+            Q_table_single_concept[[q_id] * len(correspond_c), correspond_c] = [1] * len(correspond_c)
+        self.Q_table["single_concept"] = Q_table_single_concept
+
+        self.statics_preprocessed["single_concept"] = {}
+        self.statics_preprocessed["single_concept"]["num_user"] = len(self.data_uniformed["single_concept"])
+        self.statics_preprocessed["single_concept"]["num_interaction"] = (
+            sum(list(map(lambda x: x["seq_len"], self.data_uniformed["single_concept"]))))
+        self.statics_preprocessed["single_concept"]["num_concept"] = len(concept_ids)
+        self.statics_preprocessed["single_concept"]["num_question"] = len(question_ids)
 
     def uniform_data(self):
         dataset_name = self.params["preprocess_config"]["dataset_name"]
@@ -455,6 +540,11 @@ class DataProcessor:
             self.uniform_assist2012()
         elif dataset_name in ["edi2020-task1", "edi2020-task2", "edi2020-task34"]:
             self.uniform_edi2020()
+        elif dataset_name == "ednet-kt1":
+            self.uniform_ednet_kt1()
+        elif dataset_name == "xes3g5m":
+            # 直接在load_process_uniform_xes3g5m里一起处理了
+            pass
         else:
             raise NotImplementedError()
 
@@ -584,6 +674,32 @@ class DataProcessor:
             object_data["seq_len"] = len(object_data["correct_seq"])
             seqs.append(object_data)
 
+        self.data_uniformed["single_concept"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
+
+    def uniform_ednet_kt1(self):
+        df = deepcopy(self.data_preprocessed["single_concept"])
+        info_name_table = {
+            "question_seq": "question_id",
+            "concept_seq": "concept_id",
+            "correct_seq": "correct",
+            "time_seq": "timestamp",
+            "use_time_seq": "use_time"
+        }
+        seq_keys = list(set(df.columns) - set(info_name_table.values()))
+        dataset_seq_keys = CONSTANT.datasets_seq_keys()["ednet-kt1"]
+        seqs = []
+        for user_id in pd.unique(df["user_id"]):
+            user_data = df[df["user_id"] == user_id]
+            user_data = user_data.sort_values(by=["timestamp"])
+            user_data["timestamp"] = user_data["timestamp"].map(lambda x: int(x / 1000))
+            object_data = {info_name: [] for info_name in dataset_seq_keys}
+            for k in seq_keys:
+                object_data[k] = user_data.iloc[0][k]
+            for i, (_, row_data) in enumerate(user_data.iterrows()):
+                for info_name in dataset_seq_keys:
+                    object_data[info_name].append(row_data[info_name_table[info_name]])
+            object_data["seq_len"] = len(object_data["correct_seq"])
+            seqs.append(object_data)
         self.data_uniformed["single_concept"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
 
     def get_all_id_maps(self):

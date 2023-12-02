@@ -59,7 +59,36 @@ def process4DIMKT(data_uniformed, num_q_level=100, num_c_level=100):
     return data_processed
 
 
-# 辅助函数，计算统计信息
-def static_func(data_uniformed):
-    num_interaction = 0
-    num_student = len(data_uniformed)
+def id_remap4data_uniformed(data_uniformed, seq_names2remap):
+    """
+    将指定的seq id进行重映射，如LPKT用到的time相关信息，有很多time id在数据集中没出现，就可以重映射，减少id数量，从而减少后面训练模型用的显存
+    以及将multi_concept处理成single_concept，也就是concept（为"1_2"这种形式）重映射
+    :param data_uniformed:
+    :param seq_names2remap:
+    :return:
+    """
+    ids_all = {seq_name: [] for seq_name in seq_names2remap}
+    for item_data in data_uniformed:
+        for i in range(item_data["seq_len"]):
+            for seq_name in seq_names2remap:
+                seq_id = item_data[seq_name][i]
+                ids_all[seq_name].append(seq_id)
+
+    id_remap_all = {
+        seq_name: {
+            id_original: id_mapped for id_mapped, id_original in enumerate(list(set(ids_all[seq_name])))
+        }
+        for seq_name in seq_names2remap
+    }
+
+    data_new = []
+    for item_data in data_uniformed:
+        item_data_new = {}
+        for k in item_data.keys():
+            if k not in seq_names2remap:
+                item_data_new[k] = deepcopy(item_data[k])
+            else:
+                item_data_new[k] = list(map(lambda x: id_remap_all[k][x], item_data[k]))
+        data_new.append(item_data_new)
+
+    return data_new, id_remap_all

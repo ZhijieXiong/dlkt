@@ -44,14 +44,21 @@
     ```
 - 无知识点/习题数据集：`assist2015` `statics2011`
 
-## 3、数据处理
+## 3、初始化项目
+- 修改`example/settings.json`中的配置，指定数据存放地址，即`LIB_PATH`，然后运行`example/set_up.py`会生成所需要的目录
+- 生成的目录结构如下所示，原始数据放到 ``数据存放地址/lab/dataset_raw`` 下
+  <div align=center><img src="./resources/lab_dir.png" /></div>
+- 运行 ``example/preprocess``处理对应的数据集，生成的数据在 ``数据存放地址/lab/dataset_preprocessed``
+
+
+## 4、数据处理
 
 - 数据处理分为两步
   - 数据预处理：包括丢弃信息缺失的交互（如习题、知识点缺少的交互），习题和知识点id的重映射，时间信息（做题时间、做题用时）的处理
   - 数据集划分处理：包括固定序列的长度、丢弃部分习题和知识点（如练习次数少于30次的习题）、数据集的划分（训练集、验证集、测试集）
 - 整个数据处理的pipline如下
 
-## 4、提供的数据处理
+## 5、提供的数据处理
 
 - pykt
 - cl4kt

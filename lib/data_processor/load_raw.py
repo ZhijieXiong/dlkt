@@ -48,16 +48,17 @@ def load_SLP(data_dir, dataset_name):
                "live_on_campus", "school_type", "gender"]]
 
 
-def load_ednet_kt1(data_dir):
+def load_ednet_kt1(data_dir, num_file=1):
     # 多知识点算新知识点
     dfs = []
 
     def process_tags(tags_str):
+        # 多知识点是用_连接的，但是如 1_2_3 和 2_3_1 表示同一多知识点组合，所以统一表示成id小的在前面，即1_2_3
         tags = tags_str.split("_")
         tags = list(map(str, sorted(list(map(int, tags)))))
         return "_".join(tags)
 
-    for i in range(200):
+    for i in range(num_file):
         file_name = f"users_{i}.csv"
         file_path = os.path.join(data_dir, file_name)
         if not os.path.exists(file_path):

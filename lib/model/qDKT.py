@@ -312,6 +312,64 @@ class qDKT(nn.Module):
 
         return (cl_loss0 + cl_loss1) / 2
 
+    def meta_contrast(self, batch, latent_type, meta_extractors, use_regularization):
+        batch_size = batch["mask_seq"].shape[0]
+        extractor0, extractor1 = meta_extractors
+
+        batch_aug0 = {
+            "concept_seq": batch["concept_seq_aug_0"],
+            "question_seq": batch["question_seq_aug_0"],
+            "correct_seq": batch["correct_seq_aug_0"],
+            "mask_seq": batch["mask_seq_aug_0"]
+        }
+        batch_aug1 = {
+            "concept_seq": batch["concept_seq_aug_1"],
+            "question_seq": batch["question_seq_aug_1"],
+            "correct_seq": batch["correct_seq_aug_1"],
+            "mask_seq": batch["mask_seq_aug_1"]
+        }
+
+        if latent_type == "last_time":
+            latent_aug0_pooled = self.get_latent_last(batch_aug0)
+            latent_aug1_pooled = self.get_latent_last(batch_aug1)
+        elif latent_type == "mean_pool":
+            latent_aug0_pooled = self.get_latent_mean(batch_aug0)
+            latent_aug1_pooled = self.get_latent_mean(batch_aug1)
+        else:
+            raise NotImplementedError()
+        latent_aug0_extracted = extractor0(latent_aug0_pooled)
+        latent_aug1_extracted = extractor1(latent_aug1_pooled)
+
+        temp = self.params["other"]["instance_cl"]["temp"]
+        labels = torch.arange(batch_size).long().to(self.params["device"])
+        # 随机增强的对比损失
+        cos_sim_0 = torch.cosine_similarity(latent_aug0_pooled.unsqueeze(1), latent_aug1_pooled.unsqueeze(0),
+                                            dim=-1) / temp
+        cl_loss_0 = nn.functional.cross_entropy(cos_sim_0, labels)
+
+        # 计算meta cl loss
+        cos_sim_1 = torch.cosine_similarity(latent_aug0_pooled.unsqueeze(1), latent_aug0_extracted.unsqueeze(0),
+                                            dim=-1) / temp
+        cl_loss_1 = nn.functional.cross_entropy(cos_sim_1, labels)
+
+        cos_sim_2 = torch.cosine_similarity(latent_aug1_pooled.unsqueeze(1), latent_aug1_extracted.unsqueeze(0),
+                                            dim=-1) / temp
+        cl_loss_2 = nn.functional.cross_entropy(cos_sim_2, labels)
+
+        cos_sim_3 = torch.cosine_similarity(latent_aug0_extracted.unsqueeze(1), latent_aug1_extracted.unsqueeze(0),
+                                            dim=-1) / temp
+        cl_loss_3 = nn.functional.cross_entropy(cos_sim_3, labels)
+
+        if use_regularization:
+            rl_loss = 0.
+            rl_loss += meta_contrast_rl(latent_aug0_pooled, latent_aug1_extracted, temp, "dot")
+            rl_loss += meta_contrast_rl(latent_aug1_pooled, latent_aug0_extracted, temp, "dot")
+            rl_loss += meta_contrast_rl(latent_aug0_extracted, latent_aug1_extracted, temp, "dot")
+        else:
+            rl_loss = None
+
+        return cl_loss_0, cl_loss_1 + cl_loss_2 + cl_loss_3, rl_loss
+
     def get_qc_emb(self, batch):
         concept_seq = batch["concept_seq"]
         question_seq = batch["question_seq"]

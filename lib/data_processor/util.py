@@ -57,3 +57,9 @@ def process4DIMKT(data_uniformed, num_q_level=100, num_c_level=100):
         data_processed.append(item_data_new)
 
     return data_processed
+
+
+# 辅助函数，计算统计信息
+def static_func(data_uniformed):
+    num_interaction = 0
+    num_student = len(data_uniformed)

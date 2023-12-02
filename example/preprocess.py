@@ -9,7 +9,7 @@ from lib.util.data import *
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="edi2020-task34")
+    parser.add_argument("--dataset_name", type=str, default="xes3g5m")
 
     args = parser.parse_args()
     params = vars(args)
@@ -32,7 +32,7 @@ if __name__ == "__main__":
         data_path = objects["file_manager"].get_preprocessed_path(dataset_name, k)
         write2file(data_uniformed[k], data_path)
         if k == "only_question":
-            k = "multi_concept"
+            continue
         objects["file_manager"].save_data_statics_processed(data_statics_preprocessed[k], dataset_name, k)
         objects["file_manager"].save_q_table(Q_table[k], dataset_name, k)
 

@@ -11,7 +11,7 @@ from . import CONSTANT
 from . import load_raw
 from . import util
 from . import preprocess_raw
-from ..util import parse
+from ..util import parse as parse_util
 from ..util import data as data_util
 
 
@@ -52,8 +52,12 @@ class DataProcessor:
             self.process_assist2009()
         elif dataset_name == "assist2012":
             self.process_assist2012()
+        elif dataset_name == "assist2017":
+            self.process_assist2017()
         elif dataset_name == "edi2020-task34":
             self.load_process_edi2020_task34()
+        elif dataset_name == "xes3g5m":
+            self.load_process_xes3g5m()
         else:
             raise NotImplementedError()
 
@@ -69,12 +73,6 @@ class DataProcessor:
         self.statics_raw = self.get_basic_info(self.data_raw)
 
         df = deepcopy(self.data_raw)
-        # if dataset_name == "assist2015":
-        #     df["question_id"] = df["question_id"].map(int)
-        #
-        # if dataset_name in ["assist2009", "assist2009-new", "assist2012", "assist2017"]:
-        #     df["question_id"] = df["question_id"].map(int)
-        #     df["concept_id"] = df["concept_id"].map(int)
         df.dropna(subset=["question_id", "concept_id"], inplace=True)
         df["question_id"] = df["question_id"].map(int)
         df["concept_id"] = df["concept_id"].map(int)
@@ -137,7 +135,44 @@ class DataProcessor:
         # result_preprocessed = preprocess_raw.preprocess_assist(dataset_name, df)
 
     def process_assist2017(self):
-        pass
+        data_path = self.params["preprocess_config"]["data_path"]
+        dataset_name = "assist2017"
+        useful_cols = CONSTANT.datasets_useful_cols()[dataset_name]
+        rename_cols = CONSTANT.datasets_renamed()[dataset_name]
+        self.data_raw = load_raw.load_csv(data_path, useful_cols, rename_cols)
+        self.statics_raw = self.get_basic_info(self.data_raw)
+
+        # skill字段有noskill值，过滤掉
+        df = deepcopy(self.data_raw[self.data_raw["concept_id"] != "noskill"])
+        df["use_time"] = df["use_time"].map(lambda t: min(max(1, int(t)), 60 * 60))
+        skill_id_map = {}
+        skill_names = pd.unique(df["concept_id"])
+        for i, skill in enumerate(skill_names):
+            skill_id_map[skill] = i
+        skill_id_column = df.apply(lambda l: skill_id_map[l["concept_id"]], axis=1)
+        df["concept_id"] = skill_id_column
+
+        # 里面有些习题id对应多个知识点id（但实际不是同一个习题），对这些习题id进行重映射，使之成为单知识点数据集
+        question_concept_pairs = {}
+        for i in df.index:
+            question_concept_pair = str(int(df["question_id"][i])) + "," + str(int(df["concept_id"][i]))
+            question_concept_pairs.setdefault(question_concept_pair, len(question_concept_pairs))
+            df["question_id"][i] = question_concept_pairs[question_concept_pair]
+
+        df.dropna(subset=["question_id", "concept_id"], inplace=True)
+        df["question_id"] = df["question_id"].map(int)
+        df["concept_id"] = df["concept_id"].map(int)
+        result_preprocessed = preprocess_raw.preprocess_assist(dataset_name, df)
+
+        self.data_preprocessed["single_concept"] = result_preprocessed["single_concept"]["data_processed"]
+        self.Q_table["single_concept"] = result_preprocessed["single_concept"]["Q_table"]
+        self.statics_preprocessed["single_concept"] = (
+            self.get_basic_info(result_preprocessed["single_concept"]["data_processed"]))
+        # assist2017的习题id经过了两次映射
+        qc_pairs_reverse = {v: int(k.split(",")[0]) for k, v in question_concept_pairs.items()}
+        self.question_id_map["single_concept"] = result_preprocessed["single_concept"]["question_id_map"]
+        self.question_id_map["single_concept"]["question_id"] = self.question_id_map["single_concept"]["question_id"].map(qc_pairs_reverse)
+        self.concept_id_map["single_concept"] = result_preprocessed["single_concept"]["concept_id_map"]
 
     def load_process_edi2020_task34(self):
         data_dir = self.params["preprocess_config"]["data_path"]
@@ -196,9 +231,14 @@ class DataProcessor:
             return int(time.mktime(time.strptime(time_str[:19], "%Y-%m-%d %H:%M:%S")))
 
         def map_gender(item):
-            if item not in [1, 2]:
+            # if item not in [1, 2]:
+            #     return 0
+            if item == 1:
                 return 0
-            return item
+            elif item == 2:
+                return 1
+            else:
+                return -1
 
         time_year = metadata_answer["timestamp"].map(time_str2year)
         time_year.name = "time_year"
@@ -272,6 +312,140 @@ class DataProcessor:
             correspond_c = question_concept_map[q_id]
             Q_table[[q_id] * len(correspond_c), correspond_c] = [1] * len(correspond_c)
         self.Q_table["single_concept"] = Q_table
+
+    def load_process_xes3g5m(self):
+        # 习题类型：单选和填空
+        data_dir = self.params["preprocess_config"]["data_path"]
+        # kc_level和question_level的数据是一样的，前者是multi_concept，后者是only_question（对于多知识点习题用 _ 拼接知识点）
+        train_valid_path = os.path.join(data_dir, "question_level", "train_valid_sequences_quelevel.csv")
+        test_path = os.path.join(data_dir, "question_level", "test_quelevel.csv")
+        df_train_valid = load_raw.load_csv(train_valid_path)[
+            ["uid", "questions", "concepts", "responses", "timestamps", "selectmasks"]
+        ]
+        df_test = load_raw.load_csv(test_path)[["uid", "questions", "concepts", "responses", "timestamps"]]
+
+        # metadata
+        question_meta_path = os.path.join(data_dir, "metadata", "questions.json")
+        concept_meta_path = os.path.join(data_dir, "metadata", "kc_routes_map.json")
+        question_meta = data_util.load_json(question_meta_path)
+        concept_meta = data_util.load_json(concept_meta_path)
+
+        concept_meta = {int(c_id): c_name.strip() for c_id, c_name in concept_meta.items()}
+        question_meta = {int(q_id): q_meta for q_id, q_meta in question_meta.items()}
+        data_processed_dir = self.objects["file_manager"].get_preprocessed_dir("xes3g5m")
+        question_meta_path = os.path.join(data_processed_dir, "question_meta.json")
+        concept_meta_path = os.path.join(data_processed_dir, "concept_meta.json")
+        data_util.write_json(concept_meta, concept_meta_path)
+        data_util.write_json(question_meta, question_meta_path)
+
+        data_all = {}
+        for i in df_train_valid.index:
+            user_id = int(df_train_valid["uid"][i])
+            data_all.setdefault(user_id, {
+                "question_seq": [],
+                "concept_seq": [],
+                "correct_seq": [],
+                "time_seq": []
+            })
+            # df_train_valid提供的数据是切割好的（将长序列切成固定长度为200的序列），不足200的用-1补齐
+            mask_seq = list(map(int, df_train_valid["selectmasks"][i].split(",")))
+            if -1 in mask_seq:
+                end_pos = mask_seq.index(-1)
+            else:
+                end_pos = 200
+
+            question_seq = list(map(int, df_train_valid["questions"][i].split(",")))[:end_pos]
+            concept_seq = list(map(lambda cs_str: list(map(int, cs_str.split("_"))),
+                                   df_train_valid["concepts"][i].split(",")))[:end_pos]
+            correct_seq = list(map(int, df_train_valid["responses"][i].split(",")))[:end_pos]
+            time_seq = list(map(int, df_train_valid["timestamps"][i].split(",")))[:end_pos]
+            data_all[user_id]["question_seq"] += question_seq
+            data_all[user_id]["concept_seq"] += concept_seq
+            data_all[user_id]["correct_seq"] += correct_seq
+            data_all[user_id]["time_seq"] += time_seq
+
+        for i in df_test.index:
+            # df_test提供的数据是未切割的
+            user_id = int(df_test["uid"][i])
+            data_all.setdefault(user_id, {
+                "question_seq": [],
+                "concept_seq": [],
+                "correct_seq": [],
+                "time_seq": []
+            })
+            question_seq = list(map(int, df_test["questions"][i].split(",")))
+            concept_seq = list(map(lambda cs_str: list(map(int, cs_str.split("_"))),
+                                   df_test["concepts"][i].split(",")))
+            correct_seq = list(map(int, df_test["responses"][i].split(",")))
+            time_seq = list(map(int, df_test["timestamps"][i].split(",")))
+            data_all[user_id]["question_seq"] += question_seq
+            data_all[user_id]["concept_seq"] += concept_seq
+            data_all[user_id]["correct_seq"] += correct_seq
+            data_all[user_id]["time_seq"] += time_seq
+
+        # 处理成统一格式，即[{user_id(int), question_seq(list), concept_seq(list), correct_seq(list), time_seq(list)}, ...]
+        data_uniformed = [{
+            "user_id": user_id,
+            "question_seq": seqs["question_seq"],
+            "concept_seq": seqs["concept_seq"],
+            "correct_seq": seqs["correct_seq"],
+            "time_seq": seqs["time_seq"],
+            "seq_len": len(seqs["correct_seq"])
+        } for user_id, seqs in data_all.items()]
+
+        # 提取每道习题对应的知识点：提供的数据（train_valid_sequences_quelevel.csv和test_quelevel.csv）中习题对应的知识点是最细粒度的，类似edi2020数据集中层级知识点里最细粒度的知识点
+        # 而question metadata里每道题的kc routes是完整的知识点（层级）
+        # 并且提供的数据中习题对应知识点和question metadata中习题对应的知识点不是完全一一对应的，例如习题1035
+        # 在question metadata中对应的知识点为
+        # ['拓展思维----应用题模块----年龄问题----年龄问题基本关系----年龄差', '能力----运算求解',
+        #  '课内题型----综合与实践----应用题----倍数问题----已知两量之间倍数关系和两量之差，求两个量',
+        #  '学习能力----七大能力----运算求解',
+        #  '拓展思维----应用题模块----年龄问题----年龄问题基本关系----年龄问题基本关系和差问题',
+        #  '课内知识点----数与运算----数的运算的实际应用（应用题）----整数的简单实际问题----除法的实际应用',
+        #  '知识点----应用题----和差倍应用题----已知两量之间倍数关系和两量之差，求两个量',
+        #  '知识点----数的运算----估算与简单应用----整数的简单实际问题----除法的实际应用']
+        # 在数据中对应的知识点为[169, 177, 239, 200, 73]，其对应的知识点名称为['除法的实际应用', '已知两量之间倍数关系和两量之差，求两个量', '年龄差', '年龄问题基本关系和差问题', '运算求解']
+        question_ids = []
+        concept_ids = []
+        question_concept_map = {}
+        for item_data in data_uniformed:
+            for i in range(item_data["seq_len"]):
+                q_id = item_data["question_seq"][i]
+                c_ids = item_data["concept_seq"][i]
+                question_concept_map.setdefault(q_id, c_ids)
+                question_ids.append(q_id)
+                concept_ids.extend(c_ids)
+
+        # 习题和知识点id都是映射过的，但是习题共有7651个，其id却是从0开始，7651结束（有一个空缺，但是不会影响后续模型训练，所以就不处理了）
+        question_ids = sorted(list(set(question_ids)))
+        concept_ids = sorted(list(set(concept_ids)))
+        Q_table_multi_concept = np.zeros((len(question_ids) + 1, len(concept_ids)), dtype=int)
+        for q_id in question_concept_map.keys():
+            correspond_c = question_concept_map[q_id]
+            Q_table_multi_concept[[q_id] * len(correspond_c), correspond_c] = [1] * len(correspond_c)
+        self.Q_table["multi_concept"] = Q_table_multi_concept
+
+        # 处理为multi_concept和only_question
+        data_only_question = []
+        for item_data in data_uniformed:
+            item_data_only_question = {}
+            for k in item_data:
+                if k != "concept_seq":
+                    item_data_only_question[k] = deepcopy(item_data[k])
+            data_only_question.append(item_data_only_question)
+        self.data_preprocessed["only_question"] = data_only_question
+        self.data_preprocessed["multi_concept"] = DataProcessor.single2multi(data_only_question, Q_table_multi_concept)
+
+        self.statics_preprocessed["multi_concept"] = {}
+        self.statics_preprocessed["num_user"] = len(data_only_question)
+        self.statics_preprocessed["multi_concept"]["num_interaction"] = (
+            sum(list(map(lambda x: x["seq_len"], data_only_question))))
+        self.statics_preprocessed["multi_concept"]["num_concept"] = len(concept_ids)
+        self.statics_preprocessed["multi_concept"]["num_question"] = len(question_ids)
+        self.statics_preprocessed["multi_concept"]["num_max_concept"] = (int(max(Q_table_multi_concept.sum(axis=1))))
+
+        # 处理为single_concept，即多知识点看成新的单知识点
+        print("")
 
     def uniform_data(self):
         dataset_name = self.params["preprocess_config"]["dataset_name"]
@@ -449,7 +623,7 @@ class DataProcessor:
 
     @staticmethod
     def single2multi(seqs, Q_table):
-        id_keys, seq_keys = parse.get_keys_from_uniform(seqs)
+        id_keys, seq_keys = parse_util.get_keys_from_uniform(seqs)
         seq_keys = list(set(seq_keys) - {"question_seq"})
         all_keys = id_keys + seq_keys
 
@@ -463,7 +637,7 @@ class DataProcessor:
             seq_all = zip(question_seq, *(item_data[info_name] for info_name in seq_keys))
             for ele_all in seq_all:
                 q_id = ele_all[0]
-                c_ids = parse.get_concept_from_question(q_id, Q_table)
+                c_ids = parse_util.get_concept_from_question(q_id, Q_table)
                 len_c_ids = len(c_ids)
                 item_data_new["question_seq"] += [q_id] + [-1] * (len_c_ids - 1)
                 item_data_new["concept_seq"] += c_ids

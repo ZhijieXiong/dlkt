@@ -1,5 +1,5 @@
 def datasets_multi_concept(datasets_merged=None):
-    result = ["assist2009", "assist2009-new", "ednet-kt1"]
+    result = ["assist2009", "assist2009-new", "ednet-kt1", "xes3g5m"]
     if datasets_merged is None:
         return result
     return result.extend(datasets_merged)
@@ -7,7 +7,7 @@ def datasets_multi_concept(datasets_merged=None):
 
 def datasets_has_concept(datasets_merged=None):
     result = ["assist2009", "assist2009-new", "assist2012", "assist2017", "SLP-bio", "SLP-mat", "edi2020-task12",
-              "edi2020-task1", "edi2020-task4", "slepemapy", "ednet-kt1"]
+              "edi2020-task1", "edi2020-task4", "slepemapy", "ednet-kt1", "xes3g5m"]
     if datasets_merged is None:
         return result
     return result.extend(datasets_merged)
@@ -15,7 +15,7 @@ def datasets_has_concept(datasets_merged=None):
 
 def datasets_has_q_table(datasets_merged=None):
     result = ["assist2009", "assist2009-new", "assist2012", "assist2017", "SLP-bio", "SLP-mat", "edi2020-task12",
-              "edi2020-task1", "edi2020-task4", "slepemapy", "ednet-kt1"]
+              "edi2020-task1", "edi2020-task4", "slepemapy", "ednet-kt1", "xes3g5m"]
     if datasets_merged is None:
         return result
     return result.extend(datasets_merged)

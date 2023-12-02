@@ -3,6 +3,7 @@ notebook/.ipynb_checkpoints/
 result/
 lab/
 tmp/
+cluster_models/
 example/script_cluster
 example/result_cluster
 example/script_local

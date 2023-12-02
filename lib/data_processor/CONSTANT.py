@@ -1,6 +1,6 @@
 def datasets_treatable(datasets_merged=None):
     result = ["assist2009", "assist2009-new", "assist2012", "assist2015", "assist2017", "edi2020-task1", "edi2020-task2"
-              , "edi2020-task34",  "SLP-bio", "SLP-mat", "slepemapy", "statics2011", "ednet-kt1"]
+              , "edi2020-task34",  "SLP-bio", "SLP-mat", "slepemapy", "statics2011", "ednet-kt1", "xes3g5m"]
     if datasets_merged is None:
         return result
     return result.extend(datasets_merged)

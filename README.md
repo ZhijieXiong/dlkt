@@ -45,10 +45,11 @@
 - 无知识点/习题数据集：`assist2015` `statics2011`
 
 ## 3、初始化项目
-- 修改`example/settings.json`中的配置，指定数据存放地址，即`LIB_PATH`，然后运行`example/set_up.py`会生成所需要的目录
-- 生成的目录结构如下所示，原始数据放到 ``数据存放地址/lab/dataset_raw`` 下
+- 修改`example/settings.json`中的配置，`LIB_PATH`是所有需要文件的根目录，`FILE_MANAGER_ROOT`是`lib`所在目录，然后运行`example/set_up.py`会生成所需要的目录
+- 生成的目录结构如下所示，原始数据放到 ``LIB_PATH/lab/dataset_raw`` 下
   <div align=center><img src="./resources/lab_dir.png" /></div>
-- 运行 ``example/preprocess``处理对应的数据集，生成的数据在 ``数据存放地址/lab/dataset_preprocessed``
+- `ednet-kt1`因为原始数据文件太多，所以先使用`exampe/concat_ednet.py`将每5000名学生的记录合成一个文件
+- 运行 ``example/preprocess``处理对应的数据集（即`dataset_preprocessed`下的目录名），生成的数据在 ``数据存放地址/lab/dataset_preprocessed``
 
 
 ## 4、数据处理

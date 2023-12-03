@@ -3,11 +3,16 @@ from _cl_config import *
 from _data_aug_config import *
 
 from lib.template.params_template import PARAMS
+from lib.template.params_template_v2 import PARAMS as PARAMS2
+from lib.template.model.qDKT import MODEL_PARAMS as qDKT_MODEL_PARAMS
 from lib.template.objects_template import OBJECTS
 from lib.util.basic import *
 
 
 def qdkt_general_config(local_params, global_params):
+    global_params["models_config"]["kt_model"] = deepcopy(qDKT_MODEL_PARAMS)
+    global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "qDKT"
+
     # 配置模型参数
     num_concept = local_params["num_concept"]
     num_question = local_params["num_question"]
@@ -122,6 +127,22 @@ def qdkt_max_entropy_adv_aug_config(local_params):
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
             global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-ME_adv_aug@@"))
+        global_params["save_model_dir_name"] += f"@@{params_str}"
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects
+
+
+def qdkt_meta_optimize_cl_config(local_params):
+    global_params = deepcopy(PARAMS2)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    qdkt_general_config(local_params, global_params)
+
+    params_str = meta_optimize_cl_general_config(local_params, global_params, global_objects)
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-meta_optimize_cl@@"))
         global_params["save_model_dir_name"] += f"@@{params_str}"
         save_params(global_params, global_objects)
 

@@ -62,11 +62,6 @@ class MetaOptimizeCLTrainer(KnowledgeTracingTrainer):
             self.do_online_sim()
             self.do_max_entropy_aug()
 
-            # 有对抗样本后，随机增强只需要生成一个view
-            if use_adv_aug:
-                dataset_config_this = self.params["datasets_config"]["train"]
-                dataset_config_this["kt4aug"]["num_aug"] = 1
-
             kt_model.train()
             for batch_idx, batch in enumerate(train_loader):
                 # step 1, update the parameters of the encoder，计算预测损失和随机数据增强的对比损失

@@ -3,6 +3,7 @@ import torch.nn as nn
 
 from .Module.KTEmbedLayer import KTEmbedLayer
 from .Module.PredictorLayer import PredictorLayer
+from .util import get_mask4last_or_penultimate
 
 
 class DKT(nn.Module):
@@ -34,7 +35,7 @@ class DKT(nn.Module):
         correct_seq = batch["correct_seq"]
         concept_seq = batch["concept_seq"]
         dim_predict_out = self.params["models_config"]["kt_model"]["predict_layer"]["direct"]["dim_predict_out"]
-        interaction_seq = concept_seq[:, 0:-1] + dim_predict_out * correct_seq[:, 0:-1]
+        interaction_seq = concept_seq + dim_predict_out * correct_seq
         interaction_emb = self.embed_layer.get_emb("interaction", interaction_seq)
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(interaction_emb)
@@ -46,7 +47,7 @@ class DKT(nn.Module):
         correct_seq = batch["correct_seq"]
         concept_seq = batch["concept_seq"]
         dim_predict_out = self.params["models_config"]["kt_model"]["predict_layer"]["direct"]["dim_predict_out"]
-        interaction_seq = concept_seq[:, :-1] + dim_predict_out * correct_seq[:, :-1]
+        interaction_seq = concept_seq + dim_predict_out * correct_seq
         interaction_emb = self.embed_layer.get_emb("interaction", interaction_seq)
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(interaction_emb)
@@ -70,8 +71,21 @@ class DKT(nn.Module):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         dim_predict_out = self.params["models_config"]["kt_model"]["predict_layer"]["direct"]["dim_predict_out"]
         one_hot4predict_score = nn.functional.one_hot(batch["concept_seq"][:, 1:], dim_predict_out)
-        predict_score = self.forward(batch)
+        predict_score = self.forward(batch)[:, :-1]
         predict_score = (predict_score * one_hot4predict_score).sum(-1)
         predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
+
+        return predict_score
+
+    def forward4question_evaluate(self, batch):
+        # 直接输出的是每个序列最后一个时刻的预测分数
+        dim_predict_out = self.params["models_config"]["kt_model"]["predict_layer"]["direct"]["dim_predict_out"]
+        one_hot4predict_score = nn.functional.one_hot(batch["concept_seq"][:, 1:], dim_predict_out)
+        predict_score = self.forward(batch)[:, :-1]
+        predict_score = (predict_score * one_hot4predict_score).sum(-1)
+        # 只保留mask每行的最后一个1
+        mask4last = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)[:, 1:]
+        predict_score = predict_score * mask4last
+        predict_score = torch.sum(predict_score, dim=1)
 
         return predict_score

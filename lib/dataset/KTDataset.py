@@ -18,9 +18,15 @@ class KTDataset(Dataset):
         return len(self.dataset["mask_seq"])
 
     def __getitem__(self, index):
+        dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
+        data_type = self.params["datasets_config"]["data_type"]
+        base_type = dataset_config_this["kt"]["base_type"]
         result = dict()
         for key in self.dataset.keys():
-            result[key] = self.dataset[key][index]
+            if data_type == "multi_concept" and base_type == "question":
+                result[key] = self.dataset[key][index].to(self.params["device"])
+            else:
+                result[key] = self.dataset[key][index]
         return result
 
     def load_dataset(self):
@@ -49,7 +55,7 @@ class KTDataset(Dataset):
                 del item_data[k]
 
         if data_type == "multi_concept" and base_type == "question":
-            dataset_converted = self.dataset_multi_concept2question_pykt(dataset_original)
+            self.dataset_multi_concept2question_pykt(dataset_original)
         else:
             dataset_converted = {k: [] for k in (id_keys + seq_keys)}
             if "question_seq" in seq_keys:
@@ -86,9 +92,9 @@ class KTDataset(Dataset):
             if "question_seq_mask" in dataset_converted.keys():
                 del dataset_converted["question_seq_mask"]
 
-        for k in dataset_converted.keys():
-            dataset_converted[k] = torch.tensor(dataset_converted[k]).long().to(self.params["device"])
-        self.dataset = dataset_converted
+            for k in dataset_converted.keys():
+                dataset_converted[k] = torch.tensor(dataset_converted[k]).long().to(self.params["device"])
+            self.dataset = dataset_converted
 
     def dataset_multi_concept2question_pykt(self, dataset):
         # 假设原始习题序列为[1,2,3]，回答结果序列为[1,0,1]，习题对应知识点为{1:[5,6], 2:[7], 3:[8,9,10]}
@@ -134,7 +140,7 @@ class KTDataset(Dataset):
                 # j表示用户的第j道习题
                 interaction_index += 1
                 q_id = ele_all[0]
-                c_ids = get_concept_from_question(self.objects["Q_table"], q_id)
+                c_ids = get_concept_from_question(q_id, self.objects["data"]["Q_table"])
                 num_c_id = len(c_ids)
                 is_new_seq = not len(dataset_converted["correct_seq"][-1])
                 for position_c_in_q, c_id in enumerate(c_ids):
@@ -167,7 +173,6 @@ class KTDataset(Dataset):
                 # 也就是一个用户可能第60道习题时，知识点序列长度就已经超过200了，需要截断重新构造序列
                 current_seq_len = len(dataset_converted["correct_seq"][-1])
                 # 防止序列超过200长度
-                # todo: num_max_concept看一下放到哪里好
                 if current_seq_len >= (200 - self.params["num_max_concept"]):
                     for info_name in info_names:
                         dataset_converted[info_name].append([])
@@ -185,7 +190,6 @@ class KTDataset(Dataset):
         for info_name in info_names:
             dataset_converted[info_name] = list(filter(lambda seq: len(seq) != 0, dataset_converted[info_name]))
         interaction_index_seq = list(filter(lambda idx: idx != -1, interaction_index_seq))
-        # max_seq_len_in_result = max(map(lambda seq: len(seq), dataset_converted["correct_seq"]))
         max_seq_len_in_result = 200
         for info_name in info_names:
             for i, seq_data in enumerate(dataset_converted[info_name]):
@@ -193,11 +197,10 @@ class KTDataset(Dataset):
                 dataset_converted[info_name][i] += [0] * (max_seq_len_in_result - seq_len)
         dataset_converted_result = {info_name: [] for info_name in info_names}
         for info_name in info_names:
-            dataset_converted_result[info_name] = (
-                torch.tensor(dataset_converted[info_name], device=self.params["device"], dtype=torch.int64))
-        dataset_converted_result["interaction_index_seq"] = (
-            torch.tensor(interaction_index_seq, device=self.params["device"], dtype=torch.int64))
-        return dataset_converted_result
+            dataset_converted_result[info_name] = torch.tensor(dataset_converted[info_name]).long().to("cpu")
+        dataset_converted_result["interaction_index_seq"] = torch.tensor(interaction_index_seq).long().to("cpu")
+
+        self.dataset = dataset_converted_result
 
     def get_statics_kt_dataset(self):
         num_seq = len(self.dataset["mask_seq"])

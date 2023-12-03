@@ -34,4 +34,11 @@ def evaluate_general_config(local_params):
     evaluate_config["seq_len_absolute"] = eval(local_params["seq_len_absolute"])
     evaluate_config["seq_len_percent"] = eval(local_params["seq_len_percent"])
 
+    # Q_table
+    dataset_name = local_params["dataset_name"]
+    data_type = local_params["data_type"]
+    global_objects["data"]["Q_table"] = global_objects["file_manager"].get_q_table(dataset_name, data_type)
+
+    global_params["num_max_concept"] = local_params["num_max_concept"]
+
     return global_params, global_objects

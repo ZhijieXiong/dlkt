@@ -53,12 +53,12 @@ if __name__ == "__main__":
     parser.add_argument("--dim_latent", type=int, default=64)
     parser.add_argument("--rnn_type", type=str, default="gru")
     parser.add_argument("--num_rnn_layer", type=int, default=1)
-    parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument("--dropout", type=float, default=0.3)
     parser.add_argument("--num_predict_layer", type=int, default=1)
     parser.add_argument("--dim_predict_mid", type=int, default=256)
     parser.add_argument("--activate_type", type=str, default="sigmoid")
     # 其它
-    parser.add_argument("--save_model", type=str2bool, default=False)
+    parser.add_argument("--save_model", type=str2bool, default=True)
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()

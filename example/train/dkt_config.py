@@ -1,16 +1,13 @@
 from copy import deepcopy
-from _config import general_config
+from _config import *
 
 
 from lib.template.params_template import PARAMS
 from lib.template.objects_template import OBJECTS
+from lib.util.basic import *
 
 
-def dkt_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-
+def dkt_general_config(local_params, global_params):
     # 配置模型参数
     num_concept = local_params["num_concept"]
     dim_emb = local_params["dim_emb"]
@@ -42,5 +39,23 @@ def dkt_config(local_params):
     predict_layer_config["direct"]["dim_predict_mid"] = dim_predict_mid
     predict_layer_config["direct"]["activate_type"] = activate_type
     predict_layer_config["direct"]["dim_predict_out"] = num_concept
+
+    if local_params["save_model"]:
+        setting_name = local_params["setting_name"]
+        train_file_name = local_params["train_file_name"]
+
+        global_params["save_model_dir_name"] = (
+            f"{get_now_time().replace(' ', '-').replace(':', '-')}@@DKT@@seed_{local_params['seed']}@@{setting_name}@@"
+            f"{train_file_name.replace('.txt', '')}@@{num_concept}-{dim_emb}-{dim_latent}-{rnn_type}-{num_rnn_layer}-"
+            f"{dropout}-{num_predict_layer}-{dim_predict_mid}-{activate_type}")
+
+
+def dkt_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    dkt_general_config(local_params, global_params)
+    if local_params["save_model"]:
+        save_params(global_params, global_objects)
 
     return global_params, global_objects

@@ -14,12 +14,12 @@ from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
-    parser.add_argument("--setting_name", type=str, default="random_split_leave_multi_out_setting")
-    parser.add_argument("--data_type", type=str, default="multi_concept",
+    parser.add_argument("--setting_name", type=str, default="pykt_setting")
+    parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2009_train_split_6.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_split_6.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2009_test_split_6.txt")
+    parser.add_argument("--train_file_name", type=str, default="ednet-kt1_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="ednet-kt1_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="ednet-kt1_test.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam",
                         choices=("adam", "sgd"))
@@ -48,8 +48,8 @@ if __name__ == "__main__":
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=123)
-    parser.add_argument("--num_question", type=int, default=17751)
+    parser.add_argument("--num_concept", type=int, default=1462)
+    parser.add_argument("--num_question", type=int, default=11858)
     parser.add_argument("--dim_concept", type=int, default=64)
     parser.add_argument("--dim_question", type=int, default=64)
     parser.add_argument("--dim_correct", type=int, default=128)

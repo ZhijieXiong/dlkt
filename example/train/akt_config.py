@@ -58,7 +58,8 @@ def akt_config(local_params):
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
     akt_general_config(local_params, global_params)
-    save_params(global_params, global_objects)
+    if local_params["save_model"]:
+        save_params(global_params, global_objects)
 
     return global_params, global_objects
 

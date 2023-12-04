@@ -42,8 +42,6 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
             self.do_max_entropy_aug()
             self.do_cluster()
 
-            # 有对抗样本后，随机增强只需要生成一个view
-
             do_cluster_cl = (not use_warm_up4cluster_cl) or (use_warm_up4cluster_cl and epoch > epoch_warm_up4cluster_cl)
             if do_cluster_cl:
                 train_loader.dataset.set_use_aug()
@@ -59,10 +57,8 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
                 loss = 0.
 
                 if do_cluster_cl:
-                    if use_adv_aug:
-                        cl_loss = model.get_cluster_cl_loss_adv(batch, self.clus, self.dataset_adv_generated)
-                    else:
-                        cl_loss = model.get_cluster_cl_loss_one_seq(batch, self.clus, cl_type, random_select_aug_len)
+                    cl_loss = model.get_cluster_cl_loss(batch, self.clus, cl_type, random_select_aug_len,
+                                                        use_adv_aug, self.dataset_adv_generated)
                     self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)
                     loss = loss + weight_cl_loss * cl_loss
 

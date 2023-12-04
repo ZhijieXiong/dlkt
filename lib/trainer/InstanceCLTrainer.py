@@ -44,14 +44,11 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
                 num_seq = batch["mask_seq"].shape[0]
                 loss = 0.
 
-                if cl_type in ["mean_pool", "last_time"] and not use_adv_aug:
-                    cl_loss = model.get_instance_cl_loss_one_seq(batch, cl_type, random_select_aug_len)
-                elif cl_type in ["mean_pool", "last_time"] and use_adv_aug:
-                    cl_loss = model.get_instance_cl_loss_one_seq_adv(batch, self.dataset_adv_generated, cl_type)
-                elif cl_type == "all_time" and not use_adv_aug:
-                    cl_loss = model.get_instance_cl_loss_all_interaction(batch)
-                elif cl_type == "all_time" and use_adv_aug:
-                    cl_loss = model.get_instance_cl_loss_all_interaction_adv(batch, self.dataset_adv_generated)
+                if cl_type in ["mean_pool", "last_time"]:
+                    cl_loss = model.get_instance_cl_loss(batch, cl_type, random_select_aug_len,
+                                                         use_adv_aug, self.dataset_adv_generated)
+                elif cl_type == "all_time":
+                    cl_loss = model.get_instance_cl_loss_all_interaction(batch, use_adv_aug, self.dataset_adv_generated)
                 else:
                     raise NotImplementedError()
                 self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)

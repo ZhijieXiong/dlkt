@@ -106,16 +106,9 @@ class MetaOptimizeCLTrainer(KnowledgeTracingTrainer):
                     param.requires_grad = True
                 for param in extractor1_model.parameters():
                     param.requires_grad = True
-                if cl_type in ["mean_pool", "last_time"] and not use_adv_aug:
-                    cl_loss1, cl_loss2, reg_loss = kt_model.meta_contrast(
-                        batch, cl_type, meta_extractors, use_regularization
-                    )
-                elif cl_type in ["mean_pool", "last_time"] and use_adv_aug:
-                    cl_loss1, cl_loss2, reg_loss = kt_model.meta_contrast_use_adv_aug(
-                        batch, self.dataset_adv_generated, cl_type, meta_extractors, use_regularization
-                    )
-                else:
-                    raise NotImplementedError()
+                cl_loss1, cl_loss2, reg_loss = kt_model.get_meta_contrast_cl_loss(
+                    batch, cl_type, meta_extractors, use_regularization, use_adv_aug, self.dataset_adv_generated
+                )
                 self.loss_record.add_loss("cl loss1 stage2",
                                           cl_loss1.detach().cpu().item() * num_seq, num_seq)
                 self.loss_record.add_loss("cl loss2 stage2",

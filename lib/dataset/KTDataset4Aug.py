@@ -49,8 +49,18 @@ class KTDataset4Aug(Dataset):
 
     def __getitem__(self, index):
         result = dict()
+
         for key in self.dataset.keys():
             result[key] = self.dataset[key][index]
+
+        # debug
+        # l1 = result["concept_seq"].shape[0]
+        # l2 = result["use_time_seq"].shape[0]
+        # l3 = result["correct_seq"].shape[0]
+        # l4 = result["question_seq"].shape[0]
+        # l5 = result["mask_seq"].shape[0]
+        # l6 = result["interval_time_seq"].shape[0]
+        # print(f"{index}, {l1}, {l2}, {l3}, {l4}, {l5}, {l6}")
 
         if not self.use_aug:
             return result
@@ -99,8 +109,8 @@ class KTDataset4Aug(Dataset):
         for i, data_aug in enumerate(datas_aug):
             pad_len = max_seq_len - data_aug["seq_len"]
             for k, v in data_aug.items():
-                if type(v) == list and k not in ["time_seq", "use_time_seq", "interval_time_seq"]:
-                    # 数据增强不考虑时间
+                if type(v) == list and k not in ["time_seq", "use_time_seq", "interval_time_seq", "age_seq"]:
+                    # 数据增强不考虑时间、年龄
                     result[f"{k}_aug_{i}"] = torch.tensor(v + [0] * pad_len).long().to(self.params["device"])
 
         return result

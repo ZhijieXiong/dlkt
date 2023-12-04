@@ -1,7 +1,10 @@
 import torch
 import numpy as np
-# from sklearnex import patch_sklearn
-# patch_sklearn()
+try:
+    from sklearnex import patch_sklearn
+    patch_sklearn()
+except ModuleNotFoundError:
+    print("not module sklearnex, can not use it to speed cluster")
 from sklearn.cluster import KMeans
 # from kmeans_pytorch import kmeans, kmeans_predict
 

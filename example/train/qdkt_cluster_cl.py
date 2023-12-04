@@ -78,7 +78,7 @@ if __name__ == "__main__":
                         choices=("random_aug", "informative_aug"))
     parser.add_argument("--use_random_select_aug_len", type=str2bool, default=True)
     parser.add_argument("--mask_prob", type=float, default=0.1)
-    parser.add_argument("--insert_prob", type=float, default=0.1)
+    parser.add_argument("--insert_prob", type=float, default=0.2)
     parser.add_argument("--replace_prob", type=float, default=0.3)
     parser.add_argument("--crop_prob", type=float, default=0.1)
     parser.add_argument("--permute_prob", type=float, default=0.1)
@@ -89,13 +89,13 @@ if __name__ == "__main__":
     parser.add_argument("--offline_sim_type", type=str, default="order",
                         choices=("order",))
     # max entropy adv aug参数
-    parser.add_argument("--use_adv_aug", type=str2bool, default=False)
-    parser.add_argument("--epoch_interval_generate", type=int, default=1)
+    parser.add_argument("--use_adv_aug", type=str2bool, default=True)
+    parser.add_argument("--epoch_interval_generate", type=int, default=3)
     parser.add_argument("--loop_adv", type=int, default=3)
-    parser.add_argument("--epoch_generate", type=int, default=40)
-    parser.add_argument("--adv_learning_rate", type=float, default=20.0)
-    parser.add_argument("--eta", type=float, default=5.0)
-    parser.add_argument("--gamma", type=float, default=1.0)
+    parser.add_argument("--epoch_generate", type=int, default=200)
+    parser.add_argument("--adv_learning_rate", type=float, default=30.0)
+    parser.add_argument("--eta", type=float, default=20.0)
+    parser.add_argument("--gamma", type=float, default=10.0)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
@@ -104,6 +104,7 @@ if __name__ == "__main__":
     params = vars(args)
     set_seed(params["seed"])
     global_params, global_objects = qdkt_cluster_cl_config(params)
+    # global_params["device"] = "cpu"
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)

@@ -17,9 +17,9 @@ if __name__ == "__main__":
     parser.add_argument("--setting_name", type=str, default="pykt_setting")
     parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="edi2020-task34_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="edi2020-task34_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="edi2020-task34_test.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2017_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2017_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2017_test.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam",
                         choices=("adam", "sgd"))
@@ -43,20 +43,20 @@ if __name__ == "__main__":
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
-    parser.add_argument("--lr_schedule_milestones", type=str, default="[5]")
+    parser.add_argument("--lr_schedule_milestones", type=str, default="[5, 10]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     parser.add_argument("--enable_clip_grad", type=str2bool, default=True)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=53)
-    parser.add_argument("--num_question", type=int, default=948)
+    parser.add_argument("--num_concept", type=int, default=101)
+    parser.add_argument("--num_question", type=int, default=2803)
     parser.add_argument("--dim_model", type=int, default=64)
     parser.add_argument("--key_query_same", type=str2bool, default=True)
     parser.add_argument("--num_head", type=int, default=8)
     parser.add_argument("--num_block", type=int, default=4)
     parser.add_argument("--dim_ff", type=int, default=256)
     parser.add_argument("--dim_final_fc", type=int, default=512)
-    parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--separate_qa", type=str2bool, default=False)
     parser.add_argument("--seq_representation", type=str, default="encoder_output",
                         help="choose the representation of sequence in AKT, knowledge_encoder_output is the choice of CL4KT",

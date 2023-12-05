@@ -34,6 +34,7 @@ class AKT(nn.Module, BaseModel4CL):
             self.embed_interaction = nn.Embedding(2, dim_emb)
 
         self.encoder_layer = EncoderLayer(params, objects)
+
         encoder_layer_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
         dim_model = encoder_layer_config["dim_model"]
         dim_final_fc = encoder_layer_config["dim_final_fc"]

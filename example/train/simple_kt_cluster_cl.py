@@ -2,13 +2,13 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from akt_config import akt_cluster_cl_config
+from simple_kt_config import simple_kt_cluster_cl_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
 from lib.dataset.KTDataset4Aug import KTDataset4Aug
-from lib.model.AKT import AKT
+from lib.model.SimpleKT import SimpleKT
 from lib.trainer.ClusterCLTrainer import ClusterCLTrainer
 
 
@@ -52,18 +52,17 @@ if __name__ == "__main__":
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=123)
     parser.add_argument("--num_question", type=int, default=17751)
-    parser.add_argument("--dim_model", type=int, default=64)
+    parser.add_argument("--dim_model", type=int, default=256)
+    parser.add_argument("--num_block", type=int, default=4)
+    parser.add_argument("--num_head", type=int, default=4)
+    parser.add_argument("--dim_ff", type=int, default=256)
+    parser.add_argument("--dim_final_fc", type=int, default=64)
+    parser.add_argument("--dim_final_fc2", type=int, default=64)
+    parser.add_argument("--seq_len", type=int, default=200)
+    parser.add_argument("--dropout", type=float, default=0.3)
     parser.add_argument("--key_query_same", type=str2bool, default=True)
-    parser.add_argument("--num_head", type=int, default=8)
-    parser.add_argument("--num_block", type=int, default=2)
-    parser.add_argument("--dim_ff", type=int, default=128)
-    parser.add_argument("--dim_final_fc", type=int, default=256)
-    parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--separate_qa", type=str2bool, default=False)
-    parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
-    parser.add_argument("--seq_representation", type=str, default="encoder_output",
-                        help="choose the representation of sequence in AKT, knowledge_encoder_output is the choice of CL4KT",
-                        choices=("encoder_output", "knowledge_encoder_output"))
+    parser.add_argument("--difficulty_scalar", type=str2bool, default=True)
     # cluster CL参数（对比学习）
     parser.add_argument("--use_warm_up4cluster_cl", type=str2bool, default=True)
     parser.add_argument("--epoch_warm_up4cluster_cl", type=float, default=4)
@@ -105,7 +104,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = akt_cluster_cl_config(params)
+    global_params, global_objects = simple_kt_cluster_cl_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)
@@ -129,7 +128,7 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = AKT(global_params, global_objects).to(global_params["device"])
+    model = SimpleKT(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
     trainer = ClusterCLTrainer(global_params, global_objects)
     trainer.train()

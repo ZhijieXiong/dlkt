@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 import torch.nn.functional as F
 from torch.nn import Softplus
 
@@ -129,4 +128,20 @@ def attention_AKT(q, k, v, dim_head, mask, dropout, zero_pad, gamma=None, pdiff=
     scores = dropout(scores)
     output = torch.matmul(scores, v)
 
+    return output
+
+
+def attention_SimpleKT(q, k, v, dim_head, mask, dropout, zero_pad, device="cpu"):
+    # dim_head: 每一个head的dim
+    # scores: (batch_size, num_head, seq_len, seq_len)
+    scores = torch.matmul(q, k.transpose(-2, -1)) / torch.tensor(dim_head).float().sqrt().to(device)
+    batch_size, num_head, seq_len = scores.size(0), scores.size(1), scores.size(2)
+    scores.masked_fill_(mask == 0, -1e32)
+    # scores: (batch_size, num_head, seq_len, seq_len)
+    scores = torch.softmax(scores, dim=-1)
+    if zero_pad:
+        pad_zero = torch.zeros(batch_size, num_head, 1, seq_len).to(device)
+        scores = torch.cat([pad_zero, scores[:, :, 1:, :]], dim=2)
+    scores = dropout(scores)
+    output = torch.matmul(scores, v)
     return output

@@ -117,6 +117,7 @@ class SimpleKT(nn.Module, BaseModel4CL):
         return predict_score
 
     def get_latent(self, batch):
+        difficulty_scalar = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["difficulty_scalar"]
         concept_seq = batch["concept_seq"]
         question_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
@@ -129,7 +130,7 @@ class SimpleKT(nn.Module, BaseModel4CL):
         question_difficulty_emb = self.embed_question_difficulty(question_seq)
         # mu_{q_t} * d_ct + c_ct
         question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
-        if self.difficulty_scalar:
+        if difficulty_scalar:
             # f_{(c_t, r_t)}中的r_t
             interaction_variation_emb = self.embed_interaction_variation(correct_seq)
             # e_{(c_t, r_t)} + mu_{q_t} * f_{(c_t, r_t)}

@@ -22,11 +22,13 @@ CLUSTER_CL_PARAMS = {
     "random_select_aug_len": False,
     "num_cluster": 32,
     "temp": 0.05,
+    "use_warm_up4cluster_cl": True,
+    "epoch_warm_up4cluster_cl": 4,
     "use_online_sim": True,
     "use_warm_up4online_sim": True,
     "epoch_warm_up4online_sim": 4,
-    "cl_type": "last_time",
-    "use_adv_data": False
+    # "last_time" or "all_time"
+    "cl_type": "last_time"
 }
 
 

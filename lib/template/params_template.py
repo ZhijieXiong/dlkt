@@ -277,8 +277,7 @@ PARAMS = {
       "use_warm_up4online_sim": True,
       "epoch_warm_up4online_sim": 4,
       # "last_time" or "all_time"
-      "cl_type": "last_time",
-      "use_adv_data": False
+      "cl_type": "last_time"
     },
     "max_entropy_adv_aug": {
       "epoch_interval_generate": 1,

@@ -2,7 +2,7 @@ from copy import deepcopy
 
 from lib.template.dataset_params_template import KT_RANDOM_AUG_PARAMS, KT_INFORMATIVE_AUG_PARAMS
 from lib.template.model.Extractor import MODEL_PARAMS as EXTRACTOR_PARAMS
-from lib.template.other_params_template import INSTANCE_CL_PARAMS, META_OPTIMIZE_CL_PARAMS, MAX_ENTROPY_ADV_AUG
+from lib.template.other_params_template import *
 
 
 def instance_cl_general_config(local_params, global_params, global_objects):
@@ -23,6 +23,7 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     datasets_train_config["kt4aug"]["aug_type"] = aug_type
     datasets_train_config["kt4aug"]["num_aug"] = 2
     if aug_type == "random_aug":
+        datasets_train_config["kt4aug"]["random_aug"] = deepcopy(KT_RANDOM_AUG_PARAMS)
         datasets_train_config["kt4aug"]["random_aug"]["aug_order"] = aug_order
         datasets_train_config["kt4aug"]["random_aug"]["mask_prob"] = mask_prob
         datasets_train_config["kt4aug"]["random_aug"]["crop_prob"] = crop_prob
@@ -32,6 +33,7 @@ def instance_cl_general_config(local_params, global_params, global_objects):
         datasets_train_config["kt4aug"]["random_aug"]["hard_neg_prob"] = hard_neg_prob
         datasets_train_config["kt4aug"]["random_aug"]["random_select_aug_len"] = random_select_aug_len
     elif aug_type == "informative_aug":
+        datasets_train_config["kt4aug"]["informative_aug"] = deepcopy(KT_INFORMATIVE_AUG_PARAMS)
         datasets_train_config["kt4aug"]["informative_aug"]["aug_order"] = aug_order
         datasets_train_config["kt4aug"]["informative_aug"]["mask_prob"] = mask_prob
         datasets_train_config["kt4aug"]["informative_aug"]["crop_prob"] = crop_prob
@@ -175,6 +177,7 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
     datasets_train_config["kt4aug"]["aug_type"] = aug_type
     datasets_train_config["kt4aug"]["num_aug"] = 2
     if aug_type == "random_aug":
+        datasets_train_config["kt4aug"]["random_aug"] = deepcopy(KT_RANDOM_AUG_PARAMS)
         datasets_train_config["kt4aug"]["random_aug"]["aug_order"] = aug_order
         datasets_train_config["kt4aug"]["random_aug"]["mask_prob"] = mask_prob
         datasets_train_config["kt4aug"]["random_aug"]["crop_prob"] = crop_prob
@@ -183,6 +186,7 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
         datasets_train_config["kt4aug"]["random_aug"]["hard_neg_prob"] = hard_neg_prob
         datasets_train_config["kt4aug"]["random_aug"]["random_select_aug_len"] = random_select_aug_len
     elif aug_type == "informative_aug":
+        datasets_train_config["kt4aug"]["informative_aug"] = deepcopy(KT_INFORMATIVE_AUG_PARAMS)
         datasets_train_config["kt4aug"]["informative_aug"]["aug_order"] = aug_order
         datasets_train_config["kt4aug"]["informative_aug"]["mask_prob"] = mask_prob
         datasets_train_config["kt4aug"]["informative_aug"]["crop_prob"] = crop_prob
@@ -205,6 +209,7 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
     num_cluster = local_params["num_cluster"]
     cl_type = local_params["cl_type"]
 
+    global_params["other"]["cluster_cl"] = deepcopy(CLUSTER_CL_PARAMS)
     cluster_cl_config = global_params["other"]["cluster_cl"]
     cluster_cl_config["use_warm_up4cluster_cl"] = use_warm_up4cluster_cl
     cluster_cl_config["epoch_warm_up4cluster_cl"] = epoch_warm_up4cluster_cl
@@ -225,6 +230,7 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
     eta = local_params["eta"]
     gamma = local_params["gamma"]
 
+    global_params["other"]["max_entropy_adv_aug"] = deepcopy(MAX_ENTROPY_ADV_AUG)
     max_entropy_aug_config = global_params["other"]["max_entropy_adv_aug"]
     cluster_cl_config["use_adv_aug"] = use_adv_aug
     if use_adv_aug:

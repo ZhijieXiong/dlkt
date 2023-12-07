@@ -324,6 +324,7 @@ class DataProcessor:
         rename_cols = CONSTANT.datasets_renamed()[dataset_name]
         self.data_raw.rename(columns=rename_cols, inplace=True)
 
+        # single_concept
         df = deepcopy(self.data_raw)
         df["use_time"] = df["use_time"].map(lambda t: min(max(1, int(t) // 1000), 60 * 60))
 
@@ -356,6 +357,42 @@ class DataProcessor:
         self.statics_preprocessed["single_concept"] = DataProcessor.get_basic_info(df)
         self.statics_preprocessed["single_concept"]["num_concept"] = len(concept_ids)
         self.Q_table["single_concept"] = Q_table
+
+        # multi_concept
+        # df_multi_concept只是用来统计信息，知识点映射并不使用它，因为准备在uniform是直接用single2multi和q table转换为multi concept
+        df_multi_concept = deepcopy(self.data_raw)
+        df_multi_concept["concept_id"] = df_multi_concept["concept_id"].str.split("_")
+        df_multi_concept = df_multi_concept.explode("concept_id").reset_index(drop=True)
+        self.statics_preprocessed["multi_concept"] = DataProcessor.get_basic_info(df_multi_concept)
+        self.data_preprocessed["multi_concept"] = df_multi_concept
+
+        question_ids = []
+        concept_ids = []
+        question_concept_map = {}
+        concept_id_map = self.concept_id_map["single_concept"]
+        for question_id, group_info in df_new[["question_id", "concept_id"]].groupby("question_id"):
+            correspond_c = pd.unique(group_info["concept_id"]).tolist()
+            c_ids = concept_id_map.loc[concept_id_map["concept_id_map"] == correspond_c[0], "concept_id"].iloc[0]
+            c_ids = list(map(int, c_ids.split("_")))
+            question_ids.append(question_id)
+            concept_ids.extend(c_ids)
+            question_concept_map[question_id] = c_ids
+        concept_ids = sorted(list(set(concept_ids)))
+        concept_id_map = {c_id: i for i, c_id in enumerate(concept_ids)}
+        self.concept_id_map["multi_concept"] = pd.DataFrame({
+            "concept_id": concept_id_map.keys(),
+            "concept_id_map": concept_id_map.values()
+        })
+        for q_id in question_concept_map.keys():
+            c_ids_map = []
+            for c_id_ori in question_concept_map[q_id]:
+                c_ids_map.append(concept_id_map[c_id_ori])
+            question_concept_map[q_id] = c_ids_map
+        Q_table = np.zeros((len(question_ids), len(concept_ids)), dtype=int)
+        for question_id, correspond_c in question_concept_map.items():
+            Q_table[[question_id] * len(correspond_c), correspond_c] = [1] * len(correspond_c)
+        self.Q_table["multi_concept"] = Q_table
+        self.statics_preprocessed["multi_concept"]["num_max_concept"] = (int(max(Q_table.sum(axis=1))))
 
     def load_process_uniform_xes3g5m(self):
         # 习题类型：单选和填空
@@ -594,6 +631,10 @@ class DataProcessor:
 
         # single_concept
         df = self.data_preprocessed["single_concept"]
+        school_id_map_dict = school_id_map.to_dict()
+        school_id_map4single_concept = {school_id_map_dict["school_id"][i]: school_id_map_dict["school_id_map"][i]
+                                        for i in range(len(school_id_map_dict["school_id"]))}
+        df["school_id"] = df["school_id"].map(school_id_map4single_concept)
         seqs = []
         for user_id in pd.unique(df["user_id"]):
             user_data = df[df["user_id"] == user_id]
@@ -700,7 +741,16 @@ class DataProcessor:
                     object_data[info_name].append(row_data[info_name_table[info_name]])
             object_data["seq_len"] = len(object_data["correct_seq"])
             seqs.append(object_data)
+
         self.data_uniformed["single_concept"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
+
+        data_only_question = deepcopy(seqs)
+        for item_data in data_only_question:
+            del item_data["concept_seq"]
+        self.data_uniformed["only_question"] = list(filter(lambda item: 2 <= item["seq_len"], data_only_question))
+
+        seqs = DataProcessor.single2multi(data_only_question, self.Q_table["multi_concept"])
+        self.data_uniformed["multi_concept"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
 
     def get_all_id_maps(self):
         result = {}

@@ -9,7 +9,7 @@ from lib.util.data import *
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="assist2017")
+    parser.add_argument("--dataset_name", type=str, default="ednet-kt1")
 
     args = parser.parse_args()
     params = vars(args)

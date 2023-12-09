@@ -13,7 +13,7 @@ if __name__ == "__main__":
     parser.add_argument("--data_type", type=str, default="multi_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
     # 数据集信息
-    parser.add_argument("--num_concept", type=int, default=149)
+    parser.add_argument("--num_concept", type=int, default=123)
     parser.add_argument("--num_question", type=int, default=17751)
     # 划分知识点和习题频率为低中高所用的参数，用于研究长尾问题
     parser.add_argument("--concept_fre_low_middle", type=int, default=10)
@@ -21,10 +21,10 @@ if __name__ == "__main__":
     parser.add_argument("--question_fre_low_middle", type=int, default=5)
     parser.add_argument("--question_fre_middle_high", type=int, default=30)
     # 划分知识点和习题正确率为低中高所用的参数，用于研究偏差问题
-    parser.add_argument("--concept_acc_low_middle", type=float, default=0.3)
-    parser.add_argument("--concept_acc_middle_high", type=float, default=0.8)
-    parser.add_argument("--question_acc_low_middle", type=float, default=0.3)
-    parser.add_argument("--question_acc_middle_high", type=float, default=0.8)
+    parser.add_argument("--concept_acc_low_middle", type=float, default=0.35)
+    parser.add_argument("--concept_acc_middle_high", type=float, default=0.65)
+    parser.add_argument("--question_acc_low_middle", type=float, default=0.35)
+    parser.add_argument("--question_acc_middle_high", type=float, default=0.65)
 
     args = parser.parse_args()
     params = vars(args)
@@ -81,5 +81,47 @@ if __name__ == "__main__":
         )),
     }
     if params["data_type"] != "only_ question":
-        pass
+        save_statics["concept_low_fre"] = list(map(
+            lambda k_v_tuple: k_v_tuple[0],
+            list(filter(
+                lambda k_v_tuple: k_v_tuple[1] < params["concept_fre_low_middle"],
+                basic_statics["concept_fre"].items()
+            ))
+        ))
+        save_statics["concept_middle_fre"] = list(map(
+            lambda k_v_tuple: k_v_tuple[0],
+            list(filter(
+                lambda k_v_tuple: params["concept_fre_low_middle"] <= k_v_tuple[1] <= params["concept_fre_middle_high"],
+                basic_statics["concept_fre"].items()
+            ))
+        ))
+        save_statics["concept_high_fre"] = list(map(
+            lambda k_v_tuple: k_v_tuple[0],
+            list(filter(
+                lambda k_v_tuple: k_v_tuple[1] > params["concept_fre_middle_high"],
+                basic_statics["concept_fre"].items()
+            ))
+        ))
+        save_statics["concept_low_acc"] = list(map(
+            lambda k_v_tuple: k_v_tuple[0],
+            list(filter(
+                lambda k_v_tuple: k_v_tuple[1] < params["concept_acc_low_middle"],
+                basic_statics["concept_acc"].items()
+            ))
+        ))
+        save_statics["concept_middle_acc"] = list(map(
+            lambda k_v_tuple: k_v_tuple[0],
+            list(filter(
+                lambda k_v_tuple: params["concept_acc_low_middle"] <= k_v_tuple[1] <= params["concept_acc_middle_high"],
+                basic_statics["concept_acc"].items()
+            ))
+        ))
+        save_statics["concept_high_acc"] = list(map(
+            lambda k_v_tuple: k_v_tuple[0],
+            list(filter(
+                lambda k_v_tuple: k_v_tuple[1] > params["concept_acc_middle_high"],
+                basic_statics["concept_acc"].items()
+            ))
+        ))
 
+    write_json(save_statics, statics_info_file_path)

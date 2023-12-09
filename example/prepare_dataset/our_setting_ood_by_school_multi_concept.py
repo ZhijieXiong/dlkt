@@ -6,19 +6,20 @@ import config
 import split_util
 
 from lib.util.FileManager import FileManager
+from lib.dataset.KTDataset import KTDataset
 from lib.util.parse import parse_data_type
-from lib.util.data import read_preprocessed_file
+from lib.util.data import read_preprocessed_file, load_json
 from lib.dataset.split_seq import dataset_truncate2multi_seq
 from lib.util.data import write2file
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="assist2012", choices=("assist2009", "assist2012"))
+    parser.add_argument("--dataset_name", type=str, default="assist2009", choices=("assist2009", ))
     # setting config
-    parser.add_argument("--setting_name", type=str, default="our_setting_ood_by_school")
-    parser.add_argument("--min_school_seq", type=int, help="一所学校最少要有多少学生|序列", default=200)
-    parser.add_argument("--min_mean_seq_len", type=int, default=20)
+    parser.add_argument("--setting_name", type=str, default="our_setting_ood_by_school_multi_concept")
+    parser.add_argument("--min_school_seq", type=int, help="一所学校最少要有多少学生|序列", default=100)
+    parser.add_argument("--min_mean_seq_len", type=int, default=30)
     parser.add_argument("--train_test_radio_upper_bound", type=float, default=8/2)
     parser.add_argument("--train_test_radio_lower_bound", type=float, default=7/3)
     parser.add_argument("--iid_radio", type=float, default=0.2)
@@ -28,12 +29,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     params = vars(args)
-    params["data_type"] = "single_concept"
+    params["data_type"] = "multi_concept"
     objects = {"file_manager": FileManager(config.FILE_MANAGER_ROOT)}
 
     params["lab_setting"] = {
         "name": params["setting_name"],
-        "description": "数据处理：多知识点组合当成新知识点"
+        "description": "数据处理：多知识点习题扩展为多个单知识点习题"
                        "序列处理：（1）序列长度小于200，则在后面补零；（2）序列长度大于200，则截断成多条序列；\n"
                        "数据集划分：先基于学校随机划分训练集和测试集，再在训练集内基于序列随机划分训练集和验证集，总共划分num_split组；"
                        "数据集划分具体步骤：（1）将小学校（序列数量少的学校，由min_school_seq定义）合并为一个学校，保证合并后每个学校"
@@ -91,6 +92,18 @@ if __name__ == "__main__":
     print(result_spilt_test_schools)
 
     setting_dir = objects["file_manager"].get_setting_dir(params["setting_name"])
+    data_type = params["data_type"]
+    # 生成pykt提出的测试多知识点数据集方法所需要的文件
+    max_seq_len = params["max_seq_len"]
+    # Q_table
+    dataset_name = params["dataset_name"]
+    Q_table = objects["file_manager"].get_q_table(dataset_name, data_type)
+
+    # num_max_concept
+    preprocessed_dir = objects["file_manager"].get_preprocessed_dir(dataset_name)
+    statics_preprocessed_multi_concept = load_json(os.path.join(preprocessed_dir,
+                                                                "statics_preprocessed_multi_concept.json"))
+    num_max_concept = statics_preprocessed_multi_concept["num_max_concept"]
     for i, test_schools in enumerate(result_spilt_test_schools):
         data_train_iid, data_test_ood = split_util.split_data(data_uniformed, test_schools, merged_schools)
         dataset_train_iid = dataset_truncate2multi_seq(data_train_iid,
@@ -114,8 +127,13 @@ if __name__ == "__main__":
         write2file(dataset_test_iid, test_iid_path)
         write2file(dataset_test_ood, test_ood_path)
 
-    # assist2009: 随机划分了139次，划分测试集结果如下
-    # [[10, 6, 5, 2], [3, 2, 1, 9], [3, 7, 4, 9], [3, 7, 4, 1], [9, 13, 4, 2], [4, 2, 11, 3], [8, 4, 9, 3], [12, 4, 11, 3], [1, 2, 5, 10], [3, 4, 10, 7]]
-
-    # assist2009: 随机划分了19次，划分测试集结果如下
-    # [[43, 38, 31, 13, 19, 35, 57, 5, 58, 14, 40, 54, 52, 0], [4, 30, 54, 41, 64, 16, 22, 19, 31, 36, 62, 32, 1, 13], [20, 24, 63, 19, 3, 1, 28, 62, 15, 8, 60, 41, 37, 11], [12, 50, 1, 37, 63, 42, 22, 53, 31, 0, 21, 56, 65], [47, 20, 26, 1, 59, 65, 25, 9, 28, 48, 38, 6, 52], [3, 8, 10, 13, 42, 26, 41, 18, 1, 54, 28, 50, 66, 65], [46, 23, 45, 13, 2, 41, 19, 27, 1, 30, 64, 51, 53, 33], [3, 64, 39, 53, 10, 17, 65, 40, 54, 28, 4, 43, 44, 15], [27, 3, 10, 0, 43, 22, 8, 53, 35, 18, 48, 36, 5], [19, 34, 25, 60, 0, 33, 35, 50, 6, 63, 8, 16, 18]]
+        write2file(
+            KTDataset.dataset_multi_concept2question_pykt(dataset_test_iid, Q_table, num_max_concept, max_seq_len),
+            os.path.join(setting_dir,
+                         f"{params['dataset_name']}_valid_iid_split_{i}_question_base4multi_concept.txt")
+        )
+        write2file(
+            KTDataset.dataset_multi_concept2question_pykt(dataset_test_ood, Q_table, num_max_concept, max_seq_len),
+            os.path.join(setting_dir,
+                         f"{params['dataset_name']}_test_ood_split_{i}_question_base4multi_concept.txt")
+        )

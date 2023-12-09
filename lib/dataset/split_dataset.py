@@ -97,17 +97,20 @@ def n_fold_split1(dataset_uniformed, params, objects):
     names_valid = [f"{dataset_name}_valid_fold_{fold}.txt" for fold in range(n_fold)]
 
     data_type = params["data_type"]
-    # 生成pykt提出的测试多知识点数据集方法所需要的文件
     max_seq_len = params["max_seq_len"]
     # Q_table
     dataset_name = params["dataset_name"]
     Q_table = objects["file_manager"].get_q_table(dataset_name, data_type)
+    # 生成pykt提出的测试多知识点数据集方法所需要的文件
+    if data_type == "multi_concept":
+        # num_max_concept
+        preprocessed_dir = objects["file_manager"].get_preprocessed_dir(dataset_name)
+        statics_preprocessed_multi_concept = load_json(os.path.join(preprocessed_dir,
+                                                                    "statics_preprocessed_multi_concept.json"))
+        num_max_concept = statics_preprocessed_multi_concept["num_max_concept"]
+    else:
+        num_max_concept = 1
 
-    # num_max_concept
-    preprocessed_dir = objects["file_manager"].get_preprocessed_dir(dataset_name)
-    statics_preprocessed_multi_concept = load_json(os.path.join(preprocessed_dir,
-                                                                "statics_preprocessed_multi_concept.json"))
-    num_max_concept = statics_preprocessed_multi_concept["num_max_concept"]
     for fold in range(n_fold):
         write2file(datasets_train[fold], os.path.join(setting_dir, names_train[fold]))
         write2file(datasets_valid[fold], os.path.join(setting_dir, names_valid[fold]))
@@ -117,6 +120,7 @@ def n_fold_split1(dataset_uniformed, params, objects):
                 os.path.join(setting_dir,
                              names_valid[fold].replace(".txt", "_question_base4multi_concept.txt"))
             )
+
     name_data_test = f"{dataset_name}_test.txt"
     write2file(dataset_test, os.path.join(setting_dir, name_data_test))
     if data_type == "multi_concept":
@@ -149,17 +153,20 @@ def n_fold_split2(dataset_uniformed, params, objects):
     names_test = [f"{dataset_name}_test_fold_{fold}.txt" for fold in range(n_fold)]
 
     data_type = params["data_type"]
-    # 生成pykt提出的测试多知识点数据集方法所需要的文件
     max_seq_len = params["max_seq_len"]
     # Q_table
     dataset_name = params["dataset_name"]
     Q_table = objects["file_manager"].get_q_table(dataset_name, data_type)
+    # 生成pykt提出的测试多知识点数据集方法所需要的文件
+    if data_type == "multi_concept":
+        # num_max_concept
+        preprocessed_dir = objects["file_manager"].get_preprocessed_dir(dataset_name)
+        statics_preprocessed_multi_concept = load_json(os.path.join(preprocessed_dir,
+                                                                    "statics_preprocessed_multi_concept.json"))
+        num_max_concept = statics_preprocessed_multi_concept["num_max_concept"]
+    else:
+        num_max_concept = 1
 
-    # num_max_concept
-    preprocessed_dir = objects["file_manager"].get_preprocessed_dir(dataset_name)
-    statics_preprocessed_multi_concept = load_json(os.path.join(preprocessed_dir,
-                                                                "statics_preprocessed_multi_concept.json"))
-    num_max_concept = statics_preprocessed_multi_concept["num_max_concept"]
     for fold in range(n_fold):
         write2file(datasets_train[fold], os.path.join(setting_dir, names_train[fold]))
         write2file(datasets_valid[fold], os.path.join(setting_dir, names_valid[fold]))

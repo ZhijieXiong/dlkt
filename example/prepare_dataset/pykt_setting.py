@@ -11,7 +11,7 @@ from lib.dataset.split_dataset import n_fold_split1
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="assist2009")
+    parser.add_argument("--dataset_name", type=str, default="edi2020-task34")
     # setting config
     parser.add_argument("--setting_name", type=str, default="pykt_setting")
     parser.add_argument("--max_seq_len", type=int, default=200)
@@ -32,7 +32,8 @@ if __name__ == "__main__":
 
     params["lab_setting"] = {
         "name": params["setting_name"],
-        "description": "序列处理：（1）序列长度小于200，则在后面补零；（2）序列长度大于200，则截断成多条序列；\n"
+        "description": "数据预处理：多知识点习题拆成多个单知识点习题\n"
+                       "序列处理：（1）序列长度小于200，则在后面补零；（2）序列长度大于200，则截断成多条序列；\n"
                        "数据集划分：选一部分数据做测试集，剩余数据用k折交叉划分为训练集和验证集",
         "data_type": params["data_type"],
         "max_seq_len": params["max_seq_len"],

@@ -13,7 +13,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_name", type=str, default="xes3g5m")
     # setting config
-    parser.add_argument("--setting_name", type=str, default="our_setting_iid_single_concept")
+    parser.add_argument("--setting_name", type=str, default="pykt_setting_single_concept")
     parser.add_argument("--max_seq_len", type=int, default=200)
     parser.add_argument("--min_seq_len", type=int, default=3)
     parser.add_argument("--n_fold", type=int, default=5)

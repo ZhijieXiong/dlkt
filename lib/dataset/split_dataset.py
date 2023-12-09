@@ -1,8 +1,9 @@
 import random
 import os
-from copy import deepcopy
 
 from lib.util.data import write2file
+from lib.dataset.KTDataset import KTDataset
+from lib.util.data import load_json
 
 
 def split1(dataset_uniformed, n_fold, test_radio, valid_radio, seed=0):
@@ -94,11 +95,36 @@ def n_fold_split1(dataset_uniformed, params, objects):
         pass
     names_train = [f"{dataset_name}_train_fold_{fold}.txt" for fold in range(n_fold)]
     names_valid = [f"{dataset_name}_valid_fold_{fold}.txt" for fold in range(n_fold)]
+
+    data_type = params["data_type"]
+    # 生成pykt提出的测试多知识点数据集方法所需要的文件
+    max_seq_len = params["max_seq_len"]
+    # Q_table
+    dataset_name = params["dataset_name"]
+    Q_table = objects["file_manager"].get_q_table(dataset_name, data_type)
+
+    # num_max_concept
+    preprocessed_dir = objects["file_manager"].get_preprocessed_dir(dataset_name)
+    statics_preprocessed_multi_concept = load_json(os.path.join(preprocessed_dir,
+                                                                "statics_preprocessed_multi_concept.json"))
+    num_max_concept = statics_preprocessed_multi_concept["num_max_concept"]
     for fold in range(n_fold):
         write2file(datasets_train[fold], os.path.join(setting_dir, names_train[fold]))
         write2file(datasets_valid[fold], os.path.join(setting_dir, names_valid[fold]))
+        if data_type == "multi_concept":
+            write2file(
+                KTDataset.dataset_multi_concept2question_pykt(datasets_valid[fold], Q_table, num_max_concept, max_seq_len),
+                os.path.join(setting_dir,
+                             names_valid[fold].replace(".txt", "_question_base4multi_concept.txt"))
+            )
     name_data_test = f"{dataset_name}_test.txt"
     write2file(dataset_test, os.path.join(setting_dir, name_data_test))
+    if data_type == "multi_concept":
+        write2file(
+            KTDataset.dataset_multi_concept2question_pykt(dataset_test, Q_table, num_max_concept, max_seq_len),
+            os.path.join(setting_dir,
+                         name_data_test.replace(".txt", "_question_base4multi_concept.txt"))
+        )
 
 
 def n_fold_split2(dataset_uniformed, params, objects):
@@ -122,7 +148,30 @@ def n_fold_split2(dataset_uniformed, params, objects):
     names_valid = [f"{dataset_name}_valid_fold_{fold}.txt" for fold in range(n_fold)]
     names_test = [f"{dataset_name}_test_fold_{fold}.txt" for fold in range(n_fold)]
 
+    data_type = params["data_type"]
+    # 生成pykt提出的测试多知识点数据集方法所需要的文件
+    max_seq_len = params["max_seq_len"]
+    # Q_table
+    dataset_name = params["dataset_name"]
+    Q_table = objects["file_manager"].get_q_table(dataset_name, data_type)
+
+    # num_max_concept
+    preprocessed_dir = objects["file_manager"].get_preprocessed_dir(dataset_name)
+    statics_preprocessed_multi_concept = load_json(os.path.join(preprocessed_dir,
+                                                                "statics_preprocessed_multi_concept.json"))
+    num_max_concept = statics_preprocessed_multi_concept["num_max_concept"]
     for fold in range(n_fold):
         write2file(datasets_train[fold], os.path.join(setting_dir, names_train[fold]))
         write2file(datasets_valid[fold], os.path.join(setting_dir, names_valid[fold]))
         write2file(datasets_test[fold], os.path.join(setting_dir, names_test[fold]))
+        if data_type == "multi_concept":
+            write2file(
+                KTDataset.dataset_multi_concept2question_pykt(names_test[fold], Q_table, num_max_concept, max_seq_len),
+                os.path.join(setting_dir,
+                             names_test[fold].replace(".txt", "_question_base4multi_concept.txt"))
+            )
+            write2file(
+                KTDataset.dataset_multi_concept2question_pykt(names_test[fold], Q_table, num_max_concept, max_seq_len),
+                os.path.join(setting_dir,
+                             names_test[fold].replace(".txt", "_question_base4multi_concept.txt"))
+            )

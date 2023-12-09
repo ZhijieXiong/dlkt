@@ -8,24 +8,21 @@ from evaluate_config import evaluate_general_config
 
 from lib.dataset.KTDataset import KTDataset
 from lib.evaluator.Evaluator import Evaluator
-from lib.util.set_up import set_seed
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # 基本配置
-    parser.add_argument("--save_model_dir", type=str, default=r"F:\code\myProjects\dlkt\lab\saved_models\2023-12-03-10-48-04@@DKT@@seed_0@@pykt_setting@@assist2009_train_fold_0@@123-64-64-gru-1-0.3-1-256-sigmoid")
+    parser.add_argument("--save_model_dir", type=str, default=r"F:\code\myProjects\dlkt\lab\saved_models\2023-12-08-10-31-32@@DKT@@seed_0@@pykt_setting@@ednet-kt1_train_fold_0@@188-64-64-gru-1-0.3-1-256-sigmoid")
     parser.add_argument("--save_model_name", type=str, default="kt_model.pth")
     parser.add_argument("--setting_name", type=str, default="pykt_setting")
     parser.add_argument("--data_type", type=str, default="multi_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--test_file_name", type=str, default="assist2009_test.txt")
-    parser.add_argument("--base_type", type=str, default="question", choices={"concept", "question"})
-    parser.add_argument("--dataset_name", type=str, default="assist2009",
+    parser.add_argument("--test_file_name", type=str, default="ednet-kt1_test.txt")
+    parser.add_argument("--base_type", type=str, default="question", choices=("concept", "question"))
+    parser.add_argument("--dataset_name", type=str, default="ednet-kt1",
                         help="if choose question as base_type")
-    parser.add_argument("--num_max_concept", type=int, default=4,
-                        help="if choose question as base_type, in statics_preprocessed_multi_concept.json")
     parser.add_argument("--evaluate_batch_size", type=int, default=512)
 
     # 细粒度配置
@@ -38,7 +35,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     params = vars(args)
-    set_seed(0)
 
     global_params, global_objects = evaluate_general_config(params)
     dataset_test = KTDataset(global_params, global_objects)

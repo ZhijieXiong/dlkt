@@ -100,7 +100,11 @@ def data_pad(data_uniformed, max_seq_len=200, padding_value=0):
 
 
 def dataset_agg_concept(data_uniformed):
-    # 用于将数据中question_seq序列为-1的去掉，也就是生成single数据，不做multi
+    """
+    用于将数据中question_seq序列为-1的去掉，也就是生成single数据，不做multi
+    :param data_uniformed:
+    :return:
+    """
     data_new = []
     id_keys, seq_keys = get_keys_from_uniform(data_uniformed)
     for item_data in data_uniformed:

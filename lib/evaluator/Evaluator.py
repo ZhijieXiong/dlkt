@@ -56,6 +56,20 @@ class Evaluator:
         # 按照PYKT的思路实现的，具体见KTDataset
         model = self.objects["models"]["kt_model"]
         data_loader = self.objects["data_loaders"]["test_loader"]
+        test_result = Evaluator.evaluate_kt_dataset_base_question4multi_concept(model, data_loader)
+        print(f"{get_now_time()} test result base question for multi concept dataset\n"
+              f"average result is AUC {test_result['average']['AUC']:<9.6}, "
+              f"ACC: {test_result['average']['ACC']:<9.6}, "
+              f"RMSE: {test_result['average']['RMSE']:<9.6}, "
+              f"MAE: {test_result['average']['MAE']:<9.6}\n"
+              f"lowest result is AUC: {test_result['lowest']['AUC']:<9.6}, "
+              f"ACC: {test_result['lowest']['ACC']:<9.6}, "
+              f"RMSE: {test_result['lowest']['RMSE']:<9.6}, "
+              f"MAE: {test_result['lowest']['MAE']:<9.6}")
+
+    @staticmethod
+    def evaluate_kt_dataset_base_question4multi_concept(model, data_loader):
+        # 按照PYKT的思路实现的，具体见KTDataset
         model.eval()
         with torch.no_grad():
             predict_score_all = []
@@ -74,7 +88,7 @@ class Evaluator:
         ground_truth_all = np.concatenate(ground_truth_all, axis=0)
         interaction_index_seq_all = np.concatenate(interaction_index_seq_all, axis=0)
         predict_score_average, predict_score_lowest, ground_truth_new = \
-            self.cal_metric4question(predict_score_all, ground_truth_all, interaction_index_seq_all)
+            Evaluator.cal_metric4question(predict_score_all, ground_truth_all, interaction_index_seq_all)
         predict_label_average_all = [1 if p >= 0.5 else 0 for p in predict_score_average]
         predict_label_lowest_all = [1 if p >= 0.5 else 0 for p in predict_score_lowest]
         AUC_average = roc_auc_score(y_true=ground_truth_new, y_score=predict_score_average)
@@ -85,11 +99,20 @@ class Evaluator:
         MAE_lowest = mean_absolute_error(y_true=ground_truth_new, y_pred=predict_score_lowest)
         RMSE_average = mean_squared_error(y_true=ground_truth_new, y_pred=predict_score_average) ** 0.5
         RMSE_lowest = mean_squared_error(y_true=ground_truth_new, y_pred=predict_score_lowest) ** 0.5
-        print(f"{get_now_time()} test result\n"
-              f"AUC base question (average): {AUC_average:<9.6}, ACC base concept (average): {ACC_average:<9.6}, "
-              f"MAE base question (average): {MAE_average:<9.6}, RMSE base concept (average): {RMSE_average:<9.6}\n"
-              f"AUC base question (lowest): {AUC_lowest:<9.6}, ACC base question (lowest): {ACC_lowest:<9.6}, "
-              f"MAE base question (lowest): {MAE_lowest:<9.6}, RMSE base question (lowest): {RMSE_lowest:<9.6}")
+        return {
+            "average": {
+                "AUC": AUC_average,
+                "ACC": ACC_average,
+                "MAE": MAE_average,
+                "RMSE": RMSE_average
+            },
+            "lowest": {
+                "AUC": AUC_lowest,
+                "ACC": ACC_lowest,
+                "MAE": MAE_lowest,
+                "RMSE": RMSE_lowest
+            }
+        }
 
     @staticmethod
     def cal_metric4question(predict_score, ground_truth, interaction_index):

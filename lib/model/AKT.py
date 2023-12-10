@@ -132,7 +132,8 @@ class AKT(nn.Module, BaseModel4CL):
             "interaction_emb": interaction_emb,
             "question_difficulty_emb": question_difficulty_emb
         }
-        if encoder_config["seq_representation"] == "knowledge_encoder_output":
+        seq_representation = encoder_config.get("seq_representation", "encoder_output")
+        if seq_representation == "knowledge_encoder_output":
             latent = self.encoder_layer.get_latent(encoder_input)
         else:
             latent = self.encoder_layer(encoder_input)
@@ -331,3 +332,13 @@ class AKT(nn.Module, BaseModel4CL):
             optimizer.step()
 
         return adv_predict_loss, adv_entropy, adv_mse_loss
+
+    def forward4question_evaluate(self, batch):
+        # 直接输出的是每个序列最后一个时刻的预测分数
+        predict_score = self.forward(batch)
+        # 只保留mask每行的最后一个1
+        mask4last = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
+        predict_score = predict_score * mask4last
+        predict_score = torch.sum(predict_score, dim=1)
+
+        return predict_score

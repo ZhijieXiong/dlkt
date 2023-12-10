@@ -15,11 +15,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="pykt_setting")
-    parser.add_argument("--data_type", type=str, default="single_concept",
+    parser.add_argument("--data_type", type=str, default="multi_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2017_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2017_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2017_test.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2009_test.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam",
                         choices=("adam", "sgd"))
@@ -48,8 +48,8 @@ if __name__ == "__main__":
     parser.add_argument("--enable_clip_grad", type=str2bool, default=True)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=101)
-    parser.add_argument("--num_question", type=int, default=2803)
+    parser.add_argument("--num_concept", type=int, default=123)
+    parser.add_argument("--num_question", type=int, default=17751)
     parser.add_argument("--dim_model", type=int, default=64)
     parser.add_argument("--key_query_same", type=str2bool, default=True)
     parser.add_argument("--num_head", type=int, default=8)
@@ -71,6 +71,7 @@ if __name__ == "__main__":
     params = vars(args)
     set_seed(params["seed"])
     global_params, global_objects = akt_config(params)
+    # global_params["device"] = "cpu"
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)

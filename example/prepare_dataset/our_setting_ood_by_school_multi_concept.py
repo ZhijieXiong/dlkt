@@ -109,7 +109,7 @@ if __name__ == "__main__":
         dataset_train_iid = dataset_truncate2multi_seq(data_train_iid,
                                                        params["min_seq_len"],
                                                        params["max_seq_len"],
-                                                       single_concept=True)
+                                                       single_concept=params["data_type"] != "multi_concept")
         num_train_iid = len(dataset_train_iid)
         num_test_iid = int(num_train_iid * params["iid_radio"])
         dataset_test_iid = dataset_train_iid[:num_test_iid]
@@ -117,7 +117,7 @@ if __name__ == "__main__":
         dataset_test_ood = dataset_truncate2multi_seq(data_test_ood,
                                                       params["min_seq_len"],
                                                       params["max_seq_len"],
-                                                      single_concept=True)
+                                                      single_concept=params["data_type"] != "multi_concept")
 
         train_path = os.path.join(setting_dir, f"{params['dataset_name']}_train_split_{i}.txt")
         test_iid_path = os.path.join(setting_dir, f"{params['dataset_name']}_valid_iid_split_{i}.txt")

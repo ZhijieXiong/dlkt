@@ -8,7 +8,7 @@ import split_util
 from lib.util.FileManager import FileManager
 from lib.dataset.KTDataset import KTDataset
 from lib.util.parse import parse_data_type
-from lib.util.data import read_preprocessed_file, load_json
+from lib.util.data import read_preprocessed_file, load_json, dataset_multi_concept2only_question
 from lib.dataset.split_seq import dataset_truncate2multi_seq
 from lib.util.data import write2file
 
@@ -19,8 +19,8 @@ if __name__ == "__main__":
     # setting config
     parser.add_argument("--setting_name", type=str, default="our_setting_ood_by_school_multi_concept")
     parser.add_argument("--min_school_seq", type=int, help="一所学校最少要有多少学生|序列", default=100)
-    parser.add_argument("--min_mean_seq_len", type=int, default=30)
-    parser.add_argument("--train_test_radio_upper_bound", type=float, default=8/2)
+    parser.add_argument("--min_mean_seq_len", type=int, default=20)
+    parser.add_argument("--train_test_radio_upper_bound", type=float, default=8.5/1.5)
     parser.add_argument("--train_test_radio_lower_bound", type=float, default=7/3)
     parser.add_argument("--iid_radio", type=float, default=0.2)
     parser.add_argument("--num_split", type=float, default=10)
@@ -129,11 +129,21 @@ if __name__ == "__main__":
 
         write2file(
             KTDataset.dataset_multi_concept2question_pykt(dataset_test_iid, Q_table, num_max_concept, max_seq_len),
-            os.path.join(setting_dir,
-                         f"{params['dataset_name']}_valid_iid_split_{i}_question_base4multi_concept.txt")
+            test_iid_path.replace(".txt", "_question_base4multi_concept.txt")
         )
         write2file(
             KTDataset.dataset_multi_concept2question_pykt(dataset_test_ood, Q_table, num_max_concept, max_seq_len),
-            os.path.join(setting_dir,
-                         f"{params['dataset_name']}_test_ood_split_{i}_question_base4multi_concept.txt")
+            test_ood_path.replace(".txt", "_question_base4multi_concept.txt")
+        )
+        write2file(
+            dataset_multi_concept2only_question(dataset_train, max_seq_len=max_seq_len),
+            train_path.replace(".txt", "_only_question.txt")
+        )
+        write2file(
+            dataset_multi_concept2only_question(dataset_test_iid, max_seq_len=max_seq_len),
+            test_iid_path.replace(".txt", "_only_question.txt")
+        )
+        write2file(
+            dataset_multi_concept2only_question(dataset_test_ood, max_seq_len=max_seq_len),
+            test_ood_path.replace(".txt", "_only_question.txt")
         )

@@ -74,15 +74,15 @@
 
     - `multi_concept` `question_seq`中出现-1表示当前知识点和前一知识点是同一习题
 
-    <div align=center><img src="./resources/example_multi_concept_data.png" /></div>
+    <div align=center><img src="./resources/example_multi_concept.png" /></div>
 
     - `single_concept` 因为都是单知识点，所以`question_seq`中不会出现-1
 
-    <div align=center><img src="./resources/example_single_concept_data.png" /></div>
+    <div align=center><img src="resources/example_single_concept.png" /></div>
 
     - `only_question` 只有习题序列，所以序列长度比`multi_concept`短
 
-    <div align=center><img src="./resources/example_only_question_data.png" /></div>
+    <div align=center><img src="./resources/example_only_question.png" /></div>
 
 ## 5、数据处理
 

@@ -153,10 +153,33 @@ class Decoder(nn.Module):
         return latent, out_embed
 
 
-class AdversaryDiscriminator(nn.Module):
-    def __init__(self, params):
-        super(AdversaryDiscriminator, self).__init__()
+class ContrastiveDiscriminator(nn.Module):
+    def __init__(self, params, objects):
+        super().__init__()
         self.params = params
+        self.objects = objects
+
+        rnn_config = self.params["models_config"]["kt_model"]["rnn_layer"]
+        dim_concept = rnn_config["dim_concept"]
+        dim_question = rnn_config["dim_question"]
+        dim_correct = rnn_config["dim_correct"]
+        dim_emb = dim_concept + dim_question + dim_correct
+        dim_latent = self.params["models_config"]["kt_model"]["encoder_layer"]["dim_latent"]
+
+        self.gru = nn.GRU(dim_emb + dim_latent, 128, batch_first=True)
+        self.linear = nn.Linear(128, 1)
+
+    def forward(self, x, z, padding):
+        x = F.gelu(self.gru(torch.cat([x, z], dim=-1))[0])
+        x = self.linear(x).squeeze(2)
+        return (1.0 - padding.float()) * x
+
+
+class AdversaryDiscriminator(nn.Module):
+    def __init__(self, params, objects):
+        super().__init__()
+        self.params = params
+        self.objects = objects
 
         rnn_config = self.params["models_config"]["kt_model"]["rnn_layer"]
         dim_concept = rnn_config["dim_concept"]

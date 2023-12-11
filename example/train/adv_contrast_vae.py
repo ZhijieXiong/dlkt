@@ -7,8 +7,9 @@ from adv_contrast_vae_config import adv_contrast_vae_gru_config
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.model.qDKT import qDKT
-from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
+from lib.model.AC_VAE_GRU import AC_VAE_GRU
+from lib.model.Module.AC_VAE import ContrastiveDiscriminator, AdversaryDiscriminator
+from lib.trainer.AdvContrastVaeTrainer import AdvContrastVaeTrainer
 
 
 if __name__ == "__main__":
@@ -122,8 +123,12 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = qDKT(global_params, global_objects).to(global_params["device"])
-    global_objects["models"]["kt_model"] = model
-    trainer = KnowledgeTracingTrainer(global_params, global_objects)
+    kt_model = AC_VAE_GRU(global_params, global_objects).to(global_params["device"])
+    contrastive_discriminator = ContrastiveDiscriminator(global_params, global_objects).to(global_params["device"])
+    adversary_discriminator = AdversaryDiscriminator(global_params, global_objects).to(global_params["device"])
+    global_objects["models"]["kt_model"] = kt_model
+    global_objects["models"]["contrastive_discriminator"] = contrastive_discriminator
+    global_objects["models"]["adversary_discriminator"] = adversary_discriminator
+    trainer = AdvContrastVaeTrainer(global_params, global_objects)
     trainer.train()
 

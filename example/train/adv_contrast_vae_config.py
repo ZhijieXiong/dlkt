@@ -8,7 +8,7 @@ from lib.template.objects_template import OBJECTS
 from lib.util.basic import *
 
 
-def adv_contrast_vae_gru_general_config(local_params, global_params):
+def adv_contrast_vae_gru_general_config(local_params, global_params, global_objects):
     global_params["models_config"]["kt_model"] = deepcopy(AC_VAE_PARAMS)
 
     # 配置模型参数
@@ -48,6 +48,14 @@ def adv_contrast_vae_gru_general_config(local_params, global_params):
     config_optimizer(local_params, global_params, "dual")
     config_optimizer(local_params, global_params, "prior")
 
+    # Q_table
+    dataset_name = local_params["dataset_name"]
+    data_type = local_params["data_type"]
+    if data_type == "only_question":
+        global_objects["data"]["Q_table"] = global_objects["file_manager"].get_q_table(dataset_name, "multi_concept")
+    else:
+        global_objects["data"]["Q_table"] = global_objects["file_manager"].get_q_table(dataset_name, "single_concept")
+
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]
@@ -62,7 +70,7 @@ def adv_contrast_vae_gru_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    adv_contrast_vae_gru_general_config(local_params, global_params)
+    adv_contrast_vae_gru_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         save_params(global_params, global_objects)
 

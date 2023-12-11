@@ -30,9 +30,9 @@ if __name__ == "__main__":
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test",
                         choices=("valid_test", "no_valid"))
-    parser.add_argument("--num_epoch", type=int, default=200)
+    parser.add_argument("--num_epoch", type=int, default=400)
     parser.add_argument("--use_early_stop", type=str2bool, default=True)
-    parser.add_argument("--epoch_early_stop", type=int, default=10)
+    parser.add_argument("--epoch_early_stop", type=int, default=40)
     parser.add_argument("--use_last_average", type=str2bool, default=True)
     parser.add_argument("--epoch_last_average", type=int, default=5)
     parser.add_argument("--main_metric", type=str, default="AUC")
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument("--learning_rate", type=float, default=0.001)
     parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
-    parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
+    parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
@@ -65,12 +65,12 @@ if __name__ == "__main__":
     parser.add_argument("--add_eps", type=str2bool, default=True)
     # 其它优化器的参数
     # dual: 优化的是kt model和ContrastiveDiscriminator
-    parser.add_argument("--optimizer_type_dual", type=str, default="adam",
+    parser.add_argument("--optimizer_type_dual", type=str, default="sgd",
                         choices=("adam", "sgd"))
     parser.add_argument("--weight_decay_dual", type=float, default=0)
     parser.add_argument("--momentum_dual", type=float, default=0.9)
-    parser.add_argument("--learning_rate_dual", type=float, default=0.001)
-    parser.add_argument("--enable_lr_schedule_dual", type=str2bool, default=True)
+    parser.add_argument("--learning_rate_dual", type=float, default=0.0003)
+    parser.add_argument("--enable_lr_schedule_dual", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type_dual", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step_dual", type=int, default=10)
@@ -79,12 +79,12 @@ if __name__ == "__main__":
     parser.add_argument("--enable_clip_grad_dual", type=str2bool, default=False)
     parser.add_argument("--grad_clipped_dual", type=float, default=10.0)
     # prior: 优化的是AdversaryDiscriminator，即对抗VAE中用于生成latent的网络（原始VAE是用网络生成高斯分布的均值方差，然后重参数采样出来latent的）
-    parser.add_argument("--optimizer_type_prior", type=str, default="adam",
+    parser.add_argument("--optimizer_type_prior", type=str, default="sgd",
                         choices=("adam", "sgd"))
     parser.add_argument("--weight_decay_prior", type=float, default=0)
     parser.add_argument("--momentum_prior", type=float, default=0.9)
-    parser.add_argument("--learning_rate_prior", type=float, default=0.001)
-    parser.add_argument("--enable_lr_schedule_prior", type=str2bool, default=True)
+    parser.add_argument("--learning_rate_prior", type=float, default=0.0005)
+    parser.add_argument("--enable_lr_schedule_prior", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type_prior", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step_prior", type=int, default=10)
@@ -92,6 +92,10 @@ if __name__ == "__main__":
     parser.add_argument("--lr_schedule_gamma_prior", type=float, default=0.5)
     parser.add_argument("--enable_clip_grad_prior", type=str2bool, default=False)
     parser.add_argument("--grad_clipped_prior", type=float, default=10.0)
+    # 损失权重参数
+    parser.add_argument("--weight_kl_loss", type=float, default=0.0005)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.001)
+    parser.add_argument("--use_anneal", type=str2bool, default=True)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)

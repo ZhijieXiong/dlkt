@@ -96,7 +96,7 @@ def ask_llm_kt(question_seq, correct_seq):
              f"output: I think Student A can do this exercise correctly. The reasons are as follows,\n" \
              f"Student A got the first exercise and the second exercise right one after another. " \
              f"The knowledge concepts examined in these two exercises are all one-stroke judgments in " \
-             f"graph theory problems. This shows that the student has a good grasp of this knowledge point. " \
+             f"graph theory problems. This shows that the student has a good grasp of this knowledge concept. " \
              f"The knowledge concept corresponding to the exercise you asked is the multiple strokes in the graph " \
              f"theory problem. Multiple strokes and one-stroke exercises are highly correlated, that is, " \
              f"a multi-stroke exercise can be converted into a one-stroke exercise. " \

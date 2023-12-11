@@ -5,6 +5,7 @@ from _config import *
 from lib.template.params_template_v2 import PARAMS
 from lib.template.model.AC_VAE import MODEL_PARAMS as AC_VAE_PARAMS
 from lib.template.objects_template import OBJECTS
+from lib.template.other_params_template import AC_VAE_PARAMS as AC_VAE_PARAMS_OTHER
 from lib.util.basic import *
 
 
@@ -55,6 +56,18 @@ def adv_contrast_vae_gru_general_config(local_params, global_params, global_obje
         global_objects["data"]["Q_table"] = global_objects["file_manager"].get_q_table(dataset_name, "multi_concept")
     else:
         global_objects["data"]["Q_table"] = global_objects["file_manager"].get_q_table(dataset_name, "single_concept")
+
+    # 损失权重
+    weight_cl_loss = local_params["weight_cl_loss"]
+    weight_kl_loss = local_params["weight_kl_loss"]
+
+    global_params["loss_config"]["cl loss"] = weight_cl_loss
+    # AVB就是用一个对抗模块代替VAE损失中的KL项
+    global_params["loss_config"]["adv loss"] = weight_kl_loss
+
+    # 计算对抗损失时，是否使用退火算法（防止后验崩塌）
+    global_params["other"]["adv_contrastive_vae"] = deepcopy(AC_VAE_PARAMS_OTHER)
+    global_params["other"]["adv_contrastive_vae"]["ues_anneal"] = local_params["use_anneal"]
 
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]

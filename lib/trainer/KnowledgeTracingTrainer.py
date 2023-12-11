@@ -128,6 +128,7 @@ class KnowledgeTracingTrainer:
                       f"{self.train_record.get_evaluate_result_str('train', 'train')}\n"
                       f"test performance by best test epoch is "
                       f"{self.train_record.get_evaluate_result_str('test', 'test')}\n")
+
                 if valid_result_in_best_valid is not None:
                     print(f"{get_now_time()} test result base question for multi concept dataset\n"
                           f"valid performance (average result) by best valid epoch is "

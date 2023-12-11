@@ -148,9 +148,9 @@ class Decoder(nn.Module):
         out_embed = latent
 
         latent = self.activation(latent)
-        latent = self.linear2(latent)
+        predict_score = torch.sigmoid(self.linear2(latent).squeeze(-1))
 
-        return latent, out_embed
+        return predict_score, out_embed
 
 
 class ContrastiveDiscriminator(nn.Module):
@@ -169,10 +169,11 @@ class ContrastiveDiscriminator(nn.Module):
         self.gru = nn.GRU(dim_emb + dim_latent, 128, batch_first=True)
         self.linear = nn.Linear(128, 1)
 
-    def forward(self, x, z, padding):
+    def forward(self, x, z, mask_seq):
         x = F.gelu(self.gru(torch.cat([x, z], dim=-1))[0])
         x = self.linear(x).squeeze(2)
-        return (1.0 - padding.float()) * x
+
+        return mask_seq[:, :-1].float() * x
 
 
 class AdversaryDiscriminator(nn.Module):
@@ -203,7 +204,7 @@ class AdversaryDiscriminator(nn.Module):
         self.dropout1 = nn.Dropout(0.2)
         self.dropout2 = nn.Dropout(0.2)
 
-    def forward(self, x, z, padding):
+    def forward(self, x, z, mask_seq):
         # batch_size x seq_len x dim
         net = torch.cat((x, z), 2)
         net = self.linear_i(net)
@@ -219,6 +220,6 @@ class AdversaryDiscriminator(nn.Module):
         net = self.dropout2(net)
         net = net + 0.5 * torch.square(z)
 
-        net = net * (1.0 - padding.float().unsqueeze(2))
+        net = net * mask_seq[:, :-1].float().unsqueeze(2)
 
         return net

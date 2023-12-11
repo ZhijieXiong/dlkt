@@ -46,3 +46,7 @@ MAX_ENTROPY_ADV_AUG = {
     "gamma": 1
 }
 
+
+AC_VAE_PARAMS = {
+    "use_anneal": False
+}

@@ -67,9 +67,87 @@ class AC_VAE_GRU(nn.Module):
         self.rnn_layer.flatten_parameters()
         rnn_out, _ = self.rnn_layer(self.embed_dropout(interaction_emb))
         latent_inferred = self.encoder_layer(rnn_out)
-        decoder_out, predict_score = self.decoder(latent_inferred)
+        predict_score, out_embed = self.decoder_layer(latent_inferred)
 
-        return decoder_out, interaction_emb_real, latent_inferred, predict_score
+        return predict_score, interaction_emb_real, latent_inferred, out_embed
 
-    def get_score(self, batch):
+    def get_latent(self, batch):
         pass
+
+    def get_latent_last(self, batch):
+        pass
+
+    def get_latent_mean(self, batch):
+        pass
+
+    def get_predict_score(self, batch):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        predict_score, _, _, _ = self.forward(batch)
+
+        predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
+
+        return predict_score
+
+    def get_loss_stage1(self, batch, loss_record=None, anneal_value=1):
+        num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+        num_seq = batch["mask_seq"].shape[0]
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+
+        predict_score, interaction_emb_real, latent_inferred, _ = self.forward(batch)
+
+        # 预测损失，对应VAE中的重构损失，这一部分AVB和VAE一样
+        predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
+        predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+
+        if loss_record is not None:
+            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+
+        contrastive_discriminator = self.objects["models"]["contrastive_discriminator"]
+        adversary_discriminator = self.objects["models"]["adversary_discriminator"]
+
+        # kl_loss：公式（10）中后一项（即AdvDiscriminator的输出），对应VAE中的KL项
+        use_anneal = self.params["other"]["adv_contrastive_vae"]["ues_anneal"]
+        if use_anneal:
+            weight_kl = anneal_value
+        else:
+            weight_kl = self.params["loss_config"]["adv loss"]
+        t_joint = adversary_discriminator(interaction_emb_real, latent_inferred, batch["mask_seq"])
+        t_joint = torch.mean(t_joint, dim=-1)
+        kl_loss = torch.sum(t_joint) / float(num_seq)
+        if loss_record is not None:
+            loss_record.add_loss("adv loss stage1", kl_loss.detach().cpu().item(), 1)
+        kl_loss = kl_loss * weight_kl
+
+        # 对比损失
+        t_joint = contrastive_discriminator(interaction_emb_real, latent_inferred, batch["mask_seq"])
+        z_shuffled = torch.cat([latent_inferred[1:], latent_inferred[:1]], dim=0)
+        t_shuffled = contrastive_discriminator(interaction_emb_real, z_shuffled, batch["mask_seq"])
+        Ej = -F.softplus(-t_joint)
+        Em = F.softplus(t_shuffled)
+        GLOBAL = (Em - Ej) * batch["mask_seq"][:, :-1].float()
+        cl_loss = torch.sum(GLOBAL) / float(num_seq)
+        if loss_record is not None:
+            loss_record.add_loss("cl loss", cl_loss.detach().cpu().item(), 1)
+        cl_loss = cl_loss * self.params["loss_config"]["cl loss"]
+
+        loss = predict_loss + kl_loss + cl_loss
+
+        return loss
+
+    def get_loss_stage2(self, batch, loss_record=None):
+        num_seq = batch["mask_seq"].shape[0]
+        adversary_discriminator = self.objects["models"]["adversary_discriminator"]
+
+        # 公式7：对抗AdvDiscriminator
+        _, interaction_emb_real, latent_inferred, _ = self.forward(batch)
+        prior = torch.randn_like(latent_inferred)
+        term_a = torch.log(torch.sigmoid(adversary_discriminator(interaction_emb_real.detach(), latent_inferred.detach(), batch["mask_seq"])) + 1e-9)
+        term_b = torch.log(1.0 - torch.sigmoid(adversary_discriminator(interaction_emb_real.detach(), prior, batch["mask_seq"])) + 1e-9)
+        PRIOR = -torch.mean(term_a + term_b, dim=-1) * batch["mask_seq"][:, :-1].float()
+        adv_kl_loss = torch.sum(PRIOR) / float(num_seq)
+        if loss_record is not None:
+            loss_record.add_loss("adv loss stage2", adv_kl_loss.detach().cpu().item(), 1)
+
+        return adv_kl_loss
+

@@ -85,16 +85,17 @@ class KTEmbedLayer(nn.Module):
         self.question2concept_mask_table = torch.tensor(question2concept_mask_table).long().to(device)
         self.num_max_concept = num_max_c_in_q
 
-    def get_emb_question_concept(self, question_seq, c_fusion="mean", question_front=True):
+    def get_emb_question_with_concept_fused(self, question_seq, concept_fusion="mean"):
         # 对于多知识点数据集，获取拼接了知识点emb（以某种方式融合）的习题emb
         emb_question = self.get_emb("question", question_seq)
         emb_concept = self.get_emb("concept", self.question2concept_table[question_seq])
         mask_concept = self.question2concept_mask_table[question_seq]
         emb_concept_fusion = (emb_concept * mask_concept.unsqueeze(-1)).sum(-2)
-        if c_fusion == "mean":
+        if concept_fusion == "mean":
             emb_concept_fusion = emb_concept_fusion / mask_concept.sum(-1).unsqueeze(-1)
-        return torch.cat((emb_question, emb_concept_fusion) if question_front else (emb_concept_fusion, emb_question),
-                         dim=-1)
+        else:
+            raise NotImplementedError()
+        return torch.cat((emb_concept_fusion, emb_question), dim=-1)
 
     def get_c_from_q(self, q_id):
         return self.question2concept_list[q_id]

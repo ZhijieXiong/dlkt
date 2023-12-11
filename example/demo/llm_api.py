@@ -28,7 +28,7 @@ def call_chatgpt(chatgpt_messages, max_tokens=40, model="gpt-3.5-turbo"):
 
 
 if __name__ == "__main__":
-    data_dir = "/Users/dream/Desktop/code/projects/dlkt/lab/dataset_preprocessed/xes3g5m"
+    data_dir = r"F:\code\myProjects\dlkt\lab\dataset_preprocessed\xes3g5m"
     question_meta = load_json(f"{data_dir}/question_meta.json")
     concept_meta = load_json(f"{data_dir}/concept_meta.json")
     question_seq = [3751, 3752, 3753, 3754, 1990, 3739, 3740, 3742, 3756, 3757]
@@ -70,7 +70,9 @@ if __name__ == "__main__":
              f"input: {qa_prompt}\n" \
              f"output: "
 
-    message = [{"role": "user", "content": prompt}]
-    # 注意max_tokens不能太大
-    question, n_tokens = call_chatgpt(message, model="gpt-3.5-turbo", max_tokens=10000)
-    print(question)
+    print(prompt)
+
+    # message = [{"role": "user", "content": prompt}]
+    # # 注意max_tokens不能太大
+    # question, n_tokens = call_chatgpt(message, model="gpt-3.5-turbo", max_tokens=10000)
+    # print(question)

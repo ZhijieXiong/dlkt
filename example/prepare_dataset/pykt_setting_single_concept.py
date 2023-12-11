@@ -11,7 +11,7 @@ from lib.dataset.split_dataset import n_fold_split1
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="xes3g5m")
+    parser.add_argument("--dataset_name", type=str, default="edi2020-task34")
     # setting config
     parser.add_argument("--setting_name", type=str, default="pykt_setting_single_concept")
     parser.add_argument("--max_seq_len", type=int, default=200)

@@ -3,7 +3,7 @@ import os
 
 from lib.util.data import write2file
 from lib.dataset.KTDataset import KTDataset
-from lib.util.data import load_json
+from lib.util.data import load_json, dataset_multi_concept2only_question
 
 
 def split1(dataset_uniformed, n_fold, test_radio, valid_radio, seed=0):
@@ -115,10 +115,23 @@ def n_fold_split1(dataset_uniformed, params, objects):
         write2file(datasets_train[fold], os.path.join(setting_dir, names_train[fold]))
         write2file(datasets_valid[fold], os.path.join(setting_dir, names_valid[fold]))
         if data_type == "multi_concept":
+            # 对于multi concept数据，需要生成额外的数据集用于后续基于question的模型性能评估（PYKT，2022 NeurIPS提出）
+            # 此外有些模型不做multi concept扩展，例如一道习题的知识点embedding是其对应的多个知识点embedding平均值
+            # 这类模型需要的数据是only question
             write2file(
                 KTDataset.dataset_multi_concept2question_pykt(datasets_valid[fold], Q_table, num_max_concept, max_seq_len),
                 os.path.join(setting_dir,
                              names_valid[fold].replace(".txt", "_question_base4multi_concept.txt"))
+            )
+            write2file(
+                dataset_multi_concept2only_question(datasets_train[fold], max_seq_len=max_seq_len),
+                os.path.join(setting_dir,
+                             names_train[fold].replace(".txt", "_only_question.txt"))
+            )
+            write2file(
+                dataset_multi_concept2only_question(datasets_valid[fold], max_seq_len=max_seq_len),
+                os.path.join(setting_dir,
+                             names_valid[fold].replace(".txt", "_only_question.txt"))
             )
 
     name_data_test = f"{dataset_name}_test.txt"
@@ -128,6 +141,11 @@ def n_fold_split1(dataset_uniformed, params, objects):
             KTDataset.dataset_multi_concept2question_pykt(dataset_test, Q_table, num_max_concept, max_seq_len),
             os.path.join(setting_dir,
                          name_data_test.replace(".txt", "_question_base4multi_concept.txt"))
+        )
+        write2file(
+            dataset_multi_concept2only_question(dataset_test, max_seq_len=max_seq_len),
+            os.path.join(setting_dir,
+                         name_data_test.replace(".txt", "_only_question.txt"))
         )
 
 
@@ -173,12 +191,27 @@ def n_fold_split2(dataset_uniformed, params, objects):
         write2file(datasets_test[fold], os.path.join(setting_dir, names_test[fold]))
         if data_type == "multi_concept":
             write2file(
-                KTDataset.dataset_multi_concept2question_pykt(names_test[fold], Q_table, num_max_concept, max_seq_len),
+                KTDataset.dataset_multi_concept2question_pykt(datasets_valid[fold], Q_table, num_max_concept, max_seq_len),
+                os.path.join(setting_dir,
+                             names_valid[fold].replace(".txt", "_question_base4multi_concept.txt"))
+            )
+            write2file(
+                KTDataset.dataset_multi_concept2question_pykt(datasets_test[fold], Q_table, num_max_concept, max_seq_len),
                 os.path.join(setting_dir,
                              names_test[fold].replace(".txt", "_question_base4multi_concept.txt"))
             )
             write2file(
-                KTDataset.dataset_multi_concept2question_pykt(names_test[fold], Q_table, num_max_concept, max_seq_len),
+                dataset_multi_concept2only_question(datasets_train[fold], max_seq_len=max_seq_len),
                 os.path.join(setting_dir,
-                             names_test[fold].replace(".txt", "_question_base4multi_concept.txt"))
+                             names_train[fold].replace(".txt", "_only_question.txt"))
+            )
+            write2file(
+                dataset_multi_concept2only_question(datasets_valid[fold], max_seq_len=max_seq_len),
+                os.path.join(setting_dir,
+                             names_valid[fold].replace(".txt", "_only_question.txt"))
+            )
+            write2file(
+                dataset_multi_concept2only_question(datasets_test[fold], max_seq_len=max_seq_len),
+                os.path.join(setting_dir,
+                             names_test[fold].replace(".txt", "_only_question.txt"))
             )

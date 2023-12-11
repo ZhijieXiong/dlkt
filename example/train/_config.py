@@ -17,6 +17,53 @@ from lib.util.basic import *
 from lib.util.data import write_json
 
 
+def config_optimizer(local_params, global_params, model_name="kt_model"):
+    # 优化器配置
+    optimizer_type = local_params[f"optimizer_type{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+    weight_decay = local_params[f"weight_decay{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+    momentum = local_params[f"momentum{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+    learning_rate = local_params[f"learning_rate{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+    enable_lr_schedule = local_params[f"enable_lr_schedule{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+    lr_schedule_type = local_params[f"lr_schedule_type{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+    lr_schedule_step = local_params[f"lr_schedule_step{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+    lr_schedule_milestones = eval(local_params[f"lr_schedule_milestones{'' if (model_name == 'kt_model') else ('_' + model_name)}"])
+    lr_schedule_gamma = local_params[f"lr_schedule_gamma{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+    enable_clip_grad = local_params[f"enable_clip_grad{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+    grad_clipped = local_params[f"grad_clipped{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+
+    global_params["optimizers_config"][model_name] = {}
+    optimizer_config = global_params["optimizers_config"][model_name]
+    optimizer_config["type"] = optimizer_type
+    optimizer_config[optimizer_type] = {}
+    optimizer_config[optimizer_type]["lr"] = learning_rate
+    optimizer_config[optimizer_type]["weight_decay"] = weight_decay
+    if optimizer_type == "sgd":
+        optimizer_config[optimizer_type]["momentum"] = momentum
+
+    global_params["schedulers_config"][model_name] = {}
+    scheduler_config = global_params["schedulers_config"][model_name]
+    if enable_lr_schedule:
+        scheduler_config["use_scheduler"] = True
+        scheduler_config["type"] = lr_schedule_type
+        scheduler_config[lr_schedule_type] = {}
+        if lr_schedule_type == "StepLR":
+            scheduler_config[lr_schedule_type]["step_size"] = lr_schedule_step
+            scheduler_config[lr_schedule_type]["gamma"] = lr_schedule_gamma
+        elif lr_schedule_type == "MultiStepLR":
+            scheduler_config[lr_schedule_type]["milestones"] = lr_schedule_milestones
+            scheduler_config[lr_schedule_type]["gamma"] = lr_schedule_gamma
+        else:
+            raise NotImplementedError()
+    else:
+        scheduler_config["use_scheduler"] = False
+
+    global_params["grad_clip_config"][model_name] = {}
+    grad_clip_config = global_params["grad_clip_config"][model_name]
+    grad_clip_config["use_clip"] = enable_clip_grad
+    if enable_clip_grad:
+        grad_clip_config["grad_clipped"] = grad_clipped
+
+
 def general_config(local_params, global_params, global_objects):
     file_manager = FileManager(FILE_MANAGER_ROOT)
     global_objects["file_manager"] = file_manager
@@ -69,44 +116,45 @@ def general_config(local_params, global_params, global_objects):
     datasets_config["data_type"] = data_type
 
     # 优化器配置
-    kt_optimizer_type = local_params["optimizer_type"]
-    kt_weight_decay = local_params["weight_decay"]
-    kt_momentum = local_params["momentum"]
-    kt_learning_rate = local_params["learning_rate"]
-    kt_enable_lr_schedule = local_params["enable_lr_schedule"]
-    kt_lr_schedule_type = local_params["lr_schedule_type"]
-    kt_lr_schedule_step = local_params["lr_schedule_step"]
-    kt_lr_schedule_milestones = eval(local_params["lr_schedule_milestones"])
-    kt_lr_schedule_gamma = local_params["lr_schedule_gamma"]
-    kt_enable_clip_grad = local_params["enable_clip_grad"]
-    kt_grad_clipped = local_params["grad_clipped"]
-
-    optimizer_config = global_params["optimizers_config"]["kt_model"]
-    optimizer_config["type"] = kt_optimizer_type
-    optimizer_config[kt_optimizer_type]["lr"] = kt_learning_rate
-    optimizer_config[kt_optimizer_type]["weight_decay"] = kt_weight_decay
-    if kt_optimizer_type == "sgd":
-        optimizer_config[kt_optimizer_type]["momentum"] = kt_momentum
-
-    scheduler_config = global_params["schedulers_config"]["kt_model"]
-    if kt_enable_lr_schedule:
-        scheduler_config["use_scheduler"] = True
-        scheduler_config["type"] = kt_lr_schedule_type
-        if kt_lr_schedule_type == "StepLR":
-            scheduler_config[kt_lr_schedule_type]["step_size"] = kt_lr_schedule_step
-            scheduler_config[kt_lr_schedule_type]["gamma"] = kt_lr_schedule_gamma
-        elif kt_lr_schedule_type == "MultiStepLR":
-            scheduler_config[kt_lr_schedule_type]["milestones"] = kt_lr_schedule_milestones
-            scheduler_config[kt_lr_schedule_type]["gamma"] = kt_lr_schedule_gamma
-        else:
-            raise NotImplementedError()
-    else:
-        scheduler_config["use_scheduler"] = False
-
-    grad_clip_config = global_params["grad_clip_config"]["kt_model"]
-    grad_clip_config["use_clip"] = kt_enable_clip_grad
-    if kt_enable_clip_grad:
-        grad_clip_config["grad_clipped"] = kt_grad_clipped
+    config_optimizer(local_params, global_params, model_name="kt_model")
+    # kt_optimizer_type = local_params["optimizer_type"]
+    # kt_weight_decay = local_params["weight_decay"]
+    # kt_momentum = local_params["momentum"]
+    # kt_learning_rate = local_params["learning_rate"]
+    # kt_enable_lr_schedule = local_params["enable_lr_schedule"]
+    # kt_lr_schedule_type = local_params["lr_schedule_type"]
+    # kt_lr_schedule_step = local_params["lr_schedule_step"]
+    # kt_lr_schedule_milestones = eval(local_params["lr_schedule_milestones"])
+    # kt_lr_schedule_gamma = local_params["lr_schedule_gamma"]
+    # kt_enable_clip_grad = local_params["enable_clip_grad"]
+    # kt_grad_clipped = local_params["grad_clipped"]
+    #
+    # optimizer_config = global_params["optimizers_config"]["kt_model"]
+    # optimizer_config["type"] = kt_optimizer_type
+    # optimizer_config[kt_optimizer_type]["lr"] = kt_learning_rate
+    # optimizer_config[kt_optimizer_type]["weight_decay"] = kt_weight_decay
+    # if kt_optimizer_type == "sgd":
+    #     optimizer_config[kt_optimizer_type]["momentum"] = kt_momentum
+    #
+    # scheduler_config = global_params["schedulers_config"]["kt_model"]
+    # if kt_enable_lr_schedule:
+    #     scheduler_config["use_scheduler"] = True
+    #     scheduler_config["type"] = kt_lr_schedule_type
+    #     if kt_lr_schedule_type == "StepLR":
+    #         scheduler_config[kt_lr_schedule_type]["step_size"] = kt_lr_schedule_step
+    #         scheduler_config[kt_lr_schedule_type]["gamma"] = kt_lr_schedule_gamma
+    #     elif kt_lr_schedule_type == "MultiStepLR":
+    #         scheduler_config[kt_lr_schedule_type]["milestones"] = kt_lr_schedule_milestones
+    #         scheduler_config[kt_lr_schedule_type]["gamma"] = kt_lr_schedule_gamma
+    #     else:
+    #         raise NotImplementedError()
+    # else:
+    #     scheduler_config["use_scheduler"] = False
+    #
+    # grad_clip_config = global_params["grad_clip_config"]["kt_model"]
+    # grad_clip_config["use_clip"] = kt_enable_clip_grad
+    # if kt_enable_clip_grad:
+    #     grad_clip_config["grad_clipped"] = kt_grad_clipped
 
 
 def save_params(global_params, global_objects):

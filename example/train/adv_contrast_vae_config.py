@@ -29,7 +29,7 @@ def adv_contrast_vae_gru_general_config(local_params, global_params):
     kt_embed_layer_config["concept"] = [num_concept, dim_concept]
     kt_embed_layer_config["question"] = [num_question, dim_question]
 
-    # encoder layer
+    # rnn layer
     rnn_layer_config = global_params["models_config"]["kt_model"]["rnn_layer"]
     rnn_layer_config["dim_concept"] = dim_concept
     rnn_layer_config["dim_question"] = dim_question
@@ -38,11 +38,15 @@ def adv_contrast_vae_gru_general_config(local_params, global_params):
     rnn_layer_config["rnn_type"] = rnn_type
     rnn_layer_config["num_rnn_layer"] = num_rnn_layer
 
-    # predict layer
+    # encoder layer
     encoder_layer_config = global_params["models_config"]["kt_model"]["encoder_layer"]
-    encoder_layer_config["encoder_type"] = encoder_type
+    encoder_layer_config["type"] = encoder_type
     encoder_layer_config["dim_latent"] = dim_latent
     encoder_layer_config["add_eps"] = add_eps
+
+    # 配置dual和prior优化器参数
+    config_optimizer(local_params, global_params, "dual")
+    config_optimizer(local_params, global_params, "prior")
 
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]

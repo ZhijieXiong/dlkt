@@ -8,6 +8,9 @@ class Model(nn.Module):
         self.params = params
 
         self.embed_layer = KTEmbedLayer(self.params, self.objects)
+        data_type = self.params["datasets_config"]["data_type"]
+        if data_type == "only_question":
+            self.embed_layer.parse_Q_table()
         self.embed_dropout = nn.Dropout(0.5)
 
         rnn_config = self.params["models_config"]["kt_model"]["rnn_layer"]
@@ -37,13 +40,26 @@ class Model(nn.Module):
 
         self.decoder_layer = Decoder(params)
 
+    def get_qc_emb4single_concept(self, batch):
+        concept_seq = batch["concept_seq"]
+        question_seq = batch["question_seq"]
+        concept_question_emb = self.embed_layer.get_emb_concatenated(("concept", "question"),
+                                                                     (concept_seq, question_seq))
+
+        return concept_question_emb
+
+    def get_qc_emb4only_question(self, batch):
+        return self.embed_layer.get_emb_question_with_concept_fused(batch["question_seq"], concept_fusion="mean")
+
     def forward(self, batch):
         dim_correct = self.params["models_config"]["kt_model"]["rnn_layer"]["dim_correct"]
+        data_type = self.params["datasets_config"]["data_type"]
         correct_seq = batch["correct_seq"]
 
         batch_size = correct_seq.shape[0]
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
-        qc_emb = self.get_qc_emb(batch)
+        qc_emb = self.get_qc_emb4only_question(batch) if data_type == "only_question" else (
+            self.get_qc_emb4single_concept(batch))
         interaction_emb = torch.cat((qc_emb[:, :-1], correct_emb[:, :-1]), dim=2)
         interaction_emb_real = interaction_emb
 

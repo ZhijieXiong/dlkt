@@ -12,7 +12,8 @@ MODEL_PARAMS = {
         "dim_correct": 64,
         "dim_rnn": 100,
         "rnn_type": "gru",
-        "num_rnn_layer": 1
+        "num_rnn_layer": 1,
+        "dropout": 0.2
     },
     "encoder_layer": {
         # "fc" or "fc_cnn" or "fc_no_res"

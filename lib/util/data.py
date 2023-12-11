@@ -105,6 +105,7 @@ def dataset_agg_concept(data_uniformed):
     :param data_uniformed:
     :return:
     """
+    data_uniformed = dataset_delete_pad(data_uniformed)
     data_new = []
     id_keys, seq_keys = get_keys_from_uniform(data_uniformed)
     for item_data in data_uniformed:
@@ -152,6 +153,17 @@ def data_agg_question(data_uniformed):
         data_converted.append(item_data_new)
 
     return data_converted
+
+
+def dataset_multi_concept2only_question(dataset_multi_concept, max_seq_len=200):
+    dataset_only_question = dataset_agg_concept(dataset_multi_concept)
+    for item_data in dataset_only_question:
+        del item_data["concept_seq"]
+        for k in item_data.keys():
+            if type(item_data[k]) is list:
+                item_data[k] += [0] * (max_seq_len - item_data["seq_len"])
+
+    return dataset_only_question
 
 
 def drop_qc(data_uniformed, num2drop=30):

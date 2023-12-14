@@ -338,7 +338,5 @@ class AKT(nn.Module, BaseModel4CL):
         predict_score = self.forward(batch)
         # 只保留mask每行的最后一个1
         mask4last = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
-        predict_score = predict_score * mask4last
-        predict_score = torch.sum(predict_score, dim=1)
 
-        return predict_score
+        return predict_score[mask4last.bool()]

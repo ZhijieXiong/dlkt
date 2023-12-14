@@ -28,13 +28,28 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
         self.print_data_statics()
 
         weight_cl_loss = self.params["loss_config"]["cl loss"]
-        cl_type = self.params["other"]["instance_cl"]["cl_type"]
-        random_select_aug_len = self.params["other"]["instance_cl"]["random_select_aug_len"]
+        instance_cl_config = self.params["other"]["instance_cl"]
+        latent_type4cl = instance_cl_config["latent_type4cl"]
         use_adv_aug = self.params["other"]["instance_cl"]["use_adv_aug"]
 
         for epoch in range(1, num_epoch + 1):
             self.do_online_sim()
             self.do_max_entropy_aug()
+
+            if instance_cl_config["use_weight_dynamic"]:
+                weight_dynamic_type = instance_cl_config["weight_dynamic"]["type"]
+                weight_dynamic_config = instance_cl_config["weight_dynamic"][weight_dynamic_type]
+                if weight_dynamic_type == "multi_step":
+                    for e, v in weight_dynamic_config["step_weight"]:
+                        if epoch <= e:
+                            weight_cl_loss = v
+                            break
+                elif weight_dynamic_type == "linear_increase":
+                    e = weight_dynamic_config["epoch"]
+                    v = weight_dynamic_config["value"]
+                    weight_cl_loss = self.params["loss_config"]["cl loss"] + (epoch // e) * v
+                else:
+                    raise NotImplementedError()
 
             model.train()
             for batch_idx, batch in enumerate(train_loader):
@@ -44,10 +59,9 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
                 num_seq = batch["mask_seq"].shape[0]
                 loss = 0.
 
-                if cl_type in ["mean_pool", "last_time"]:
-                    cl_loss = model.get_instance_cl_loss(batch, cl_type, random_select_aug_len,
-                                                         use_adv_aug, self.dataset_adv_generated)
-                elif cl_type == "all_time":
+                if latent_type4cl in ["mean_pool", "last_time"]:
+                    cl_loss = model.get_instance_cl_loss(batch, instance_cl_config, self.dataset_adv_generated)
+                elif latent_type4cl == "all_time":
                     cl_loss = model.get_instance_cl_loss_all_interaction(batch, use_adv_aug, self.dataset_adv_generated)
                 else:
                     raise NotImplementedError()

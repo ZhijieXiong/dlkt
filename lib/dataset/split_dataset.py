@@ -98,6 +98,7 @@ def n_fold_split1(dataset_uniformed, params, objects):
 
     data_type = params["data_type"]
     max_seq_len = params["max_seq_len"]
+    min_seq_len = params["min_seq_len"]
     # Q_table
     dataset_name = params["dataset_name"]
     Q_table = objects["file_manager"].get_q_table(dataset_name, data_type)
@@ -119,7 +120,7 @@ def n_fold_split1(dataset_uniformed, params, objects):
             # 此外有些模型不做multi concept扩展，例如一道习题的知识点embedding是其对应的多个知识点embedding平均值
             # 这类模型需要的数据是only question
             write2file(
-                KTDataset.dataset_multi_concept2question_pykt(datasets_valid[fold], Q_table, num_max_concept, max_seq_len),
+                KTDataset.dataset_multi_concept2question_pykt(datasets_valid[fold], Q_table, min_seq_len, max_seq_len, num_max_concept),
                 os.path.join(setting_dir,
                              names_valid[fold].replace(".txt", "_question_base4multi_concept.txt"))
             )
@@ -138,7 +139,7 @@ def n_fold_split1(dataset_uniformed, params, objects):
     write2file(dataset_test, os.path.join(setting_dir, name_data_test))
     if data_type == "multi_concept":
         write2file(
-            KTDataset.dataset_multi_concept2question_pykt(dataset_test, Q_table, num_max_concept, max_seq_len),
+            KTDataset.dataset_multi_concept2question_pykt(dataset_test, Q_table, min_seq_len, max_seq_len, num_max_concept),
             os.path.join(setting_dir,
                          name_data_test.replace(".txt", "_question_base4multi_concept.txt"))
         )
@@ -172,6 +173,7 @@ def n_fold_split2(dataset_uniformed, params, objects):
 
     data_type = params["data_type"]
     max_seq_len = params["max_seq_len"]
+    min_seq_len = params["min_seq_len"]
     # Q_table
     dataset_name = params["dataset_name"]
     Q_table = objects["file_manager"].get_q_table(dataset_name, data_type)
@@ -191,12 +193,12 @@ def n_fold_split2(dataset_uniformed, params, objects):
         write2file(datasets_test[fold], os.path.join(setting_dir, names_test[fold]))
         if data_type == "multi_concept":
             write2file(
-                KTDataset.dataset_multi_concept2question_pykt(datasets_valid[fold], Q_table, num_max_concept, max_seq_len),
+                KTDataset.dataset_multi_concept2question_pykt(datasets_valid[fold], Q_table, min_seq_len, max_seq_len, num_max_concept),
                 os.path.join(setting_dir,
                              names_valid[fold].replace(".txt", "_question_base4multi_concept.txt"))
             )
             write2file(
-                KTDataset.dataset_multi_concept2question_pykt(datasets_test[fold], Q_table, num_max_concept, max_seq_len),
+                KTDataset.dataset_multi_concept2question_pykt(datasets_test[fold], Q_table, min_seq_len, max_seq_len, num_max_concept),
                 os.path.join(setting_dir,
                              names_test[fold].replace(".txt", "_question_base4multi_concept.txt"))
             )

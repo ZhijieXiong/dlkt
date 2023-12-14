@@ -17,11 +17,17 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     hard_neg_prob = local_params["hard_neg_prob"]
     aug_order = eval(local_params["aug_order"])
     random_select_aug_len = local_params["use_random_select_aug_len"]
+    data_aug_type4cl = local_params["data_aug_type4cl"]
 
     datasets_train_config = global_params["datasets_config"]["train"]
     datasets_train_config["type"] = "kt4aug"
     datasets_train_config["kt4aug"]["aug_type"] = aug_type
-    datasets_train_config["kt4aug"]["num_aug"] = 2
+    if data_aug_type4cl == "original_data_aug":
+        datasets_train_config["kt4aug"]["num_aug"] = 2
+    elif data_aug_type4cl == "hybrid":
+        datasets_train_config["kt4aug"]["num_aug"] = 1
+    else:
+        datasets_train_config["kt4aug"]["num_aug"] = 0
     if aug_type == "random_aug":
         datasets_train_config["kt4aug"]["random_aug"] = deepcopy(KT_RANDOM_AUG_PARAMS)
         datasets_train_config["kt4aug"]["random_aug"]["aug_order"] = aug_order
@@ -50,18 +56,35 @@ def instance_cl_general_config(local_params, global_params, global_objects):
 
     # instance CL参数
     temp = local_params["temp"]
+    use_weight_dynamic = local_params["use_weight_dynamic"]
+    weight_dynamic_type = local_params["weight_dynamic_type"]
+    multi_step_weight = eval(local_params["multi_step_weight"])
+    linear_increase_epoch = local_params["linear_increase_epoch"]
+    linear_increase_value = local_params["linear_increase_value"]
     use_online_sim = local_params["use_online_sim"]
     use_warm_up4online_sim = local_params["use_warm_up4online_sim"]
     epoch_warm_up4online_sim = local_params["epoch_warm_up4online_sim"]
-    cl_type = local_params["cl_type"]
+    latent_type4cl = local_params["latent_type4cl"]
+    use_emb_dropout4cl = local_params["use_emb_dropout4cl"]
+    emb_dropout4cl = local_params["emb_dropout4cl"]
 
+    global_params["other"]["instance_cl"] = deepcopy(INSTANCE_CL_PARAMS)
     instance_cl_config = global_params["other"]["instance_cl"]
     instance_cl_config["temp"] = temp
     instance_cl_config["use_online_sim"] = use_online_sim
     instance_cl_config["use_warm_up4online_sim"] = use_warm_up4online_sim
     instance_cl_config["epoch_warm_up4online_sim"] = epoch_warm_up4online_sim
-    instance_cl_config["cl_type"] = cl_type
+    instance_cl_config["latent_type4cl"] = latent_type4cl
     instance_cl_config["random_select_aug_len"] = random_select_aug_len
+    instance_cl_config["use_weight_dynamic"] = use_weight_dynamic
+    instance_cl_config["weight_dynamic"]["type"] = weight_dynamic_type
+    instance_cl_config["weight_dynamic"]["multi_step"]["step_weight"] = multi_step_weight
+    instance_cl_config["weight_dynamic"]["linear_increase"] = {}
+    instance_cl_config["weight_dynamic"]["linear_increase"]["epoch"] = linear_increase_epoch
+    instance_cl_config["weight_dynamic"]["linear_increase"]["value"] = linear_increase_value
+    instance_cl_config["use_emb_dropout4cl"] = use_emb_dropout4cl
+    instance_cl_config["emb_dropout4cl"] = emb_dropout4cl
+    instance_cl_config["data_aug_type4cl"] = data_aug_type4cl
 
     # max entropy adv aug参数
     use_adv_aug = local_params["use_adv_aug"]
@@ -72,6 +95,7 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     eta = local_params["eta"]
     gamma = local_params["gamma"]
 
+    global_params["other"]["max_entropy_adv_aug"] = deepcopy(MAX_ENTROPY_ADV_AUG)
     max_entropy_aug_config = global_params["other"]["max_entropy_adv_aug"]
     instance_cl_config["use_adv_aug"] = use_adv_aug
     if use_adv_aug:
@@ -99,16 +123,7 @@ def instance_cl_general_config(local_params, global_params, global_objects):
         "permute": permute_prob
     }
 
-    # v1表示last time，v2表示mean pool，v3表示all interaction
-    if cl_type == "last_time":
-        cl_type_str = "v1"
-    elif cl_type == "mean_pool":
-        cl_type_str = "v2"
-    elif cl_type == "all_time":
-        cl_type_str = "v3"
-    else:
-        raise NotImplementedError()
-    params_str = f"{temp}-{weight_cl_loss}-{cl_type_str}@@"
+    params_str = f"{temp}-{weight_cl_loss}@@"
     if local_params["use_adv_aug"]:
         params_str += f"adv_aug-{epoch_interval_generate}-{loop_adv}-{epoch_generate}-{adv_learning_rate}-{eta}-{gamma}@@"
     if aug_type in ["random_aug", "informative_aug"]:

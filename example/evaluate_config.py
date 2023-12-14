@@ -64,10 +64,11 @@ def evaluate_general_config(local_params):
     datasets_config["test"]["kt"]["base_type"] = base_type
 
     # 细粒度配置
-    evaluate_config = global_params["evaluate"]["fine_grain"]
-    evaluate_config["max_seq_len"] = local_params["max_seq_len"]
-    evaluate_config["seq_len_absolute"] = eval(local_params["seq_len_absolute"])
-    evaluate_config["seq_len_percent"] = eval(local_params["seq_len_percent"])
+    fine_grain_config = global_params["evaluate"]["fine_grain"]
+    fine_grain_config["max_seq_len"] = local_params["max_seq_len"]
+    fine_grain_config["seq_len_absolute"] = eval(local_params["seq_len_absolute"])
+    fine_grain_config["statics_path"] = os.path.join(file_manager.get_setting_dir(setting_name),
+                                                     local_params["statics_file_name"])
 
     # Q_table
     dataset_name = local_params["dataset_name"]
@@ -75,9 +76,9 @@ def evaluate_general_config(local_params):
     global_objects["data"]["Q_table"] = global_objects["file_manager"].get_q_table(dataset_name, data_type)
 
     # num_max_concept
-    preprocessed_dir = file_manager.get_preprocessed_dir(local_params["dataset_name"])
-    statics_preprocessed_multi_concept = load_json(os.path.join(preprocessed_dir,
-                                                                "statics_preprocessed_multi_concept.json"))
-    global_params["num_max_concept"] = statics_preprocessed_multi_concept["num_max_concept"]
+    # preprocessed_dir = file_manager.get_preprocessed_dir(local_params["dataset_name"])
+    # statics_preprocessed_multi_concept = load_json(os.path.join(preprocessed_dir,
+    #                                                             "statics_preprocessed_multi_concept.json"))
+    # global_params["num_max_concept"] = statics_preprocessed_multi_concept["num_max_concept"]
 
     return global_params, global_objects

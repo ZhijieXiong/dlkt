@@ -86,11 +86,10 @@ class AdvContrastVaeTrainer(KnowledgeTracingTrainer):
         total_step = 20000
         for epoch in range(1, num_epoch + 1):
             kt_model.train()
-            for batch in train_loader:
+            for batch_idx, batch in enumerate(train_loader):
+                # --------------------------VAE---------------------------
                 kt_model_optimizer.zero_grad()
                 dual_net_optimizer.zero_grad()
-
-                # --------------------------VAE---------------------------
                 loss = kt_model.get_loss_stage1(batch, self.loss_record, cur_step/total_step)
                 loss.backward()
                 if kt_model_grad_clip_config["use_clip"]:

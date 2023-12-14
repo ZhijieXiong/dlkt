@@ -53,15 +53,6 @@ class KTDataset4Aug(Dataset):
         for key in self.dataset.keys():
             result[key] = self.dataset[key][index]
 
-        # debug
-        # l1 = result["concept_seq"].shape[0]
-        # l2 = result["use_time_seq"].shape[0]
-        # l3 = result["correct_seq"].shape[0]
-        # l4 = result["question_seq"].shape[0]
-        # l5 = result["mask_seq"].shape[0]
-        # l6 = result["interval_time_seq"].shape[0]
-        # print(f"{index}, {l1}, {l2}, {l3}, {l4}, {l5}, {l6}")
-
         if not self.use_aug:
             return result
 

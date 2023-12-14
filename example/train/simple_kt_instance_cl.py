@@ -2,13 +2,13 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from qdkt_config import qdkt_instance_cl_config
+from simple_kt_config import simple_kt_instance_cl_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
 from lib.dataset.KTDataset4Aug import KTDataset4Aug
-from lib.model.qDKT import qDKT
+from lib.model.SimpleKT import SimpleKT
 from lib.trainer.InstanceCLTrainer import InstanceCLTrainer
 
 
@@ -16,12 +16,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="random_split_leave_multi_out_setting")
-    parser.add_argument("--dataset_name", type=str, default="assist2009")
-    parser.add_argument("--data_type", type=str, default="multi_concept",
+    parser.add_argument("--dataset_name", type=str, default="assist2012")
+    parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2009_train_split_6.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_split_6.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2009_test_split_6.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2012_train_split_5.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2012_valid_split_5.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2012_test_split_5.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam",
                         choices=("adam", "sgd"))
@@ -38,30 +38,31 @@ if __name__ == "__main__":
     parser.add_argument("--main_metric", type=str, default="AUC")
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
-    parser.add_argument("--learning_rate", type=float, default=0.001)
+    parser.add_argument("--learning_rate", type=float, default=0.0004)
     parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
-    parser.add_argument("--lr_schedule_milestones", type=str, default="[5]")
+    parser.add_argument("--lr_schedule_milestones", type=str, default="[5, 15]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=265)
     parser.add_argument("--num_question", type=int, default=53091)
-    parser.add_argument("--dim_concept", type=int, default=64)
-    parser.add_argument("--dim_question", type=int, default=64)
-    parser.add_argument("--dim_correct", type=int, default=128)
-    parser.add_argument("--dim_latent", type=int, default=128)
-    parser.add_argument("--rnn_type", type=str, default="gru")
-    parser.add_argument("--num_rnn_layer", type=int, default=1)
-    parser.add_argument("--dropout", type=float, default=0.1)
-    parser.add_argument("--num_predict_layer", type=int, default=3)
-    parser.add_argument("--dim_predict_mid", type=int, default=128)
-    parser.add_argument("--activate_type", type=str, default="relu")
+    parser.add_argument("--dim_model", type=int, default=256)
+    parser.add_argument("--num_block", type=int, default=3)
+    parser.add_argument("--num_head", type=int, default=8)
+    parser.add_argument("--dim_ff", type=int, default=256)
+    parser.add_argument("--dim_final_fc", type=int, default=64)
+    parser.add_argument("--dim_final_fc2", type=int, default=64)
+    parser.add_argument("--seq_len", type=int, default=200)
+    parser.add_argument("--dropout", type=float, default=0.2)
+    parser.add_argument("--key_query_same", type=str2bool, default=True)
+    parser.add_argument("--separate_qa", type=str2bool, default=False)
+    parser.add_argument("--difficulty_scalar", type=str2bool, default=True)
     # instance cl参数
     parser.add_argument("--temp", type=float, default=0.01)
     parser.add_argument("--weight_cl_loss", type=float, default=0.1)
@@ -76,7 +77,7 @@ if __name__ == "__main__":
                         choices=("last_time", "all_time", "mean_pool"))
     parser.add_argument("--use_emb_dropout4cl", type=str2bool, default=True)
     parser.add_argument("--emb_dropout4cl", type=float, default=0.3)
-    parser.add_argument("--data_aug_type4cl", type=str, default="model_aug",
+    parser.add_argument("--data_aug_type4cl", type=str, default="hybrid",
                         choices=("original_data_aug", "model_aug", "hybrid"))
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)
@@ -100,10 +101,10 @@ if __name__ == "__main__":
     # max entropy adv aug参数
     parser.add_argument("--use_adv_aug", type=str2bool, default=False)
     parser.add_argument("--epoch_interval_generate", type=int, default=1)
-    parser.add_argument("--loop_adv", type=int, default=5)
+    parser.add_argument("--loop_adv", type=int, default=3)
     parser.add_argument("--epoch_generate", type=int, default=40)
-    parser.add_argument("--adv_learning_rate", type=float, default=10.0)
-    parser.add_argument("--eta", type=float, default=1.0)
+    parser.add_argument("--adv_learning_rate", type=float, default=20.0)
+    parser.add_argument("--eta", type=float, default=5.0)
     parser.add_argument("--gamma", type=float, default=1.0)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
@@ -112,7 +113,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = qdkt_instance_cl_config(params)
+    global_params, global_objects = simple_kt_instance_cl_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)
@@ -136,43 +137,8 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = qDKT(global_params, global_objects).to(global_params["device"])
+    model = SimpleKT(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
     trainer = InstanceCLTrainer(global_params, global_objects)
     trainer.train()
 
-    # LMO as09 domain 6, use online sim, use warm up 4 online sim (4), random aug len, use hard neg, crop: 0.1, replace: 0.3, insert: 0.3, last time, weight cl: 0.1
-    # best valid epoch: 26  , best test epoch: 10
-    # train performance by best valid epoch is main metric: 0.9144   , AUC: 0.9144   , ACC: 0.83542  , RMSE: 0.3358   , MAE: 0.24055  ,
-    # valid performance by best valid epoch is main metric: 0.83598  , AUC: 0.83598  , ACC: 0.80159  , RMSE: 0.36995  , MAE: 0.2612   ,
-    # test performance by best valid epoch is main metric: 0.74825  , AUC: 0.74825  , ACC: 0.69697  , RMSE: 0.44866  , MAE: 0.35422  ,
-    # ----------------------------------------------------------------------------------------------------
-    # train performance by best train epoch is main metric: 0.93723  , AUC: 0.93723  , ACC: 0.8602   , RMSE: 0.31316  , MAE: 0.21566  ,
-    # test performance by best test epoch is main metric: 0.75813  , AUC: 0.75813  , ACC: 0.70747  , RMSE: 0.43868  , MAE: 0.36597  ,
-
-    # LMO as09 domain 6, use online sim, use warm up 4 online sim (4), random aug len, use hard neg, crop: 0.1, replace: 0.3, insert: 0.3, last time, weight cl: 0.01
-    # best valid epoch: 16  , best test epoch: 10
-    # train performance by best valid epoch is main metric: 0.91123  , AUC: 0.91123  , ACC: 0.83412  , RMSE: 0.33866  , MAE: 0.24477  ,
-    # valid performance by best valid epoch is main metric: 0.83555  , AUC: 0.83555  , ACC: 0.7985   , RMSE: 0.3723   , MAE: 0.26877  ,
-    # test performance by best valid epoch is main metric: 0.75274  , AUC: 0.75274  , ACC: 0.6996   , RMSE: 0.44742  , MAE: 0.35539  ,
-    # ----------------------------------------------------------------------------------------------------
-    # train performance by best train epoch is main metric: 0.94697  , AUC: 0.94697  , ACC: 0.87282  , RMSE: 0.29994  , MAE: 0.19976  ,
-    # test performance by best test epoch is main metric: 0.76326  , AUC: 0.76326  , ACC: 0.70373  , RMSE: 0.43997  , MAE: 0.36447  ,
-
-    # LMO as09 domain 6, use online sim, use warm up 4 online sim (4), random aug len, use hard neg, crop: 0.1, replace: 0.3, insert: 0.3, mean pool, weight cl: 0.1
-    # best valid epoch: 19  , best test epoch: 8
-    # train performance by best valid epoch is main metric: 0.91952  , AUC: 0.91952  , ACC: 0.84227  , RMSE: 0.32967  , MAE: 0.22858  ,
-    # valid performance by best valid epoch is main metric: 0.83044  , AUC: 0.83044  , ACC: 0.79938  , RMSE: 0.37376  , MAE: 0.2586   ,
-    # test performance by best valid epoch is main metric: 0.75645  , AUC: 0.75645  , ACC: 0.70673  , RMSE: 0.4479   , MAE: 0.34415  ,
-    # ----------------------------------------------------------------------------------------------------
-    # train performance by best train epoch is main metric: 0.95398  , AUC: 0.95398  , ACC: 0.88157  , RMSE: 0.28926  , MAE: 0.18382  ,
-    # test performance by best test epoch is main metric: 0.76453  , AUC: 0.76453  , ACC: 0.71154  , RMSE: 0.43696  , MAE: 0.3582   ,
-
-    # LMO as09 domain 6, use online sim, use warm up 4 online sim (4), random aug len, use hard neg, crop: 0.1, replace: 0.3, insert: 0.3, mean pool, weight cl: 0.01
-    # best valid epoch: 12  , best test epoch: 6
-    # train performance by best valid epoch is main metric: 0.90836  , AUC: 0.90836  , ACC: 0.83372  , RMSE: 0.33876  , MAE: 0.23734  ,
-    # valid performance by best valid epoch is main metric: 0.82965  , AUC: 0.82965  , ACC: 0.80105  , RMSE: 0.37276  , MAE: 0.26164  ,
-    # test performance by best valid epoch is main metric: 0.75965  , AUC: 0.75965  , ACC: 0.70835  , RMSE: 0.44417  , MAE: 0.34575  ,
-    # ----------------------------------------------------------------------------------------------------
-    # train performance by best train epoch is main metric: 0.95443  , AUC: 0.95443  , ACC: 0.8839   , RMSE: 0.28731  , MAE: 0.18206  ,
-    # test performance by best test epoch is main metric: 0.7649   , AUC: 0.7649   , ACC: 0.7143   , RMSE: 0.43566  , MAE: 0.35651  ,

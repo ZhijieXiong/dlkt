@@ -67,9 +67,9 @@ class AC_VAE_GRU(nn.Module):
         self.rnn_layer.flatten_parameters()
         rnn_out, _ = self.rnn_layer(self.embed_dropout(interaction_emb))
         latent_inferred = self.encoder_layer(rnn_out)
-        predict_score, out_embed = self.decoder_layer(latent_inferred)
+        predict_score = self.decoder_layer(latent_inferred, qc_emb[:, 1:])
 
-        return predict_score, interaction_emb_real, latent_inferred, out_embed
+        return predict_score, interaction_emb_real, latent_inferred
 
     def get_latent(self, batch):
         pass
@@ -82,7 +82,7 @@ class AC_VAE_GRU(nn.Module):
 
     def get_predict_score(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-        predict_score, _, _, _ = self.forward(batch)
+        predict_score, _, _ = self.forward(batch)
 
         predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
 
@@ -94,7 +94,7 @@ class AC_VAE_GRU(nn.Module):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
 
-        predict_score, interaction_emb_real, latent_inferred, _ = self.forward(batch)
+        predict_score, interaction_emb_real, latent_inferred = self.forward(batch)
 
         # 预测损失，对应VAE中的重构损失，这一部分AVB和VAE一样
         predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
@@ -140,7 +140,7 @@ class AC_VAE_GRU(nn.Module):
         adversary_discriminator = self.objects["models"]["adversary_discriminator"]
 
         # 公式7：对抗AdvDiscriminator
-        _, interaction_emb_real, latent_inferred, _ = self.forward(batch)
+        _, interaction_emb_real, latent_inferred = self.forward(batch)
         prior = torch.randn_like(latent_inferred)
         term_a = torch.log(torch.sigmoid(adversary_discriminator(interaction_emb_real.detach(), latent_inferred.detach(), batch["mask_seq"])) + 1e-9)
         term_b = torch.log(1.0 - torch.sigmoid(adversary_discriminator(interaction_emb_real.detach(), prior, batch["mask_seq"])) + 1e-9)

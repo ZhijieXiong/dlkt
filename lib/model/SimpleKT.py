@@ -116,16 +116,27 @@ class SimpleKT(nn.Module, BaseModel4CL):
 
         return predict_score
 
-    def get_latent(self, batch):
+    def get_latent(self, batch, use_emb_dropout=False, dropout=0.1):
         difficulty_scalar = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["difficulty_scalar"]
+        separate_qa = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["separate_qa"]
         concept_seq = batch["concept_seq"]
         question_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
 
         # c_{c_t}和e_(ct, rt)
-        concept_emb, interaction_emb = self.base_emb(batch)
+        concept_emb = self.embed_concept(concept_seq)
+        if use_emb_dropout:
+            concept_emb = torch.dropout(concept_emb, dropout, self.training)
+        if separate_qa:
+            interaction_seqs = concept_seq + self.num_concept * correct_seq
+            interaction_emb = self.embed_interaction(interaction_seqs)
+        else:
+            # e_{(c_t, r_t)} = c_{c_t} + r_{r_t}
+            interaction_emb = self.embed_interaction(correct_seq) + concept_emb
         # d_ct 总结了包含当前question（concept）的problems（questions）的变化
         concept_variation_emb = self.embed_concept_variation(concept_seq)
+        if use_emb_dropout:
+            concept_variation_emb = torch.dropout(concept_variation_emb, dropout, self.training)
         # mu_{q_t}
         question_difficulty_emb = self.embed_question_difficulty(question_seq)
         # mu_{q_t} * d_ct + c_ct
@@ -149,17 +160,21 @@ class SimpleKT(nn.Module, BaseModel4CL):
 
         return latent
 
-    def get_latent_last(self, batch):
+    def get_latent_last(self, batch, use_emb_dropout=False, dropout=0.1):
         latent = self.get_latent(batch)
         mask4last = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
         latent_last = latent[torch.where(mask4last == 1)]
+        if use_emb_dropout:
+            latent_last = torch.dropout(latent_last, dropout, self.training)
 
         return latent_last
 
-    def get_latent_mean(self, batch):
+    def get_latent_mean(self, batch, use_emb_dropout=False, dropout=0.1):
         latent = self.get_latent(batch)
         mask_seq = batch["mask_seq"]
         latent_mean = (latent * mask_seq.unsqueeze(-1)).sum(1) / mask_seq.sum(-1).unsqueeze(-1)
+        if use_emb_dropout:
+            latent_mean = torch.dropout(latent_mean, dropout, self.training)
 
         return latent_mean
 

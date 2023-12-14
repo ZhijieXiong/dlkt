@@ -69,6 +69,9 @@ def adv_contrast_vae_gru_general_config(local_params, global_params, global_obje
     global_params["other"]["adv_contrastive_vae"] = deepcopy(AC_VAE_PARAMS_OTHER)
     global_params["other"]["adv_contrastive_vae"]["ues_anneal"] = local_params["use_anneal"]
 
+    # 消融
+    global_params["other"]["adv_contrastive_vae"]["ablation"]["use_vae"] = local_params["use_vae"]
+
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]

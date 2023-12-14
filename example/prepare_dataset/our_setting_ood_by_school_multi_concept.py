@@ -23,7 +23,7 @@ if __name__ == "__main__":
     parser.add_argument("--train_test_radio_upper_bound", type=float, default=8.5/1.5)
     parser.add_argument("--train_test_radio_lower_bound", type=float, default=7/3)
     parser.add_argument("--iid_radio", type=float, default=0.2)
-    parser.add_argument("--num_split", type=float, default=10)
+    parser.add_argument("--num_split", type=float, default=15)
     parser.add_argument("--max_seq_len", type=int, default=200)
     parser.add_argument("--min_seq_len", type=int, default=3)
 
@@ -95,6 +95,7 @@ if __name__ == "__main__":
     data_type = params["data_type"]
     # 生成pykt提出的测试多知识点数据集方法所需要的文件
     max_seq_len = params["max_seq_len"]
+    min_seq_len = params["min_seq_len"]
     # Q_table
     dataset_name = params["dataset_name"]
     Q_table = objects["file_manager"].get_q_table(dataset_name, data_type)
@@ -128,11 +129,11 @@ if __name__ == "__main__":
         write2file(dataset_test_ood, test_ood_path)
 
         write2file(
-            KTDataset.dataset_multi_concept2question_pykt(dataset_test_iid, Q_table, num_max_concept, max_seq_len),
+            KTDataset.dataset_multi_concept2question_pykt(dataset_test_iid, Q_table, min_seq_len, max_seq_len, num_max_concept),
             test_iid_path.replace(".txt", "_question_base4multi_concept.txt")
         )
         write2file(
-            KTDataset.dataset_multi_concept2question_pykt(dataset_test_ood, Q_table, num_max_concept, max_seq_len),
+            KTDataset.dataset_multi_concept2question_pykt(dataset_test_ood, Q_table, min_seq_len, max_seq_len, num_max_concept),
             test_ood_path.replace(".txt", "_question_base4multi_concept.txt")
         )
         write2file(

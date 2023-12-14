@@ -117,44 +117,6 @@ def general_config(local_params, global_params, global_objects):
 
     # 优化器配置
     config_optimizer(local_params, global_params, model_name="kt_model")
-    # kt_optimizer_type = local_params["optimizer_type"]
-    # kt_weight_decay = local_params["weight_decay"]
-    # kt_momentum = local_params["momentum"]
-    # kt_learning_rate = local_params["learning_rate"]
-    # kt_enable_lr_schedule = local_params["enable_lr_schedule"]
-    # kt_lr_schedule_type = local_params["lr_schedule_type"]
-    # kt_lr_schedule_step = local_params["lr_schedule_step"]
-    # kt_lr_schedule_milestones = eval(local_params["lr_schedule_milestones"])
-    # kt_lr_schedule_gamma = local_params["lr_schedule_gamma"]
-    # kt_enable_clip_grad = local_params["enable_clip_grad"]
-    # kt_grad_clipped = local_params["grad_clipped"]
-    #
-    # optimizer_config = global_params["optimizers_config"]["kt_model"]
-    # optimizer_config["type"] = kt_optimizer_type
-    # optimizer_config[kt_optimizer_type]["lr"] = kt_learning_rate
-    # optimizer_config[kt_optimizer_type]["weight_decay"] = kt_weight_decay
-    # if kt_optimizer_type == "sgd":
-    #     optimizer_config[kt_optimizer_type]["momentum"] = kt_momentum
-    #
-    # scheduler_config = global_params["schedulers_config"]["kt_model"]
-    # if kt_enable_lr_schedule:
-    #     scheduler_config["use_scheduler"] = True
-    #     scheduler_config["type"] = kt_lr_schedule_type
-    #     if kt_lr_schedule_type == "StepLR":
-    #         scheduler_config[kt_lr_schedule_type]["step_size"] = kt_lr_schedule_step
-    #         scheduler_config[kt_lr_schedule_type]["gamma"] = kt_lr_schedule_gamma
-    #     elif kt_lr_schedule_type == "MultiStepLR":
-    #         scheduler_config[kt_lr_schedule_type]["milestones"] = kt_lr_schedule_milestones
-    #         scheduler_config[kt_lr_schedule_type]["gamma"] = kt_lr_schedule_gamma
-    #     else:
-    #         raise NotImplementedError()
-    # else:
-    #     scheduler_config["use_scheduler"] = False
-    #
-    # grad_clip_config = global_params["grad_clip_config"]["kt_model"]
-    # grad_clip_config["use_clip"] = kt_enable_clip_grad
-    # if kt_enable_clip_grad:
-    #     grad_clip_config["grad_clipped"] = kt_grad_clipped
 
 
 def save_params(global_params, global_objects):

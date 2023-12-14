@@ -133,24 +133,21 @@ class Decoder(nn.Module):
         rnn_config = self.params["models_config"]["kt_model"]["rnn_layer"]
         dim_concept = rnn_config["dim_concept"]
         dim_question = rnn_config["dim_question"]
-        dim_correct = rnn_config["dim_correct"]
-        dim_emb = dim_concept + dim_question + dim_correct
         dim_latent = self.params["models_config"]["kt_model"]["encoder_layer"]["dim_latent"]
 
-        self.linear1 = nn.Linear(dim_latent, dim_emb)
-        self.linear2 = nn.Linear(dim_emb, 1)
+        self.linear1 = nn.Linear(dim_latent, dim_latent)
+        self.linear2 = nn.Linear(dim_latent + dim_question + dim_concept, 1)
         nn.init.xavier_normal_(self.linear1.weight)
         nn.init.xavier_normal_(self.linear2.weight)
         self.activation = nn.Tanh()
 
-    def forward(self, latent):
-        latent = self.linear1(latent)
-        out_embed = latent
+    def forward(self, latent, qc_emb):
+        y = self.linear1(latent)
+        y = self.activation(y)
+        y = torch.cat((y, qc_emb), dim=-1)
+        predict_score = torch.sigmoid(self.linear2(y).squeeze(-1))
 
-        latent = self.activation(latent)
-        predict_score = torch.sigmoid(self.linear2(latent).squeeze(-1))
-
-        return predict_score, out_embed
+        return predict_score
 
 
 class ContrastiveDiscriminator(nn.Module):
@@ -211,6 +208,7 @@ class AdversaryDiscriminator(nn.Module):
         net = self.dropout1(net)
 
         for i in range(2):
+            # Linear+残差
             dnet = self.dnet_list[i](net)
             net = net + self.net_list[i](dnet)
             net = F.elu(net)

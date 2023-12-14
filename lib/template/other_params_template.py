@@ -5,15 +5,30 @@ DUO_CL_PARAMS = {
 
 
 INSTANCE_CL_PARAMS = {
-    "use_adv_aug": False,
-    "random_select_aug_len": False,
-    "temp": 0.05,
+    "temp": 0.01,
     "use_online_sim": True,
     "use_warm_up4online_sim": True,
     "epoch_warm_up4online_sim": 4,
+    "random_select_aug_len": False,
     # "last_time" or "all_time" or "mean_pool"
-    "cl_type": "last_time",
-    "akt_seq_representation": "encoder_output"
+    "latent_type4cl": "last_time",
+    "use_weight_dynamic": False,
+    "weight_dynamic": {
+        # "multi_step", "linear_increase"
+        "type": "linear_increase",
+        "multi_step": {
+            "step_weight": []
+        },
+        "linear_increase": {
+            "epoch": 1,
+            "value": 0.01
+        }
+    },
+    "use_emb_dropout4cl": True,
+    "emb_dropout4cl": 0.1,
+    # "original_data_aug", "model_aug", "hybrid"
+    "data_aug_type4cl": "hybrid",
+    "use_adv_aug": False,
 }
 
 
@@ -48,5 +63,8 @@ MAX_ENTROPY_ADV_AUG = {
 
 
 AC_VAE_PARAMS = {
-    "use_anneal": False
+    "use_anneal": False,
+    "ablation": {
+        "use_vae": True
+    }
 }

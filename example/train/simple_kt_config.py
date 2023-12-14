@@ -4,6 +4,7 @@ from _data_aug_config import *
 
 from lib.template.params_template_v2 import PARAMS
 from lib.template.model.SimpleKT import MODEL_PARAMS as SimpleKT_MODEL_PARAMS
+from lib.template.other_params_template import *
 from lib.template.objects_template import OBJECTS
 from lib.util.basic import *
 
@@ -59,6 +60,21 @@ def simple_kt_config(local_params):
     general_config(local_params, global_params, global_objects)
     simple_kt_general_config(local_params, global_params)
     if local_params["save_model"]:
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects
+
+
+def simple_kt_instance_cl_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    simple_kt_general_config(local_params, global_params)
+    params_str = instance_cl_general_config(local_params, global_params, global_objects)
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@SimpleKT@@", "@@SimpleKT-instance_cl@@"))
+        global_params["save_model_dir_name"] += f"@@{params_str}"
         save_params(global_params, global_objects)
 
     return global_params, global_objects

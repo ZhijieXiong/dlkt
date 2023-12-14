@@ -19,7 +19,7 @@ EVALUATE_PARAMS = {
         "fine_grain": {
             "max_seq_len": 200,
             "seq_len_absolute": [0, 5, 10, 20, 30, 50, 100, 150, 200],
-            "seq_len_percent": [0, .2, .4, .6, .7, .8, .9, 1]
+            "statics_path": ""
         }
     }
 }

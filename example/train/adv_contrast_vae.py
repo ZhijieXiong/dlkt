@@ -16,24 +16,24 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="random_split_leave_multi_out_setting")
-    parser.add_argument("--data_type", type=str, default="only_question",
+    parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("single_concept", "only_question"))
-    parser.add_argument("--dataset_name", type=str, default="assist2009")
-    parser.add_argument("--train_file_name", type=str, default="assist2009_train_split_6_only_question.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_split_6_only_question.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2009_test_split_6_only_question.txt")
+    parser.add_argument("--dataset_name", type=str, default="assist2012")
+    parser.add_argument("--train_file_name", type=str, default="assist2012_train_split_5.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2012_valid_split_5.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2012_test_split_5.txt")
     # 优化器相关参数选择
-    parser.add_argument("--optimizer_type", type=str, default="adam",
+    parser.add_argument("--optimizer_type", type=str, default="adamW",
                         choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0)
+    parser.add_argument("--weight_decay", type=float, default=0.01)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test",
                         choices=("valid_test", "no_valid"))
-    parser.add_argument("--num_epoch", type=int, default=400)
+    parser.add_argument("--num_epoch", type=int, default=200)
     parser.add_argument("--use_early_stop", type=str2bool, default=True)
-    parser.add_argument("--epoch_early_stop", type=int, default=40)
-    parser.add_argument("--use_last_average", type=str2bool, default=True)
+    parser.add_argument("--epoch_early_stop", type=int, default=10)
+    parser.add_argument("--use_last_average", type=str2bool, default=False)
     parser.add_argument("--epoch_last_average", type=int, default=5)
     parser.add_argument("--main_metric", type=str, default="AUC")
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
@@ -50,24 +50,24 @@ if __name__ == "__main__":
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=123)
-    parser.add_argument("--num_question", type=int, default=17751)
-    parser.add_argument("--dim_concept", type=int, default=64)
-    parser.add_argument("--dim_question", type=int, default=64)
-    parser.add_argument("--dim_correct", type=int, default=128)
-    parser.add_argument("--dim_rnn", type=int, default=100)
-    parser.add_argument("--rnn_type", type=str, default="gru",
+    parser.add_argument("--num_concept", type=int, default=265)
+    parser.add_argument("--num_question", type=int, default=53091)
+    parser.add_argument("--dim_concept", type=int, default=128)
+    parser.add_argument("--dim_question", type=int, default=128)
+    parser.add_argument("--dim_correct", type=int, default=64)
+    parser.add_argument("--dim_rnn", type=int, default=200)
+    parser.add_argument("--rnn_type", type=str, default="lstm",
                         choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=1)
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--encoder_type", type=str, default="fc")
-    parser.add_argument("--dim_latent", type=int, default=64)
+    parser.add_argument("--dim_latent", type=int, default=128)
     parser.add_argument("--add_eps", type=str2bool, default=True)
     # 其它优化器的参数
-    # dual: 优化的是kt model和ContrastiveDiscriminator
+    # dual: 优化的是kt model的encoder和ContrastiveDiscriminator
     parser.add_argument("--optimizer_type_dual", type=str, default="sgd",
                         choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay_dual", type=float, default=0)
+    parser.add_argument("--weight_decay_dual", type=float, default=0.1)
     parser.add_argument("--momentum_dual", type=float, default=0.9)
     parser.add_argument("--learning_rate_dual", type=float, default=0.0003)
     parser.add_argument("--enable_lr_schedule_dual", type=str2bool, default=False)
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     # prior: 优化的是AdversaryDiscriminator，即对抗VAE中用于生成latent的网络（原始VAE是用网络生成高斯分布的均值方差，然后重参数采样出来latent的）
     parser.add_argument("--optimizer_type_prior", type=str, default="sgd",
                         choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay_prior", type=float, default=0)
+    parser.add_argument("--weight_decay_prior", type=float, default=0.1)
     parser.add_argument("--momentum_prior", type=float, default=0.9)
     parser.add_argument("--learning_rate_prior", type=float, default=0.0005)
     parser.add_argument("--enable_lr_schedule_prior", type=str2bool, default=False)
@@ -93,9 +93,11 @@ if __name__ == "__main__":
     parser.add_argument("--enable_clip_grad_prior", type=str2bool, default=False)
     parser.add_argument("--grad_clipped_prior", type=float, default=10.0)
     # 损失权重参数
-    parser.add_argument("--weight_kl_loss", type=float, default=0.0005)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.001)
+    parser.add_argument("--weight_kl_loss", type=float, default=0.005)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.01)
     parser.add_argument("--use_anneal", type=str2bool, default=True)
+    # 消融
+    parser.add_argument("--use_vae", type=str2bool, default=True)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)

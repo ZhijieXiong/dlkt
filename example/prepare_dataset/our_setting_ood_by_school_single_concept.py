@@ -17,12 +17,12 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_name", type=str, default="assist2012", choices=("assist2009", "assist2012"))
     # setting config
     parser.add_argument("--setting_name", type=str, default="our_setting_ood_by_school_single_concept")
-    parser.add_argument("--min_school_seq", type=int, help="一所学校最少要有多少学生|序列", default=300)
+    parser.add_argument("--min_school_seq", type=int, help="一所学校最少要有多少学生|序列", default=200)
     parser.add_argument("--min_mean_seq_len", type=int, default=20)
     parser.add_argument("--train_test_radio_upper_bound", type=float, default=8.5/1.5)
     parser.add_argument("--train_test_radio_lower_bound", type=float, default=7/3)
     parser.add_argument("--iid_radio", type=float, default=0.2)
-    parser.add_argument("--num_split", type=float, default=10)
+    parser.add_argument("--num_split", type=float, default=15)
     parser.add_argument("--max_seq_len", type=int, default=200)
     parser.add_argument("--min_seq_len", type=int, default=3)
 

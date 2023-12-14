@@ -1,3 +1,5 @@
+import torch
+
 from .BaseModel4CL import BaseModel4CL
 from .Module.KTEmbedLayer import KTEmbedLayer
 from .Module.PredictorLayer import PredictorLayer
@@ -60,7 +62,15 @@ class qDKT(nn.Module, BaseModel4CL):
 
         return predict_score
 
-    def get_latent(self, batch):
+    def forward4question_evaluate(self, batch):
+        # 直接输出的是每个序列最后一个时刻的预测分数
+        predict_score = self.forward(batch)
+        # 只保留mask每行的最后一个1
+        mask4last = get_mask4last_or_penultimate(batch["mask_seq"][:, 1:], penultimate=False)
+
+        return predict_score[mask4last.bool()]
+
+    def get_latent(self, batch, use_emb_dropout=False, dropout=0.1):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
         dim_correct = encoder_config["dim_correct"]
         correct_seq = batch["correct_seq"]
@@ -68,6 +78,8 @@ class qDKT(nn.Module, BaseModel4CL):
         batch_size = correct_seq.shape[0]
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
         qc_emb = self.get_qc_emb(batch)
+        if use_emb_dropout:
+            qc_emb = torch.dropout(qc_emb, dropout, self.training)
         interaction_emb = torch.cat((qc_emb, correct_emb), dim=2)
 
         self.encoder_layer.flatten_parameters()
@@ -75,17 +87,21 @@ class qDKT(nn.Module, BaseModel4CL):
 
         return latent
 
-    def get_latent_last(self, batch):
-        latent = self.get_latent(batch)
+    def get_latent_last(self, batch, use_emb_dropout=False, dropout=0.1):
+        latent = self.get_latent(batch, use_emb_dropout, dropout)
         mask4last = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
         latent_last = latent[torch.where(mask4last == 1)]
+        if use_emb_dropout:
+            latent_last = torch.dropout(latent_last, dropout, self.training)
 
         return latent_last
 
-    def get_latent_mean(self, batch):
-        latent = self.get_latent(batch)
+    def get_latent_mean(self, batch, use_emb_dropout=False, dropout=0.1):
+        latent = self.get_latent(batch, use_emb_dropout, dropout)
         mask_seq = batch["mask_seq"]
         latent_mean = (latent * mask_seq.unsqueeze(-1)).sum(1) / mask_seq.sum(-1).unsqueeze(-1)
+        if use_emb_dropout:
+            latent_mean = torch.dropout(latent_mean, dropout, self.training)
 
         return latent_mean
 

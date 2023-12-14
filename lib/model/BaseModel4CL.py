@@ -13,23 +13,23 @@ class BaseModel4CL:
         self.objects = objects
 
     @abstractmethod
-    def get_latent(self, batch):
+    def get_latent(self, batch, use_emb_dropout=False, dropout=0.1):
         pass
 
     @abstractmethod
-    def get_latent_last(self, batch):
+    def get_latent_last(self, batch, use_emb_dropout=False, dropout=0.1):
         pass
 
     @abstractmethod
-    def get_latent_mean(self, batch):
+    def get_latent_mean(self, batch, use_emb_dropout=False, dropout=0.1):
         pass
 
     @abstractmethod
-    def get_latent_last_from_adv_data(self, dataset, batch):
+    def get_latent_last_from_adv_data(self, dataset, batch, use_emb_dropout=False, dropout=0.1):
         pass
 
     @abstractmethod
-    def get_latent_mean_from_adv_data(self, dataset, batch):
+    def get_latent_mean_from_adv_data(self, dataset, batch, use_emb_dropout=False, dropout=0.1):
         pass
 
     def get_duo_cl_loss(self, batch, latent_type):
@@ -63,32 +63,53 @@ class BaseModel4CL:
 
         return cl_loss
 
-    def get_instance_cl_loss(self, batch, latent_type, use_random_seq_len=False, use_adv_aug=False, dataset=None):
-        batch_aug0 = {
-            "concept_seq": batch["concept_seq_aug_0"],
-            "question_seq": batch["question_seq_aug_0"],
-            "correct_seq": batch["correct_seq_aug_0"],
-            "mask_seq": batch["mask_seq_aug_0"]
-        }
-        batch_aug1 = {
-            "concept_seq": batch["concept_seq_aug_1"],
-            "question_seq": batch["question_seq_aug_1"],
-            "correct_seq": batch["correct_seq_aug_1"],
-            "mask_seq": batch["mask_seq_aug_1"]
-        }
+    def get_instance_cl_loss(self, batch, instance_cl_params, dataset=None):
+        latent_type4cl = instance_cl_params["latent_type4cl"]
+        random_select_aug_len = instance_cl_params["random_select_aug_len"]
+        use_adv_aug = instance_cl_params["use_adv_aug"]
+        use_emb_dropout4cl = instance_cl_params["use_emb_dropout4cl"]
+        emb_dropout4cl = instance_cl_params["emb_dropout4cl"]
+        data_aug_type4cl = instance_cl_params["data_aug_type4cl"]
 
-        if latent_type == "last_time" and not use_adv_aug:
-            latent_aug0_pooled = self.get_latent_last(batch_aug0)
-            latent_aug1_pooled = self.get_latent_last(batch_aug1)
-        elif latent_type == "mean_pool" and not use_adv_aug:
-            latent_aug0_pooled = self.get_latent_mean(batch_aug0)
-            latent_aug1_pooled = self.get_latent_mean(batch_aug1)
-        elif latent_type == "last_time" and use_adv_aug:
-            latent_aug0_pooled = self.get_latent_last_from_adv_data(dataset, batch_aug0)
-            latent_aug1_pooled = self.get_latent_last_from_adv_data(dataset, batch_aug1)
-        elif latent_type == "mean_pool" and use_adv_aug:
-            latent_aug0_pooled = self.get_latent_mean_from_adv_data(dataset, batch_aug0)
-            latent_aug1_pooled = self.get_latent_mean_from_adv_data(dataset, batch_aug1)
+        if data_aug_type4cl == "original_data_aug":
+            batch_aug0 = {
+                "concept_seq": batch["concept_seq_aug_0"],
+                "question_seq": batch["question_seq_aug_0"],
+                "correct_seq": batch["correct_seq_aug_0"],
+                "mask_seq": batch["mask_seq_aug_0"]
+            }
+            batch_aug1 = {
+                "concept_seq": batch["concept_seq_aug_1"],
+                "question_seq": batch["question_seq_aug_1"],
+                "correct_seq": batch["correct_seq_aug_1"],
+                "mask_seq": batch["mask_seq_aug_1"]
+            }
+        elif data_aug_type4cl == "model_aug":
+            batch_aug0 = batch
+            batch_aug1 = batch
+        elif data_aug_type4cl == "hybrid":
+            batch_aug0 = {
+                "concept_seq": batch["concept_seq_aug_0"],
+                "question_seq": batch["question_seq_aug_0"],
+                "correct_seq": batch["correct_seq_aug_0"],
+                "mask_seq": batch["mask_seq_aug_0"]
+            }
+            batch_aug1 = batch
+        else:
+            raise NotImplementedError()
+
+        if latent_type4cl == "last_time" and not use_adv_aug:
+            latent_aug0_pooled = self.get_latent_last(batch_aug0, use_emb_dropout4cl, emb_dropout4cl)
+            latent_aug1_pooled = self.get_latent_last(batch_aug1, use_emb_dropout4cl, emb_dropout4cl)
+        elif latent_type4cl == "mean_pool" and not use_adv_aug:
+            latent_aug0_pooled = self.get_latent_mean(batch_aug0, use_emb_dropout4cl, emb_dropout4cl)
+            latent_aug1_pooled = self.get_latent_mean(batch_aug1, use_emb_dropout4cl, emb_dropout4cl)
+        elif latent_type4cl == "last_time" and use_adv_aug:
+            latent_aug0_pooled = self.get_latent_last_from_adv_data(dataset, batch_aug0, use_emb_dropout4cl, emb_dropout4cl)
+            latent_aug1_pooled = self.get_latent_last_from_adv_data(dataset, batch_aug1, use_emb_dropout4cl, emb_dropout4cl)
+        elif latent_type4cl == "mean_pool" and use_adv_aug:
+            latent_aug0_pooled = self.get_latent_mean_from_adv_data(dataset, batch_aug0, use_emb_dropout4cl, emb_dropout4cl)
+            latent_aug1_pooled = self.get_latent_mean_from_adv_data(dataset, batch_aug1, use_emb_dropout4cl, emb_dropout4cl)
         else:
             raise NotImplementedError()
 
@@ -97,7 +118,7 @@ class BaseModel4CL:
                                               dim=-1) / temp
 
         if "correct_seq_hard_neg" in batch.keys():
-            if use_random_seq_len:
+            if random_select_aug_len:
                 batch_hard_neg = {
                     "concept_seq": batch["concept_seq_random_len"],
                     "question_seq": batch["question_seq_random_len"],
@@ -111,14 +132,14 @@ class BaseModel4CL:
                     "correct_seq": batch["correct_seq_hard_neg"],
                     "mask_seq": batch["mask_seq"]
                 }
-            if latent_type == "last_time" and not use_adv_aug:
-                latent_hard_neg_pooled = self.get_latent_last(batch_hard_neg)
-            elif latent_type == "mean_pool" and not use_adv_aug:
-                latent_hard_neg_pooled = self.get_latent_mean(batch_hard_neg)
-            elif latent_type == "last_time" and use_adv_aug:
-                latent_hard_neg_pooled = self.get_latent_last_from_adv_data(dataset, batch_hard_neg)
-            elif latent_type == "mean_pool" and use_adv_aug:
-                latent_hard_neg_pooled = self.get_latent_mean_from_adv_data(dataset, batch_hard_neg)
+            if latent_type4cl == "last_time" and not use_adv_aug:
+                latent_hard_neg_pooled = self.get_latent_last(batch_hard_neg, use_emb_dropout4cl, emb_dropout4cl)
+            elif latent_type4cl == "mean_pool" and not use_adv_aug:
+                latent_hard_neg_pooled = self.get_latent_mean(batch_hard_neg, use_emb_dropout4cl, emb_dropout4cl)
+            elif latent_type4cl == "last_time" and use_adv_aug:
+                latent_hard_neg_pooled = self.get_latent_last_from_adv_data(dataset, batch_hard_neg, use_emb_dropout4cl, emb_dropout4cl)
+            elif latent_type4cl == "mean_pool" and use_adv_aug:
+                latent_hard_neg_pooled = self.get_latent_mean_from_adv_data(dataset, batch_hard_neg, use_emb_dropout4cl, emb_dropout4cl)
             else:
                 raise NotImplementedError()
             cos_sim_neg = torch.cosine_similarity(latent_aug0_pooled.unsqueeze(1),
@@ -158,17 +179,19 @@ class BaseModel4CL:
         seq_len = latent_aug0.shape[1]
         m = (torch.eye(bs) == 0)
 
-        # 将另一增强序列的每个时刻都作为一个neg
+        # 将另一增强序列的每个时刻都作为一个neg，但是为了减少计算量，实际取另一增强序列每隔5个时刻
         neg_all = latent_aug1.repeat(bs, 1, 1).reshape(bs, bs, seq_len, -1)[m].reshape(bs, bs - 1, seq_len, -1)
-        mask_bool4neg = torch.ne(batch["mask_seq_aug_1"].repeat(bs, 1).reshape(bs, bs, -1)[m].reshape(bs, bs - 1, -1),
-                                 0)
+        mask_bool4neg = torch.ne(batch["mask_seq_aug_1"].repeat(bs, 1).reshape(bs, bs, -1)[m].reshape(bs, bs - 1, -1), 0)
+        mask4select = torch.zeros_like(mask_bool4neg).to(self.params["device"])
+        mask4select[:, :, 5::5] = True
+        mask4select = mask4select & mask_bool4neg
 
         temp = self.params["other"]["instance_cl"]["temp"]
         cos_sim_list = []
         for i in range(bs):
             anchor = latent_aug0_last[i]
             pos = latent_aug1_last[i]
-            neg = neg_all[i][:, 1:][mask_bool4neg[i][:, 1:]]
+            neg = neg_all[i][:, 3:][mask4select[i][:, 3:]]
             sim_i = torch.cosine_similarity(anchor, torch.cat((pos.unsqueeze(dim=0), neg), dim=0)) / temp
             cos_sim_list.append(sim_i.unsqueeze(dim=0))
 

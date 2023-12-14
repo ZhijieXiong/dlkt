@@ -96,7 +96,7 @@ class KTDataset(Dataset):
         return num_seq, num_sample, num_correct / num_interaction
 
     @staticmethod
-    def dataset_multi_concept2question_pykt(dataset, Q_table, num_max_concept, max_seq_len):
+    def dataset_multi_concept2question_pykt(dataset, Q_table, min_seq_len, max_seq_len, num_max_concept):
         # 假设原始习题序列为[1,2,3]，回答结果序列为[1,0,1]，习题对应知识点为{1:[5,6], 2:[7], 3:[8,9,10]}
         # 那么新生成的数据应该为
         # question_seq: [1, 0, 0, 0], concept_seq: [5, 0, 0, 0], correct_seq:  [1, 0, 0, 0], mask_seq: [1, 0, 0, 0]
@@ -115,25 +115,24 @@ class KTDataset(Dataset):
         # 那么就可以做融合了，即late fusion
         # 需要用一个来东西来指示每个序列取第几列，如下
         # [1, 1, 2, 3, 3, 3] 表示y(1,1)和y(1,2)是习题1的，y(2,1)是习题2的，y(3,1)、y(3,2)和y(3,3)是习题3的
-        dataset = dataset_delete_pad(dataset)
         dataset = dataset_agg_concept(dataset)
 
         interaction_index_seq = []
         interaction_index = -1
-        info_names = []
+        seq_keys = []
         for key in dataset[0].keys():
             if type(dataset[0][key]) == list:
-                info_names.append(key)
-        info_names = ["question_seq"] + list(set(info_names) - {"question_seq"})
-        dataset_converted = {info_name: [] for info_name in info_names}
+                seq_keys.append(key)
+        seq_keys = ["question_seq"] + list(set(seq_keys) - {"question_seq"})
+        dataset_converted = {info_name: [] for info_name in seq_keys}
         for i, user_data in enumerate(dataset):
             # 每个用户数据进来都要初始化
             # 初始化为[[]]是因为在第一个用户的第一道习题时，要用到
             # 即c_seq_this = dataset_converted["concept_seq"][-1] + [c_id]，当刚开始循环时
-            for k, info_name in enumerate(info_names):
+            for k, info_name in enumerate(seq_keys):
                 dataset_converted[info_name].append([])
             interaction_index_seq.append(-1)
-            seq_all = [user_data[info_name] for info_name in info_names]
+            seq_all = [user_data[info_name] for info_name in seq_keys]
             last_num_c_id = 0
             last_c_ids = []
             for j, ele_all in enumerate(zip(*seq_all)):
@@ -145,7 +144,7 @@ class KTDataset(Dataset):
                 is_new_seq = not len(dataset_converted["correct_seq"][-1])
                 for position_c_in_q, c_id in enumerate(c_ids):
                     interaction_index_seq.append(interaction_index)
-                    for k, info_name in enumerate(info_names):
+                    for k, info_name in enumerate(seq_keys):
                         if info_name != "concept_seq":
                             if position_c_in_q == 0 and is_new_seq:
                                 # 新序列开始
@@ -174,22 +173,22 @@ class KTDataset(Dataset):
                 current_seq_len = len(dataset_converted["correct_seq"][-1])
                 # 防止序列超过200长度
                 if current_seq_len >= (max_seq_len - num_max_concept):
-                    for info_name in info_names:
+                    for info_name in seq_keys:
                         dataset_converted[info_name].append([])
                     interaction_index_seq.append(-1)
                     last_num_c_id = 1
                     last_c_ids = []
                     
-        for info_name in info_names:
+        for info_name in seq_keys:
             dataset_converted[info_name] = list(filter(lambda seq: len(seq) != 0, dataset_converted[info_name]))
             
         interaction_index_seq = list(filter(lambda idx: idx != -1, interaction_index_seq))
         for i, correct_seq in enumerate(dataset_converted["correct_seq"]):
-            if len(correct_seq) < 3:
+            if len(correct_seq) < min_seq_len:
                 interaction_index_seq[i] = -1
-                for info_name in info_names:
+                for info_name in seq_keys:
                     dataset_converted[info_name][i] = []
-        for info_name in info_names:
+        for info_name in seq_keys:
             dataset_converted[info_name] = list(filter(lambda seq: len(seq) != 0, dataset_converted[info_name]))
         interaction_index_seq = list(filter(lambda idx: idx != -1, interaction_index_seq))
         

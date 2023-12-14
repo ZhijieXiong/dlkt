@@ -164,8 +164,6 @@ class SimpleKT(nn.Module, BaseModel4CL):
         latent = self.get_latent(batch)
         mask4last = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
         latent_last = latent[torch.where(mask4last == 1)]
-        if use_emb_dropout:
-            latent_last = torch.dropout(latent_last, dropout, self.training)
 
         return latent_last
 
@@ -173,8 +171,6 @@ class SimpleKT(nn.Module, BaseModel4CL):
         latent = self.get_latent(batch)
         mask_seq = batch["mask_seq"]
         latent_mean = (latent * mask_seq.unsqueeze(-1)).sum(1) / mask_seq.sum(-1).unsqueeze(-1)
-        if use_emb_dropout:
-            latent_mean = torch.dropout(latent_mean, dropout, self.training)
 
         return latent_mean
 

@@ -1,3 +1,4 @@
+import json
 from copy import deepcopy
 
 from lib.template.dataset_params_template import KT_RANDOM_AUG_PARAMS, KT_INFORMATIVE_AUG_PARAMS
@@ -85,6 +86,7 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     instance_cl_config["use_emb_dropout4cl"] = use_emb_dropout4cl
     instance_cl_config["emb_dropout4cl"] = emb_dropout4cl
     instance_cl_config["data_aug_type4cl"] = data_aug_type4cl
+    weight_dynamic = instance_cl_config["weight_dynamic"][weight_dynamic_type]
 
     # max entropy adv aug参数
     use_adv_aug = local_params["use_adv_aug"]
@@ -110,39 +112,24 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     weight_cl_loss = local_params["weight_cl_loss"]
     global_params["loss_config"]["cl loss"] = weight_cl_loss
 
+    # 打印参数
+    print(f"input data aug\n"
+          f"    aug_type: {aug_type}, aug order: {local_params['aug_order']}, use hard neg: {use_hard_neg}, random aug len: {random_select_aug_len}\n"
+          f"    mask prob: {mask_prob}, crop prob: {crop_prob}, replace prob: {replace_prob}, insert prob: {insert_prob}, permute prob: {permute_prob}\n"
+          f"    info aug, offline sim type: {local_params['offline_sim_type']}, use online sim: {use_online_sim}, use warm up for online sim: {use_warm_up4online_sim}, warm up for online sim: {epoch_warm_up4online_sim}\n"
+          f"instance cl\n"
+          f"    temp: {temp}, weight of cl loss: {weight_cl_loss}, use dynamic weight: {use_weight_dynamic}, dynamic weight type: {weight_dynamic_type}, dynamic weight: {json.dumps(weight_dynamic)}\n"
+          f"    data aug type: {data_aug_type4cl}, latent type: {latent_type4cl}, use emb dropout: {use_emb_dropout4cl}, emb dropout: {emb_dropout4cl}\n"
+          f"max_entropy_adv_aug\n"
+          f"    use max entropy adv aug: {use_adv_aug}, interval epoch of generation: {epoch_interval_generate}, generate loops: {loop_adv}, generation epoch: {epoch_generate}\n"
+          f"    adv lr: {adv_learning_rate}, eta: {eta}, gamma: {gamma}")
+
     # Q_table
     dataset_name = local_params["dataset_name"]
     data_type = local_params["data_type"]
     global_objects["data"]["Q_table"] = global_objects["file_manager"].get_q_table(dataset_name, data_type)
 
-    aug_table = {
-        "mask": mask_prob,
-        "crop": crop_prob,
-        "replace": replace_prob,
-        "insert": insert_prob,
-        "permute": permute_prob
-    }
-
-    params_str = f"{temp}-{weight_cl_loss}@@"
-    if local_params["use_adv_aug"]:
-        params_str += f"adv_aug-{epoch_interval_generate}-{loop_adv}-{epoch_generate}-{adv_learning_rate}-{eta}-{gamma}@@"
-    if aug_type in ["random_aug", "informative_aug"]:
-        if aug_type == "random_aug":
-            params_str += "random_aug"
-        elif aug_type == "informative_aug":
-            params_str += f"informative_aug"
-        else:
-            raise NotImplementedError()
-        # v1使用序列随机长度部分做增强；v2使用完整序列做增强
-        if random_select_aug_len:
-            params_str += "-v1"
-        else:
-            params_str += "-v2"
-
-        for aug in aug_order:
-            params_str += f"-{aug}-{aug_table[aug]}"
-    else:
-        raise NotImplementedError()
+    params_str = f"{temp}-{weight_cl_loss if not use_weight_dynamic else weight_dynamic_type}@@"
 
     return params_str
 

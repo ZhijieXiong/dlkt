@@ -64,19 +64,19 @@ if __name__ == "__main__":
     parser.add_argument("--activate_type", type=str, default="relu")
     # instance cl参数
     parser.add_argument("--temp", type=float, default=0.01)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
-    parser.add_argument("--use_weight_dynamic", type=str2bool, default=False)
-    parser.add_argument("--weight_dynamic_type", type=str, default="multi_step",
+    parser.add_argument("--weight_cl_loss", type=float, default=0.01)
+    parser.add_argument("--use_weight_dynamic", type=str2bool, default=True)
+    parser.add_argument("--weight_dynamic_type", type=str, default="linear_increase",
                         choices=("multi_step", "linear_increase"))
     parser.add_argument("--multi_step_weight", type=str,
                         default="[(5, 0.001), (10, 0.005), (20, 0.01), (30, 0.05), (40, 0.1)]")
     parser.add_argument("--linear_increase_epoch", type=int, default=1)
-    parser.add_argument("--linear_increase_value", type=float, default=0.001)
+    parser.add_argument("--linear_increase_value", type=float, default=0.003)
     parser.add_argument("--latent_type4cl", type=str, default="last_time",
                         choices=("last_time", "all_time", "mean_pool"))
     parser.add_argument("--use_emb_dropout4cl", type=str2bool, default=True)
     parser.add_argument("--emb_dropout4cl", type=float, default=0.3)
-    parser.add_argument("--data_aug_type4cl", type=str, default="model_aug",
+    parser.add_argument("--data_aug_type4cl", type=str, default="hybrid",
                         choices=("original_data_aug", "model_aug", "hybrid"))
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)

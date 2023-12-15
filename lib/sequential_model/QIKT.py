@@ -79,18 +79,19 @@ class QIKT(nn.Module):
         return self.embed_layer.get_emb_question_with_concept_fused(batch["question_seq"], concept_fusion="mean")
 
     def forward(self, batch):
-        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["QIKT"]
         lambda_q_all = encoder_config["lambda_q_all"]
         lambda_c_next = encoder_config["lambda_c_next"]
         lambda_c_all = encoder_config["lambda_c_all"]
         use_irt = encoder_config["use_irt"]
         dim_emb = encoder_config["dim_emb"]
+        question_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
         data_type = self.params["datasets_config"]["data_type"]
 
         if data_type == "only_question":
             qc_emb = self.get_qc_emb4only_question(batch)
-            concept_emb = self.embed_layer.get_concept_fused_emb(batch["question_seq"], "mean")
+            concept_emb = self.embed_layer.get_concept_fused_emb(question_seq, "mean")
         else:
             qc_emb = self.get_qc_emb4single_concept(batch)
             concept_emb = self.embed_layer.get_emb("concept", batch["concept_seq"])
@@ -111,13 +112,24 @@ class QIKT(nn.Module):
         latent_concept = self.dropout_layer(self.rnn_layer4concept(ca_emb[:, :-1])[0])
 
         predict_score_q_next = torch.sigmoid(self.predict_layer4q_next(
-            torch.cat((qc_emb[:, 1:], latent_question))
-        ))
+            torch.cat((qc_emb[:, 1:], latent_question), dim=-1)
+        )).squeeze(-1)
         predict_score_q_all = torch.sigmoid(self.predict_layer4q_all(latent_question))
         predict_score_c_next = torch.sigmoid(self.predict_layer4c_next(
-            torch.cat((concept_emb[:, 1:], latent_concept))
+            torch.cat((qc_emb[:, 1:], latent_concept), dim=-1)
         ))
         predict_score_c_all = torch.sigmoid(self.predict_layer4c_all(latent_concept))
+
+        predict_score_q_all = torch.gather(predict_score_q_all, 2, question_seq.unsqueeze(-1)[:, 1:]).squeeze(-1)
+        if data_type == "only_question":
+            # predict_score_c_next和predict_score_c_all原代码没写怎么处理一道习题对应多个知识点，我的理解是各个知识点上的分数取平均值
+
+        else:
+            # 和原代码一样
+            predict_score_c_all = torch.gather(predict_score_c_all, 2,
+                                               batch["concept_seq"].unsqueeze(-1)[:, 1:]).squeeze(-1)
+            predict_score_c_next = torch.gather(predict_score_c_next, 2,
+                                                batch["concept_seq"].unsqueeze(-1)[:, 1:]).squeeze(-1)
 
         if use_irt:
             predict_score = (sigmoid_inverse(predict_score_q_all) * lambda_q_all +

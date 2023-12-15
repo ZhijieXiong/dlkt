@@ -19,5 +19,6 @@ OBJECTS = {
     },
     "data": {
         "Q_table": None,
+        "train_data_statics": None
     }
 }

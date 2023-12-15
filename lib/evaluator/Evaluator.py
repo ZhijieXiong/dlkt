@@ -140,6 +140,7 @@ class Evaluator:
         all_question_dis = defaultdict(list)
         for q_id, p, g in zip(question_all, predict_score_all, ground_truth_all):
             all_question_dis[q_id].append((p, g))
+        result4statics['question_zero_fre'] = get_performance(statics_train['question_zero_fre'], all_question_dis)
         result4statics['question_low_fre'] = get_performance(statics_train['question_low_fre'], all_question_dis)
         result4statics['question_middle_fre'] = get_performance(statics_train['question_middle_fre'], all_question_dis)
         result4statics['question_high_fre'] = get_performance(statics_train['question_high_fre'], all_question_dis)
@@ -148,7 +149,12 @@ class Evaluator:
         result4statics['question_high_acc'] = get_performance(statics_train['question_high_acc'], all_question_dis)
 
         print(f"按照训练集习题频率划分\n"
-              f"低频率（共{result4statics['question_low_fre']['num_sample']:<9}个样本），"
+              f"训练集中未出现过的样本（共{result4statics['question_zero_fre']['num_sample']:<9}个样本），"
+              f"AUC: {result4statics['question_zero_fre']['AUC']:<9.6}, "
+              f"ACC: {result4statics['question_zero_fre']['ACC']:<9.6}, "
+              f"RMSE: {result4statics['question_zero_fre']['RMSE']:<9.6}, "
+              f"MAE: {result4statics['question_zero_fre']['MAE']:<9.6}\n"
+              f"低频率（不包括零频率，共{result4statics['question_low_fre']['num_sample']:<9}个样本），"
               f"AUC: {result4statics['question_low_fre']['AUC']:<9.6}, "
               f"ACC: {result4statics['question_low_fre']['ACC']:<9.6}, "
               f"RMSE: {result4statics['question_low_fre']['RMSE']:<9.6}, "

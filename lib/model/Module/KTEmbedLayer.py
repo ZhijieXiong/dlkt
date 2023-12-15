@@ -97,6 +97,19 @@ class KTEmbedLayer(nn.Module):
             raise NotImplementedError()
         return torch.cat((emb_concept_fusion, emb_question), dim=-1)
 
+    def get_concept_fused_emb(self, question_seq, concept_fusion="mean"):
+        # 对于多知识点数据集，获取拼接了知识点emb（以某种方式融合）的习题emb
+        emb_concept = self.get_emb("concept", self.question2concept_table[question_seq])
+        mask_concept = self.question2concept_mask_table[question_seq]
+        emb_concept_fusion = (emb_concept * mask_concept.unsqueeze(-1)).sum(-2)
+        if concept_fusion == "mean":
+            emb_concept_fusion = emb_concept_fusion / mask_concept.sum(-1).unsqueeze(-1)
+        elif concept_fusion == "max":
+            pass
+        else:
+            raise NotImplementedError()
+        return emb_concept_fusion
+
     def get_c_from_q(self, q_id):
         return self.question2concept_list[q_id]
 

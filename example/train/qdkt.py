@@ -15,6 +15,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="our_setting_ood_by_school")
+    parser.add_argument("--dataset_name", type=str, default="assist2009")
     parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
     parser.add_argument("--train_file_name", type=str, default="assist2009_train_split_0.txt")

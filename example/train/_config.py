@@ -4,6 +4,8 @@ import os
 import inspect
 import torch
 
+os.environ["OMP_NUM_THREADS"] = '1'
+
 current_file_name = inspect.getfile(inspect.currentframe())
 current_dir = os.path.dirname(current_file_name)
 settings_path = os.path.join(current_dir, "../settings.json")
@@ -63,6 +65,10 @@ def config_optimizer(local_params, global_params, model_name="kt_model"):
     if enable_clip_grad:
         grad_clip_config["grad_clipped"] = grad_clipped
 
+    print(f"    model optimized: {model_name}, optimizer type: {optimizer_type}, {optimizer_type} config: {json.dumps(optimizer_config[optimizer_type])}, "
+          f"use lr schedule: {enable_lr_schedule}{f', schedule type is {lr_schedule_type}: {json.dumps(scheduler_config[lr_schedule_type])}' if enable_lr_schedule else ''}, "
+          f"use clip for grad: {enable_clip_grad}{f', norm clipped: {grad_clipped}' if enable_clip_grad else ''}")
+
 
 def general_config(local_params, global_params, global_objects):
     file_manager = FileManager(FILE_MANAGER_ROOT)
@@ -71,7 +77,7 @@ def general_config(local_params, global_params, global_objects):
     global_params["train_strategy"]["type"] = local_params["train_strategy"]
     global_params["datasets_config"]["data_type"] = local_params["data_type"]
     global_params["device"] = "cuda" if torch.cuda.is_available() else "cpu"
-    # global_params["device"] = "cpu"
+    global_params["seed"] = local_params["seed"]
 
     # 训练策略配置
     num_epoch = local_params["num_epoch"]
@@ -82,21 +88,28 @@ def general_config(local_params, global_params, global_objects):
     main_metric = local_params["main_metric"]
     use_multi_metrics = local_params["use_multi_metrics"]
     mutil_metrics = local_params["multi_metrics"]
+    train_strategy_type = local_params["train_strategy"]
 
-    train_strategy = global_params["train_strategy"]
-    train_strategy["num_epoch"] = num_epoch
-    train_strategy["main_metric"] = main_metric
-    train_strategy["use_multi_metrics"] = use_multi_metrics
+    train_strategy_config = global_params["train_strategy"]
+    train_strategy_config["num_epoch"] = num_epoch
+    train_strategy_config["main_metric"] = main_metric
+    train_strategy_config["use_multi_metrics"] = use_multi_metrics
     if use_multi_metrics:
-        train_strategy["multi_metrics"] = eval(mutil_metrics)
-    if train_strategy["type"] == "valid_test":
-        train_strategy["valid_test"]["use_early_stop"] = use_early_stop
+        train_strategy_config["multi_metrics"] = eval(mutil_metrics)
+
+    train_strategy_config["type"] = train_strategy_type
+    train_strategy_config[train_strategy_type] = {}
+
+    if train_strategy_type == "valid_test":
+        train_strategy_config["valid_test"]["use_early_stop"] = use_early_stop
         if use_early_stop:
-            train_strategy["valid_test"]["epoch_early_stop"] = epoch_early_stop
+            train_strategy_config["valid_test"]["epoch_early_stop"] = epoch_early_stop
+    elif train_strategy_type == "no_valid":
+        train_strategy_config["no_valid"]["use_average"] = use_last_average
+        if use_last_average:
+            train_strategy_config["no_valid"]["epoch_last_average"] = epoch_last_average
     else:
-        train_strategy["no_valid"]["use_average"] = use_last_average
-        if use_early_stop:
-            train_strategy["no_valid"]["use_average"] = epoch_last_average
+        raise NotImplementedError()
 
     # 数据集配置
     setting_name = local_params["setting_name"]
@@ -109,14 +122,40 @@ def general_config(local_params, global_params, global_objects):
     datasets_config["train"]["setting_name"] = setting_name
     datasets_config["test"]["setting_name"] = setting_name
     datasets_config["valid"]["setting_name"] = setting_name
-    if train_strategy["type"] == "valid_test":
+    if train_strategy_config["type"] == "valid_test":
         datasets_config["valid"]["file_name"] = valid_file_name
     datasets_config["train"]["file_name"] = train_file_name
     datasets_config["test"]["file_name"] = test_file_name
     datasets_config["data_type"] = data_type
 
+    print("basic setting\n"
+          f"    device: {global_params['device']}, seed: {global_params['seed']}\n"
+          "train policy\n"
+          f"    type: {train_strategy_type}, {train_strategy_type}: {json.dumps(train_strategy_config[train_strategy_type])}, num of epoch: {num_epoch}\n"
+          "evaluate metric\n"
+          f"    main metric: {main_metric}, use multi metrics: {use_multi_metrics}{f', multi metrics: {mutil_metrics}' if use_multi_metrics else ''}")
+
     # 优化器配置
+    print("optimizer setting")
     config_optimizer(local_params, global_params, model_name="kt_model")
+
+    # Q table
+    dataset_name = local_params["dataset_name"]
+    data_type = local_params["data_type"]
+    global_objects["data"]["Q_table"] = global_objects["file_manager"].get_q_table(dataset_name, data_type)
+
+    # 数据集统计信息
+    statics_info_file_path = os.path.join(
+        file_manager.get_setting_dir(setting_name),
+        datasets_config["train"]["file_name"].replace(".txt", f"_statics.json")
+    )
+    assert os.path.exists(statics_info_file_path), f"please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset"
+    with open(statics_info_file_path, "r") as file:
+        global_objects["data"]["train_data_statics"] = json.load(file)
+
+    print("dataset\n"
+          f"    setting: {setting_name}, dataset: {dataset_name}, data type: {data_type}, "
+          f"train: {train_file_name}{f', valid: {valid_file_name}' if train_strategy_type == 'valid_test' else ''}, test: {test_file_name}")
 
 
 def save_params(global_params, global_objects):

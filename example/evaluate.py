@@ -20,7 +20,7 @@ if __name__ == "__main__":
     parser.add_argument("--setting_name", type=str, default="random_split_leave_multi_out_setting")
     parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--test_file_name", type=str, default="assist2012_test_split_5.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2012_valid_split_5.txt")
     parser.add_argument("--base_type", type=str, default="concept", choices=("concept", "question"))
     parser.add_argument("--dataset_name", type=str, default="assist2012",
                         help="if choose question as base_type")

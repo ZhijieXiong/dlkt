@@ -91,7 +91,7 @@ if __name__ == "__main__":
     parser.add_argument("--concept_fre_middle_high", type=int, default=1000)
     parser.add_argument("--question_fre_low_middle", type=int, default=5)
     parser.add_argument("--question_fre_middle_high", type=int, default=20)
-    parser.add_argument("--question_fre_percent_lowest", type=float, default=0.2)
+    parser.add_argument("--question_fre_percent_lowest", type=float, default=0.3)
     parser.add_argument("--question_fre_percent_highest", type=float, default=0.8)
     parser.add_argument("--concept_fre_percent_lowest", type=float, default=0.5)
     parser.add_argument("--concept_fre_percent_highest", type=float, default=0.8)
@@ -154,8 +154,16 @@ if __name__ == "__main__":
                                               question_acc_middle_high, True),
         "question_high_acc": extract_subset(basic_statics["question_acc"],
                                             None,
-                                            question_acc_middle_high, True)
+                                            question_acc_middle_high, True),
+        "question_zero_fre": list(map(
+            lambda k_v_tuple: k_v_tuple[0],
+            list(filter(
+                lambda k_v_tuple: k_v_tuple[1] == 0,
+                basic_statics["question_fre"].items()
+            ))
+        ))
     }
+    save_statics['question_low_fre'] = list(set(save_statics['question_low_fre']) - set(save_statics['question_zero_fre']))
 
     # 知识点
     if params["data_type"] != "only_question":

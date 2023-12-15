@@ -15,6 +15,9 @@ class qDKT(nn.Module, BaseModel4CL):
         super(nn.Module, self).__init__(params, objects)
 
         self.embed_layer = KTEmbedLayer(self.params, self.objects)
+        data_type = self.params["datasets_config"]["data_type"]
+        if data_type == "only_question":
+            self.embed_layer.parse_Q_table()
 
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
         dim_concept = encoder_config["dim_concept"]
@@ -36,22 +39,27 @@ class qDKT(nn.Module, BaseModel4CL):
     def get_concept_emb(self):
         return self.embed_layer.get_emb_all("concept")
 
-    def get_qc_emb(self, batch):
+    def get_qc_emb4single_concept(self, batch):
         concept_seq = batch["concept_seq"]
         question_seq = batch["question_seq"]
-        concept_question_emb = (
-            self.embed_layer.get_emb_concatenated(("concept", "question"), (concept_seq, question_seq)))
+        concept_question_emb = self.embed_layer.get_emb_concatenated(("concept", "question"),
+                                                                     (concept_seq, question_seq))
 
         return concept_question_emb
+
+    def get_qc_emb4only_question(self, batch):
+        return self.embed_layer.get_emb_question_with_concept_fused(batch["question_seq"], concept_fusion="mean")
 
     def forward(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
         dim_correct = encoder_config["dim_correct"]
         correct_seq = batch["correct_seq"]
+        data_type = self.params["datasets_config"]["data_type"]
 
         batch_size = correct_seq.shape[0]
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
-        qc_emb = self.get_qc_emb(batch)
+        qc_emb = self.get_qc_emb4only_question(batch) if data_type == "only_question" else (
+            self.get_qc_emb4single_concept(batch))
         interaction_emb = torch.cat((qc_emb[:, :-1], correct_emb[:, :-1]), dim=2)
 
         self.encoder_layer.flatten_parameters()
@@ -165,14 +173,14 @@ class qDKT(nn.Module, BaseModel4CL):
 
         return latent
 
-    def get_latent_last_from_adv_data(self, dataset, batch):
+    def get_latent_last_from_adv_data(self, dataset, batch, use_emb_dropout=False, dropout=0.1):
         latent = self.get_latent_from_adv_data(dataset, batch)
         mask4last = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
         latent_last = latent[torch.where(mask4last == 1)]
 
         return latent_last
 
-    def get_latent_mean_from_adv_data(self, dataset, batch):
+    def get_latent_mean_from_adv_data(self, dataset, batch, use_emb_dropout=False, dropout=0.1):
         latent = self.get_latent_from_adv_data(dataset, batch)
         mask_seq = batch["mask_seq"]
         latent_mean = (latent * mask_seq.unsqueeze(-1)).sum(1) / mask_seq.sum(-1).unsqueeze(-1)

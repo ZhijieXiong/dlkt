@@ -43,14 +43,18 @@ def akt_general_config(local_params, global_params):
     # 损失权重
     global_params["loss_config"]["rasch_loss"] = local_params["weight_rasch_loss"]
 
+    print("model params\n"
+          f"    num of concept: {num_concept}, num of question: {num_question}, dim of model: {dim_model}, num of block: {num_block}, "
+          f"num of attention head: {num_head}, dim of ff: {dim_ff}, dim of final fc: {dim_final_fc}, dropout: {dropout}\n"
+          f"    separate question answer: {separate_qa}, key and query of attention are same: {key_query_same}, representation of seq in AKT: {seq_representation}")
+
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]
 
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '-').replace(':', '-')}@@AKT@@seed_{local_params['seed']}@@{setting_name}@@"
-            f"{train_file_name.replace('.txt', '')}@@{num_concept}-{num_question}-{dim_model}-{key_query_same}-"
-            f"{num_block}-{num_head}-{dim_ff}-{dim_final_fc}-{separate_qa}-{dropout}")
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@AKT@@seed_{local_params['seed']}@@{setting_name}@@"
+            f"{train_file_name.replace('.txt', '')}")
 
 
 def akt_config(local_params):

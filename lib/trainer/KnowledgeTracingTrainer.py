@@ -175,10 +175,10 @@ class KnowledgeTracingTrainer:
             self.train_record.next_epoch(train_performance, test_performance, valid_performance)
             valid_performance_str = self.train_record.get_performance_str("valid")
             test_performance_str = self.train_record.get_performance_str("test")
+            best_epoch = self.train_record.get_best_epoch("valid")
             print(f"{get_now_time()} epoch {self.train_record.get_current_epoch():<3} , valid performance is "
                   f"{valid_performance_str}train loss is {self.loss_record.get_str()}, test performance is "
-                  f"{test_performance_str}")
-            best_epoch = self.train_record.get_best_epoch("valid")
+                  f"{test_performance_str}, current best epoch is {best_epoch}")
             current_epoch = self.train_record.get_current_epoch()
             if best_epoch == current_epoch:
                 self.best_model = deepcopy(model)
@@ -206,10 +206,15 @@ class KnowledgeTracingTrainer:
         with torch.no_grad():
             predict_score_all = []
             ground_truth_all = []
+            if hasattr(model, "set_question_emb4zero_emb"):
+                model.set_question_emb4zero_emb()
             for batch in data_loader:
                 correct_seq = batch["correct_seq"]
                 mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-                predict_score = model.get_predict_score(batch).detach().cpu().numpy()
+                if hasattr(model, "set_question4zero_emb"):
+                    predict_score = model.get_predict_score4question_zero(batch).detach().cpu().numpy()
+                else:
+                    predict_score = model.get_predict_score(batch).detach().cpu().numpy()
                 ground_truth = torch.masked_select(correct_seq[:, 1:], mask_bool_seq[:, 1:]).detach().cpu().numpy()
                 predict_score_all.append(predict_score)
                 ground_truth_all.append(ground_truth)

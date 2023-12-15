@@ -124,11 +124,6 @@ def instance_cl_general_config(local_params, global_params, global_objects):
           f"    use max entropy adv aug: {use_adv_aug}, interval epoch of generation: {epoch_interval_generate}, generate loops: {loop_adv}, generation epoch: {epoch_generate}\n"
           f"    adv lr: {adv_learning_rate}, eta: {eta}, gamma: {gamma}")
 
-    # Q_table
-    dataset_name = local_params["dataset_name"]
-    data_type = local_params["data_type"]
-    global_objects["data"]["Q_table"] = global_objects["file_manager"].get_q_table(dataset_name, data_type)
-
     params_str = f"{temp}-{weight_cl_loss if not use_weight_dynamic else weight_dynamic_type}@@"
 
     return params_str

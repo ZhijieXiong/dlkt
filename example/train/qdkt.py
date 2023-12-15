@@ -7,7 +7,7 @@ from qdkt_config import qdkt_config
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.model.qDKT import qDKT
+from lib.sequential_model.qDKT import qDKT
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 

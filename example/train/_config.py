@@ -142,20 +142,26 @@ def general_config(local_params, global_params, global_objects):
     # Q table
     dataset_name = local_params["dataset_name"]
     data_type = local_params["data_type"]
-    global_objects["data"]["Q_table"] = global_objects["file_manager"].get_q_table(dataset_name, data_type)
+    if data_type == "only_question":
+        global_objects["data"]["Q_table"] = file_manager.get_q_table(dataset_name, "multi_concept")
+    else:
+        global_objects["data"]["Q_table"] = file_manager.get_q_table(dataset_name, data_type)
+
+    print("dataset\n"
+          f"    setting: {setting_name}, dataset: {dataset_name}, data type: {data_type}, "
+          f"train: {train_file_name}{f', valid: {valid_file_name}' if train_strategy_type == 'valid_test' else ''}, test: {test_file_name}")
 
     # 数据集统计信息
     statics_info_file_path = os.path.join(
         file_manager.get_setting_dir(setting_name),
         datasets_config["train"]["file_name"].replace(".txt", f"_statics.json")
     )
-    assert os.path.exists(statics_info_file_path), f"please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset"
-    with open(statics_info_file_path, "r") as file:
-        global_objects["data"]["train_data_statics"] = json.load(file)
-
-    print("dataset\n"
-          f"    setting: {setting_name}, dataset: {dataset_name}, data type: {data_type}, "
-          f"train: {train_file_name}{f', valid: {valid_file_name}' if train_strategy_type == 'valid_test' else ''}, test: {test_file_name}")
+    if not os.path.exists(statics_info_file_path):
+        print("\n\nstatics of train dataset is not exist, this file is must for evaluate (fine grain evaluation, such as long tail problem) and some "
+              "model for address long tail problem. if it is necessary, please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset\n\n")
+    else:
+        with open(statics_info_file_path, "r") as file:
+            global_objects["data"]["train_data_statics"] = json.load(file)
 
 
 def save_params(global_params, global_objects):

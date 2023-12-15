@@ -118,8 +118,8 @@ def instance_cl_general_config(local_params, global_params, global_objects):
           f"    mask prob: {mask_prob}, crop prob: {crop_prob}, replace prob: {replace_prob}, insert prob: {insert_prob}, permute prob: {permute_prob}\n"
           f"    info aug, offline sim type: {local_params['offline_sim_type']}, use online sim: {use_online_sim}, use warm up for online sim: {use_warm_up4online_sim}, warm up for online sim: {epoch_warm_up4online_sim}\n"
           f"instance cl\n"
-          f"    temp: {temp}, weight of cl loss: {weight_cl_loss}, use dynamic weight: {use_weight_dynamic}, dynamic weight type: {weight_dynamic_type}, dynamic weight: {json.dumps(weight_dynamic)}\n"
-          f"    data aug type: {data_aug_type4cl}, latent type: {latent_type4cl}, use emb dropout: {use_emb_dropout4cl}, emb dropout: {emb_dropout4cl}\n"
+          f"    temp: {temp}, weight of cl loss: {weight_cl_loss}, use dynamic weight: {use_weight_dynamic}{f', dynamic weight type: {weight_dynamic_type}, dynamic weight: {json.dumps(weight_dynamic)}' if use_weight_dynamic else ''}\n"
+          f"    data aug type: {data_aug_type4cl}, latent type: {latent_type4cl}, use emb dropout: {use_emb_dropout4cl}{f', emb dropout: {emb_dropout4cl}' if use_emb_dropout4cl else ''}\n"
           f"max_entropy_adv_aug\n"
           f"    use max entropy adv aug: {use_adv_aug}, interval epoch of generation: {epoch_interval_generate}, generate loops: {loop_adv}, generation epoch: {epoch_generate}\n"
           f"    adv lr: {adv_learning_rate}, eta: {eta}, gamma: {gamma}")

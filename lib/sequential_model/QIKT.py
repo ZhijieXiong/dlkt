@@ -80,6 +80,7 @@ class QIKT(nn.Module):
 
     def forward(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["QIKT"]
+        data_type = self.params["datasets_config"]["data_type"]
         lambda_q_all = encoder_config["lambda_q_all"]
         lambda_c_next = encoder_config["lambda_c_next"]
         lambda_c_all = encoder_config["lambda_c_all"]
@@ -87,7 +88,6 @@ class QIKT(nn.Module):
         dim_emb = encoder_config["dim_emb"]
         question_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
-        data_type = self.params["datasets_config"]["data_type"]
 
         if data_type == "only_question":
             qc_emb = self.get_qc_emb4only_question(batch)
@@ -123,7 +123,24 @@ class QIKT(nn.Module):
         predict_score_q_all = torch.gather(predict_score_q_all, 2, question_seq.unsqueeze(-1)[:, 1:]).squeeze(-1)
         if data_type == "only_question":
             # predict_score_c_next和predict_score_c_all原代码没写怎么处理一道习题对应多个知识点，我的理解是各个知识点上的分数取平均值
+            q2c_seq, q2c_mask_seq = self.embed_layer.get_question2concept_mask(question_seq)
+            num_max_concept = q2c_seq.shape[-1]
 
+            # [bs, seq_len, num_max_c] => [bs, seq_len, num_max_c, 1]
+            q2c_seq = q2c_seq[:, 1:].unsqueeze(-1)
+            # [bs, seq_len, num_max_c] => [bs, seq_len, num_max_c, 1]
+            q2c_mask_seq_repeated = q2c_mask_seq[:, 1:].unsqueeze(-1)
+            # [bs, seq_len, num_max_c] => [bs, seq_len]
+            q2c_mask_seq_sum = q2c_mask_seq[:, 1:].sum(dim=-1)
+
+            # [bs, seq_len, num_c] => [bs, seq_len, num_max_c, num_c]
+            predict_score_c_next = predict_score_c_next.unsqueeze(-2).repeat(1, 1, num_max_concept, 1)
+            predict_score_c_next = torch.gather(predict_score_c_next, -1, q2c_seq) * q2c_mask_seq_repeated
+            predict_score_c_next = predict_score_c_next.squeeze(-1).sum(dim=-1) / q2c_mask_seq_sum
+
+            predict_score_c_all = predict_score_c_all.unsqueeze(-2).repeat(1, 1, num_max_concept, 1)
+            predict_score_c_all = torch.gather(predict_score_c_all, -1, q2c_seq) * q2c_mask_seq_repeated
+            predict_score_c_all = predict_score_c_all.squeeze(-1).sum(dim=-1) / q2c_mask_seq_sum
         else:
             # 和原代码一样
             predict_score_c_all = torch.gather(predict_score_c_all, 2,
@@ -142,24 +159,48 @@ class QIKT(nn.Module):
                              predict_score_c_next * lambda_c_next)
             predict_score = predict_score / (lambda_q_all + lambda_c_all + lambda_c_next)
 
-        return predict_score
+        return predict_score, predict_score_q_next, predict_score_q_all, predict_score_c_next, predict_score_c_all
 
     def get_predict_score(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-        predict_score = self.forward(batch)
+        predict_score, _, _, _, _ = self.forward(batch)
         predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
 
         return predict_score
 
     def get_predict_loss(self, batch, loss_record=None):
+        loss_wight = self.params["loss_config"]
+        use_irt = self.params["models_config"]["kt_model"]["encoder_layer"]["QIKT"]["use_irt"]
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
 
-        predict_score = self.get_predict_score(batch)
+        predict_score, predict_score_q_next, predict_score_q_all, predict_score_c_next, predict_score_c_all = (
+            self.forward(batch))
+        predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
+        predict_score_q_next = torch.masked_select(predict_score_q_next, mask_bool_seq[:, 1:])
+        predict_score_q_all = torch.masked_select(predict_score_q_all, mask_bool_seq[:, 1:])
+        predict_score_c_next = torch.masked_select(predict_score_c_next, mask_bool_seq[:, 1:])
+        predict_score_c_all = torch.masked_select(predict_score_c_all, mask_bool_seq[:, 1:])
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+
         predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+        predict_loss_q_next = nn.functional.binary_cross_entropy(predict_score_q_next.double(), ground_truth.double())
+        predict_loss_q_all = nn.functional.binary_cross_entropy(predict_score_q_all.double(), ground_truth.double())
+        predict_loss_c_next = nn.functional.binary_cross_entropy(predict_score_c_next.double(), ground_truth.double())
+        predict_loss_c_all = nn.functional.binary_cross_entropy(predict_score_c_all.double(), ground_truth.double())
 
         if loss_record is not None:
             num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
             loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+            loss_record.add_loss("q all loss", predict_loss_q_all.detach().cpu().item() * num_sample, num_sample)
+            loss_record.add_loss("q next loss", predict_loss_q_next.detach().cpu().item() * num_sample, num_sample)
+            loss_record.add_loss("c all loss", predict_loss_c_all.detach().cpu().item() * num_sample, num_sample)
+            loss_record.add_loss("c next loss", predict_loss_c_next.detach().cpu().item() * num_sample, num_sample)
+
+        predict_loss = (predict_loss +
+                        loss_wight["q all loss"] * predict_loss_q_all +
+                        loss_wight["c all loss"] * predict_loss_c_all +
+                        loss_wight["c next loss"] * predict_loss_c_next)
+        if not use_irt:
+            predict_loss = predict_loss + loss_wight["q next loss"] * predict_loss_q_next
 
         return predict_loss

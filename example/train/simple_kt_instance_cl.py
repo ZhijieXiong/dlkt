@@ -8,7 +8,7 @@ from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
 from lib.dataset.KTDataset4Aug import KTDataset4Aug
-from lib.model.SimpleKT import SimpleKT
+from lib.sequential_model.SimpleKT import SimpleKT
 from lib.trainer.InstanceCLTrainer import InstanceCLTrainer
 
 
@@ -64,9 +64,9 @@ if __name__ == "__main__":
     parser.add_argument("--separate_qa", type=str2bool, default=False)
     parser.add_argument("--difficulty_scalar", type=str2bool, default=True)
     # instance cl参数
-    parser.add_argument("--temp", type=float, default=0.01)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.01)
-    parser.add_argument("--use_weight_dynamic", type=str2bool, default=True)
+    parser.add_argument("--temp", type=float, default=0.05)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.001)
+    parser.add_argument("--use_weight_dynamic", type=str2bool, default=False)
     parser.add_argument("--weight_dynamic_type", type=str, default="multi_step",
                         choices=("multi_step", "linear_increase"))
     parser.add_argument("--multi_step_weight", type=str,
@@ -77,7 +77,7 @@ if __name__ == "__main__":
                         choices=("last_time", "all_time", "mean_pool"))
     parser.add_argument("--use_emb_dropout4cl", type=str2bool, default=True)
     parser.add_argument("--emb_dropout4cl", type=float, default=0.2)
-    parser.add_argument("--data_aug_type4cl", type=str, default="hybrid",
+    parser.add_argument("--data_aug_type4cl", type=str, default="original_data_aug",
                         choices=("original_data_aug", "model_aug", "hybrid"))
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     parser.add_argument("--permute_prob", type=float, default=0.1)
     parser.add_argument("--use_hard_neg", type=str2bool, default=False)
     parser.add_argument("--hard_neg_prob", type=float, default=1)
-    parser.add_argument("--aug_order", type=str, default="['crop', 'replace', 'insert']",
+    parser.add_argument("--aug_order", type=str, default="['crop', 'replace']",
                         help="CL4KT: ['mask', 'replace', 'permute', 'crop']"
                              "info aug: ['mask', 'crop', 'replace', 'insert']")
     parser.add_argument("--offline_sim_type", type=str, default="order",

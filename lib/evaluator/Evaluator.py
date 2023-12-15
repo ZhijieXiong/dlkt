@@ -6,7 +6,7 @@ from sklearn.metrics import roc_auc_score, accuracy_score, mean_absolute_error, 
 
 from .util import record_dis4seq_len, evaluate4seq_len
 from ..util.basic import get_now_time
-from ..model.util import get_mask4last_or_penultimate
+from ..sequential_model.util import get_mask4last_or_penultimate
 
 
 def get_performance(item_list, item_pg_all):

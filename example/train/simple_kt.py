@@ -7,7 +7,7 @@ from simple_kt_config import simple_kt_config
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.model.SimpleKT import SimpleKT
+from lib.sequential_model.SimpleKT import SimpleKT
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 

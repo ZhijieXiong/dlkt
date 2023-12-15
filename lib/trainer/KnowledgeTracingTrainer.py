@@ -178,7 +178,7 @@ class KnowledgeTracingTrainer:
             best_epoch = self.train_record.get_best_epoch("valid")
             print(f"{get_now_time()} epoch {self.train_record.get_current_epoch():<3} , valid performance is "
                   f"{valid_performance_str}train loss is {self.loss_record.get_str()}, test performance is "
-                  f"{test_performance_str}, current best epoch is {best_epoch}")
+                  f"{test_performance_str}current best epoch is {best_epoch}")
             current_epoch = self.train_record.get_current_epoch()
             if best_epoch == current_epoch:
                 self.best_model = deepcopy(model)

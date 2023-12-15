@@ -6,7 +6,7 @@ import numpy as np
 from .KnowledgeTracingTrainer import KnowledgeTracingTrainer
 from .Cluster import Cluster
 from .LossRecord import LossRecord
-from ..model.Module.KTEmbedLayer import KTEmbedLayer
+from ..sequential_model.Module.KTEmbedLayer import KTEmbedLayer
 from ..util.basic import *
 
 

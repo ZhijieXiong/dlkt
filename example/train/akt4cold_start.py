@@ -7,7 +7,7 @@ from akt_config import akt4cold_start_config
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.model.AKT import AKT
+from lib.sequential_model.AKT import AKT
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 

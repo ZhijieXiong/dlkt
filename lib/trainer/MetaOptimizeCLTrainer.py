@@ -4,7 +4,7 @@ import torch.optim as optim
 
 from .KnowledgeTracingTrainer import KnowledgeTracingTrainer
 from .LossRecord import LossRecord
-from ..model.Module.KTEmbedLayer import KTEmbedLayer
+from ..sequential_model.Module.KTEmbedLayer import KTEmbedLayer
 from ..util.basic import *
 
 

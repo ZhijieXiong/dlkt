@@ -8,8 +8,8 @@ from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
 from lib.dataset.KTDataset4Aug import KTDataset4Aug
-from lib.model.AKT import AKT
-from lib.model.Extractor import Extractor
+from lib.sequential_model.AKT import AKT
+from lib.sequential_model.Extractor import Extractor
 from lib.trainer.MetaOptimizeCLTrainer import MetaOptimizeCLTrainer
 
 

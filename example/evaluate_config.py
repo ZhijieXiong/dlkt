@@ -32,7 +32,10 @@ def evaluate_dataset_config(local_params):
     # Q_table
     dataset_name = local_params["dataset_name"]
     data_type = local_params["data_type"]
-    global_objects["data"]["Q_table"] = file_manager.get_q_table(dataset_name, data_type)
+    if data_type == "only_question":
+        global_objects["data"]["Q_table"] = file_manager.get_q_table(dataset_name, "multi_concept")
+    else:
+        global_objects["data"]["Q_table"] = file_manager.get_q_table(dataset_name, data_type)
 
     # num_max_concept
     preprocessed_dir = file_manager.get_preprocessed_dir(dataset_name)
@@ -73,7 +76,10 @@ def evaluate_general_config(local_params):
     # Q_table
     dataset_name = local_params["dataset_name"]
     data_type = local_params["data_type"]
-    global_objects["data"]["Q_table"] = global_objects["file_manager"].get_q_table(dataset_name, data_type)
+    if data_type == "only_question":
+        global_objects["data"]["Q_table"] = file_manager.get_q_table(dataset_name, "multi_concept")
+    else:
+        global_objects["data"]["Q_table"] = file_manager.get_q_table(dataset_name, data_type)
 
     # num_max_concept
     # preprocessed_dir = file_manager.get_preprocessed_dir(local_params["dataset_name"])

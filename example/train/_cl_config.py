@@ -68,6 +68,11 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     latent_type4cl = local_params["latent_type4cl"]
     use_emb_dropout4cl = local_params["use_emb_dropout4cl"]
     emb_dropout4cl = local_params["emb_dropout4cl"]
+    use_neg = local_params["use_neg"]
+    use_neg_filter = local_params["use_neg_filter"]
+    neg_sim_threshold = local_params["neg_sim_threshold"]
+    use_stop_cl_after = local_params["use_stop_cl_after"]
+    epoch_stop_cl = local_params["epoch_stop_cl"]
 
     global_params["other"]["instance_cl"] = deepcopy(INSTANCE_CL_PARAMS)
     instance_cl_config = global_params["other"]["instance_cl"]
@@ -87,6 +92,11 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     instance_cl_config["emb_dropout4cl"] = emb_dropout4cl
     instance_cl_config["data_aug_type4cl"] = data_aug_type4cl
     weight_dynamic = instance_cl_config["weight_dynamic"][weight_dynamic_type]
+    instance_cl_config["use_neg"] = use_neg
+    instance_cl_config["use_neg_filter"] = use_neg_filter
+    instance_cl_config["neg_sim_threshold"] = neg_sim_threshold
+    instance_cl_config["use_stop_cl_after"] = use_stop_cl_after
+    instance_cl_config["epoch_stop_cl"] = epoch_stop_cl
 
     # max entropy adv aug参数
     use_adv_aug = local_params["use_adv_aug"]
@@ -113,15 +123,18 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     global_params["loss_config"]["cl loss"] = weight_cl_loss
 
     # 打印参数
+    info_aug_params_str = f"offline sim type: {local_params['offline_sim_type']}, use online sim: {use_online_sim}, use warm up for online sim: {use_warm_up4online_sim}, num of warm up epoch for online sim: {epoch_warm_up4online_sim}"
     print(f"input data aug\n"
           f"    aug_type: {aug_type}, aug order: {local_params['aug_order']}, use hard neg: {use_hard_neg}, random aug len: {random_select_aug_len}\n"
+          f"    {'use random data aug' if aug_type == 'random_aug' else f'use info data aug, {info_aug_params_str}'}\n"
           f"    mask prob: {mask_prob}, crop prob: {crop_prob}, replace prob: {replace_prob}, insert prob: {insert_prob}, permute prob: {permute_prob}\n"
-          f"    info aug, offline sim type: {local_params['offline_sim_type']}, use online sim: {use_online_sim}, use warm up for online sim: {use_warm_up4online_sim}, warm up for online sim: {epoch_warm_up4online_sim}\n"
           f"instance cl\n"
-          f"    temp: {temp}, weight of cl loss: {weight_cl_loss}, use dynamic weight: {use_weight_dynamic}{f', dynamic weight type: {weight_dynamic_type}, dynamic weight: {json.dumps(weight_dynamic)}' if use_weight_dynamic else ''}\n"
+          f"    temp: {temp}, weight of cl loss: {weight_cl_loss}, use dynamic weight: {use_weight_dynamic}{f', dynamic weight type: {weight_dynamic_type}, {weight_dynamic_type}: {json.dumps(weight_dynamic)}' if use_weight_dynamic else ''}, "
+          f"use stop cl after specified epoch: {use_stop_cl_after}{f', num of epoch to stop cl: {epoch_stop_cl}' if use_stop_cl_after else ''}\n"
           f"    data aug type: {data_aug_type4cl}, latent type: {latent_type4cl}, use emb dropout: {use_emb_dropout4cl}{f', emb dropout: {emb_dropout4cl}' if use_emb_dropout4cl else ''}\n"
+          f"    use neg sample: {use_neg}, use neg sample filter: {use_neg_filter}{f', threshold of neg sample filter (similarity): {neg_sim_threshold}' if use_neg_filter else ''}\n"
           f"max_entropy_adv_aug\n"
-          f"    use max entropy adv aug: {use_adv_aug}, interval epoch of generation: {epoch_interval_generate}, generate loops: {loop_adv}, generation epoch: {epoch_generate}\n"
+          f"    use max entropy adv aug: {use_adv_aug}, interval epoch of generation: {epoch_interval_generate}, generate loops: {loop_adv}, num of generation epoch: {epoch_generate}\n"
           f"    adv lr: {adv_learning_rate}, eta: {eta}, gamma: {gamma}")
 
     params_str = f"{temp}-{weight_cl_loss if not use_weight_dynamic else weight_dynamic_type}@@"

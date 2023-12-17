@@ -157,8 +157,8 @@ def general_config(local_params, global_params, global_objects):
         datasets_config["train"]["file_name"].replace(".txt", f"_statics.json")
     )
     if not os.path.exists(statics_info_file_path):
-        print("\n\nstatics of train dataset is not exist, this file is must for evaluate (fine grain evaluation, such as long tail problem) and some "
-              "model for address long tail problem. if it is necessary, please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset\n\n")
+        print("\nWARNING: statics of train dataset is not exist, this file is must for evaluate (fine grain evaluation, such as long tail problem) and some "
+              "model for address long tail problem. if it is necessary, please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset\n")
     else:
         with open(statics_info_file_path, "r") as file:
             global_objects["data"]["train_data_statics"] = json.load(file)

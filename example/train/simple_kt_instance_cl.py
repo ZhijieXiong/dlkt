@@ -45,8 +45,8 @@ if __name__ == "__main__":
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
-    parser.add_argument("--lr_schedule_milestones", type=str, default="[5, 15]")
-    parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
+    parser.add_argument("--lr_schedule_milestones", type=str, default="[5]")
+    parser.add_argument("--lr_schedule_gamma", type=float, default=0.25)
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
@@ -64,21 +64,30 @@ if __name__ == "__main__":
     parser.add_argument("--separate_qa", type=str2bool, default=False)
     parser.add_argument("--difficulty_scalar", type=str2bool, default=True)
     # instance cl参数
-    parser.add_argument("--temp", type=float, default=0.05)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.001)
+    parser.add_argument("--temp", type=float, default=0.01)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
+    # cl loss weight动态变化
     parser.add_argument("--use_weight_dynamic", type=str2bool, default=False)
     parser.add_argument("--weight_dynamic_type", type=str, default="multi_step",
                         choices=("multi_step", "linear_increase"))
     parser.add_argument("--multi_step_weight", type=str,
-                        default="[(3, 0.001), (5, 0.005), (10, 0.01), (15, 0.05), (20, 0.1), (200, 0.5)]")
+                        default="[[1, 0.1], [3, 0.03], [5, 0.01], [10, 0.0001], [200, 0.000001]]")
     parser.add_argument("--linear_increase_epoch", type=int, default=1)
-    parser.add_argument("--linear_increase_value", type=float, default=0.001)
+    parser.add_argument("--linear_increase_value", type=float, default=0.1)
+    parser.add_argument("--use_stop_cl_after", type=str2bool, default=False)
+    parser.add_argument("--epoch_stop_cl", type=int, default=3)
     parser.add_argument("--latent_type4cl", type=str, default="last_time",
                         choices=("last_time", "all_time", "mean_pool"))
-    parser.add_argument("--use_emb_dropout4cl", type=str2bool, default=True)
+    # model aug参数
+    parser.add_argument("--use_emb_dropout4cl", type=str2bool, default=False)
     parser.add_argument("--emb_dropout4cl", type=float, default=0.2)
     parser.add_argument("--data_aug_type4cl", type=str, default="original_data_aug",
                         choices=("original_data_aug", "model_aug", "hybrid"))
+    # neg sample参数
+    parser.add_argument("--use_neg", type=str2bool, default=True)
+    parser.add_argument("--use_neg_filter", type=str2bool, default=True)
+    parser.add_argument("--neg_sim_threshold", type=float, default=0.7, help="cos sim, between (0, 1)")
+    # info aug参数
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)
     parser.add_argument("--epoch_warm_up4online_sim", type=float, default=4)
@@ -87,13 +96,13 @@ if __name__ == "__main__":
                         choices=("random_aug", "informative_aug"))
     parser.add_argument("--use_random_select_aug_len", type=str2bool, default=True)
     parser.add_argument("--mask_prob", type=float, default=0.1)
-    parser.add_argument("--insert_prob", type=float, default=0.1)
-    parser.add_argument("--replace_prob", type=float, default=0.5)
+    parser.add_argument("--insert_prob", type=float, default=0.2)
+    parser.add_argument("--replace_prob", type=float, default=0.3)
     parser.add_argument("--crop_prob", type=float, default=0.1)
     parser.add_argument("--permute_prob", type=float, default=0.1)
     parser.add_argument("--use_hard_neg", type=str2bool, default=False)
     parser.add_argument("--hard_neg_prob", type=float, default=1)
-    parser.add_argument("--aug_order", type=str, default="['crop', 'replace']",
+    parser.add_argument("--aug_order", type=str, default="['crop', 'insert', 'replace']",
                         help="CL4KT: ['mask', 'replace', 'permute', 'crop']"
                              "info aug: ['mask', 'crop', 'replace', 'insert']")
     parser.add_argument("--offline_sim_type", type=str, default="order",

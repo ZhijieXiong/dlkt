@@ -178,7 +178,7 @@ class AKT(nn.Module, BaseModel4CL):
         )
 
     def set_question_emb4zero_emb(self):
-        self.set_question_difficulty_emb4zero()
+
         pass
 
     def get_latent(self, batch, use_emb_dropout=False, dropout=0.1):
@@ -236,7 +236,7 @@ class AKT(nn.Module, BaseModel4CL):
 
         return predict_score
 
-    def get_question_emb4question_zero(self, batch):
+    def get_emb4question_zero(self, batch):
         pass
 
     def get_predict_score4question_zero(self, batch):
@@ -250,7 +250,7 @@ class AKT(nn.Module, BaseModel4CL):
         # c_{c_t}和e_(ct, rt)
         concept_emb, interaction_emb = self.base_emb(batch)
         concept_variation_emb = self.embed_concept_variation(concept_seq)
-        question_difficulty_emb = self.embed_question_difficulty4zero(question_seq)
+        question_difficulty_emb = self.embed_question_difficulty(question_seq)
         # mu_{q_t} * d_ct + c_ct
         question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
         interaction_variation_emb = self.embed_interaction_variation(correct_seq)

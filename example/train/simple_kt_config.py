@@ -44,6 +44,12 @@ def simple_kt_general_config(local_params, global_params):
     qdkt_encoder_layer_config["separate_qa"] = separate_qa
     qdkt_encoder_layer_config["difficulty_scalar"] = difficulty_scalar
 
+    print("model params\n"
+          f"    num of concept: {num_concept}, num of question: {num_question}, dim of model: {dim_model}, num of block: {num_block}, "
+          f"num of attention head: {num_head}, dim of ff: {dim_ff}, dim of final fc: {dim_final_fc}, dim of final fc2: {dim_final_fc2} "
+          f"dropout: {dropout}, length of sequence: {seq_len}\n"
+          f"    separate question answer: {separate_qa}, key and query of attention are same: {key_query_same}, use scalar difficulty: {difficulty_scalar}")
+
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]

@@ -37,10 +37,10 @@ if __name__ == "__main__":
     parser.add_argument("--main_metric", type=str, default="AUC")
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
-    parser.add_argument("--learning_rate", type=float, default=0.0004)
-    parser.add_argument("--train_batch_size", type=int, default=32)
+    parser.add_argument("--learning_rate", type=float, default=0.0001)
+    parser.add_argument("--train_batch_size", type=int, default=16)
     parser.add_argument("--evaluate_batch_size", type=int, default=128)
-    parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
+    parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     parser.add_argument("--rnn_type", type=str, default="lstm",
                         choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=1)
-    parser.add_argument("--dropout", type=float, default=0.5)
+    parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--num_mlp_layer", type=int, default=1)
     parser.add_argument("--lambda_q_all", type=int, default=1)
     parser.add_argument("--lambda_c_next", type=int, default=1)

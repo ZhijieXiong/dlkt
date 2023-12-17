@@ -29,6 +29,11 @@ INSTANCE_CL_PARAMS = {
     # "original_data_aug", "model_aug", "hybrid"
     "data_aug_type4cl": "hybrid",
     "use_adv_aug": False,
+    "use_neg": True,
+    "use_neg_filter": True,
+    "neg_sim_threshold": 0.5,
+    "use_stop_cl_after": True,
+    "epoch_stop_cl": 3
 }
 
 

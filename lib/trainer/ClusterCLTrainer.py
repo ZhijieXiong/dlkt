@@ -161,7 +161,7 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
             t_start = get_now_time()
             model.eval()
             # RNN就需要加上torch.backends.cudnn.enabled = False，才能在eval模式下通过网络还能保留梯度
-            torch.backends.cudnn.enabled = False
+            # torch.backends.cudnn.enabled = False
             optimizer = self.init_data_generated(adv_learning_rate)
             for batch_idx, batch in enumerate(train_loader):
                 num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
@@ -172,7 +172,7 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
                 self.adv_loss.add_loss("gen entropy loss", adv_entropy * num_sample, num_sample)
                 self.adv_loss.add_loss("gen mse loss", adv_mse_loss * num_sample, num_sample)
 
-            torch.backends.cudnn.enabled = True
+            # torch.backends.cudnn.enabled = True
             self.num_epoch_adv_gen += 1
             t_end = get_now_time()
             print(f"max entropy adversarial data augment: from {t_start} to {t_end}, {self.adv_loss.get_str()}")

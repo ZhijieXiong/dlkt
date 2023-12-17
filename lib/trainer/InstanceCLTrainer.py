@@ -31,10 +31,18 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
         instance_cl_config = self.params["other"]["instance_cl"]
         latent_type4cl = instance_cl_config["latent_type4cl"]
         use_adv_aug = self.params["other"]["instance_cl"]["use_adv_aug"]
+        use_stop_cl_after = self.params["other"]["instance_cl"]["use_stop_cl_after"]
+        epoch_stop_cl = self.params["other"]["instance_cl"]["epoch_stop_cl"]
 
         for epoch in range(1, num_epoch + 1):
             self.do_online_sim()
             self.do_max_entropy_aug()
+
+            do_instance_cl = not use_stop_cl_after or (epoch <= epoch_stop_cl)
+            if do_instance_cl:
+                train_loader.dataset.set_use_aug()
+            else:
+                train_loader.dataset.set_not_use_aug()
 
             if instance_cl_config["use_weight_dynamic"]:
                 weight_dynamic_type = instance_cl_config["weight_dynamic"]["type"]
@@ -59,14 +67,15 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
                 num_seq = batch["mask_seq"].shape[0]
                 loss = 0.
 
-                if latent_type4cl in ["mean_pool", "last_time"]:
-                    cl_loss = model.get_instance_cl_loss(batch, instance_cl_config, self.dataset_adv_generated)
-                elif latent_type4cl == "all_time":
-                    cl_loss = model.get_instance_cl_loss_all_interaction(batch, use_adv_aug, self.dataset_adv_generated)
-                else:
-                    raise NotImplementedError()
-                self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)
-                loss = loss + weight_cl_loss * cl_loss
+                if do_instance_cl:
+                    if latent_type4cl in ["mean_pool", "last_time"]:
+                        cl_loss = model.get_instance_cl_loss(batch, instance_cl_config, self.dataset_adv_generated)
+                    elif latent_type4cl == "all_time":
+                        cl_loss = model.get_instance_cl_loss_all_interaction(batch, use_adv_aug, self.dataset_adv_generated)
+                    else:
+                        raise NotImplementedError()
+                    self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)
+                    loss = loss + weight_cl_loss * cl_loss
 
                 predict_loss = model.get_predict_loss(batch)
                 self.loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
@@ -91,10 +100,14 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
         after_warm_up = current_epoch >= epoch_warm_up4online_sim
         dataset_config_this = self.params["datasets_config"]["train"]
         aug_type = dataset_config_this["kt4aug"]["aug_type"]
+        use_stop_cl_after = self.params["other"]["instance_cl"]["use_stop_cl_after"]
+        epoch_stop_cl = self.params["other"]["instance_cl"]["epoch_stop_cl"]
+        do_instance_cl = not use_stop_cl_after or (current_epoch < epoch_stop_cl)
+
         model = self.objects["models"]["kt_model"]
         train_loader = self.objects["data_loaders"]["train_loader"]
 
-        if aug_type == "informative_aug" and use_online_sim and (not use_warm_up4online_sim or after_warm_up):
+        if do_instance_cl and aug_type == "informative_aug" and use_online_sim and (not use_warm_up4online_sim or after_warm_up):
             t_start = get_now_time()
             concept_emb = model.get_concept_emb()
             train_loader.dataset.online_similarity.analysis(concept_emb)
@@ -120,7 +133,7 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
             t_start = get_now_time()
             model.eval()
             # RNN就需要加上torch.backends.cudnn.enabled = False，才能在eval模式下通过网络还能保留梯度
-            torch.backends.cudnn.enabled = False
+            # torch.backends.cudnn.enabled = False
             optimizer = self.init_data_generated(adv_learning_rate)
             for batch_idx, batch in enumerate(train_loader):
                 num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
@@ -131,7 +144,7 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
                 self.adv_loss.add_loss("gen entropy loss", adv_entropy * num_sample, num_sample)
                 self.adv_loss.add_loss("gen mse loss", adv_mse_loss * num_sample, num_sample)
 
-            torch.backends.cudnn.enabled = True
+            # torch.backends.cudnn.enabled = True
             self.num_epoch_adv_gen += 1
             t_end = get_now_time()
             print(f"max entropy adversarial data augment: from {t_start} to {t_end}, {self.adv_loss.get_str()}")

@@ -58,8 +58,10 @@ class qDKT(nn.Module, BaseModel4CL):
 
         batch_size = correct_seq.shape[0]
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
-        qc_emb = self.get_qc_emb4only_question(batch) if data_type == "only_question" else (
-            self.get_qc_emb4single_concept(batch))
+        if data_type == "only_question":
+            qc_emb = self.get_qc_emb4only_question(batch)
+        else:
+            qc_emb = self.get_qc_emb4single_concept(batch)
         interaction_emb = torch.cat((qc_emb[:, :-1], correct_emb[:, :-1]), dim=2)
 
         self.encoder_layer.flatten_parameters()
@@ -80,12 +82,16 @@ class qDKT(nn.Module, BaseModel4CL):
 
     def get_latent(self, batch, use_emb_dropout=False, dropout=0.1):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
+        data_type = self.params["datasets_config"]["data_type"]
         dim_correct = encoder_config["dim_correct"]
         correct_seq = batch["correct_seq"]
 
         batch_size = correct_seq.shape[0]
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
-        qc_emb = self.get_qc_emb(batch)
+        if data_type == "only_question":
+            qc_emb = self.get_qc_emb4only_question(batch)
+        else:
+            qc_emb = self.get_qc_emb4single_concept(batch)
         if use_emb_dropout:
             qc_emb = torch.dropout(qc_emb, dropout, self.training)
         interaction_emb = torch.cat((qc_emb, correct_emb), dim=2)

@@ -3,6 +3,7 @@ import requests
 import tiktoken
 
 from xes3g5m_process import *
+from keys import jiujiuai_api_key
 
 # cl100k_base: gpt-4, gpt-3.5-turbo, text-embedding-ada-002
 # p50k_base: Codex models, text-davinci-002, text-davinci-003
@@ -16,7 +17,7 @@ def call_chatgpt(chatgpt_messages, max_tokens=4000, model="gpt-3.5-turbo"):
     headers = {
         "Content-Type": "application/json",
         # "Authorization": "Bearer sk-XHx1xQu7iM5kmgYVFd08Ce8f3e5a4dEa8c2c00Bf62225244"
-        "Authorization": "sk-XHx1xQu7iM5kmgYVFd08Ce8f3e5a4dEa8c2c00Bf62225244"
+        "Authorization": jiujiuai_api_key
     }
 
     data = {
@@ -38,7 +39,7 @@ def call_chatgpt_vision(chatgpt_messages, max_tokens=4000):
     headers = {
         "Content-Type": "application/json",
         # "Authorization": "Bearer sk-XHx1xQu7iM5kmgYVFd08Ce8f3e5a4dEa8c2c00Bf62225244"
-        "Authorization": "sk-XHx1xQu7iM5kmgYVFd08Ce8f3e5a4dEa8c2c00Bf62225244"
+        "Authorization": jiujiuai_api_key
     }
 
     data = {
@@ -52,6 +53,29 @@ def call_chatgpt_vision(chatgpt_messages, max_tokens=4000):
     total_tokens = response_data['usage']['total_tokens']
 
     return reply, total_tokens
+
+
+@retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
+def call_chatgpt_embedding(text, max_tokens=8000):
+    url = "https://www.jiujiuai.life/v1/embeddings"
+    headers = {
+        "Content-Type": "application/json",
+        # "Authorization": "Bearer sk-XHx1xQu7iM5kmgYVFd08Ce8f3e5a4dEa8c2c00Bf62225244"
+        "Authorization": jiujiuai_api_key
+    }
+
+    data = {
+        "model": "text-embedding-ada-002",
+        "input": text,
+        "encoding_format": "float",
+        "max_tokens": max_tokens,
+    }
+    response = requests.post(url, json=data, headers=headers)
+    response_data = response.json()
+    if type(text) is list:
+        return response_data['data']
+    else:
+        return response_data['data'][0]
 
 
 def ask_llm_kt(question_seq, correct_seq):
@@ -228,4 +252,11 @@ if __name__ == "__main__":
     # This is a multiple choice question. There is a square flower bed with a side length of $$5$$ meters. A $$1$$ meter wide path is paved around the outside. The area of the path is ( ) square meters.
     # [%question_20-image_0%]
 
-    ask_llm_question_vision()
+    # ask_llm_question_vision()
+
+    emb = call_chatgpt_embedding("this is a math exercise.")
+    # 返回格式: {'object': 'embedding', 'index': 0, 'embedding': [0.012580604, ...]}
+    embs = call_chatgpt_embedding(["this is a math exercise.", "你好，世界。"])
+    # 返回格式：[{'object': 'embedding', 'index': 0, 'embedding': [0.012580604, ...]}, {'object': 'embedding', 'index': 0, 'embedding': [0.012580604, ...]}, ...]
+    print(emb)
+    print(embs)

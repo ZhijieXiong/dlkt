@@ -11,6 +11,8 @@ example/result_local
 .idea/
 
 /example/demo/*.csv
+/example/keys.py
+/example/demo/keys.py
 /*.ipynb
 /note.md
 /git_usage.txt

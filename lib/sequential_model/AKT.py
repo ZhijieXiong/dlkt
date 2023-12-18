@@ -5,7 +5,7 @@ from sklearn.mixture import GaussianMixture
 from .BaseModel4CL import BaseModel4CL
 from .Module.EncoderLayer import EncoderLayer
 from .loss_util import binary_entropy
-from .util import get_mask4last_or_penultimate
+from .util import get_mask4last_or_penultimate, parse_question_zero_shot
 from ..util.parse import concept2question_from_Q, question2concept_from_Q
 
 
@@ -60,10 +60,12 @@ class AKT(nn.Module, BaseModel4CL):
         # 解析q table
         self.question2concept_list = question2concept_from_Q(objects["data"]["Q_table"])
         self.concept2question_list = concept2question_from_Q(objects["data"]["Q_table"])
-        self.question_head4zero = {}
-        self.parse_question_zero_shot()
+        self.question_head4zero = parse_question_zero_shot(self.objects["data"]["train_data_statics"],
+                                                           self.question2concept_list,
+                                                           self.concept2question_list)
         self.embed_question_difficulty4zero = None
         self.embed_question4zero = None
+        self.embed_interaction4zero = None
 
     def get_concept_emb(self):
         return self.embed_concept.weight
@@ -116,18 +118,6 @@ class AKT(nn.Module, BaseModel4CL):
 
         return predict_score
 
-    def parse_question_zero_shot(self):
-        statics_train = self.objects["data"]["train_data_statics"]
-        question_zero_shot = statics_train["question_zero_fre"]
-        question_high_fre = statics_train["question_high_fre"]
-        # 这些zero shot所对应知识点下的head question（出现频率高的）
-        for z_q in question_zero_shot:
-            concepts_correspond = self.question2concept_list[z_q]
-            qs = []
-            for c in concepts_correspond:
-                qs += list(set(self.concept2question_list[c]).intersection(set(question_high_fre)))
-            self.question_head4zero[z_q] = qs
-
     def set_question_difficulty_emb4zero(self):
         """
         transfer head to tail use gaussian distribution
@@ -162,7 +152,6 @@ class AKT(nn.Module, BaseModel4CL):
 
             # 取平均没用
             # if len(head_qs_emb) == 0:
-            #     # .detach().clone()效果更好，防止损失精度
             #     tail_q_emb = self.embed_question_difficulty.weight.mean().detach().clone()
             # else:
             #     tail_q_emb = head_qs_emb.mean().detach().clone()
@@ -177,8 +166,27 @@ class AKT(nn.Module, BaseModel4CL):
             _weight=embed_question_difficulty
         )
 
-    def set_question_emb4zero_emb(self):
+    def set_emb4zero_emb(self):
+        # 目前先实现single concept的
+        question_all = torch.arange(len(self.question2concept_list)).long().to(self.params["device"])
+        c4q_all = torch.tensor([cs[0] for cs in self.question2concept_list]).long().to(self.params["device"])
 
+        # encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
+        # separate_qa = encoder_config["separate_qa"]
+        # concept_seq = batch["concept_seq"]
+        # correct_seq = batch["correct_seq"]
+        #
+        # # c_ct
+        # concept_emb = self.embed_concept(concept_seq)
+        # if separate_qa:
+        #     interaction_seq = concept_seq + self.num_concept * correct_seq
+        #     interaction_emb = self.embed_interaction(interaction_seq)
+        # else:
+        #     # e_{(c_t, r_t)} = c_{c_t} + r_{r_t}
+        #     interaction_emb = self.embed_interaction(correct_seq) + concept_emb
+
+        concept_variation_emb = self.embed_concept_variation(c4q_all)
+        question_difficulty_emb = self.embed_question_difficulty(question_all)
         pass
 
     def get_latent(self, batch, use_emb_dropout=False, dropout=0.1):
@@ -235,9 +243,6 @@ class AKT(nn.Module, BaseModel4CL):
         predict_score = torch.masked_select(predict_score[:, 1:], mask_bool_seq[:, 1:])
 
         return predict_score
-
-    def get_emb4question_zero(self, batch):
-        pass
 
     def get_predict_score4question_zero(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]

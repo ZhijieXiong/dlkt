@@ -109,7 +109,24 @@ class DataProcessor:
         self.statics_raw = self.get_basic_info(self.data_raw)
 
         df = deepcopy(self.data_raw)
+        # 有知识点名称的interaction数量为2630080，总数量为2711813
         df.dropna(subset=["question_id", "concept_id"], inplace=True)
+
+        # 获取concept name和concept 原始id的对应并保存
+        concept_names = list(pd.unique(df.dropna(subset=["concept_name"])["concept_name"]))
+        concept_id2name = {}
+        for c_name in concept_names:
+            concept_data = df[df["concept_name"] == c_name]
+            c_id = int(concept_data["concept_id"].iloc[0])
+            concept_id2name[c_id] = c_name.strip()
+        concept_id2name_map = pd.DataFrame({
+            "concept_id": concept_id2name.keys(),
+            "concept_name": concept_id2name.values()
+        })
+        preprocessed_dir = self.objects["file_manager"].get_preprocessed_dir(dataset_name)
+        concept_id2name_map_path = os.path.join(preprocessed_dir, f"concept_id2name_map.csv")
+        concept_id2name_map.to_csv(concept_id2name_map_path, index=False)
+
         df["correct"] = df["correct"].astype('int8')
         df["use_time"] = df["use_time"].map(lambda t: min(max(1, int(t) // 1000), 60 * 60))
         df["timestamp"] = df["timestamp"].map(time_str2timestamp)

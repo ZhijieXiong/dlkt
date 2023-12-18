@@ -15,12 +15,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # 基本配置
-    parser.add_argument("--save_model_dir", type=str, default=r"F:\code\myProjects\dlkt\lab\saved_models\2023-11-28-18-06-54@@AKT@@seed_0@@random_split_leave_multi_out_setting@@assist2012_train_split_5@@valid_test@@early_stop_200_10@@265-53091-64-True-2-8-256-512-False-0.2")
+    parser.add_argument("--save_model_dir", type=str, default=r"F:\code\myProjects\dlkt\lab\saved_models\2023-12-18-14-55-28@@qDKT@@seed_0@@random_split_leave_multi_out_setting@@assist2012_train_split_5@@265-53091-64-64-128-128-gru-1-0.1-3-128-relu")
     parser.add_argument("--save_model_name", type=str, default="kt_model.pth")
     parser.add_argument("--setting_name", type=str, default="random_split_leave_multi_out_setting")
     parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--test_file_name", type=str, default="assist2012_valid_split_5.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2012_test_split_5.txt")
     parser.add_argument("--base_type", type=str, default="concept", choices=("concept", "question"))
     parser.add_argument("--dataset_name", type=str, default="assist2012",
                         help="if choose question as base_type")

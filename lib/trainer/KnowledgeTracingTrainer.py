@@ -207,15 +207,10 @@ class KnowledgeTracingTrainer:
         with torch.no_grad():
             predict_score_all = []
             ground_truth_all = []
-            if hasattr(model, "set_question_emb4zero_emb"):
-                model.set_question_emb4zero_emb()
             for batch in data_loader:
                 correct_seq = batch["correct_seq"]
                 mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-                if hasattr(model, "set_question4zero_emb"):
-                    predict_score = model.get_predict_score4question_zero(batch).detach().cpu().numpy()
-                else:
-                    predict_score = model.get_predict_score(batch).detach().cpu().numpy()
+                predict_score = model.get_predict_score(batch).detach().cpu().numpy()
                 ground_truth = torch.masked_select(correct_seq[:, 1:], mask_bool_seq[:, 1:]).detach().cpu().numpy()
                 predict_score_all.append(predict_score)
                 ground_truth_all.append(ground_truth)

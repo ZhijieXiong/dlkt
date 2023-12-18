@@ -270,7 +270,6 @@ class KTDataset4Aug(Dataset):
             if type(v) == list:
                 seq_keys.append(k)
         insert_num = max(1, min((self.max_seq_len - seq_len), int(seq_len * prob)))
-        sample["seq_len"] += insert_num
 
         insert_idx = random.sample([i for i in range(seq_len - 1)], k=insert_num)
         do_insert = [False for _ in range(seq_len)]
@@ -293,6 +292,7 @@ class KTDataset4Aug(Dataset):
                     sample_new["correct_seq"].append(random.choice([0, 1]))
                 sample_new["question_seq"].append(self.offline_similarity.get_random_q_in_concept(similar_concept))
                 sample_new["mask_seq"].append(1)
+        sample_new["seq_len"] = sample["seq_len"] + insert_num
         return sample_new
 
     def informative_mask(self, sample, mask_prob, mask_min_seq_len=10):

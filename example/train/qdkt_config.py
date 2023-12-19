@@ -9,7 +9,7 @@ from lib.template.objects_template import OBJECTS
 from lib.util.basic import *
 
 
-def qdkt_general_config(local_params, global_params):
+def qdkt_general_config(local_params, global_params, global_objects):
     global_params["models_config"]["kt_model"] = deepcopy(qDKT_MODEL_PARAMS)
     global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "qDKT"
 
@@ -51,6 +51,12 @@ def qdkt_general_config(local_params, global_params):
     predict_layer_config["direct"]["activate_type"] = activate_type
     predict_layer_config["direct"]["dim_predict_out"] = 1
 
+    print("model params\n"
+          f"    num of concept: {num_concept}, num of question: {num_question}, dim of question emb: {dim_question}, "
+          f"dim of concept emb: {dim_concept}, dim of correct emb: {dim_correct}, dim of latent: {dim_latent}\n"
+          f"    rnn type: {rnn_type}, num of rnn layer: {num_rnn_layer}, dropout: {dropout}, num of predict layer: {num_predict_layer}, "
+          f"dim of middle predict layer: {dim_predict_mid}, type of activate function: {activate_type}\n")
+
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]
@@ -66,7 +72,7 @@ def qdkt_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    qdkt_general_config(local_params, global_params)
+    qdkt_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         save_params(global_params, global_objects)
 
@@ -77,7 +83,7 @@ def qdkt_instance_cl_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    qdkt_general_config(local_params, global_params)
+    qdkt_general_config(local_params, global_params, global_objects)
     params_str = instance_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
@@ -92,7 +98,7 @@ def qdkt_duo_cl_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    qdkt_general_config(local_params, global_params)
+    qdkt_general_config(local_params, global_params, global_objects)
     params_str = duo_cl_general_config(local_params, global_params)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
@@ -107,7 +113,7 @@ def qdkt_cluster_cl_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    qdkt_general_config(local_params, global_params)
+    qdkt_general_config(local_params, global_params, global_objects)
     params_str = cluster_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
@@ -122,7 +128,7 @@ def qdkt_max_entropy_adv_aug_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    qdkt_general_config(local_params, global_params)
+    qdkt_general_config(local_params, global_params, global_objects)
     params_str = max_entropy_adv_aug_general_config(local_params, global_params)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
@@ -137,7 +143,7 @@ def qdkt_meta_optimize_cl_config(local_params):
     global_params = deepcopy(PARAMS2)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    qdkt_general_config(local_params, global_params)
+    qdkt_general_config(local_params, global_params, global_objects)
 
     params_str = meta_optimize_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:

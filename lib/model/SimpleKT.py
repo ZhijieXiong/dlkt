@@ -1,9 +1,12 @@
 import torch
 import torch.nn as nn
+from sklearn.mixture import GaussianMixture
 
 from .BaseModel4CL import BaseModel4CL
 from .Module.EncoderLayer import EncoderLayer
-from .util import get_mask4last_or_penultimate
+from .Module.MLP import MLP4LLM_emb
+from .util import get_mask4last_or_penultimate, parse_question_zero_shot
+from ..util.parse import concept2question_from_Q, question2concept_from_Q
 
 
 class SimpleKT(nn.Module, BaseModel4CL):
@@ -55,6 +58,28 @@ class SimpleKT(nn.Module, BaseModel4CL):
 
         self.reset()
 
+        # 解析q table
+        self.question2concept_list = question2concept_from_Q(objects["data"]["Q_table"])
+        self.concept2question_list = concept2question_from_Q(objects["data"]["Q_table"])
+        self.question_head4zero = parse_question_zero_shot(self.objects["data"]["train_data_statics"],
+                                                           self.question2concept_list,
+                                                           self.concept2question_list)
+        self.embed_question_difficulty4zero = None
+        self.embed_question4zero = None
+        self.embed_interaction4zero = None
+
+        use_LLM_emb4question = self.params["use_LLM_emb4question"]
+        use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
+        embed_config = self.params["models_config"]["kt_model"]["kt_embed_layer"]
+        if use_LLM_emb4question:
+            dim_LLM_emb = self.embed_layer.embed_question.weight.shape[1]
+            dim_question = embed_config["question"][1]
+            self.MLP4question = MLP4LLM_emb(dim_LLM_emb, dim_question, 0.1)
+        if use_LLM_emb4concept:
+            dim_LLM_emb = self.embed_layer.embed_concept.weight.shape[1]
+            dim_concept = embed_config["question"][1]
+            self.MLP4concept = MLP4LLM_emb(dim_LLM_emb, dim_concept, 0.1)
+
     def reset(self):
         num_question = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["num_question"]
         for p in self.parameters():
@@ -82,7 +107,6 @@ class SimpleKT(nn.Module, BaseModel4CL):
         return concept_emb, interaction_emb
 
     def forward(self, batch):
-        difficulty_scalar = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["difficulty_scalar"]
         concept_seq = batch["concept_seq"]
         question_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
@@ -95,14 +119,10 @@ class SimpleKT(nn.Module, BaseModel4CL):
         question_difficulty_emb = self.embed_question_difficulty(question_seq)
         # mu_{q_t} * d_ct + c_ct
         question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
-        if difficulty_scalar:
-            # f_{(c_t, r_t)}中的r_t
-            interaction_variation_emb = self.embed_interaction_variation(correct_seq)
-            # e_{(c_t, r_t)} + mu_{q_t} * f_{(c_t, r_t)}
-            interaction_emb = (
-                    interaction_emb + question_difficulty_emb * (interaction_variation_emb + concept_variation_emb))
-        else:
-            raise NotImplementedError()
+        # f_{(c_t, r_t)}中的r_t
+        interaction_variation_emb = self.embed_interaction_variation(correct_seq)
+        # e_{(c_t, r_t)} + mu_{q_t} * f_{(c_t, r_t)}
+        interaction_emb = (interaction_emb + question_difficulty_emb * (interaction_variation_emb + concept_variation_emb))
 
         encoder_input = {
             "question_emb": question_emb,
@@ -174,6 +194,56 @@ class SimpleKT(nn.Module, BaseModel4CL):
 
         return latent_mean
 
+    def set_emb4zero(self):
+        """
+        transfer head to tail use gaussian distribution
+        :return:
+        """
+        difficulty_scalar = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["difficulty_scalar"]
+        data_type = self.params["datasets_config"]["data_type"]
+        indices = []
+        tail_qs_emb = []
+        for z_q, head_qs in self.question_head4zero.items():
+            indices.append(z_q)
+            head_qs_emb = self.embed_question_difficulty(
+                torch.tensor(head_qs).long().to(self.params["device"])
+            )
+
+            # if len(head_qs_emb) > 100:
+            #     head_qs_emb = head_qs_emb.detach().cpu().numpy()
+            #     if data_type == "only_question":
+            #         # 多知识点数据集
+            #         n_com = 2
+            #     else:
+            #         # 单知识点数据集
+            #         n_com = 1
+            #     gmm = GaussianMixture(n_components=n_com, random_state=self.params["seed"])
+            #     gmm.fit(head_qs_emb)
+            #     gmm_samples = gmm.sample(1)
+            #     tail_q_emb = torch.from_numpy(gmm_samples[0][0]).item()
+            # elif len(head_qs_emb) == 0:
+            #     tail_q_emb = self.embed_question_difficulty.weight.mean().detach().clone()
+            # else:
+            #     tail_q_emb = head_qs_emb.mean().detach().detach().clone()
+
+            if len(head_qs_emb) == 0:
+                tail_q_emb = self.embed_question_difficulty.weight.mean().detach().clone()
+            else:
+                tail_q_emb = head_qs_emb.mean().detach().clone()
+            tail_qs_emb.append(tail_q_emb)
+        indices = torch.tensor(indices)
+        tail_qs_emb = torch.tensor(tail_qs_emb)
+        embed_question_difficulty = self.embed_question_difficulty.weight.detach().clone()
+        embed_question_difficulty[indices, 0] = tail_qs_emb
+        self.embed_question_difficulty4zero = nn.Embedding(
+            embed_question_difficulty.shape[0],
+            embed_question_difficulty.shape[1],
+            _weight=embed_question_difficulty
+        )
+
+    def get_predict_score4question_zero(self, batch):
+        pass
+
     def get_predict_score(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         predict_score = self.forward(batch)
@@ -186,7 +256,13 @@ class SimpleKT(nn.Module, BaseModel4CL):
 
         predict_score = self.get_predict_score(batch)
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
-        predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+        if self.params["use_sample_weight"]:
+            weight = torch.masked_select(batch["weight_seq"][:, 1:], mask_bool_seq[:, 1:])
+            predict_loss = nn.functional.binary_cross_entropy(predict_score.double(),
+                                                              ground_truth.double(),
+                                                              weight=weight)
+        else:
+            predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
 
         if loss_record is not None:
             num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()

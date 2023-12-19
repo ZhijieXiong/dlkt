@@ -1,12 +1,10 @@
-import torch
 import json
-import numpy as np
 from collections import defaultdict
 from sklearn.metrics import roc_auc_score, accuracy_score, mean_absolute_error, mean_squared_error
 
-from .util import record_dis4seq_len, evaluate4seq_len
+from .util import *
 from ..util.basic import get_now_time
-from ..sequential_model.util import get_mask4last_or_penultimate
+from ..model.util import get_mask4last_or_penultimate
 
 
 def get_performance(item_list, item_pg_all):
@@ -97,6 +95,7 @@ class Evaluator:
             ground_truth_all = []
             question_all = []
             concept_all = []
+            result_all_batch = []
             for batch in data_loader:
                 correct_seq = batch["correct_seq"]
                 question_seq = batch["question_seq"]
@@ -104,6 +103,12 @@ class Evaluator:
                 mask_bool_seq = torch.ne(batch["mask_seq"], 0)
 
                 predict_score_seq_len_minus1 = model.get_predict_score_seq_len_minus1(batch)
+                result_all_batch.append({
+                    "label": correct_seq[:, 1:].detach().cpu().numpy().tolist(),
+                    "predict_score": predict_score_seq_len_minus1.detach().cpu().numpy().tolist(),
+                    "correct_seq": batch["correct_seq"].detach().cpu().numpy().tolist(),
+                    "mask_seq": batch["mask_seq"].detach().cpu().numpy().tolist()
+                })
                 label_dis, score_dis = record_dis4seq_len(correct_seq[:, 1:],
                                                           predict_score_seq_len_minus1,
                                                           batch["mask_seq"][:, 1:])
@@ -130,6 +135,7 @@ class Evaluator:
 
         print(f"AUC: {AUC:<9.5}, ACC: {ACC:<9.5}, RMSE: {MAE:<9.5}, MAE: {RMSE:<9.5}")
         evaluate4seq_len(all_label_dis, all_score_dis, seq_len_absolute)
+        evaluate_bias(result_all_batch, 3)
 
         result4statics = {}
         statics_path = fine_grain_config["statics_path"]

@@ -3,6 +3,7 @@ from torch.utils.data import Dataset
 
 from ..util.data import *
 from ..util.parse import *
+from .sample_weight import *
 
 
 class KTDataset(Dataset):
@@ -52,6 +53,9 @@ class KTDataset(Dataset):
         if "time_seq" in seq_keys:
             dataset_converted["interval_time_seq"] = []
         dataset_converted["seq_id"] = []
+        if self.params.get("use_sample_weight", False):
+            dataset_converted["weight_seq"] = []
+        max_seq_len = len(dataset_original[0]["mask_seq"])
         for seq_i, item_data in enumerate(dataset_original):
             for k in id_keys:
                 dataset_converted[k].append(item_data[k])
@@ -75,14 +79,29 @@ class KTDataset(Dataset):
                     dataset_converted["interval_time_seq"].append(interval_time_seq)
                 else:
                     dataset_converted[k].append(item_data[k])
+
+            # 生成weight seq
+            if self.params.get("use_sample_weight", False):
+                if self.params["sample_weight_method"] == "discount":
+                    w_seq = discount(item_data["correct_seq"], item_data["seq_len"], max_seq_len)
+                elif self.params["sample_weight_method"] == "highlight_tail":
+                    w_seq = highlight_tail(self.params["tail_weight"], item_data["question_seq"],
+                                           self.objects["data"]["train_data_statics"], item_data["seq_len"], max_seq_len)
+                else:
+                    raise NotImplementedError()
+                dataset_converted["weight_seq"].append(w_seq)
             dataset_converted["seq_id"].append(seq_i)
+
         if "time_seq" in dataset_converted.keys():
             del dataset_converted["time_seq"]
         if "question_seq_mask" in dataset_converted.keys():
             del dataset_converted["question_seq_mask"]
 
         for k in dataset_converted.keys():
-            dataset_converted[k] = torch.tensor(dataset_converted[k]).long().to(self.params["device"])
+            if k not in ["weight_seq"]:
+                dataset_converted[k] = torch.tensor(dataset_converted[k]).long().to(self.params["device"])
+            else:
+                dataset_converted[k] = torch.tensor(dataset_converted[k]).float().to(self.params["device"])
         self.dataset = dataset_converted
 
     def get_statics_kt_dataset(self):

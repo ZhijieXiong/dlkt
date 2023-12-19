@@ -2,16 +2,12 @@ import torch
 import os
 import torch.nn as nn
 
-from torch.utils.data import DataLoader
-from copy import deepcopy
 from sklearn.metrics import roc_auc_score, accuracy_score, mean_absolute_error, mean_squared_error
 
 from .util import *
 from ..util.basic import *
 from .LossRecord import *
 from .TrainRecord import *
-from ..evaluator.Evaluator import Evaluator
-from ..dataset.KTDataset_cpu2device import KTDataset_cpu2device
 
 
 class KnowledgeTracingTrainer:
@@ -88,36 +84,6 @@ class KnowledgeTracingTrainer:
                 best_valid_performance_by_valid = self.train_record.get_evaluate_result_str("valid", "valid")
                 best_test_performance_by_valid = self.train_record.get_evaluate_result_str("test", "valid")
 
-                # pykt提出的多知识点数据测试方法
-                datasets_config = self.params["datasets_config"]
-                data_type = datasets_config["data_type"]
-                if data_type == "multi_concept":
-                    datasets_config["valid"]["file_name"] = (
-                        datasets_config["valid"]["file_name"].replace(".txt", "_question_base4multi_concept.txt"))
-                    datasets_config["test"]["file_name"] = (
-                        datasets_config["test"]["file_name"].replace(".txt", "_question_base4multi_concept.txt"))
-
-                    valid_params4multi_concept = deepcopy(self.params)
-                    valid_params4multi_concept["datasets_config"]["dataset_this"] = "valid"
-                    valid_dataset4multi_concept = KTDataset_cpu2device(valid_params4multi_concept, self.objects)
-                    valid_dataloader4multi_concept = (
-                        DataLoader(valid_dataset4multi_concept, batch_size=256, shuffle=False))
-
-                    test_params4multi_concept = deepcopy(self.params)
-                    test_params4multi_concept["datasets_config"]["dataset_this"] = "test"
-                    test_dataset4multi_concept = KTDataset_cpu2device(test_params4multi_concept, self.objects)
-                    test_dataloader4multi_concept = (
-                        DataLoader(test_dataset4multi_concept, batch_size=256, shuffle=False))
-
-                    model = self.best_model
-                    valid_result_in_best_valid = (
-                        Evaluator.evaluate_kt_dataset_base_question4multi_concept(model, valid_dataloader4multi_concept))
-                    test_result_in_best_valid = (
-                        Evaluator.evaluate_kt_dataset_base_question4multi_concept(model, test_dataloader4multi_concept))
-                else:
-                    valid_result_in_best_valid = None
-                    test_result_in_best_valid = None
-
                 print(f"best valid epoch: {self.train_record.get_best_epoch('valid'):<3} , "
                       f"best test epoch: {self.train_record.get_best_epoch('test')}\n"
                       f"train performance by best valid epoch is {best_train_performance_by_valid}\n"
@@ -128,29 +94,6 @@ class KnowledgeTracingTrainer:
                       f"{self.train_record.get_evaluate_result_str('train', 'train')}\n"
                       f"test performance by best test epoch is "
                       f"{self.train_record.get_evaluate_result_str('test', 'test')}\n")
-
-                if valid_result_in_best_valid is not None:
-                    print(f"{get_now_time()} test result base question for multi concept dataset\n"
-                          f"valid performance (average result) by best valid epoch is "
-                          f"AUC {valid_result_in_best_valid['average']['AUC']:<9.6}, "
-                          f"ACC: {valid_result_in_best_valid['average']['ACC']:<9.6}, "
-                          f"RMSE: {valid_result_in_best_valid['average']['RMSE']:<9.6}, "
-                          f"MAE: {valid_result_in_best_valid['average']['MAE']:<9.6}\n"
-                          f"valid performance (lowest result) by best valid epoch is "
-                          f"AUC: {valid_result_in_best_valid['lowest']['AUC']:<9.6}, "
-                          f"ACC: {valid_result_in_best_valid['lowest']['ACC']:<9.6}, "
-                          f"RMSE: {valid_result_in_best_valid['lowest']['RMSE']:<9.6}, "
-                          f"MAE: {valid_result_in_best_valid['lowest']['MAE']:<9.6}\n"
-                          f"test performance (average result) by best valid epoch is "
-                          f"AUC {test_result_in_best_valid['average']['AUC']:<9.6}, "
-                          f"ACC: {test_result_in_best_valid['average']['ACC']:<9.6}, "
-                          f"RMSE: {test_result_in_best_valid['average']['RMSE']:<9.6}, "
-                          f"MAE: {test_result_in_best_valid['average']['MAE']:<9.6}\n"
-                          f"test performance (lowest result) by best valid epoch is "
-                          f"AUC: {test_result_in_best_valid['lowest']['AUC']:<9.6}, "
-                          f"ACC: {test_result_in_best_valid['lowest']['ACC']:<9.6}, "
-                          f"RMSE: {test_result_in_best_valid['lowest']['RMSE']:<9.6}, "
-                          f"MAE: {test_result_in_best_valid['lowest']['MAE']:<9.6}\n")
 
         return stop_flag
 
@@ -182,7 +125,6 @@ class KnowledgeTracingTrainer:
             self.loss_record.clear_loss()
             current_epoch = self.train_record.get_current_epoch()
             if best_epoch == current_epoch:
-                self.best_model = deepcopy(model)
                 if save_model:
                     save_model_dir = self.params["save_model_dir"]
                     model_path = os.path.join(save_model_dir, "kt_model.pth")

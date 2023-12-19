@@ -7,7 +7,7 @@ from qdkt_config import qdkt_config
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.sequential_model.qDKT import qDKT
+from lib.model.qDKT import qDKT
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 
@@ -62,6 +62,10 @@ if __name__ == "__main__":
     parser.add_argument("--num_predict_layer", type=int, default=3)
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
+    # 是否使用LLM的emb初始化
+    parser.add_argument("--use_LLM_emb4question", type=str2bool, default=True)
+    parser.add_argument("--use_LLM_emb4concept", type=str2bool, default=False)
+    parser.add_argument("--train_LLM_emb", type=str2bool, default=True)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
@@ -97,35 +101,3 @@ if __name__ == "__main__":
     global_objects["models"]["kt_model"] = model
     trainer = KnowledgeTracingTrainer(global_params, global_objects)
     trainer.train()
-
-    # assist2009
-    # domain 0
-    # AUC: 0.81119  , ACC: 0.79384  , RMSE: 0.37954  , MAE: 0.27214
-    # AUC: 0.77465  , ACC: 0.74729  , RMSE: 0.41712  , MAE: 0.31898
-    # AUC: 0.77684  , ACC: 0.75089  , RMSE: 0.41347  , MAE: 0.32403
-
-    # domain 6
-    # AUC: 0.82585  , ACC: 0.79635  , RMSE: 0.37493  , MAE: 0.27575
-    # AUC: 0.75559  , ACC: 0.70579  , RMSE: 0.44308  , MAE: 0.35698
-    # AUC: 0.76119  , ACC: 0.71178  , RMSE: 0.43823  , MAE: 0.35405
-
-    # domain 8
-    # AUC: 0.8208   , ACC: 0.79526  , RMSE: 0.37639  , MAE: 0.27545
-    # AUC: 0.7795   , ACC: 0.75079  , RMSE: 0.41285  , MAE: 0.321
-    # AUC: 0.78009  , ACC: 0.75401  , RMSE: 0.41033  , MAE: 0.32242
-
-    # assist2012
-    # domain 3
-    # AUC: 0.7519   , ACC: 0.74583  , RMSE: 0.41656  , MAE: 0.33534
-    # AUC: 0.73136  , ACC: 0.72575  , RMSE: 0.43021  , MAE: 0.34996
-    # AUC: 0.73272  , ACC: 0.72827  , RMSE: 0.42791  , MAE: 0.35358
-
-    # domain 5
-    # AUC: 0.75289  , ACC: 0.74444  , RMSE: 0.41755  , MAE: 0.33546
-    # AUC: 0.72747  , ACC: 0.73588  , RMSE: 0.42485  , MAE: 0.34082
-    # AUC: 0.72928  , ACC: 0.73765  , RMSE: 0.42284  , MAE: 0.34624
-
-    # domain 7
-    # AUC: 0.75361  , ACC: 0.74894  , RMSE: 0.41435  , MAE: 0.33418
-    # AUC: 0.72822  , ACC: 0.72162  , RMSE: 0.43225  , MAE: 0.35816
-    # AUC: 0.72857  , ACC: 0.7218   , RMSE: 0.43171  , MAE: 0.35931

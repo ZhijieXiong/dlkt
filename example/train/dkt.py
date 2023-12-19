@@ -7,7 +7,7 @@ from dkt_config import dkt_config
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.sequential_model.DKT import DKT
+from lib.model.DKT import DKT
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 

@@ -8,7 +8,7 @@ from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset4AT_DKT import KTDataset4AT_DKT
 from lib.dataset.KTDataset import KTDataset
-from lib.sequential_model.AT_DKT import AT_DKT
+from lib.model.AT_DKT import AT_DKT
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 

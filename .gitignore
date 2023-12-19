@@ -8,6 +8,7 @@ example/script_cluster
 example/result_cluster
 example/script_local
 example/result_local
+back_up/
 .idea/
 
 /example/demo/*.csv

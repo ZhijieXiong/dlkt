@@ -7,7 +7,7 @@ from qikt_config import qikt_config
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.sequential_model.QIKT import QIKT
+from lib.model.QIKT import QIKT
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 

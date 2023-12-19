@@ -118,77 +118,6 @@ class AKT(nn.Module, BaseModel4CL):
 
         return predict_score
 
-    def set_question_difficulty_emb4zero(self):
-        """
-        transfer head to tail use gaussian distribution
-        :return:
-        """
-        # 只对question_difficulty_emb进行迁移是没效果的
-        data_type = self.params["datasets_config"]["data_type"]
-        indices = []
-        tail_qs_emb = []
-        for z_q, head_qs in self.question_head4zero.items():
-            indices.append(z_q)
-            head_qs_emb = self.embed_question_difficulty(
-                torch.tensor(head_qs).long().to(self.params["device"])
-            )
-            # len(head_qs_emb)值越小越好，即直接取均值不好，可能fit时报错: pvals < 0, pvals > 1 or pvals contains NaNs
-            if len(head_qs_emb) > 100:
-                head_qs_emb = head_qs_emb.detach().cpu().numpy()
-                if data_type == "only_question":
-                    # 多知识点数据集
-                    n_com = 2
-                else:
-                    # 单知识点数据集
-                    n_com = 1
-                gmm = GaussianMixture(n_components=n_com, random_state=self.params["seed"])
-                gmm.fit(head_qs_emb)
-                gmm_samples = gmm.sample(1)
-                tail_q_emb = torch.from_numpy(gmm_samples[0][0]).item()
-            elif len(head_qs_emb) == 0:
-                tail_q_emb = self.embed_question_difficulty.weight.mean().detach().clone()
-            else:
-                tail_q_emb = head_qs_emb.mean().detach().detach().clone()
-
-            # 取平均没用
-            # if len(head_qs_emb) == 0:
-            #     tail_q_emb = self.embed_question_difficulty.weight.mean().detach().clone()
-            # else:
-            #     tail_q_emb = head_qs_emb.mean().detach().clone()
-            tail_qs_emb.append(tail_q_emb)
-        indices = torch.tensor(indices)
-        tail_qs_emb = torch.tensor(tail_qs_emb)
-        embed_question_difficulty = self.embed_question_difficulty.weight.detach().clone()
-        embed_question_difficulty[indices, 0] = tail_qs_emb
-        self.embed_question_difficulty4zero = nn.Embedding(
-            embed_question_difficulty.shape[0],
-            embed_question_difficulty.shape[1],
-            _weight=embed_question_difficulty
-        )
-
-    def set_emb4zero_emb(self):
-        # 目前先实现single concept的
-        question_all = torch.arange(len(self.question2concept_list)).long().to(self.params["device"])
-        c4q_all = torch.tensor([cs[0] for cs in self.question2concept_list]).long().to(self.params["device"])
-
-        # encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
-        # separate_qa = encoder_config["separate_qa"]
-        # concept_seq = batch["concept_seq"]
-        # correct_seq = batch["correct_seq"]
-        #
-        # # c_ct
-        # concept_emb = self.embed_concept(concept_seq)
-        # if separate_qa:
-        #     interaction_seq = concept_seq + self.num_concept * correct_seq
-        #     interaction_emb = self.embed_interaction(interaction_seq)
-        # else:
-        #     # e_{(c_t, r_t)} = c_{c_t} + r_{r_t}
-        #     interaction_emb = self.embed_interaction(correct_seq) + concept_emb
-
-        concept_variation_emb = self.embed_concept_variation(c4q_all)
-        question_difficulty_emb = self.embed_question_difficulty(question_all)
-        pass
-
     def get_latent(self, batch, use_emb_dropout=False, dropout=0.1):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
         separate_qa = encoder_config["separate_qa"]
@@ -243,6 +172,54 @@ class AKT(nn.Module, BaseModel4CL):
         predict_score = torch.masked_select(predict_score[:, 1:], mask_bool_seq[:, 1:])
 
         return predict_score
+
+    def set_emb4zero(self):
+        """
+        transfer head to tail use gaussian distribution
+        :return:
+        """
+        # 只对question_difficulty_emb进行迁移是没效果的
+        data_type = self.params["datasets_config"]["data_type"]
+        indices = []
+        tail_qs_emb = []
+        for z_q, head_qs in self.question_head4zero.items():
+            indices.append(z_q)
+            head_qs_emb = self.embed_question_difficulty(
+                torch.tensor(head_qs).long().to(self.params["device"])
+            )
+            # len(head_qs_emb)值越小越好，即直接取均值不好，可能fit时报错: pvals < 0, pvals > 1 or pvals contains NaNs
+            if len(head_qs_emb) > 100:
+                head_qs_emb = head_qs_emb.detach().cpu().numpy()
+                if data_type == "only_question":
+                    # 多知识点数据集
+                    n_com = 2
+                else:
+                    # 单知识点数据集
+                    n_com = 1
+                gmm = GaussianMixture(n_components=n_com, random_state=self.params["seed"])
+                gmm.fit(head_qs_emb)
+                gmm_samples = gmm.sample(1)
+                tail_q_emb = torch.from_numpy(gmm_samples[0][0]).item()
+            elif len(head_qs_emb) == 0:
+                tail_q_emb = self.embed_question_difficulty.weight.mean().detach().clone()
+            else:
+                tail_q_emb = head_qs_emb.mean().detach().detach().clone()
+
+            # 取平均没用
+            # if len(head_qs_emb) == 0:
+            #     tail_q_emb = self.embed_question_difficulty.weight.mean().detach().clone()
+            # else:
+            #     tail_q_emb = head_qs_emb.mean().detach().clone()
+            tail_qs_emb.append(tail_q_emb)
+        indices = torch.tensor(indices)
+        tail_qs_emb = torch.tensor(tail_qs_emb)
+        embed_question_difficulty = self.embed_question_difficulty.weight.detach().clone()
+        embed_question_difficulty[indices, 0] = tail_qs_emb
+        self.embed_question_difficulty4zero = nn.Embedding(
+            embed_question_difficulty.shape[0],
+            embed_question_difficulty.shape[1],
+            _weight=embed_question_difficulty
+        )
 
     def get_predict_score4question_zero(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]

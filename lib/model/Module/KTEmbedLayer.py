@@ -13,21 +13,22 @@ class KTEmbedLayer(nn.Module):
         self.objects = objects
 
         emb_config = self.params["models_config"]["kt_model"]["kt_embed_layer"]
+        use_LLM_emb4question = params["use_LLM_emb4question"]
+        use_LLM_emb4concept = params["use_LLM_emb4concept"]
         self.emb_dict = {}
         for k, v in emb_config.items():
-            if len(v) > 0:
-                if k == "concept":
-                    self.embed_concept = nn.Embedding(v[0], v[1])
-                    self.emb_dict["concept"] = self.embed_concept
-                if k == "question":
-                    self.embed_question = nn.Embedding(v[0], v[1])
-                    self.emb_dict["question"] = self.embed_question
-                if k == "correct":
-                    self.embed_correct = nn.Embedding(v[0], v[1])
-                    self.emb_dict["correct"] = self.embed_correct
-                if k == "interaction":
-                    self.embed_interaction = nn.Embedding(v[0], v[1])
-                    self.emb_dict["interaction"] = self.embed_interaction
+            if k == "concept":
+                self.embed_concept = self.init_concept_with_LLM() if use_LLM_emb4concept else nn.Embedding(v[0], v[1])
+                self.emb_dict["concept"] = self.embed_concept
+            if k == "question":
+                self.embed_question = self.init_question_with_LLM() if use_LLM_emb4question else nn.Embedding(v[0], v[1])
+                self.emb_dict["question"] = self.embed_question
+            if k == "correct":
+                self.embed_correct = nn.Embedding(v[0], v[1])
+                self.emb_dict["correct"] = self.embed_correct
+            if k == "interaction":
+                self.embed_interaction = nn.Embedding(v[0], v[1])
+                self.emb_dict["interaction"] = self.embed_interaction
 
         self.Q_table = self.objects["data"].get("Q_table", None)
         # 如果有Q table的话，question2concept_table和question2concept_mask_table都是(num_q, num_max_c)的tensor
@@ -42,6 +43,50 @@ class KTEmbedLayer(nn.Module):
         self.num_max_concept = None
         if self.Q_table is not None:
             self.parse_Q_table()
+
+    def init_question_with_LLM(self):
+        LLM_question_embeddings = self.objects["data"]["LLM_question_embeddings"]
+        all_embeddings = np.array([emb for emb in LLM_question_embeddings.values()])
+        mean_embedding = all_embeddings.mean(axis=0).tolist()
+        q_id2original_c_id = self.objects["data"]["q_id2original_c_id"]
+        data_type = self.params["datasets_config"]["data_type"]
+
+        embed_question = []
+        if data_type == "only_question":
+            pass
+        else:
+            for c_id in q_id2original_c_id:
+                if str(c_id) in LLM_question_embeddings.keys():
+                    embed_question.append(LLM_question_embeddings[str(c_id)])
+                else:
+                    embed_question.append(mean_embedding)
+        embed_question = torch.tensor(embed_question, dtype=torch.float).to(self.params["device"])
+        embed = nn.Embedding(embed_question.shape[0], embed_question.shape[1], _weight=embed_question)
+        embed.weight.requires_grad = self.params["train_LLM_emb"]
+        return embed
+
+    def init_concept_with_LLM(self):
+        LLM_concept_embeddings = self.objects["data"]["LLM_concept_embeddings"]
+        all_embeddings = np.array([emb for emb in LLM_concept_embeddings.values()])
+        mean_embedding = all_embeddings.mean(axis=0).tolist()
+        c_id2original_c_id = self.objects["data"]["c_id2original_c_id"]
+        data_type = self.params["datasets_config"]["data_type"]
+
+        embed_concept = []
+        if data_type == "only_question":
+            pass
+        else:
+            for i in range(len(c_id2original_c_id)):
+                c_id = c_id2original_c_id[i]
+                if str(c_id) in LLM_concept_embeddings.keys():
+                    embed_concept.append(LLM_concept_embeddings[str(c_id)])
+                else:
+                    embed_concept.append(mean_embedding)
+
+        embed_concept = torch.tensor(embed_concept, dtype=torch.float).to(self.params["device"])
+        embed = nn.Embedding(embed_concept.shape[0], embed_concept.shape[1], _weight=embed_concept)
+        embed.weight.requires_grad = self.params["train_LLM_emb"]
+        return embed
 
     def get_emb(self, emb_name, emb_index):
         assert self.emb_dict[emb_name] is not None, f"Embedding of {emb_name} is not initialized"

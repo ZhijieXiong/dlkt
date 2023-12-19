@@ -5,7 +5,15 @@ import numpy as np
 from copy import deepcopy
 from collections import defaultdict
 
-from .parse import get_keys_from_uniform
+
+def get_keys_from_uniform(data_uniformed):
+    item_data = data_uniformed[0]
+    id_keys = []
+    for k in item_data.keys():
+        if type(item_data[k]) is not list:
+            id_keys.append(k)
+    seq_keys = list(set(item_data.keys()) - set(id_keys))
+    return id_keys, seq_keys
 
 
 def write2file(data, data_path):

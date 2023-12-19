@@ -8,7 +8,7 @@ from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset4Aug import KTDataset4Aug
 from lib.dataset.KTDataset import KTDataset
-from lib.sequential_model.AKT import AKT
+from lib.model.AKT import AKT
 from lib.trainer.DuoCLTrainer import DuoCLTrainer
 
 

@@ -7,8 +7,8 @@ from adv_contrast_vae_config import adv_contrast_vae_gru_config
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.sequential_model.AC_VAE_GRU import AC_VAE_GRU
-from lib.sequential_model.Module.AC_VAE import ContrastiveDiscriminator, AdversaryDiscriminator
+from lib.model.AC_VAE_GRU import AC_VAE_GRU
+from lib.model.Module.AC_VAE import ContrastiveDiscriminator, AdversaryDiscriminator
 from lib.trainer.AdvContrastVaeTrainer import AdvContrastVaeTrainer
 
 

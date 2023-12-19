@@ -4,6 +4,7 @@ from copy import deepcopy
 from .BaseModel4CL import BaseModel4CL
 from .Module.KTEmbedLayer import KTEmbedLayer
 from .Module.PredictorLayer import PredictorLayer
+from .Module.MLP import MLP4LLM_emb
 from .loss_util import *
 from .util import *
 from ..util.parse import concept2question_from_Q, question2concept_from_Q
@@ -46,14 +47,38 @@ class qDKT(nn.Module, BaseModel4CL):
                                                            self.concept2question_list)
         self.embed_layer4zero = deepcopy(self.embed_layer)
 
+        use_LLM_emb4question = self.params["use_LLM_emb4question"]
+        use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
+        embed_config = self.params["models_config"]["kt_model"]["kt_embed_layer"]
+        if use_LLM_emb4question:
+            dim_LLM_emb = self.embed_layer.embed_question.weight.shape[1]
+            dim_question = embed_config["question"][1]
+            self.MLP4question = MLP4LLM_emb(dim_LLM_emb, dim_question, 0.1)
+        if use_LLM_emb4concept:
+            dim_LLM_emb = self.embed_layer.embed_concept.weight.shape[1]
+            dim_concept = embed_config["question"][1]
+            self.MLP4concept = MLP4LLM_emb(dim_LLM_emb, dim_concept, 0.1)
+
     def get_concept_emb(self):
         return self.embed_layer.get_emb_all("concept")
 
     def get_qc_emb4single_concept(self, batch):
+        use_LLM_emb4question = self.params["use_LLM_emb4question"]
+        use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
         concept_seq = batch["concept_seq"]
         question_seq = batch["question_seq"]
-        concept_question_emb = self.embed_layer.get_emb_concatenated(("concept", "question"),
-                                                                     (concept_seq, question_seq))
+
+        if (not use_LLM_emb4question) and (not use_LLM_emb4concept):
+            concept_question_emb = self.embed_layer.get_emb_concatenated(("concept", "question"),
+                                                                         (concept_seq, question_seq))
+        else:
+            concept_emb = self.embed_layer.get_emb("concept", concept_seq)
+            question_emb = self.embed_layer.get_emb("question", question_seq)
+            if use_LLM_emb4concept:
+                concept_emb = self.MLP4concept(concept_emb)
+            if use_LLM_emb4question:
+                question_emb = self.MLP4question(question_emb)
+            concept_question_emb = torch.cat((concept_emb, question_emb), dim=-1)
 
         return concept_question_emb
 

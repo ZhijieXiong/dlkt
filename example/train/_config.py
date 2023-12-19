@@ -96,6 +96,8 @@ def general_config(local_params, global_params, global_objects):
     use_LLM_emb4question = local_params["use_LLM_emb4question"]
     use_LLM_emb4concept = local_params["use_LLM_emb4concept"]
     train_LLM_emb = local_params["train_LLM_emb"]
+    transfer_head2zero = local_params["transfer_head2zero"]
+    head2tail_transfer_method = local_params["head2tail_transfer_method"]
 
     train_strategy_config = global_params["train_strategy"]
     train_strategy_config["num_epoch"] = num_epoch
@@ -149,6 +151,10 @@ def general_config(local_params, global_params, global_objects):
     global_params["use_LLM_emb4concept"] = use_LLM_emb4concept
     global_params["train_LLM_emb"] = train_LLM_emb
 
+    # 是否将head的知识迁移到zero shot的知识
+    global_params["transfer_head2zero"] = transfer_head2zero
+    global_params["head2tail_transfer_method"] = head2tail_transfer_method
+
     print("basic setting\n"
           f"    device: {global_params['device']}, seed: {global_params['seed']}\n"
           "train policy\n"
@@ -158,6 +164,7 @@ def general_config(local_params, global_params, global_objects):
           f"embedding init\n"
           f"    use LLM emb to init question emb: {use_LLM_emb4question}, use LLM emb to init concept emb: {use_LLM_emb4concept}"
           f"{f', train LLM emb: {train_LLM_emb}' if (use_LLM_emb4question or use_LLM_emb4concept) else ''}\n"
+          f"    transfer head to zero for question in train data: {transfer_head2zero}{f', transfer method: {head2tail_transfer_method}' if transfer_head2zero else ''}\n"
           "evaluate metric\n"
           f"    main metric: {main_metric}, use multi metrics: {use_multi_metrics}{f', multi metrics: {mutil_metrics}' if use_multi_metrics else ''}")
 

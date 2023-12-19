@@ -44,7 +44,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
-    parser.add_argument("--lr_schedule_milestones", type=str, default="[5， 10]")
+    parser.add_argument("--lr_schedule_milestones", type=str, default="[5, 10]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
@@ -71,6 +71,10 @@ if __name__ == "__main__":
     parser.add_argument("--use_LLM_emb4question", type=str2bool, default=False)
     parser.add_argument("--use_LLM_emb4concept", type=str2bool, default=False)
     parser.add_argument("--train_LLM_emb", type=str2bool, default=True)
+    # 是否将head question的知识迁移到zero shot question
+    parser.add_argument("--transfer_head2zero", type=str2bool, default=False)
+    parser.add_argument("--head2tail_transfer_method", type=str, default="mean_pool",
+                        choices=("mean_pool", "gaussian_fit"))
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=1)

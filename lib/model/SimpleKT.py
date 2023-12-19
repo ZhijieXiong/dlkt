@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 import torch.nn as nn
 from sklearn.mixture import GaussianMixture
 
@@ -17,31 +18,40 @@ class SimpleKT(nn.Module, BaseModel4CL):
         super(nn.Module, self).__init__(params, objects)
 
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]
+        difficulty_scalar = encoder_config["difficulty_scalar"]
         num_concept = encoder_config["num_concept"]
-        num_question = encoder_config["num_question"]
         dim_model = encoder_config["dim_model"]
         dim_final_fc = encoder_config["dim_final_fc"]
         dim_final_fc2 = encoder_config["dim_final_fc2"]
         separate_qa = encoder_config["separate_qa"]
-        difficulty_scalar = encoder_config["difficulty_scalar"]
         dropout = encoder_config["dropout"]
+        use_LLM_emb4question = self.params["use_LLM_emb4question"]
+        use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
 
         # 题目难度用一个标量表示
-        if difficulty_scalar:
-            # 题目难度用一个标量表示
-            self.embed_question_difficulty = nn.Embedding(num_question, 1)
-        else:
-            # 题目难度用一个embedding表示
-            self.embed_question_difficulty = nn.Embedding(num_question, dim_model)
-        self.embed_concept_variation = nn.Embedding(num_concept, dim_model)
+        self.embed_question_difficulty = self.get_embed_question_diff()
+        self.embed_concept_variation = self.get_embed_concept()
+        self.embed_concept = self.get_embed_concept()
         self.embed_interaction_variation = nn.Embedding(2, dim_model)
-        self.embed_concept = nn.Embedding(num_concept, dim_model)
         if separate_qa:
             # 直接用一个embedding表示在所有concept的interaction
             self.embed_interaction = nn.Embedding(2 * num_concept, dim_model)
         else:
             # 只表示interaction，具体到concept，用concept embedding加interaction embedding表示这个concept的interaction
             self.embed_interaction = nn.Embedding(2, dim_model)
+
+        if use_LLM_emb4question:
+            dim_LLM_emb = self.embed_question_difficulty.weight.shape[1]
+            if difficulty_scalar:
+                self.MLP4question = MLP4LLM_emb(dim_LLM_emb, 1, 0.1)
+            else:
+                self.MLP4question = MLP4LLM_emb(dim_LLM_emb, dim_model, 0.1)
+        else:
+            self.reset()
+        if use_LLM_emb4concept:
+            dim_LLM_emb = self.embed_concept_variation.weight.shape[1]
+            self.MLP4concept_variation = MLP4LLM_emb(dim_LLM_emb, dim_model, 0.1)
+            self.MLP4concept = MLP4LLM_emb(dim_LLM_emb, dim_model, 0.1)
 
         self.encoder_layer = EncoderLayer(params, objects)
 
@@ -56,8 +66,6 @@ class SimpleKT(nn.Module, BaseModel4CL):
             nn.Sigmoid()
         )
 
-        self.reset()
-
         # 解析q table
         self.question2concept_list = question2concept_from_Q(objects["data"]["Q_table"])
         self.concept2question_list = concept2question_from_Q(objects["data"]["Q_table"])
@@ -68,17 +76,70 @@ class SimpleKT(nn.Module, BaseModel4CL):
         self.embed_question4zero = None
         self.embed_interaction4zero = None
 
+    def get_embed_question_diff(self):
+        difficulty_scalar = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["difficulty_scalar"]
+        num_question = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["num_question"]
+        dim_model = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["dim_model"]
         use_LLM_emb4question = self.params["use_LLM_emb4question"]
-        use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
-        embed_config = self.params["models_config"]["kt_model"]["kt_embed_layer"]
+
         if use_LLM_emb4question:
-            dim_LLM_emb = self.embed_layer.embed_question.weight.shape[1]
-            dim_question = embed_config["question"][1]
-            self.MLP4question = MLP4LLM_emb(dim_LLM_emb, dim_question, 0.1)
+            LLM_question_embeddings = self.objects["data"]["LLM_question_embeddings"]
+            all_embeddings = np.array([emb for emb in LLM_question_embeddings.values()])
+            mean_embedding = all_embeddings.mean(axis=0).tolist()
+            q_id2original_c_id = self.objects["data"]["q_id2original_c_id"]
+            data_type = self.params["datasets_config"]["data_type"]
+
+            embed_question = []
+            if data_type == "only_question":
+                pass
+            else:
+                for c_id in q_id2original_c_id:
+                    if str(c_id) in LLM_question_embeddings.keys():
+                        embed_question.append(LLM_question_embeddings[str(c_id)])
+                    else:
+                        embed_question.append(mean_embedding)
+            embed_question_difficulty = torch.tensor(embed_question, dtype=torch.float).to(self.params["device"])
+            embed = nn.Embedding(num_question, embed_question_difficulty.shape[1], _weight=embed_question_difficulty)
+            embed.weight.requires_grad = self.params["train_LLM_emb"]
+        elif difficulty_scalar:
+            # 题目难度用一个标量表示
+            embed = nn.Embedding(num_question, 1)
+        else:
+            # 题目难度用一个embedding表示
+            embed = nn.Embedding(num_question, dim_model)
+
+        return embed
+
+    def get_embed_concept(self):
+        num_concept = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["num_concept"]
+        dim_model = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["dim_model"]
+        use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
+
         if use_LLM_emb4concept:
-            dim_LLM_emb = self.embed_layer.embed_concept.weight.shape[1]
-            dim_concept = embed_config["question"][1]
-            self.MLP4concept = MLP4LLM_emb(dim_LLM_emb, dim_concept, 0.1)
+            LLM_concept_embeddings = self.objects["data"]["LLM_concept_embeddings"]
+            all_embeddings = np.array([emb for emb in LLM_concept_embeddings.values()])
+            mean_embedding = all_embeddings.mean(axis=0).tolist()
+            c_id2original_c_id = self.objects["data"]["c_id2original_c_id"]
+            data_type = self.params["datasets_config"]["data_type"]
+
+            embed_concept = []
+            if data_type == "only_question":
+                pass
+            else:
+                for i in range(len(c_id2original_c_id)):
+                    c_id = c_id2original_c_id[i]
+                    if str(c_id) in LLM_concept_embeddings.keys():
+                        embed_concept.append(LLM_concept_embeddings[str(c_id)])
+                    else:
+                        embed_concept.append(mean_embedding)
+
+            embed_concept = torch.tensor(embed_concept, dtype=torch.float).to(self.params["device"])
+            embed = nn.Embedding(embed_concept.shape[0], embed_concept.shape[1], _weight=embed_concept)
+            embed.weight.requires_grad = self.params["train_LLM_emb"]
+        else:
+            embed = nn.Embedding(num_concept, dim_model)
+
+        return embed
 
     def reset(self):
         num_question = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["num_question"]
@@ -92,11 +153,14 @@ class SimpleKT(nn.Module, BaseModel4CL):
 
     def base_emb(self, batch):
         separate_qa = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["separate_qa"]
+        use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
         concept_seq = batch["concept_seq"]
         correct_seq = batch["correct_seq"]
 
         # c_ct
         concept_emb = self.embed_concept(concept_seq)
+        if use_LLM_emb4concept:
+            concept_emb = self.MLP4concept(concept_emb)
         if separate_qa:
             interaction_seqs = concept_seq + self.num_concept * correct_seq
             interaction_emb = self.embed_interaction(interaction_seqs)
@@ -107,6 +171,8 @@ class SimpleKT(nn.Module, BaseModel4CL):
         return concept_emb, interaction_emb
 
     def forward(self, batch):
+        use_LLM_emb4question = self.params["use_LLM_emb4question"]
+        use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
         concept_seq = batch["concept_seq"]
         question_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
@@ -115,8 +181,12 @@ class SimpleKT(nn.Module, BaseModel4CL):
         concept_emb, interaction_emb = self.base_emb(batch)
         # d_ct 总结了包含当前question（concept）的problems（questions）的变化
         concept_variation_emb = self.embed_concept_variation(concept_seq)
+        if use_LLM_emb4concept:
+            concept_variation_emb = self.MLP4concept_variation(concept_variation_emb)
         # mu_{q_t}
         question_difficulty_emb = self.embed_question_difficulty(question_seq)
+        if use_LLM_emb4question:
+            question_difficulty_emb = self.MLP4question(question_difficulty_emb)
         # mu_{q_t} * d_ct + c_ct
         question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
         # f_{(c_t, r_t)}中的r_t
@@ -200,41 +270,44 @@ class SimpleKT(nn.Module, BaseModel4CL):
         :return:
         """
         difficulty_scalar = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["difficulty_scalar"]
+        head2tail_transfer_method = self.params["head2tail_transfer_method"]
         data_type = self.params["datasets_config"]["data_type"]
         indices = []
         tail_qs_emb = []
         for z_q, head_qs in self.question_head4zero.items():
+            head_question_indices = torch.tensor(head_qs).long().to(self.params["device"])
+            head_qs_emb = self.embed_question_difficulty(head_question_indices).detach().clone()
+            if len(head_qs) == 0:
+                continue
             indices.append(z_q)
-            head_qs_emb = self.embed_question_difficulty(
-                torch.tensor(head_qs).long().to(self.params["device"])
-            )
-
-            # if len(head_qs_emb) > 100:
-            #     head_qs_emb = head_qs_emb.detach().cpu().numpy()
-            #     if data_type == "only_question":
-            #         # 多知识点数据集
-            #         n_com = 2
-            #     else:
-            #         # 单知识点数据集
-            #         n_com = 1
-            #     gmm = GaussianMixture(n_components=n_com, random_state=self.params["seed"])
-            #     gmm.fit(head_qs_emb)
-            #     gmm_samples = gmm.sample(1)
-            #     tail_q_emb = torch.from_numpy(gmm_samples[0][0]).item()
-            # elif len(head_qs_emb) == 0:
-            #     tail_q_emb = self.embed_question_difficulty.weight.mean().detach().clone()
-            # else:
-            #     tail_q_emb = head_qs_emb.mean().detach().detach().clone()
-
-            if len(head_qs_emb) == 0:
-                tail_q_emb = self.embed_question_difficulty.weight.mean().detach().clone()
+            if head2tail_transfer_method == "gaussian_fit":
+                # todo: 这段代码没有检查
+                if len(head_qs_emb) > 100:
+                    head_qs_emb = head_qs_emb.detach().cpu().numpy()
+                    if data_type == "only_question":
+                        # 多知识点数据集
+                        n_com = 2
+                    else:
+                        # 单知识点数据集
+                        n_com = 1
+                    gmm = GaussianMixture(n_components=n_com, random_state=self.params["seed"])
+                    gmm.fit(head_qs_emb)
+                    gmm_samples = gmm.sample(1)
+                    tail_q_emb = torch.from_numpy(gmm_samples[0][0]).item()
+                elif len(head_qs_emb) == 0:
+                    tail_q_emb = self.embed_question_difficulty.weight.mean().detach().clone()
+                else:
+                    tail_q_emb = head_qs_emb.mean().detach().detach().clone()
+            elif head2tail_transfer_method == "mean_pool":
+                # todo: 这段代码没有检查过当question diff emb为标量时是否正确
+                tail_q_emb = head_qs_emb.mean(dim=0).unsqueeze(0)
             else:
-                tail_q_emb = head_qs_emb.mean().detach().clone()
+                raise NotImplementedError()
             tail_qs_emb.append(tail_q_emb)
         indices = torch.tensor(indices)
-        tail_qs_emb = torch.tensor(tail_qs_emb)
+        tail_qs_emb = torch.cat(tail_qs_emb, dim=0)
         embed_question_difficulty = self.embed_question_difficulty.weight.detach().clone()
-        embed_question_difficulty[indices, 0] = tail_qs_emb
+        embed_question_difficulty[indices] = tail_qs_emb
         self.embed_question_difficulty4zero = nn.Embedding(
             embed_question_difficulty.shape[0],
             embed_question_difficulty.shape[1],
@@ -242,7 +315,44 @@ class SimpleKT(nn.Module, BaseModel4CL):
         )
 
     def get_predict_score4question_zero(self, batch):
-        pass
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+
+        use_LLM_emb4question = self.params["use_LLM_emb4question"]
+        use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
+        concept_seq = batch["concept_seq"]
+        question_seq = batch["question_seq"]
+        correct_seq = batch["correct_seq"]
+
+        # c_{c_t}和e_(ct, rt)
+        concept_emb, interaction_emb = self.base_emb(batch)
+        # d_ct 总结了包含当前question（concept）的problems（questions）的变化
+        concept_variation_emb = self.embed_concept_variation(concept_seq)
+        if use_LLM_emb4concept:
+            concept_variation_emb = self.MLP4concept_variation(concept_variation_emb)
+        # mu_{q_t}
+        question_difficulty_emb = self.embed_question_difficulty4zero(question_seq)
+        if use_LLM_emb4question:
+            question_difficulty_emb = self.MLP4question(question_difficulty_emb)
+        # mu_{q_t} * d_ct + c_ct
+        question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
+        # f_{(c_t, r_t)}中的r_t
+        interaction_variation_emb = self.embed_interaction_variation(correct_seq)
+        # e_{(c_t, r_t)} + mu_{q_t} * f_{(c_t, r_t)}
+        interaction_emb = (
+                    interaction_emb + question_difficulty_emb * (interaction_variation_emb + concept_variation_emb))
+
+        encoder_input = {
+            "question_emb": question_emb,
+            "interaction_emb": interaction_emb,
+            "question_difficulty_emb": question_difficulty_emb
+        }
+
+        latent = self.encoder_layer(encoder_input)
+        predict_layer_input = torch.cat((latent, question_emb), dim=2)
+        predict_score = self.predict_layer(predict_layer_input).squeeze(dim=-1)
+        predict_score = torch.masked_select(predict_score[:, 1:], mask_bool_seq[:, 1:])
+
+        return predict_score
 
     def get_predict_score(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)

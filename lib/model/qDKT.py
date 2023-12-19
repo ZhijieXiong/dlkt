@@ -45,7 +45,7 @@ class qDKT(nn.Module, BaseModel4CL):
         self.question_head4zero = parse_question_zero_shot(self.objects["data"]["train_data_statics"],
                                                            self.question2concept_list,
                                                            self.concept2question_list)
-        self.embed_layer4zero = deepcopy(self.embed_layer)
+        self.embed_question4zero = None
 
         use_LLM_emb4question = self.params["use_LLM_emb4question"]
         use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
@@ -154,44 +154,48 @@ class qDKT(nn.Module, BaseModel4CL):
 
         return latent_mean
 
-    def set_emb4zero_emb(self):
+    def set_emb4zero(self):
         """
         transfer head to tail use gaussian distribution
         :return:
         """
         data_type = self.params["datasets_config"]["data_type"]
+        head2tail_transfer_method = self.params["head2tail_transfer_method"]
         indices = []
         tail_qs_emb = []
         for z_q, head_qs in self.question_head4zero.items():
-            head_qs_emb = self.embed_layer.get_emb("question",
-                                                   torch.tensor(head_qs).long().to(self.params["device"]))
-            if len(head_qs_emb) > 100 or len(head_qs_emb) != 0:
-                indices.append(z_q)
-            else:
+            head_question_indices = torch.tensor(head_qs).long().to(self.params["device"])
+            head_qs_emb = self.embed_layer.get_emb("question", head_question_indices).detach().clone()
+            if len(head_qs) == 0:
                 continue
-            # 可能fit时报错: pvals < 0, pvals > 1 or pvals contains NaNs
-            if len(head_qs_emb) > 100:
-                head_qs_emb = head_qs_emb.detach().cpu().numpy()
-                if data_type == "only_question":
-                    # 多知识点数据集
-                    n_com = 2
+            indices.append(z_q)
+            if head2tail_transfer_method == "gaussian_fit":
+                # zero shot question的emb用同一知识点下的其它习题emb拟合高斯分布然后从里面采样
+                if len(head_qs_emb) > 100:
+                    head_qs_emb = head_qs_emb.detach().cpu().numpy()
+                    if data_type == "only_question":
+                        # 多知识点数据集
+                        n_com = 2
+                    else:
+                        # 单知识点数据集
+                        n_com = 1
+                    gmm = GaussianMixture(n_components=n_com, random_state=self.params["seed"])
+                    gmm.fit(head_qs_emb)
+                    gmm_samples = gmm.sample(1)
+                    tail_q_emb = torch.from_numpy(gmm_samples[0][0]).unsqueeze(0).to(self.params["device"])
                 else:
-                    # 单知识点数据集
-                    n_com = 1
-                gmm = GaussianMixture(n_components=n_com, random_state=self.params["seed"])
-                gmm.fit(head_qs_emb)
-                gmm_samples = gmm.sample(1)
-                tail_q_emb = torch.from_numpy(gmm_samples[0][0]).unsqueeze(0).to(self.params["device"])
+                    tail_q_emb = head_qs_emb.mean(dim=0).unsqueeze(0)
+            elif head2tail_transfer_method == "mean_pool":
+                tail_q_emb = head_qs_emb.mean(dim=0).unsqueeze(0)
             else:
-                tail_q_emb = head_qs_emb.mean(dim=0).detach().clone().unsqueeze(0)
+                raise NotImplementedError()
             tail_qs_emb.append(tail_q_emb.float())
         indices = torch.tensor(indices)
         tail_qs_emb = torch.cat(tail_qs_emb, dim=0)
 
         embed_question = self.embed_layer.embed_question.weight.detach().clone()
         embed_question[indices] = tail_qs_emb
-        self.embed_layer4zero.embed_question = nn.Embedding(embed_question.shape[0], embed_question.shape[1],
-                                                            _weight=embed_question)
+        self.embed_question4zero = nn.Embedding(embed_question.shape[0], embed_question.shape[1], _weight=embed_question)
 
     def get_predict_score4question_zero(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
@@ -199,20 +203,25 @@ class qDKT(nn.Module, BaseModel4CL):
         correct_seq = batch["correct_seq"]
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         data_type = self.params["datasets_config"]["data_type"]
-
+        use_LLM_emb4question = self.params["use_LLM_emb4question"]
+        use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
         batch_size = correct_seq.shape[0]
-        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
-        if data_type == "only_question":
-            qc_emb = self.embed_layer4zero.get_emb_question_with_concept_fused(batch["question_seq"],
-                                                                               concept_fusion="mean")
-        else:
-            concept_seq = batch["concept_seq"]
-            question_seq = batch["question_seq"]
-            concept_question_emb = self.embed_layer4zero.get_emb_concatenated(("concept", "question"),
-                                                                              (concept_seq, question_seq))
-            qc_emb = concept_question_emb
-        interaction_emb = torch.cat((qc_emb[:, :-1], correct_emb[:, :-1]), dim=2)
 
+        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
+
+        if data_type == "only_question":
+            # todo: 这里是错误的，需要改正
+            qc_emb = self.embed_layer4zero.get_emb_question_with_concept_fused(batch["question_seq"], "mean")
+        else:
+            concept_emb = self.embed_layer.get_emb("concept", batch["concept_seq"])
+            question_emb = self.embed_question4zero(batch["question_seq"])
+            if use_LLM_emb4concept:
+                concept_emb = self.MLP4concept(concept_emb)
+            if use_LLM_emb4question:
+                question_emb = self.MLP4question(question_emb)
+            qc_emb = torch.cat((concept_emb, question_emb), dim=-1)
+
+        interaction_emb = torch.cat((qc_emb[:, :-1], correct_emb[:, :-1]), dim=2)
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(interaction_emb)
 

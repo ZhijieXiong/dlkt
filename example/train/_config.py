@@ -93,11 +93,12 @@ def general_config(local_params, global_params, global_objects):
     use_multi_metrics = local_params["use_multi_metrics"]
     mutil_metrics = local_params["multi_metrics"]
     train_strategy_type = local_params["train_strategy"]
-    use_LLM_emb4question = local_params["use_LLM_emb4question"]
-    use_LLM_emb4concept = local_params["use_LLM_emb4concept"]
-    train_LLM_emb = local_params["train_LLM_emb"]
-    transfer_head2zero = local_params["transfer_head2zero"]
-    head2tail_transfer_method = local_params["head2tail_transfer_method"]
+    # 下面配置不是每个模型都写了的
+    use_LLM_emb4question = local_params.get("use_LLM_emb4question", False)
+    use_LLM_emb4concept = local_params.get("use_LLM_emb4concept", False)
+    train_LLM_emb = local_params.get("train_LLM_emb", False)
+    transfer_head2zero = local_params.get("transfer_head2zero", False)
+    head2tail_transfer_method = local_params.get("head2tail_transfer_method", "mean_pool")
 
     train_strategy_config = global_params["train_strategy"]
     train_strategy_config["num_epoch"] = num_epoch

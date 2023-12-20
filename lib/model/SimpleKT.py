@@ -207,8 +207,9 @@ class SimpleKT(nn.Module, BaseModel4CL):
         return predict_score
 
     def get_latent(self, batch, use_emb_dropout=False, dropout=0.1):
-        difficulty_scalar = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["difficulty_scalar"]
-        separate_qa = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["separate_qa"]
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]
+        difficulty_scalar = encoder_config["difficulty_scalar"]
+        separate_qa = encoder_config["separate_qa"]
         concept_seq = batch["concept_seq"]
         question_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
@@ -246,7 +247,11 @@ class SimpleKT(nn.Module, BaseModel4CL):
             "question_difficulty_emb": question_difficulty_emb
         }
 
-        latent = self.encoder_layer(encoder_input)
+        seq_representation = encoder_config.get("seq_representation", "encoder_output")
+        if seq_representation == "knowledge_encoder_output":
+            latent = self.encoder_layer.get_latent(encoder_input)
+        else:
+            latent = self.encoder_layer(encoder_input)
 
         return latent
 
@@ -379,3 +384,6 @@ class SimpleKT(nn.Module, BaseModel4CL):
             loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
 
         return predict_loss
+
+    def get_predict_score_seq_len_minus1(self, batch):
+        return self.forward(batch)[:, 1:]

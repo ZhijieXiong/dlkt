@@ -162,7 +162,6 @@ class BaseModel4CL:
         if use_neg_filter:
             mask4filter = ((cos_sim[:, :batch_size] > (neg_sim_threshold / temp)) &
                            torch.ne(torch.eye(batch_size), 1).to(self.params["device"]))
-            # 这里不能用-1 / temp，会降低cl loss，模型学不到东西
             cos_sim[mask4filter] = 1 / temp
         cl_loss = nn.functional.cross_entropy(cos_sim, labels)
 
@@ -270,9 +269,8 @@ class BaseModel4CL:
         temp = self.params["other"]["cluster_cl"]["temp"]
         cos_sim_aug0 = torch.cosine_similarity(intent.unsqueeze(1), latent_aug0_pooled.unsqueeze(0), dim=-1) / temp
         cos_sim_aug1 = torch.cosine_similarity(intent.unsqueeze(1), latent_aug1_pooled.unsqueeze(0), dim=-1) / temp
-        # 这里不能用-1 / temp，会降低cl loss，模型学不到东西
-        cos_sim_aug0[mask4inf] = 1 / temp
-        cos_sim_aug1[mask4inf] = 1 / temp
+        cos_sim_aug0[mask4inf] = -1 / temp
+        cos_sim_aug1[mask4inf] = -1 / temp
 
         labels = torch.arange(batch_size).long().to(self.params["device"])
         cl_loss0 = nn.functional.cross_entropy(cos_sim_aug0, labels)

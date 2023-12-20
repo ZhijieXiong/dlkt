@@ -65,7 +65,7 @@ if __name__ == "__main__":
     # 其它参数
     parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
     # 其它
-    parser.add_argument("--save_model", type=str2bool, default=True)
+    parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()

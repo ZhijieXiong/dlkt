@@ -20,13 +20,26 @@ class Architecture(nn.Module):
         self.blocks = nn.ModuleList([TransformerLayer(params) for _ in range(num_block)])
         self.position_emb = CosinePositionalEmbedding(d_model=self.dim_model, max_len=seq_len)
 
+    def get_latent(self, batch):
+        interaction_emb = batch["interaction_emb"]
+        emb_position_interaction = self.position_emb(interaction_emb)
+        interaction_emb = interaction_emb + emb_position_interaction
+        y = interaction_emb
+
+        for block in self.blocks:
+            # apply_pos is True: FFN+残差+lay norm 非第一层与0~t-1的的q的attention, 对应图中Knowledge Retriever
+            # mask=0，不能看到当前的response, 在Knowledge Retriever的value全为0，因此，第一题只有question信息，无interaction信息
+            y = block(mask=1, query=y, key=y, values=y, apply_pos=True)
+
+        return y
+
     def forward(self, batch):
         question_emb = batch["question_emb"]
         interaction_emb = batch["interaction_emb"]
 
         # target shape: (batch_size, seq_len)
-        emb_position_concept = self.position_emb(question_emb)
-        question_emb = question_emb + emb_position_concept
+        emb_position_question = self.position_emb(question_emb)
+        question_emb = question_emb + emb_position_question
         emb_position_interaction = self.position_emb(interaction_emb)
         interaction_emb = interaction_emb + emb_position_interaction
 

@@ -45,7 +45,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
-    parser.add_argument("--lr_schedule_milestones", type=str, default="[10]")
+    parser.add_argument("--lr_schedule_milestones", type=str, default="[5, 10]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     parser.add_argument("--difficulty_scalar", type=str2bool, default=True)
     # instance cl参数
     parser.add_argument("--temp", type=float, default=0.05)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.01)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
     # cl loss weight动态变化
     parser.add_argument("--use_weight_dynamic", type=str2bool, default=False)
     parser.add_argument("--weight_dynamic_type", type=str, default="multi_step",
@@ -76,12 +76,12 @@ if __name__ == "__main__":
     parser.add_argument("--linear_increase_value", type=float, default=0.1)
     parser.add_argument("--use_stop_cl_after", type=str2bool, default=False)
     parser.add_argument("--epoch_stop_cl", type=int, default=3)
-    parser.add_argument("--latent_type4cl", type=str, default="last_time",
+    parser.add_argument("--latent_type4cl", type=str, default="mean_pool",
                         choices=("last_time", "all_time", "mean_pool"))
     # model aug参数
-    parser.add_argument("--use_emb_dropout4cl", type=str2bool, default=True)
+    parser.add_argument("--use_emb_dropout4cl", type=str2bool, default=False)
     parser.add_argument("--emb_dropout4cl", type=float, default=0.2)
-    parser.add_argument("--data_aug_type4cl", type=str, default="hybrid",
+    parser.add_argument("--data_aug_type4cl", type=str, default="original_data_aug",
                         choices=("original_data_aug", "model_aug", "hybrid"))
     # neg sample参数
     parser.add_argument("--use_neg", type=str2bool, default=True)
@@ -115,6 +115,14 @@ if __name__ == "__main__":
     parser.add_argument("--adv_learning_rate", type=float, default=20.0)
     parser.add_argument("--eta", type=float, default=5.0)
     parser.add_argument("--gamma", type=float, default=1.0)
+    # 是否使用LLM的emb初始化
+    parser.add_argument("--use_LLM_emb4question", type=str2bool, default=False)
+    parser.add_argument("--use_LLM_emb4concept", type=str2bool, default=False)
+    parser.add_argument("--train_LLM_emb", type=str2bool, default=False)
+    # 是否将head question的知识迁移到zero shot question
+    parser.add_argument("--transfer_head2zero", type=str2bool, default=False)
+    parser.add_argument("--head2tail_transfer_method", type=str, default="mean_pool",
+                        choices=("mean_pool", "gaussian_fit"))
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)

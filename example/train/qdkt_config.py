@@ -63,9 +63,7 @@ def qdkt_general_config(local_params, global_params, global_objects):
 
         global_params["save_model_dir_name"] = (
             f"{get_now_time().replace(' ', '-').replace(':', '-')}@@qDKT@@seed_{local_params['seed']}@@{setting_name}@@"
-            f"{train_file_name.replace('.txt', '')}@@{num_concept}-{num_question}-{dim_concept}-{dim_question}-"
-            f"{dim_correct}-{dim_latent}-{rnn_type}-{num_rnn_layer}-{dropout}-{num_predict_layer}-{dim_predict_mid}-"
-            f"{activate_type}")
+            f"{train_file_name.replace('.txt', '')}")
 
 
 def qdkt_config(local_params):

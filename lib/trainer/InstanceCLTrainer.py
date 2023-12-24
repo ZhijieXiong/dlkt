@@ -30,7 +30,8 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
         weight_cl_loss = self.params["loss_config"]["cl loss"]
         instance_cl_config = self.params["other"]["instance_cl"]
         latent_type4cl = instance_cl_config["latent_type4cl"]
-        use_adv_aug = self.params["other"]["instance_cl"]["use_adv_aug"]
+        use_warm_up4cluster_cl = self.params["other"]["instance_cl"]["use_warm_up4cluster_cl"]
+        epoch_warm_up4cluster_cl = self.params["other"]["instance_cl"]["epoch_warm_up4cluster_cl"]
         use_stop_cl_after = self.params["other"]["instance_cl"]["use_stop_cl_after"]
         epoch_stop_cl = self.params["other"]["instance_cl"]["epoch_stop_cl"]
 
@@ -38,7 +39,14 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
             self.do_online_sim()
             self.do_max_entropy_aug()
 
-            do_instance_cl = not use_stop_cl_after or (epoch <= epoch_stop_cl)
+            do_instance_cl = (
+                    (
+                            (not use_warm_up4cluster_cl) or (use_warm_up4cluster_cl and epoch > epoch_warm_up4cluster_cl)
+                    )
+                    and (
+                            not use_stop_cl_after or (epoch <= epoch_stop_cl)
+                    )
+            )
             if do_instance_cl:
                 train_loader.dataset.set_use_aug()
             else:
@@ -71,7 +79,7 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
                     if latent_type4cl in ["mean_pool", "last_time"]:
                         cl_loss = model.get_instance_cl_loss(batch, instance_cl_config, self.dataset_adv_generated)
                     elif latent_type4cl == "all_time":
-                        cl_loss = model.get_instance_cl_loss_all_interaction(batch, use_adv_aug, self.dataset_adv_generated)
+                        cl_loss = model.get_instance_cl_loss_all_interaction(batch, instance_cl_config, self.dataset_adv_generated)
                     else:
                         raise NotImplementedError()
                     self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)

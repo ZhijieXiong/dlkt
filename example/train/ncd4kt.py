@@ -2,12 +2,12 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from simple_kt_config import simple_kt_config
+from ncd4kt_config import ncd4kt_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.model.SimpleKT import SimpleKT
+from lib.model.NCD4KT import NCD4KT
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 
@@ -32,15 +32,15 @@ if __name__ == "__main__":
     parser.add_argument("--num_epoch", type=int, default=200)
     parser.add_argument("--use_early_stop", type=str2bool, default=True)
     parser.add_argument("--epoch_early_stop", type=int, default=10)
-    parser.add_argument("--use_last_average", type=str2bool, default=False)
+    parser.add_argument("--use_last_average", type=str2bool, default=True)
     parser.add_argument("--epoch_last_average", type=int, default=5)
     parser.add_argument("--main_metric", type=str, default="AUC")
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
-    parser.add_argument("--learning_rate", type=float, default=0.0002)
+    parser.add_argument("--learning_rate", type=float, default=0.001)
     parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
-    parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
+    parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
@@ -51,38 +51,23 @@ if __name__ == "__main__":
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=265)
     parser.add_argument("--num_question", type=int, default=53091)
-    parser.add_argument("--dim_model", type=int, default=256)
-    parser.add_argument("--num_block", type=int, default=3)
-    parser.add_argument("--num_head", type=int, default=8)
-    parser.add_argument("--dim_ff", type=int, default=256)
-    parser.add_argument("--dim_final_fc", type=int, default=64)
-    parser.add_argument("--dim_final_fc2", type=int, default=64)
-    parser.add_argument("--seq_len", type=int, default=200)
-    parser.add_argument("--dropout", type=float, default=0.2)
-    parser.add_argument("--key_query_same", type=str2bool, default=True)
-    parser.add_argument("--separate_qa", type=str2bool, default=False)
-    parser.add_argument("--difficulty_scalar", type=str2bool, default=False)
-    # 是否对样本加权
-    parser.add_argument("--use_sample_weight", type=str2bool, default=False)
-    parser.add_argument("--sample_weight_method", type=str, default="highlight_tail",
-                        choices=("discount", "highlight_tail"))
-    parser.add_argument("--tail_weight", type=float, default=1.1)
-    # 是否使用LLM的emb初始化
-    parser.add_argument("--use_LLM_emb4question", type=str2bool, default=False)
-    parser.add_argument("--use_LLM_emb4concept", type=str2bool, default=False)
-    parser.add_argument("--train_LLM_emb", type=str2bool, default=True)
-    # 是否将head question的知识迁移到zero shot question
-    parser.add_argument("--transfer_head2zero", type=str2bool, default=False)
-    parser.add_argument("--head2tail_transfer_method", type=str, default="mean_pool",
-                        choices=("mean_pool", "gaussian_fit"))
+    parser.add_argument("--dim_concept", type=int, default=64)
+    parser.add_argument("--dim_correct", type=int, default=64)
+    parser.add_argument("--rnn_type", type=str, default="gru",
+                        choices=("rnn", "lstm", "gru"))
+    parser.add_argument("--num_rnn_layer", type=int, default=1)
+    parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument("--num_predict_layer", type=int, default=3)
+    parser.add_argument("--dim_predict_mid", type=int, default=256)
+    parser.add_argument("--activate_type", type=str, default="relu")
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
-    parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = simple_kt_config(params)
+    global_params, global_objects = ncd4kt_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)
@@ -106,7 +91,7 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = SimpleKT(global_params, global_objects).to(global_params["device"])
+    model = NCD4KT(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
     trainer = KnowledgeTracingTrainer(global_params, global_objects)
     trainer.train()

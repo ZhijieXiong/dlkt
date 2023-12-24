@@ -67,6 +67,8 @@ class KnowledgeTracingTrainer:
                 if grad_clip_config["use_clip"]:
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
                 optimizer.step()
+                if hasattr(model, "apply_clipper"):
+                    model.apply_clipper()
             if schedulers_config["use_scheduler"]:
                 scheduler.step()
             self.evaluate()

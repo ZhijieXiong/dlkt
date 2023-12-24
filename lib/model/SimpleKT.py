@@ -30,7 +30,7 @@ class SimpleKT(nn.Module, BaseModel4CL):
 
         # 题目难度用一个标量表示
         self.embed_question_difficulty = self.get_embed_question_diff()
-        self.embed_concept_variation = self.get_embed_concept()
+        self.embed_concept_variation = nn.Embedding(num_concept, dim_model)
         self.embed_concept = self.get_embed_concept()
         self.embed_interaction_variation = nn.Embedding(2, dim_model)
         if separate_qa:
@@ -172,7 +172,6 @@ class SimpleKT(nn.Module, BaseModel4CL):
 
     def forward(self, batch):
         use_LLM_emb4question = self.params["use_LLM_emb4question"]
-        use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
         concept_seq = batch["concept_seq"]
         question_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
@@ -181,8 +180,6 @@ class SimpleKT(nn.Module, BaseModel4CL):
         concept_emb, interaction_emb = self.base_emb(batch)
         # d_ct 总结了包含当前question（concept）的problems（questions）的变化
         concept_variation_emb = self.embed_concept_variation(concept_seq)
-        if use_LLM_emb4concept:
-            concept_variation_emb = self.MLP4concept_variation(concept_variation_emb)
         # mu_{q_t}
         question_difficulty_emb = self.embed_question_difficulty(question_seq)
         if use_LLM_emb4question:
@@ -208,7 +205,6 @@ class SimpleKT(nn.Module, BaseModel4CL):
 
     def get_latent(self, batch, use_emb_dropout=False, dropout=0.1):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]
-        difficulty_scalar = encoder_config["difficulty_scalar"]
         separate_qa = encoder_config["separate_qa"]
         concept_seq = batch["concept_seq"]
         question_seq = batch["question_seq"]
@@ -232,14 +228,11 @@ class SimpleKT(nn.Module, BaseModel4CL):
         question_difficulty_emb = self.embed_question_difficulty(question_seq)
         # mu_{q_t} * d_ct + c_ct
         question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
-        if difficulty_scalar:
-            # f_{(c_t, r_t)}中的r_t
-            interaction_variation_emb = self.embed_interaction_variation(correct_seq)
-            # e_{(c_t, r_t)} + mu_{q_t} * f_{(c_t, r_t)}
-            interaction_emb = (
-                    interaction_emb + question_difficulty_emb * (interaction_variation_emb + concept_variation_emb))
-        else:
-            raise NotImplementedError()
+        # f_{(c_t, r_t)}中的r_t
+        interaction_variation_emb = self.embed_interaction_variation(correct_seq)
+        # e_{(c_t, r_t)} + mu_{q_t} * f_{(c_t, r_t)}
+        interaction_emb = (
+                interaction_emb + question_difficulty_emb * (interaction_variation_emb + concept_variation_emb))
 
         encoder_input = {
             "question_emb": question_emb,
@@ -323,7 +316,6 @@ class SimpleKT(nn.Module, BaseModel4CL):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
 
         use_LLM_emb4question = self.params["use_LLM_emb4question"]
-        use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
         concept_seq = batch["concept_seq"]
         question_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
@@ -332,8 +324,6 @@ class SimpleKT(nn.Module, BaseModel4CL):
         concept_emb, interaction_emb = self.base_emb(batch)
         # d_ct 总结了包含当前question（concept）的problems（questions）的变化
         concept_variation_emb = self.embed_concept_variation(concept_seq)
-        if use_LLM_emb4concept:
-            concept_variation_emb = self.MLP4concept_variation(concept_variation_emb)
         # mu_{q_t}
         question_difficulty_emb = self.embed_question_difficulty4zero(question_seq)
         if use_LLM_emb4question:

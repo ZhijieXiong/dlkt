@@ -63,11 +63,11 @@ if __name__ == "__main__":
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
     # 是否使用LLM的emb初始化
-    parser.add_argument("--use_LLM_emb4question", type=str2bool, default=True)
+    parser.add_argument("--use_LLM_emb4question", type=str2bool, default=False)
     parser.add_argument("--use_LLM_emb4concept", type=str2bool, default=False)
     parser.add_argument("--train_LLM_emb", type=str2bool, default=True)
     # 是否将head question的知识迁移到zero shot question
-    parser.add_argument("--transfer_head2zero", type=str2bool, default=True)
+    parser.add_argument("--transfer_head2zero", type=str2bool, default=False)
     parser.add_argument("--head2tail_transfer_method", type=str, default="mean_pool",
                         choices=("mean_pool", "gaussian_fit"))
     # 其它

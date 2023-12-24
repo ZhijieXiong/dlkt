@@ -9,6 +9,7 @@ from evaluate_config import evaluate_general_config
 from lib.dataset.KTDataset import KTDataset
 from lib.dataset.KTDataset_cpu2device import KTDataset_cpu2device
 from lib.evaluator.Evaluator import Evaluator
+from lib.util.parse import str2bool
 
 
 if __name__ == "__main__":
@@ -16,7 +17,7 @@ if __name__ == "__main__":
 
     # 基本配置
     parser.add_argument("--save_model_dir", type=str,
-                        default=r"F:\code\myProjects\dlkt\lab\saved_models\2023-11-28-18-06-54@@AKT@@seed_0@@random_split_leave_multi_out_setting@@assist2012_train_split_5")
+                        default=r"F:\code\myProjects\dlkt\lab\saved_models\2023-12-20@11-25-32@@AKT-instance_cl@@seed_0@@random_split_leave_multi_out_setting@@assist2012_train_split_5")
     parser.add_argument("--save_model_name", type=str, default="kt_model.pth")
     parser.add_argument("--setting_name", type=str, default="random_split_leave_multi_out_setting")
     parser.add_argument("--data_type", type=str, default="single_concept",
@@ -34,6 +35,11 @@ if __name__ == "__main__":
                         choices=("[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]",
                                  "[0, 5, 10, 20, 30, 40, 50, 60, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200]"))
     parser.add_argument("--statics_file_name", type=str, default="assist2012_train_split_5_statics.json")
+
+    # 是否将head question的知识迁移到zero shot question
+    parser.add_argument("--transfer_head2zero", type=str2bool, default=False)
+    parser.add_argument("--head2tail_transfer_method", type=str, default="mean_pool",
+                        choices=("mean_pool", "gaussian_fit"))
 
     args = parser.parse_args()
     params = vars(args)

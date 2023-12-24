@@ -82,11 +82,10 @@ def qdkt_instance_cl_config(local_params):
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
     qdkt_general_config(local_params, global_params, global_objects)
-    params_str = instance_cl_general_config(local_params, global_params, global_objects)
+    instance_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
             global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-instance_cl@@"))
-        global_params["save_model_dir_name"] += f"@@{params_str}"
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -97,11 +96,10 @@ def qdkt_duo_cl_config(local_params):
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
     qdkt_general_config(local_params, global_params, global_objects)
-    params_str = duo_cl_general_config(local_params, global_params)
+    duo_cl_general_config(local_params, global_params)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
             global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-duo_cl@@"))
-        global_params["save_model_dir_name"] += f"@@{params_str}"
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -112,11 +110,10 @@ def qdkt_cluster_cl_config(local_params):
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
     qdkt_general_config(local_params, global_params, global_objects)
-    params_str = cluster_cl_general_config(local_params, global_params, global_objects)
+    cluster_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
             global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-cluster_cl@@"))
-        global_params["save_model_dir_name"] += f"@@{params_str}"
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -127,11 +124,10 @@ def qdkt_max_entropy_adv_aug_config(local_params):
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
     qdkt_general_config(local_params, global_params, global_objects)
-    params_str = max_entropy_adv_aug_general_config(local_params, global_params)
+    max_entropy_adv_aug_general_config(local_params, global_params)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
             global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-ME_adv_aug@@"))
-        global_params["save_model_dir_name"] += f"@@{params_str}"
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -142,12 +138,10 @@ def qdkt_meta_optimize_cl_config(local_params):
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
     qdkt_general_config(local_params, global_params, global_objects)
-
-    params_str = meta_optimize_cl_general_config(local_params, global_params, global_objects)
+    meta_optimize_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
             global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-meta_optimize_cl@@"))
-        global_params["save_model_dir_name"] += f"@@{params_str}"
         save_params(global_params, global_objects)
 
     return global_params, global_objects

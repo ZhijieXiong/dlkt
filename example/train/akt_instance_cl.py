@@ -61,12 +61,12 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--separate_qa", type=str2bool, default=False)
     parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
-    parser.add_argument("--seq_representation", type=str, default="knowledge_encoder_output",
+    parser.add_argument("--seq_representation", type=str, default="encoder_output",
                         help="choose the representation of sequence in AKT, knowledge_encoder_output is the choice of CL4KT",
                         choices=("encoder_output", "knowledge_encoder_output"))
     # instance cl参数
     parser.add_argument("--temp", type=float, default=0.05)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.001)
     # cl loss weight动态变化
     parser.add_argument("--use_weight_dynamic", type=str2bool, default=False)
     parser.add_argument("--weight_dynamic_type", type=str, default="multi_step",
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     parser.add_argument("--linear_increase_value", type=float, default=0.1)
     parser.add_argument("--use_stop_cl_after", type=str2bool, default=False)
     parser.add_argument("--epoch_stop_cl", type=int, default=3)
-    parser.add_argument("--latent_type4cl", type=str, default="mean_pool",
+    parser.add_argument("--latent_type4cl", type=str, default="all_time",
                         choices=("last_time", "all_time", "mean_pool"))
     # model aug参数
     parser.add_argument("--use_emb_dropout4cl", type=str2bool, default=True)
@@ -86,7 +86,7 @@ if __name__ == "__main__":
                         choices=("original_data_aug", "model_aug", "hybrid"))
     # neg sample参数
     parser.add_argument("--use_neg", type=str2bool, default=True)
-    parser.add_argument("--use_neg_filter", type=str2bool, default=True)
+    parser.add_argument("--use_neg_filter", type=str2bool, default=False)
     parser.add_argument("--neg_sim_threshold", type=float, default=0.75, help="cos sim, between (0, 1)")
     # info aug参数
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     parser.add_argument("--eta", type=float, default=5.0)
     parser.add_argument("--gamma", type=float, default=1.0)
     # 其它
-    parser.add_argument("--save_model", type=str2bool, default=True)
+    parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()

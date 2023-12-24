@@ -162,24 +162,42 @@ class BaseModel4CL:
         if use_neg_filter:
             mask4filter = ((cos_sim[:, :batch_size] > (neg_sim_threshold / temp)) &
                            torch.ne(torch.eye(batch_size), 1).to(self.params["device"]))
-            cos_sim[mask4filter] = 1 / temp
+            cos_sim[mask4filter] = -1 / temp
         cl_loss = nn.functional.cross_entropy(cos_sim, labels)
 
         return cl_loss
 
-    def get_instance_cl_loss_all_interaction(self, batch, use_adv_aug=False, dataset=None):
-        batch_aug0 = {
-            "concept_seq": batch["concept_seq_aug_0"],
-            "question_seq": batch["question_seq_aug_0"],
-            "correct_seq": batch["correct_seq_aug_0"],
-            "mask_seq": batch["mask_seq_aug_0"]
-        }
-        batch_aug1 = {
-            "concept_seq": batch["concept_seq_aug_1"],
-            "question_seq": batch["question_seq_aug_1"],
-            "correct_seq": batch["correct_seq_aug_1"],
-            "mask_seq": batch["mask_seq_aug_1"]
-        }
+    def get_instance_cl_loss_all_interaction(self, batch, instance_cl_params, dataset=None):
+        use_neg_filter = instance_cl_params["use_neg_filter"]
+        neg_sim_threshold = instance_cl_params["neg_sim_threshold"]
+        data_aug_type4cl = instance_cl_params["data_aug_type4cl"]
+
+        if data_aug_type4cl == "original_data_aug":
+            batch_aug0 = {
+                "concept_seq": batch["concept_seq_aug_0"],
+                "question_seq": batch["question_seq_aug_0"],
+                "correct_seq": batch["correct_seq_aug_0"],
+                "mask_seq": batch["mask_seq_aug_0"]
+            }
+            batch_aug1 = {
+                "concept_seq": batch["concept_seq_aug_1"],
+                "question_seq": batch["question_seq_aug_1"],
+                "correct_seq": batch["correct_seq_aug_1"],
+                "mask_seq": batch["mask_seq_aug_1"]
+            }
+        elif data_aug_type4cl == "model_aug":
+            batch_aug0 = batch
+            batch_aug1 = batch
+        elif data_aug_type4cl == "hybrid":
+            batch_aug0 = {
+                "concept_seq": batch["concept_seq_aug_0"],
+                "question_seq": batch["question_seq_aug_0"],
+                "correct_seq": batch["correct_seq_aug_0"],
+                "mask_seq": batch["mask_seq_aug_0"]
+            }
+            batch_aug1 = batch
+        else:
+            raise NotImplementedError()
 
         latent_aug0 = self.get_latent(batch_aug0)
         mask4last_aug0 = get_mask4last_or_penultimate(batch_aug0["mask_seq"], penultimate=False)
@@ -189,20 +207,20 @@ class BaseModel4CL:
         mask4last_aug1 = get_mask4last_or_penultimate(batch_aug1["mask_seq"], penultimate=False)
         latent_aug1_last = latent_aug1[torch.where(mask4last_aug1 == 1)]
 
-        bs = latent_aug0.shape[0]
+        batch_size = latent_aug0.shape[0]
         seq_len = latent_aug0.shape[1]
-        m = (torch.eye(bs) == 0)
+        m = (torch.eye(batch_size) == 0)
 
         # 将另一增强序列的每个时刻都作为一个neg，但是为了减少计算量，实际取另一增强序列每隔5个时刻
-        neg_all = latent_aug1.repeat(bs, 1, 1).reshape(bs, bs, seq_len, -1)[m].reshape(bs, bs - 1, seq_len, -1)
-        mask_bool4neg = torch.ne(batch["mask_seq_aug_1"].repeat(bs, 1).reshape(bs, bs, -1)[m].reshape(bs, bs - 1, -1), 0)
+        neg_all = latent_aug1.repeat(batch_size, 1, 1).reshape(batch_size, batch_size, seq_len, -1)[m].reshape(batch_size, batch_size - 1, seq_len, -1)
+        mask_bool4neg = torch.ne(batch_aug1["mask_seq"].repeat(batch_size, 1).reshape(batch_size, batch_size, -1)[m].reshape(batch_size, batch_size - 1, -1), 0)
         mask4select = torch.zeros_like(mask_bool4neg).to(self.params["device"])
         mask4select[:, :, 5::5] = True
         mask4select = mask4select & mask_bool4neg
 
         temp = self.params["other"]["instance_cl"]["temp"]
         cos_sim_list = []
-        for i in range(bs):
+        for i in range(batch_size):
             anchor = latent_aug0_last[i]
             pos = latent_aug1_last[i]
             neg = neg_all[i][:, 3:][mask4select[i][:, 3:]]
@@ -211,8 +229,12 @@ class BaseModel4CL:
 
         labels = torch.tensor([0]).long().to(self.params["device"])
         cl_loss = 0.
-        for i in range(bs):
+        for i in range(batch_size):
             cos_sim = cos_sim_list[i]
+            if use_neg_filter:
+                mask4filter = cos_sim < (neg_sim_threshold / temp)
+                mask4filter[0, 0] = True
+                cos_sim = cos_sim[mask4filter].unsqueeze(0)
             cl_loss = cl_loss + nn.functional.cross_entropy(cos_sim, labels)
 
         return cl_loss
@@ -269,8 +291,8 @@ class BaseModel4CL:
         temp = self.params["other"]["cluster_cl"]["temp"]
         cos_sim_aug0 = torch.cosine_similarity(intent.unsqueeze(1), latent_aug0_pooled.unsqueeze(0), dim=-1) / temp
         cos_sim_aug1 = torch.cosine_similarity(intent.unsqueeze(1), latent_aug1_pooled.unsqueeze(0), dim=-1) / temp
-        cos_sim_aug0[mask4inf] = -1 / temp
-        cos_sim_aug1[mask4inf] = -1 / temp
+        cos_sim_aug0[mask4inf] = 1 / temp
+        cos_sim_aug1[mask4inf] = 1 / temp
 
         labels = torch.arange(batch_size).long().to(self.params["device"])
         cl_loss0 = nn.functional.cross_entropy(cos_sim_aug0, labels)

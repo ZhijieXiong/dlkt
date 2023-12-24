@@ -38,14 +38,14 @@ if __name__ == "__main__":
     parser.add_argument("--main_metric", type=str, default="AUC")
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
-    parser.add_argument("--learning_rate", type=float, default=0.0004)
+    parser.add_argument("--learning_rate", type=float, default=0.0002)
     parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
-    parser.add_argument("--lr_schedule_milestones", type=str, default="[5, 10]")
+    parser.add_argument("--lr_schedule_milestones", type=str, default="[5]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
@@ -62,10 +62,13 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--key_query_same", type=str2bool, default=True)
     parser.add_argument("--separate_qa", type=str2bool, default=False)
-    parser.add_argument("--difficulty_scalar", type=str2bool, default=True)
+    parser.add_argument("--difficulty_scalar", type=str2bool, default=False)
     # instance cl参数
     parser.add_argument("--temp", type=float, default=0.05)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.01)
+    # warm up
+    parser.add_argument("--use_warm_up4cluster_cl", type=str2bool, default=True)
+    parser.add_argument("--epoch_warm_up4cluster_cl", type=float, default=4)
     # cl loss weight动态变化
     parser.add_argument("--use_weight_dynamic", type=str2bool, default=False)
     parser.add_argument("--weight_dynamic_type", type=str, default="multi_step",
@@ -76,17 +79,17 @@ if __name__ == "__main__":
     parser.add_argument("--linear_increase_value", type=float, default=0.1)
     parser.add_argument("--use_stop_cl_after", type=str2bool, default=False)
     parser.add_argument("--epoch_stop_cl", type=int, default=3)
-    parser.add_argument("--latent_type4cl", type=str, default="mean_pool",
+    parser.add_argument("--latent_type4cl", type=str, default="last_time",
                         choices=("last_time", "all_time", "mean_pool"))
     # model aug参数
-    parser.add_argument("--use_emb_dropout4cl", type=str2bool, default=False)
-    parser.add_argument("--emb_dropout4cl", type=float, default=0.2)
+    parser.add_argument("--use_emb_dropout4cl", type=str2bool, default=True)
+    parser.add_argument("--emb_dropout4cl", type=float, default=0.1)
     parser.add_argument("--data_aug_type4cl", type=str, default="original_data_aug",
                         choices=("original_data_aug", "model_aug", "hybrid"))
     # neg sample参数
     parser.add_argument("--use_neg", type=str2bool, default=True)
     parser.add_argument("--use_neg_filter", type=str2bool, default=True)
-    parser.add_argument("--neg_sim_threshold", type=float, default=0.85, help="cos sim, between (0, 1)")
+    parser.add_argument("--neg_sim_threshold", type=float, default=0.75, help="cos sim, between (0, 1)")
     # info aug参数
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)

@@ -60,6 +60,8 @@ def evaluate_general_config(local_params):
     setting_name = local_params["setting_name"]
     test_file_name = local_params["test_file_name"]
     base_type = local_params["base_type"]
+    transfer_head2zero = local_params.get("transfer_head2zero", False)
+    head2tail_transfer_method = local_params.get("head2tail_transfer_method", "mean_pool")
 
     datasets_config = global_params["datasets_config"]
     datasets_config["test"]["setting_name"] = setting_name
@@ -86,5 +88,9 @@ def evaluate_general_config(local_params):
     # statics_preprocessed_multi_concept = load_json(os.path.join(preprocessed_dir,
     #                                                             "statics_preprocessed_multi_concept.json"))
     # global_params["num_max_concept"] = statics_preprocessed_multi_concept["num_max_concept"]
+
+    # 是否将head的知识迁移到zero shot的知识
+    global_params["transfer_head2zero"] = transfer_head2zero
+    global_params["head2tail_transfer_method"] = head2tail_transfer_method
 
     return global_params, global_objects

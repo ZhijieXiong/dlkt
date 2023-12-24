@@ -57,6 +57,8 @@ def instance_cl_general_config(local_params, global_params, global_objects):
 
     # instance CL参数
     temp = local_params["temp"]
+    use_warm_up4cluster_cl = local_params["use_warm_up4cluster_cl"]
+    epoch_warm_up4cluster_cl = local_params["epoch_warm_up4cluster_cl"]
     use_weight_dynamic = local_params["use_weight_dynamic"]
     weight_dynamic_type = local_params["weight_dynamic_type"]
     multi_step_weight = eval(local_params["multi_step_weight"])
@@ -74,8 +76,10 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     use_stop_cl_after = local_params["use_stop_cl_after"]
     epoch_stop_cl = local_params["epoch_stop_cl"]
 
-    global_params["other"]["instance_cl"] = deepcopy(INSTANCE_CL_PARAMS)
+    global_params["other"]["instance_cl"] = {}
     instance_cl_config = global_params["other"]["instance_cl"]
+    instance_cl_config["epoch_warm_up4cluster_cl"] = epoch_warm_up4cluster_cl
+    instance_cl_config["use_warm_up4cluster_cl"] = use_warm_up4cluster_cl
     instance_cl_config["temp"] = temp
     instance_cl_config["use_online_sim"] = use_online_sim
     instance_cl_config["use_warm_up4online_sim"] = use_warm_up4online_sim
@@ -83,11 +87,17 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     instance_cl_config["latent_type4cl"] = latent_type4cl
     instance_cl_config["random_select_aug_len"] = random_select_aug_len
     instance_cl_config["use_weight_dynamic"] = use_weight_dynamic
+    instance_cl_config["weight_dynamic"] = {}
+    instance_cl_config["weight_dynamic"][weight_dynamic_type] = {}
     instance_cl_config["weight_dynamic"]["type"] = weight_dynamic_type
-    instance_cl_config["weight_dynamic"]["multi_step"]["step_weight"] = multi_step_weight
-    instance_cl_config["weight_dynamic"]["linear_increase"] = {}
-    instance_cl_config["weight_dynamic"]["linear_increase"]["epoch"] = linear_increase_epoch
-    instance_cl_config["weight_dynamic"]["linear_increase"]["value"] = linear_increase_value
+    if weight_dynamic_type == "multi_step":
+        instance_cl_config["weight_dynamic"]["multi_step"]["step_weight"] = multi_step_weight
+    elif weight_dynamic_type == "linear_increase":
+        instance_cl_config["weight_dynamic"]["linear_increase"] = {}
+        instance_cl_config["weight_dynamic"]["linear_increase"]["epoch"] = linear_increase_epoch
+        instance_cl_config["weight_dynamic"]["linear_increase"]["value"] = linear_increase_value
+    else:
+        raise NotImplementedError()
     instance_cl_config["use_emb_dropout4cl"] = use_emb_dropout4cl
     instance_cl_config["emb_dropout4cl"] = emb_dropout4cl
     instance_cl_config["data_aug_type4cl"] = data_aug_type4cl
@@ -137,10 +147,6 @@ def instance_cl_general_config(local_params, global_params, global_objects):
           f"    use max entropy adv aug: {use_adv_aug}, interval epoch of generation: {epoch_interval_generate}, generate loops: {loop_adv}, num of generation epoch: {epoch_generate}\n"
           f"    adv lr: {adv_learning_rate}, eta: {eta}, gamma: {gamma}")
 
-    params_str = f"{temp}-{weight_cl_loss if not use_weight_dynamic else weight_dynamic_type}@@"
-
-    return params_str
-
 
 def duo_cl_general_config(local_params, global_params):
     # 配置数据集参数
@@ -158,16 +164,6 @@ def duo_cl_general_config(local_params, global_params):
     # 损失权重
     weight_cl_loss = local_params["weight_cl_loss"]
     global_params["loss_config"]["cl loss"] = weight_cl_loss
-
-    if cl_type == "last_time":
-        cl_type_str = "v1"
-    elif cl_type == "mean_pool":
-        cl_type_str = "v2"
-    else:
-        raise NotImplementedError()
-    params_str = f"{temp}-{weight_cl_loss}-{cl_type_str}"
-
-    return params_str
 
 
 def cluster_cl_general_config(local_params, global_params, global_objects):
@@ -259,43 +255,6 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
     dataset_name = local_params["dataset_name"]
     data_type = local_params["data_type"]
     global_objects["data"]["Q_table"] = global_objects["file_manager"].get_q_table(dataset_name, data_type)
-
-    aug_table = {
-        "mask": mask_prob,
-        "crop": crop_prob,
-        "replace": replace_prob,
-        "insert": insert_prob,
-        "permute": permute_prob
-    }
-
-    if cl_type == "last_time":
-        cl_type_str = "v1"
-    elif cl_type == "mean_pool":
-        cl_type_str = "v2"
-    else:
-        raise NotImplementedError()
-    params_str = f"{temp}-{weight_cl_loss}-{cl_type_str}-{num_cluster}@@"
-    if local_params["use_adv_aug"]:
-        params_str += f"adv_aug-{epoch_interval_generate}-{loop_adv}-{epoch_generate}-{adv_learning_rate}-{eta}-{gamma}@@"
-    if aug_type in ["random_aug", "informative_aug"]:
-        if aug_type == "random_aug":
-            params_str += "random_aug"
-        elif aug_type == "informative_aug":
-            params_str += f"informative_aug"
-        else:
-            raise NotImplementedError()
-        # v1使用序列随机长度部分做增强；v2使用完整序列做增强
-        if random_select_aug_len:
-            params_str += "-v1"
-        else:
-            params_str += "-v2"
-
-        for aug in aug_order:
-            params_str += f"-{aug}-{aug_table[aug]}"
-    else:
-        raise NotImplementedError()
-
-    return params_str
 
 
 def meta_optimize_cl_general_config(local_params, global_params, global_objects):
@@ -410,40 +369,3 @@ def meta_optimize_cl_general_config(local_params, global_params, global_objects)
     dataset_name = local_params["dataset_name"]
     data_type = local_params["data_type"]
     global_objects["data"]["Q_table"] = global_objects["file_manager"].get_q_table(dataset_name, data_type)
-
-    aug_table = {
-        "mask": mask_prob,
-        "crop": crop_prob,
-        "replace": replace_prob,
-        "insert": insert_prob,
-        "permute": permute_prob
-    }
-
-    if cl_type == "last_time":
-        cl_type_str = "v1"
-    elif cl_type == "mean_pool":
-        cl_type_str = "v2"
-    else:
-        raise NotImplementedError()
-    params_str = f"{temp}-{weight_lambda}-{weight_beta}-{weight_gamma}-{cl_type_str}@@"
-    if local_params["use_adv_aug"]:
-        params_str += f"adv_aug-{epoch_interval_generate}-{loop_adv}-{epoch_generate}-{adv_learning_rate}-{eta}-{gamma}@@"
-    if aug_type in ["random_aug", "informative_aug"]:
-        if aug_type == "random_aug":
-            params_str += "random_aug"
-        elif aug_type == "informative_aug":
-            params_str += f"informative_aug"
-        else:
-            raise NotImplementedError()
-        # v1使用序列随机长度部分做增强；v2使用完整序列做增强
-        if random_select_aug_len:
-            params_str += "-v1"
-        else:
-            params_str += "-v2"
-
-        for aug in aug_order:
-            params_str += f"-{aug}-{aug_table[aug]}"
-    else:
-        raise NotImplementedError()
-
-    return params_str

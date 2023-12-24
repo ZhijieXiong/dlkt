@@ -1,5 +1,4 @@
 from sklearn.mixture import GaussianMixture
-from copy import deepcopy
 
 from .BaseModel4CL import BaseModel4CL
 from .Module.KTEmbedLayer import KTEmbedLayer

@@ -81,6 +81,7 @@ class Evaluator:
         self.objects = objects
 
     def evaluate(self):
+        transfer_head2zero = self.params["transfer_head2zero"]
         fine_grain_config = self.params["evaluate"]["fine_grain"]
         max_seq_len = fine_grain_config["max_seq_len"]
         seq_len_absolute = fine_grain_config["seq_len_absolute"]
@@ -96,6 +97,8 @@ class Evaluator:
             question_all = []
             concept_all = []
             result_all_batch = []
+            if transfer_head2zero and hasattr(model, "set_emb4zero"):
+                model.set_emb4zero()
             for batch in data_loader:
                 correct_seq = batch["correct_seq"]
                 question_seq = batch["question_seq"]
@@ -116,7 +119,10 @@ class Evaluator:
                     all_score_dis[i] += score_dis[i]
                     all_label_dis[i] += label_dis[i]
 
-                predict_score = model.get_predict_score(batch).detach().cpu().numpy()
+                if transfer_head2zero and hasattr(model, "get_predict_score4question_zero"):
+                    predict_score = model.get_predict_score4question_zero(batch).detach().cpu().numpy()
+                else:
+                    predict_score = model.get_predict_score(batch).detach().cpu().numpy()
                 ground_truth = torch.masked_select(correct_seq[:, 1:], mask_bool_seq[:, 1:]).detach().cpu().numpy()
                 predict_score_all.append(predict_score)
                 ground_truth_all.append(ground_truth)
@@ -154,39 +160,39 @@ class Evaluator:
         result4statics['question_middle_acc'] = get_performance(statics_train['question_middle_acc'], all_question_dis)
         result4statics['question_high_acc'] = get_performance(statics_train['question_high_acc'], all_question_dis)
 
-        print(f"按照训练集习题频率划分\n"
-              f"训练集中未出现过的样本（共{result4statics['question_zero_fre']['num_sample']:<9}个样本），"
+        print(f"question frequency\n"
+              f"zero shot ({result4statics['question_zero_fre']['num_sample']:<9} samples), "
               f"AUC: {result4statics['question_zero_fre']['AUC']:<9.6}, "
               f"ACC: {result4statics['question_zero_fre']['ACC']:<9.6}, "
               f"RMSE: {result4statics['question_zero_fre']['RMSE']:<9.6}, "
               f"MAE: {result4statics['question_zero_fre']['MAE']:<9.6}\n"
-              f"低频率（不包括零频率，共{result4statics['question_low_fre']['num_sample']:<9}个样本），"
+              f"low frequency ({result4statics['question_low_fre']['num_sample']:<9} samples), "
               f"AUC: {result4statics['question_low_fre']['AUC']:<9.6}, "
               f"ACC: {result4statics['question_low_fre']['ACC']:<9.6}, "
               f"RMSE: {result4statics['question_low_fre']['RMSE']:<9.6}, "
               f"MAE: {result4statics['question_low_fre']['MAE']:<9.6}\n"
-              f"中频率（共{result4statics['question_middle_fre']['num_sample']:<9}个样本），"
+              f"middle frequency ({result4statics['question_middle_fre']['num_sample']:<9} samples), "
               f"AUC: {result4statics['question_middle_fre']['AUC']:<9.6}, "
               f"ACC: {result4statics['question_middle_fre']['ACC']:<9.6}, "
               f"RMSE: {result4statics['question_middle_fre']['RMSE']:<9.6}, "
               f"MAE: {result4statics['question_middle_fre']['MAE']:<9.6}\n"
-              f"高频率（共{result4statics['question_high_fre']['num_sample']:<9}个样本），"
+              f"high frequency ({result4statics['question_high_fre']['num_sample']:<9} samples), "
               f"AUC: {result4statics['question_high_fre']['AUC']:<9.6}, "
               f"ACC: {result4statics['question_high_fre']['ACC']:<9.6}, "
               f"RMSE: {result4statics['question_high_fre']['RMSE']:<9.6}, "
               f"MAE: {result4statics['question_high_fre']['MAE']:<9.6}\n"
-              f"按照训练集习题正确率划分\n"
-              f"低正确率（共{result4statics['question_low_acc']['num_sample']:<9}个样本），"
+              f"question accuracy\n"
+              f"low accuracy ({result4statics['question_low_acc']['num_sample']:<9} samples), "
               f"AUC: {result4statics['question_low_acc']['AUC']:<9.6}, "
               f"ACC: {result4statics['question_low_acc']['ACC']:<9.6}, "
               f"RMSE: {result4statics['question_low_acc']['RMSE']:<9.6}, "
               f"MAE: {result4statics['question_low_acc']['MAE']:<9.6}\n"
-              f"中正确率（共{result4statics['question_middle_acc']['num_sample']:<9}个样本），"
+              f"middle accuracy ({result4statics['question_middle_acc']['num_sample']:<9} samples), "
               f"AUC: {result4statics['question_middle_acc']['AUC']:<9.6}, "
               f"ACC: {result4statics['question_middle_acc']['ACC']:<9.6}, "
               f"RMSE: {result4statics['question_middle_acc']['RMSE']:<9.6}, "
               f"MAE: {result4statics['question_middle_acc']['MAE']:<9.6}\n"
-              f"高正确率（共{result4statics['question_high_acc']['num_sample']:<9}个样本），"
+              f"high accuracy ({result4statics['question_high_acc']['num_sample']:<9} samples), "
               f"AUC: {result4statics['question_high_acc']['AUC']:<9.6}, "
               f"ACC: {result4statics['question_high_acc']['ACC']:<9.6}, "
               f"RMSE: {result4statics['question_high_acc']['RMSE']:<9.6}, "
@@ -205,34 +211,34 @@ class Evaluator:
             result4statics['concept_middle_acc'] = get_performance(statics_train['concept_middle_acc'], all_concept_dis)
             result4statics['concept_high_acc'] = get_performance(statics_train['concept_high_acc'], all_concept_dis)
 
-            print(f"按照训练集知识点频率划分\n"
-                  f"低频率（共{result4statics['concept_low_fre']['num_sample']:<9}个样本），"
+            print(f"concept frequency\n"
+                  f"low frequency ({result4statics['concept_low_fre']['num_sample']:<9} samples), "
                   f"AUC: {result4statics['concept_low_fre']['AUC']:<9.6}, "
                   f"ACC: {result4statics['concept_low_fre']['ACC']:<9.6}, "
                   f"RMSE: {result4statics['concept_low_fre']['RMSE']:<9.6}, "
                   f"MAE: {result4statics['concept_low_fre']['MAE']:<9.6}\n"
-                  f"中频率（共{result4statics['concept_middle_fre']['num_sample']:<9}个样本），"
+                  f"middle frequency ({result4statics['concept_middle_fre']['num_sample']:<9} samples), "
                   f"AUC: {result4statics['concept_middle_fre']['AUC']:<9.6}, "
                   f"ACC: {result4statics['concept_middle_fre']['ACC']:<9.6}, "
                   f"RMSE: {result4statics['concept_middle_fre']['RMSE']:<9.6}, "
                   f"MAE: {result4statics['concept_middle_fre']['MAE']:<9.6}\n"
-                  f"高频率（共{result4statics['concept_high_fre']['num_sample']:<9}个样本），"
+                  f"high frequency ({result4statics['concept_high_fre']['num_sample']:<9} samples), "
                   f"AUC: {result4statics['concept_high_fre']['AUC']:<9.6}, "
                   f"ACC: {result4statics['concept_high_fre']['ACC']:<9.6}, "
                   f"RMSE: {result4statics['concept_high_fre']['RMSE']:<9.6}, "
                   f"MAE: {result4statics['concept_high_fre']['MAE']:<9.6}\n"
-                  f"按照训练集知识点正确率划分\n"
-                  f"低正确率（共{result4statics['concept_low_acc']['num_sample']:<9}个样本），"
+                  f"concept accuracy\n"
+                  f"low accuracy ({result4statics['concept_low_acc']['num_sample']:<9} samples), "
                   f"AUC: {result4statics['concept_low_acc']['AUC']:<9.6}, "
                   f"ACC: {result4statics['concept_low_acc']['ACC']:<9.6}, "
                   f"RMSE: {result4statics['concept_low_acc']['RMSE']:<9.6}, "
                   f"MAE: {result4statics['concept_low_acc']['MAE']:<9.6}\n"
-                  f"中正确率（共{result4statics['concept_middle_acc']['num_sample']:<9}个样本），"
+                  f"middle accuracy ({result4statics['concept_middle_acc']['num_sample']:<9} samples), "
                   f"AUC: {result4statics['concept_middle_acc']['AUC']:<9.6}, "
                   f"ACC: {result4statics['concept_middle_acc']['ACC']:<9.6}, "
                   f"RMSE: {result4statics['concept_middle_acc']['RMSE']:<9.6}, "
                   f"MAE: {result4statics['concept_middle_acc']['MAE']:<9.6}\n"
-                  f"高正确率（共{result4statics['concept_high_acc']['num_sample']:<9}个样本），"
+                  f"high accuracy ({result4statics['concept_high_acc']['num_sample']:<9} samples), "
                   f"AUC: {result4statics['concept_high_acc']['AUC']:<9.6}, "
                   f"ACC: {result4statics['concept_high_acc']['ACC']:<9.6}, "
                   f"RMSE: {result4statics['concept_high_acc']['RMSE']:<9.6}, "
@@ -248,24 +254,24 @@ class Evaluator:
             result4statics['qc_low_acc'] = get_performance_qc(statics_train['question_low_acc'], statics_train['concept_low_acc'], all_qc_dis)
             result4statics['qc_high_acc'] = get_performance_qc(statics_train['question_high_acc'], statics_train['concept_high_acc'], all_qc_dis)
 
-            print(f"按照训练集习题和知识点频率划分\n"
-                  f"低频率（共{result4statics['qc_low_fre']['num_sample']:<9}个样本），"
+            print(f"question & concept frequency\n"
+                  f"low frequency ({result4statics['qc_low_fre']['num_sample']:<9} samples), "
                   f"AUC: {result4statics['qc_low_fre']['AUC']:<9.6}, "
                   f"ACC: {result4statics['qc_low_fre']['ACC']:<9.6}, "
                   f"RMSE: {result4statics['qc_low_fre']['RMSE']:<9.6}, "
                   f"MAE: {result4statics['qc_low_fre']['MAE']:<9.6}\n"
-                  f"高频率（共{result4statics['qc_high_fre']['num_sample']:<9}个样本），"
+                  f"high frequency ({result4statics['qc_high_fre']['num_sample']:<9} samples), "
                   f"AUC: {result4statics['qc_high_fre']['AUC']:<9.6}, "
                   f"ACC: {result4statics['qc_high_fre']['ACC']:<9.6}, "
                   f"RMSE: {result4statics['qc_high_fre']['RMSE']:<9.6}, "
                   f"MAE: {result4statics['qc_high_fre']['MAE']:<9.6}\n"
-                  f"按照训练集习题和知识点正确率划分\n"
-                  f"低正确率（共{result4statics['qc_low_acc']['num_sample']:<9}个样本），"
+                  f"question & concept accuracy\n"
+                  f"low accuracy ({result4statics['qc_low_acc']['num_sample']:<9} samples), "
                   f"AUC: {result4statics['qc_low_acc']['AUC']:<9.6}, "
                   f"ACC: {result4statics['qc_low_acc']['ACC']:<9.6}, "
                   f"RMSE: {result4statics['qc_low_acc']['RMSE']:<9.6}, "
                   f"MAE: {result4statics['qc_low_acc']['MAE']:<9.6}\n"
-                  f"高正确率（共{result4statics['qc_high_acc']['num_sample']:<9}个样本），"
+                  f"high accuracy ({result4statics['qc_high_acc']['num_sample']:<9} samples), "
                   f"AUC: {result4statics['qc_high_acc']['AUC']:<9.6}, "
                   f"ACC: {result4statics['qc_high_acc']['ACC']:<9.6}, "
                   f"RMSE: {result4statics['qc_high_acc']['RMSE']:<9.6}, "

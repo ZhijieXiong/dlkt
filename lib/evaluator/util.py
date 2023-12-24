@@ -31,7 +31,7 @@ def evaluate4seq_len(label_dis, score_dis, split_len):
         tmp_score_dis = score_dis[index_s: index_e]
         label_dis4len[i] += [item for item_list in tmp_label_dis for item in item_list]
         score_dis4len[i] += [item for item_list in tmp_score_dis for item in item_list]
-    print("按照序列长度划分，例如(0, 50)表示长度在这区间的序列")
+    print("split by seq length")
     for i in range(len(label_dis4len)):
         if len(label_dis4len[i]) == 0:
             continue

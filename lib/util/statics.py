@@ -7,8 +7,8 @@ def cal_frequency(data_uniformed, num_item, target="question"):
     target_seq = "concept_seq" if target == "concept" else "question_seq"
     item_seqs = list(map(lambda item_data: item_data[target_seq], data_uniformed))
     items = []
-    for question_seq in item_seqs:
-        items += question_seq
+    for item_seq in item_seqs:
+        items += item_seq
     item_frequency = Counter(items)
 
     for item in range(num_item):

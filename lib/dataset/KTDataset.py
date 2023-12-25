@@ -27,6 +27,7 @@ class KTDataset(Dataset):
     def load_dataset(self):
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         data_type = self.params["datasets_config"]["data_type"]
+        dataset_type = dataset_config_this["type"]
         setting_name = dataset_config_this["setting_name"]
         file_name = dataset_config_this["file_name"]
         dataset_path = os.path.join(self.objects["file_manager"].get_setting_dir(setting_name), file_name)
@@ -37,6 +38,9 @@ class KTDataset(Dataset):
             dataset_original = read_preprocessed_file(dataset_path)
         else:
             dataset_original = self.objects["dataset_this"]
+
+        if dataset_type == "kt4dimkt":
+            self.parse_difficulty(dataset_original)
 
         id_keys, seq_keys = get_keys_from_uniform(dataset_original)
         all_keys = set(id_keys).union(seq_keys)
@@ -113,6 +117,23 @@ class KTDataset(Dataset):
             mask_bool_seq = torch.ne(self.dataset["mask_seq"], 0)
             num_correct = torch.sum(torch.masked_select(correct_seq, mask_bool_seq)).item()
         return num_seq, num_sample, num_correct / num_interaction
+
+    def parse_difficulty(self, data_uniformed):
+        # 目前只考虑single concept数据集
+        data_type = self.params["datasets_config"]["data_type"]
+        num_question_difficulty = self.params["datasets_config"]["train"]["kt4dimkt"]["num_question_difficulty"]
+        num_concept_difficulty = self.params["datasets_config"]["train"]["kt4dimkt"]["num_concept_difficulty"]
+        question_difficulty = self.objects["dimkt"]["question_difficulty"]
+        concept_difficulty = self.objects["dimkt"]["concept_difficulty"]
+        if data_type == "single_concept":
+            for item_data in data_uniformed:
+                item_data["question_diff_seq"] = []
+                item_data["concept_diff_seq"] = []
+                for q_id, c_id in zip(item_data["question_seq"], item_data["concept_seq"]):
+                    item_data["question_diff_seq"].append(question_difficulty.get(q_id, num_question_difficulty))
+                    item_data["concept_diff_seq"].append(concept_difficulty.get(c_id, num_concept_difficulty))
+        else:
+            raise NotImplementedError()
 
     @staticmethod
     def dataset_multi_concept2question_pykt(dataset, Q_table, min_seq_len, max_seq_len, num_max_concept):

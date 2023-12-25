@@ -199,6 +199,13 @@ PARAMS = {
         # 配置KTDataset需要的参数
         "base_type": "concept"
       },
+      "kt4dimkt": {
+        # 配置DIMKT需要的参数
+        "num_min_question": 30,
+        "num_min_concept": 30,
+        "num_question_difficulty": 100,
+        "num_concept_difficulty": 100
+      },
       "kt4aug": {
         # "random_aug" or "semantic_aug" or "informative_aug"
         "aug_type": "semantic_aug",

@@ -8,7 +8,7 @@ import split_util
 from lib.util.FileManager import FileManager
 from lib.util.parse import parse_data_type
 from lib.util.data import read_preprocessed_file
-from lib.dataset.split_seq import dataset_truncate2multi_seq
+from lib.dataset.split_seq import dataset_truncate2one_seq
 from lib.util.data import write2file
 
 
@@ -16,15 +16,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_name", type=str, default="assist2012", choices=("assist2009", "assist2012"))
     # setting config
-    parser.add_argument("--setting_name", type=str, default="our_setting_ood_by_school_single_concept")
+    parser.add_argument("--setting_name", type=str, default="cl4kt_setting_ood_by_school_single_concept")
     parser.add_argument("--min_school_seq", type=int, help="一所学校最少要有多少学生|序列", default=200)
     parser.add_argument("--min_mean_seq_len", type=int, default=20)
     parser.add_argument("--train_test_radio_upper_bound", type=float, default=8.5/1.5)
     parser.add_argument("--train_test_radio_lower_bound", type=float, default=7/3)
     parser.add_argument("--iid_radio", type=float, default=0.2)
-    parser.add_argument("--num_split", type=float, default=15)
-    parser.add_argument("--max_seq_len", type=int, default=200)
-    parser.add_argument("--min_seq_len", type=int, default=3)
+    parser.add_argument("--num_split", type=float, default=10)
+    parser.add_argument("--max_seq_len", type=int, default=50)
+    parser.add_argument("--min_seq_len", type=int, default=5)
 
     args = parser.parse_args()
     params = vars(args)
@@ -33,9 +33,7 @@ if __name__ == "__main__":
 
     params["lab_setting"] = {
         "name": params["setting_name"],
-        "description": "数据处理：多知识点组合当成新知识点"
-                       "序列处理：（1）序列长度小于200，则在后面补零；（2）序列长度大于200，则截断成多条序列；\n"
-                       "数据集划分：先基于学校随机划分训练集和测试集，再在训练集内基于序列随机划分训练集和验证集，总共划分num_split组；"
+        "description": "数据集划分：先基于学校随机划分训练集和测试集，再在训练集内基于序列随机划分训练集和验证集，总共划分num_split组；"
                        "数据集划分具体步骤：（1）将小学校（序列数量少的学校，由min_school_seq定义）合并为一个学校，保证合并后每个学校"
                        "                    序列数量大于等于min_school_seq"
                        "                （2）根据train_test_radio_upper_bound和train_test_radio_lower_bound并基于学校划分"
@@ -93,18 +91,20 @@ if __name__ == "__main__":
     setting_dir = objects["file_manager"].get_setting_dir(params["setting_name"])
     for i, test_schools in enumerate(result_spilt_test_schools):
         data_train_iid, data_test_ood = split_util.split_data(data_uniformed, test_schools, merged_schools)
-        dataset_train_iid = dataset_truncate2multi_seq(data_train_iid,
-                                                       params["min_seq_len"],
-                                                       params["max_seq_len"],
-                                                       single_concept=params["data_type"] != "multi_concept")
+        dataset_train_iid = dataset_truncate2one_seq(data_train_iid,
+                                                     params["min_seq_len"],
+                                                     params["max_seq_len"],
+                                                     multi_concept=False,
+                                                     from_start=False)
         num_train_iid = len(dataset_train_iid)
         num_test_iid = int(num_train_iid * params["iid_radio"])
         dataset_test_iid = dataset_train_iid[:num_test_iid]
         dataset_train = dataset_train_iid[num_test_iid:]
-        dataset_test_ood = dataset_truncate2multi_seq(data_test_ood,
-                                                      params["min_seq_len"],
-                                                      params["max_seq_len"],
-                                                      single_concept=params["data_type"] != "multi_concept")
+        dataset_test_ood = dataset_truncate2one_seq(data_test_ood,
+                                                    params["min_seq_len"],
+                                                    params["max_seq_len"],
+                                                    multi_concept=False,
+                                                    from_start=False)
 
         train_path = os.path.join(setting_dir, f"{params['dataset_name']}_train_split_{i}.txt")
         test_iid_path = os.path.join(setting_dir, f"{params['dataset_name']}_valid_iid_split_{i}.txt")

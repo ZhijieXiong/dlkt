@@ -26,3 +26,10 @@ KT_INFORMATIVE_AUG_PARAMS = {
     "sim_type": "off",
     "aug_order": ["mask", "crop", "replace", "insert"]
 }
+
+
+KT_LONG_TAIL_PARAMS = {
+    "low_threshold": 0.2,
+    "high_threshold": 0.8,
+
+}

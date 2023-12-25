@@ -37,10 +37,9 @@ class AKT(nn.Module, BaseModel4CL):
 
         self.encoder_layer = EncoderLayer(params, objects)
 
-        encoder_layer_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
-        dim_model = encoder_layer_config["dim_model"]
-        dim_final_fc = encoder_layer_config["dim_final_fc"]
-        dropout = encoder_layer_config["dropout"]
+        dim_model = encoder_config["dim_model"]
+        dim_final_fc = encoder_config["dim_final_fc"]
+        dropout = encoder_config["dropout"]
         self.predict_layer = nn.Sequential(
             nn.Linear(dim_model * 2, dim_final_fc),
             nn.ReLU(),

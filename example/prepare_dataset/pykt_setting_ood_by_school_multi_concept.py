@@ -17,7 +17,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_name", type=str, default="assist2009", choices=("assist2009", ))
     # setting config
-    parser.add_argument("--setting_name", type=str, default="our_setting_ood_by_school_multi_concept")
+    parser.add_argument("--setting_name", type=str, default="pykt_setting_ood_by_school_multi_concept")
     parser.add_argument("--min_school_seq", type=int, help="一所学校最少要有多少学生|序列", default=100)
     parser.add_argument("--min_mean_seq_len", type=int, default=20)
     parser.add_argument("--train_test_radio_upper_bound", type=float, default=8.5/1.5)
@@ -110,7 +110,7 @@ if __name__ == "__main__":
         dataset_train_iid = dataset_truncate2multi_seq(data_train_iid,
                                                        params["min_seq_len"],
                                                        params["max_seq_len"],
-                                                       single_concept=params["data_type"] != "multi_concept")
+                                                       single_concept=False)
         num_train_iid = len(dataset_train_iid)
         num_test_iid = int(num_train_iid * params["iid_radio"])
         dataset_test_iid = dataset_train_iid[:num_test_iid]
@@ -118,7 +118,7 @@ if __name__ == "__main__":
         dataset_test_ood = dataset_truncate2multi_seq(data_test_ood,
                                                       params["min_seq_len"],
                                                       params["max_seq_len"],
-                                                      single_concept=params["data_type"] != "multi_concept")
+                                                      single_concept=False)
 
         train_path = os.path.join(setting_dir, f"{params['dataset_name']}_train_split_{i}.txt")
         test_iid_path = os.path.join(setting_dir, f"{params['dataset_name']}_valid_iid_split_{i}.txt")

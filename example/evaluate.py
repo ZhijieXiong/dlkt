@@ -10,6 +10,7 @@ from lib.dataset.KTDataset import KTDataset
 from lib.dataset.KTDataset_cpu2device import KTDataset_cpu2device
 from lib.evaluator.Evaluator import Evaluator
 from lib.util.parse import str2bool
+from lib.util.data import load_json
 
 
 if __name__ == "__main__":
@@ -17,15 +18,14 @@ if __name__ == "__main__":
 
     # 基本配置
     parser.add_argument("--save_model_dir", type=str,
-                        default=r"F:\code\myProjects\dlkt\lab\saved_models\2023-12-20@11-25-32@@AKT-instance_cl@@seed_0@@random_split_leave_multi_out_setting@@assist2012_train_split_5")
+                        default=r"F:\code\myProjects\dlkt\lab\saved_models\2023-12-26@10-55-57@@DIMKT@@seed_0@@random_split_leave_multi_out_setting@@assist2012_train_split_5")
     parser.add_argument("--save_model_name", type=str, default="kt_model.pth")
     parser.add_argument("--setting_name", type=str, default="random_split_leave_multi_out_setting")
     parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
     parser.add_argument("--test_file_name", type=str, default="assist2012_test_split_5.txt")
     parser.add_argument("--base_type", type=str, default="concept", choices=("concept", "question"))
-    parser.add_argument("--dataset_name", type=str, default="assist2012",
-                        help="if choose question as base_type")
+    parser.add_argument("--dataset_name", type=str, default="assist2012")
     parser.add_argument("--evaluate_batch_size", type=int, default=512)
 
     # 细粒度配置（暂时不适用于question evaluate）
@@ -34,12 +34,20 @@ if __name__ == "__main__":
                         default="[0, 5, 10, 20, 30]",
                         choices=("[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]",
                                  "[0, 5, 10, 20, 30, 40, 50, 60, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200]"))
-    parser.add_argument("--statics_file_name", type=str, default="assist2012_train_split_5_statics.json")
+    parser.add_argument("--statics_file_path", type=str,
+                        default=r"F:\code\myProjects\dlkt\lab\settings\random_split_leave_multi_out_setting\assist2012_train_split_5_statics.json")
 
     # 是否将head question的知识迁移到zero shot question
     parser.add_argument("--transfer_head2zero", type=str2bool, default=False)
     parser.add_argument("--head2tail_transfer_method", type=str, default="mean_pool",
                         choices=("mean_pool", "gaussian_fit"))
+
+    # 如果是DIMKT，需要训练集数据的difficulty信息
+    parser.add_argument("--is_dimkt", type=str2bool, default=True)
+    parser.add_argument("--train_diff_file_path", type=str,
+                        default=r"F:\code\myProjects\dlkt\lab\settings\random_split_leave_multi_out_setting\assist2012_train_split_5_dimkt_diff.json")
+    parser.add_argument("--num_question_diff", type=int, default=100)
+    parser.add_argument("--num_concept_diff", type=int, default=100)
 
     args = parser.parse_args()
     params = vars(args)
@@ -51,6 +59,21 @@ if __name__ == "__main__":
             datasets_config["test"]["file_name"].replace(".txt", "_question_base4multi_concept.txt"))
         dataset_test = KTDataset_cpu2device(global_params, global_objects)
     else:
+        if params["is_dimkt"]:
+            difficulty_info = load_json(params["train_diff_file_path"])
+            question_difficulty = {}
+            concept_difficulty = {}
+            for k, v in difficulty_info["question_difficulty"].items():
+                question_difficulty[int(k)] = v
+            for k, v in difficulty_info["concept_difficulty"].items():
+                concept_difficulty[int(k)] = v
+            global_objects["dimkt"] = {}
+            global_objects["dimkt"]["question_difficulty"] = question_difficulty
+            global_objects["dimkt"]["concept_difficulty"] = concept_difficulty
+            global_params["datasets_config"]["test"]["type"] = "kt4dimkt"
+            global_params["datasets_config"]["test"]["kt4dimkt"] = {}
+            global_params["datasets_config"]["test"]["kt4dimkt"]["num_question_difficulty"] = params["num_question_diff"]
+            global_params["datasets_config"]["test"]["kt4dimkt"]["num_concept_difficulty"] = params["num_concept_diff"]
         dataset_test = KTDataset(global_params, global_objects)
     dataloader_test = DataLoader(dataset_test, batch_size=params["evaluate_batch_size"], shuffle=False)
 

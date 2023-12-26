@@ -1,3 +1,5 @@
+import os.path
+
 from _config import *
 from _cl_config import *
 
@@ -7,7 +9,7 @@ from lib.template.params_template_v2 import PARAMS
 from lib.template.model.DIMKT import MODEL_PARAMS as DIMKT_MODEL_PARAMS
 from lib.util.basic import *
 from lib.dataset.util import parse_difficulty
-from lib.util.data import read_preprocessed_file
+from lib.util.data import read_preprocessed_file, write_json, load_json
 
 
 def dimkt_general_config(local_params, global_params, global_objects):
@@ -24,29 +26,53 @@ def dimkt_general_config(local_params, global_params, global_objects):
     dim_emb = local_params["dim_emb"]
     dropout = local_params["dropout"]
 
-    dataset_train = read_preprocessed_file(os.path.join(
-        global_objects["file_manager"].get_setting_dir(global_params["datasets_config"]["train"]["setting_name"]),
-        global_params["datasets_config"]["train"]["file_name"]
-    ))
-    question_difficulty, concept_difficulty = \
-        parse_difficulty(dataset_train, global_params["datasets_config"]["data_type"],
-                         num_min_question, num_min_concept, num_question_diff, num_concept_diff)
+    # 统计习题和知识点难度信息，如果已存在，直接读取
+    setting_dir = global_objects["file_manager"].get_setting_dir(global_params["datasets_config"]["train"]["setting_name"])
+    train_file_name = global_params["datasets_config"]["train"]["file_name"]
+    difficulty_info_path = os.path.join(setting_dir, train_file_name.replace(".txt", "_dimkt_diff.json"))
+    if os.path.exists(difficulty_info_path):
+        difficulty_info = load_json(difficulty_info_path)
+        question_difficulty = {}
+        concept_difficulty = {}
+        for k, v in difficulty_info["question_difficulty"].items():
+            question_difficulty[int(k)] = v
+        for k, v in difficulty_info["concept_difficulty"].items():
+            concept_difficulty[int(k)] = v
+    else:
+        dataset_train = read_preprocessed_file(os.path.join(
+            global_objects["file_manager"].get_setting_dir(global_params["datasets_config"]["train"]["setting_name"]),
+            global_params["datasets_config"]["train"]["file_name"]
+        ))
+        question_difficulty, concept_difficulty = \
+            parse_difficulty(dataset_train, global_params["datasets_config"]["data_type"],
+                             num_min_question, num_min_concept, num_question_diff, num_concept_diff)
+        difficulty_info = {"question_difficulty": question_difficulty, "concept_difficulty": concept_difficulty}
+        write_json(difficulty_info, difficulty_info_path)
     global_objects["dimkt"] = {}
     global_objects["dimkt"]["question_difficulty"] = question_difficulty
     global_objects["dimkt"]["concept_difficulty"] = concept_difficulty
     global_params["datasets_config"]["train"]["type"] = "kt4dimkt"
+    global_params["datasets_config"]["train"]["kt4dimkt"] = {}
+    global_params["datasets_config"]["train"]["kt4dimkt"]["num_question_difficulty"] = num_question_diff
+    global_params["datasets_config"]["train"]["kt4dimkt"]["num_concept_difficulty"] = num_concept_diff
+    global_params["datasets_config"]["test"]["type"] = "kt4dimkt"
+    global_params["datasets_config"]["test"]["kt4dimkt"] = {}
+    global_params["datasets_config"]["test"]["kt4dimkt"]["num_question_difficulty"] = num_question_diff
+    global_params["datasets_config"]["test"]["kt4dimkt"]["num_concept_difficulty"] = num_concept_diff
+    if local_params["train_strategy"] == "valid_test":
+        global_params["datasets_config"]["valid"]["type"] = "kt4dimkt"
+        global_params["datasets_config"]["valid"]["kt4dimkt"] = {}
+        global_params["datasets_config"]["valid"]["kt4dimkt"]["num_question_difficulty"] = num_question_diff
+        global_params["datasets_config"]["valid"]["kt4dimkt"]["num_concept_difficulty"] = num_concept_diff
 
     # encoder layer
-    akt_encoder_layer_config = global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]
-    akt_encoder_layer_config["num_concept"] = num_concept
-    akt_encoder_layer_config["num_question"] = num_question
-    akt_encoder_layer_config["num_question_diff"] = num_question_diff
-    akt_encoder_layer_config["num_concept_diff"] = num_concept_diff
-    akt_encoder_layer_config["dim_emb"] = dim_emb
-    akt_encoder_layer_config["dropout"] = dropout
-
-    # 损失权重
-    global_params["loss_config"]["rasch_loss"] = local_params["weight_rasch_loss"]
+    dimkt_encoder_layer_config = global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]
+    dimkt_encoder_layer_config["num_concept"] = num_concept
+    dimkt_encoder_layer_config["num_question"] = num_question
+    dimkt_encoder_layer_config["num_question_diff"] = num_question_diff
+    dimkt_encoder_layer_config["num_concept_diff"] = num_concept_diff
+    dimkt_encoder_layer_config["dim_emb"] = dim_emb
+    dimkt_encoder_layer_config["dropout"] = dropout
 
     print("model params\n"
           f"    num of concept: {num_concept}, num of question: {num_question}, num of min question: {num_min_question}, "

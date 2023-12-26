@@ -39,12 +39,13 @@ class qDKT(nn.Module, BaseModel4CL):
         self.predict_layer = PredictorLayer(self.params, self.objects)
 
         # 解析q table
-        self.question2concept_list = question2concept_from_Q(objects["data"]["Q_table"])
-        self.concept2question_list = concept2question_from_Q(objects["data"]["Q_table"])
-        self.question_head4zero = parse_question_zero_shot(self.objects["data"]["train_data_statics"],
-                                                           self.question2concept_list,
-                                                           self.concept2question_list)
-        self.embed_question4zero = None
+        if params["transfer_head2zero"]:
+            self.question2concept_list = question2concept_from_Q(objects["data"]["Q_table"])
+            self.concept2question_list = concept2question_from_Q(objects["data"]["Q_table"])
+            self.question_head4zero = parse_question_zero_shot(self.objects["data"]["train_data_statics"],
+                                                               self.question2concept_list,
+                                                               self.concept2question_list)
+            self.embed_question4zero = None
 
         use_LLM_emb4question = self.params["use_LLM_emb4question"]
         use_LLM_emb4concept = self.params["use_LLM_emb4concept"]

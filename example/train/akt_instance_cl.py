@@ -106,7 +106,7 @@ if __name__ == "__main__":
     parser.add_argument("--permute_prob", type=float, default=0.1)
     parser.add_argument("--use_hard_neg", type=str2bool, default=False)
     parser.add_argument("--hard_neg_prob", type=float, default=1)
-    parser.add_argument("--aug_order", type=str, default="['crop', 'replace', 'insert']",
+    parser.add_argument("--aug_order", type=str, default="['crop', 'replace']",
                         help="CL4KT: ['mask', 'replace', 'permute', 'crop']"
                              "info aug: ['mask', 'crop', 'replace', 'insert']")
     parser.add_argument("--offline_sim_type", type=str, default="order",

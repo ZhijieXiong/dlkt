@@ -138,6 +138,9 @@ class AKT(nn.Module, BaseModel4CL):
             # + uq *(h_rt+d_ct) # （q-response emb diff + question emb diff）
             interaction_emb = \
                 interaction_emb + question_difficulty_emb * (interaction_variation_emb + concept_variation_emb)
+        if use_emb_dropout:
+            question_emb = torch.dropout(question_emb, dropout, self.training)
+            interaction_emb = torch.dropout(interaction_emb, dropout, self.training)
         encoder_input = {
             "question_emb": question_emb,
             "interaction_emb": interaction_emb,
@@ -152,14 +155,14 @@ class AKT(nn.Module, BaseModel4CL):
         return latent
 
     def get_latent_last(self, batch, use_emb_dropout=False, dropout=0.1):
-        latent = self.get_latent(batch)
+        latent = self.get_latent(batch, use_emb_dropout, dropout)
         mask4last = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
         latent_last = latent[torch.where(mask4last == 1)]
 
         return latent_last
 
     def get_latent_mean(self, batch, use_emb_dropout=False, dropout=0.1):
-        latent = self.get_latent(batch)
+        latent = self.get_latent(batch, use_emb_dropout, dropout)
         mask_seq = batch["mask_seq"]
         latent_mean = (latent * mask_seq.unsqueeze(-1)).sum(1) / mask_seq.sum(-1).unsqueeze(-1)
 

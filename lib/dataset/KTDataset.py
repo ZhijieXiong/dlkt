@@ -120,9 +120,10 @@ class KTDataset(Dataset):
 
     def parse_difficulty(self, data_uniformed):
         # 目前只考虑single concept数据集
+        dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         data_type = self.params["datasets_config"]["data_type"]
-        num_question_difficulty = self.params["datasets_config"]["train"]["kt4dimkt"]["num_question_difficulty"]
-        num_concept_difficulty = self.params["datasets_config"]["train"]["kt4dimkt"]["num_concept_difficulty"]
+        num_question_difficulty = dataset_config_this["kt4dimkt"]["num_question_difficulty"]
+        num_concept_difficulty = dataset_config_this["kt4dimkt"]["num_concept_difficulty"]
         question_difficulty = self.objects["dimkt"]["question_difficulty"]
         concept_difficulty = self.objects["dimkt"]["concept_difficulty"]
         if data_type == "single_concept":

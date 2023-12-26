@@ -13,7 +13,7 @@ class DIMKT(nn.Module):
         self.objects = objects
 
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]
-        dim_emb = encoder_config["dim_model"]
+        dim_emb = encoder_config["dim_emb"]
         num_question = encoder_config["num_question"]
         num_concept = encoder_config["num_concept"]
         num_question_diff = encoder_config["num_question_diff"]
@@ -35,6 +35,7 @@ class DIMKT(nn.Module):
         self.dropout_layer = nn.Dropout(dropout)
 
     def forward(self, batch):
+        dim_emb = self.params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["dim_emb"]
         batch_size, seq_len = batch["question_seq"].shape[0], batch["question_seq"].shape[1]
         question_emb = self.embed_question(batch["question_seq"])
         concept_emb = self.embed_concept(batch["concept_seq"])
@@ -42,8 +43,8 @@ class DIMKT(nn.Module):
         concept_diff_emb = self.embed_concept_diff(batch["concept_diff_seq"])
         correct_emb = self.embed_correct(batch["correct_seq"])
 
-        hidden_state = torch.zeros(batch_size, seq_len, self.dim).to(self.params["device"])
-        h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, self.dim)).to(self.params["device"])
+        hidden_state = torch.zeros(batch_size, seq_len, dim_emb).to(self.params["device"])
+        h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_emb)).to(self.params["device"])
         y = torch.zeros(batch_size, seq_len).to(self.params["device"])
 
         for t in range(seq_len-1):
@@ -155,7 +156,7 @@ class DIMKT(nn.Module):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
 
         predict_score = self.get_predict_score(batch)
-        ground_truth = torch.masked_select(batch["correct_seq"][:, :-1], mask_bool_seq[:, 1:])
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
         predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
 
         if loss_record is not None:
@@ -163,3 +164,6 @@ class DIMKT(nn.Module):
             loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
 
         return predict_loss
+
+    def get_predict_score_seq_len_minus1(self, batch):
+        return self.forward(batch)[:, :-1]

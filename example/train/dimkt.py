@@ -24,7 +24,7 @@ if __name__ == "__main__":
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam",
                         choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0)
+    parser.add_argument("--weight_decay", type=float, default=0.0001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test",
@@ -37,24 +37,24 @@ if __name__ == "__main__":
     parser.add_argument("--main_metric", type=str, default="AUC")
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
-    parser.add_argument("--learning_rate", type=float, default=0.0004)
-    parser.add_argument("--train_batch_size", type=int, default=32)
+    parser.add_argument("--learning_rate", type=float, default=0.002)
+    parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=5)
-    parser.add_argument("--lr_schedule_milestones", type=str, default="[5, 10]")
+    parser.add_argument("--lr_schedule_milestones", type=str, default="[5]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
-    parser.add_argument("--enable_clip_grad", type=str2bool, default=True)
+    parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # DIMKT数据处理参数
-    parser.add_argument("--num_min_question", type=int, default=30)
+    parser.add_argument("--num_min_question", type=int, default=25)
     parser.add_argument("--num_min_concept", type=int, default=30)
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=265)
     parser.add_argument("--num_question", type=int, default=53091)
-    parser.add_argument("--dim_emb", type=int, default=64)
+    parser.add_argument("--dim_emb", type=int, default=128)
     parser.add_argument("--num_question_diff", type=int, default=100)
     parser.add_argument("--num_concept_diff", type=int, default=100)
     parser.add_argument("--dropout", type=float, default=0.2)

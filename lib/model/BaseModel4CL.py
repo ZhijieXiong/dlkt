@@ -87,6 +87,11 @@ class BaseModel4CL:
                 "correct_seq": batch["correct_seq_aug_1"],
                 "mask_seq": batch["mask_seq_aug_1"]
             }
+            if "question_diff_seq" in batch.keys():
+                batch_aug0["question_diff_seq"] = batch["question_diff_seq_aug_0"]
+                batch_aug0["concept_diff_seq"] = batch["concept_diff_seq_aug_0"]
+                batch_aug1["question_diff_seq"] = batch["question_diff_seq_aug_1"]
+                batch_aug1["concept_diff_seq"] = batch["concept_diff_seq_aug_1"]
         elif data_aug_type4cl == "model_aug":
             batch_aug0 = batch
             batch_aug1 = batch
@@ -98,6 +103,9 @@ class BaseModel4CL:
                 "mask_seq": batch["mask_seq_aug_0"]
             }
             batch_aug1 = batch
+            if "question_diff_seq" in batch.keys():
+                batch_aug0["question_diff_seq"] = batch["question_diff_seq_aug_0"]
+                batch_aug0["concept_diff_seq"] = batch["concept_diff_seq_aug_0"]
         else:
             raise NotImplementedError()
 

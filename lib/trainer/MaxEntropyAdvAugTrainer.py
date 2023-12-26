@@ -4,7 +4,7 @@ import torch.optim as optim
 
 from .KnowledgeTracingTrainer import KnowledgeTracingTrainer
 from .LossRecord import LossRecord
-from ..sequential_model.Module.KTEmbedLayer import KTEmbedLayer
+from ..model.Module.KTEmbedLayer import KTEmbedLayer
 from ..util.basic import *
 
 
@@ -144,6 +144,36 @@ class MaxEntropyAdvAugTrainer(KnowledgeTracingTrainer):
                 self.dataset_adv_generated["embed_interaction_variation"].weight,
                 self.dataset_adv_generated["embed_concept"].weight,
                 self.dataset_adv_generated["embed_interaction"].weight
+            ], lr=adv_learning_rate)
+        elif model_name == "DIMKT":
+            encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]
+            dim_emb = encoder_config["dim_emb"]
+            num_question = encoder_config["num_question"]
+            num_concept = encoder_config["num_concept"]
+            num_question_diff = encoder_config["num_question_diff"]
+            num_concept_diff = encoder_config["num_concept_diff"]
+
+            self.dataset_adv_generated["embed_question"] = \
+                nn.Embedding(num_question, dim_emb,
+                             _weight=model.embed_question.weight.detach().clone())
+            self.dataset_adv_generated["embed_concept"] = \
+                nn.Embedding(num_concept, dim_emb,
+                             _weight=model.embed_concept.weight.detach().clone())
+            self.dataset_adv_generated["embed_question_diff"] = \
+                nn.Embedding(num_question_diff + 1, dim_emb,
+                             _weight=model.embed_question_diff.weight.detach().clone())
+            self.dataset_adv_generated["embed_concept_diff"] = \
+                nn.Embedding(num_concept_diff + 1, dim_emb,
+                             _weight=model.embed_concept_diff.weight.detach().clone())
+            self.dataset_adv_generated["embed_correct"] = \
+                nn.Embedding(2, dim_emb,
+                             _weight=model.embed_correct.weight.detach().clone())
+            optimizer = optim.SGD(params=[
+                self.dataset_adv_generated["embed_question"].weight,
+                self.dataset_adv_generated["embed_concept"].weight,
+                self.dataset_adv_generated["embed_question_diff"].weight,
+                self.dataset_adv_generated["embed_concept_diff"].weight,
+                self.dataset_adv_generated["embed_correct"].weight
             ], lr=adv_learning_rate)
         else:
             raise NotImplementedError()

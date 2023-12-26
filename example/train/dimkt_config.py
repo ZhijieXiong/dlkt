@@ -118,3 +118,17 @@ def dimkt_instance_cl_config(local_params):
         save_params(global_params, global_objects)
 
     return global_params, global_objects
+
+
+def dimkt_max_entropy_adv_aug_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    dimkt_general_config(local_params, global_params, global_objects)
+    max_entropy_adv_aug_general_config(local_params, global_params)
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT-ME_adv_aug@@"))
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects

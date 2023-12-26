@@ -2,6 +2,7 @@ import os.path
 
 from _config import *
 from _cl_config import *
+from _data_aug_config import *
 
 from lib.template.params_template import PARAMS
 from lib.template.objects_template import OBJECTS
@@ -94,6 +95,26 @@ def dimkt_config(local_params):
     general_config(local_params, global_params, global_objects)
     dimkt_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects
+
+
+def dimkt_instance_cl_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    dimkt_general_config(local_params, global_params, global_objects)
+    instance_cl_general_config(local_params, global_params, global_objects)
+    train_aug_config = global_params["datasets_config"]["train"]["kt4aug"]
+    train_aug_config["use_diff4dimkt"] = True
+    train_aug_config["diff4dimkt"] = {
+        "num_question_difficulty": local_params["num_question_diff"],
+        "num_concept_difficulty": local_params["num_concept_diff"]
+    }
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-instance_cl@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects

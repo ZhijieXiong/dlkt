@@ -190,7 +190,7 @@ PARAMS = {
     "dataset_this": "train",
     "data_type": "multi_concept",
     "train": {
-      # "kt" or "kt4aug" or "srs"
+      # "kt" or "kt4aug" or "kt4dimkt" or "kt4srs"
       "type": "kt",
       "setting_name": "pykt_setting",
       "file_name": "assist2009_train_fold_0.txt",
@@ -201,8 +201,6 @@ PARAMS = {
       },
       "kt4dimkt": {
         # 配置DIMKT需要的参数
-        "num_min_question": 30,
-        "num_min_concept": 30,
         "num_question_difficulty": 100,
         "num_concept_difficulty": 100
       },
@@ -210,6 +208,12 @@ PARAMS = {
         # "random_aug" or "semantic_aug" or "informative_aug"
         "aug_type": "semantic_aug",
         "num_aug": 2,
+        # 是否使用DIMKT，如果True，会生成diff seq，在知识点级别和习题级别上
+        "use_diff4dimkt": False,
+        "diff4dimkt": {
+          "num_question_difficulty": 100,
+          "num_concept_difficulty": 100
+        },
         "random_aug": {
           # 配置随机增强
           # 为True的话，在原序列基础上随机选一段做增强，如concept seq会产生concept_seq_ori,concept_seq_aug_0, concept_seq_aug_1, ...

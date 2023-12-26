@@ -1,16 +1,16 @@
 import torch
 import torch.nn as nn
 
+from .BaseModel4CL import BaseModel4CL
 from .util import get_mask4last_or_penultimate
 
 
-class DIMKT(nn.Module):
+class DIMKT(nn.Module, BaseModel4CL):
     model_name = "DIMKT"
 
     def __init__(self, params, objects):
         super(DIMKT, self).__init__()
-        self.params = params
-        self.objects = objects
+        super(nn.Module, self).__init__(params, objects)
 
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]
         dim_emb = encoder_config["dim_emb"]
@@ -96,7 +96,6 @@ class DIMKT(nn.Module):
 
         latent = torch.zeros(batch_size, seq_len, self.dim).to(self.params["device"])
         h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, self.dim)).to(self.params["device"])
-        y = torch.zeros(batch_size, seq_len).to(self.params["device"])
 
         for t in range(seq_len - 1):
             input_x = torch.concat((
@@ -118,14 +117,6 @@ class DIMKT(nn.Module):
             ), dim=1)
             Gamma_ksu = torch.sigmoid(self.knowledge_indicator_MLP(input_KI))
             h = Gamma_ksu * h_pre + (1 - Gamma_ksu) * pka
-            input_x_next = torch.concat((
-                question_emb[:, t + 1],
-                concept_emb[:, t + 1],
-                question_diff_emb[:, t + 1],
-                concept_diff_emb[:, t + 1]
-            ), dim=1)
-            x_next = self.generate_x_MLP(input_x_next)
-            y[:, t] = torch.sigmoid(torch.sum(x_next * h, dim=-1))
             latent[:, t + 1, :] = h
             h_pre = h
 

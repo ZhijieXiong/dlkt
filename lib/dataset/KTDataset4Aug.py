@@ -5,6 +5,7 @@ from torch.utils.data import Dataset
 from ..util.data import *
 from ..util.parse import *
 from .util import data_kt2srs
+from .KTDataset import KTDataset
 from .KTDataRandomAug import KTDataRandomAug
 from .Similarity import OfflineSimilarity, OnlineSimilarity
 
@@ -95,6 +96,20 @@ class KTDataset4Aug(Dataset):
             datas_aug = self.get_informative_aug(item_data2aug)
         else:
             raise NotImplementedError()
+
+        # 如果是DIMKT，加上difficulty信息
+        if dataset_config_this["kt4aug"]["use_diff4dimkt"]:
+            num_question_difficulty = dataset_config_this["kt4aug"]["diff4dimkt"]["num_question_difficulty"]
+            num_concept_difficulty = dataset_config_this["kt4aug"]["diff4dimkt"]["num_concept_difficulty"]
+            question_difficulty = self.objects["dimkt"]["question_difficulty"]
+            concept_difficulty = self.objects["dimkt"]["concept_difficulty"]
+            for data_aug in datas_aug:
+                data_aug["question_diff_seq"] = []
+                data_aug["concept_diff_seq"] = []
+                for q_id in data_aug["question_seq"]:
+                    data_aug["question_diff_seq"].append(question_difficulty.get(q_id, num_question_difficulty))
+                for c_id in data_aug["concept_seq"]:
+                    data_aug["concept_diff_seq"].append(concept_difficulty.get(c_id, num_concept_difficulty))
 
         # 补零
         for i, data_aug in enumerate(datas_aug):
@@ -343,6 +358,16 @@ class KTDataset4Aug(Dataset):
             dataset_original = read_preprocessed_file(dataset_path)
         else:
             dataset_original = self.objects["dataset_this"]
+
+        if dataset_config_this["kt4aug"]["use_diff4dimkt"]:
+            num_question_difficulty = dataset_config_this["kt4aug"]["diff4dimkt"]["num_question_difficulty"]
+            num_concept_difficulty = dataset_config_this["kt4aug"]["diff4dimkt"]["num_concept_difficulty"]
+            qc_num_difficulty = (num_question_difficulty, num_concept_difficulty)
+            question_difficulty = self.objects["dimkt"]["question_difficulty"]
+            concept_difficulty = self.objects["dimkt"]["concept_difficulty"]
+            qc_difficulty = (question_difficulty, concept_difficulty)
+            KTDataset.parse_difficulty(dataset_original, data_type, qc_difficulty, qc_num_difficulty)
+
         if data_type == "multi_concept":
             self.data_uniformed = data_agg_question(dataset_original)
         else:

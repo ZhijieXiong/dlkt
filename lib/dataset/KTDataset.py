@@ -40,7 +40,13 @@ class KTDataset(Dataset):
             dataset_original = self.objects["dataset_this"]
 
         if dataset_type == "kt4dimkt":
-            self.parse_difficulty(dataset_original)
+            num_question_difficulty = dataset_config_this["kt4dimkt"]["num_question_difficulty"]
+            num_concept_difficulty = dataset_config_this["kt4dimkt"]["num_concept_difficulty"]
+            qc_num_difficulty = (num_question_difficulty, num_concept_difficulty)
+            question_difficulty = self.objects["dimkt"]["question_difficulty"]
+            concept_difficulty = self.objects["dimkt"]["concept_difficulty"]
+            qc_difficulty = (question_difficulty, concept_difficulty)
+            KTDataset.parse_difficulty(dataset_original, data_type, qc_difficulty, qc_num_difficulty)
 
         id_keys, seq_keys = get_keys_from_uniform(dataset_original)
         all_keys = set(id_keys).union(seq_keys)
@@ -118,14 +124,11 @@ class KTDataset(Dataset):
             num_correct = torch.sum(torch.masked_select(correct_seq, mask_bool_seq)).item()
         return num_seq, num_sample, num_correct / num_interaction
 
-    def parse_difficulty(self, data_uniformed):
+    @staticmethod
+    def parse_difficulty(data_uniformed, data_type, qc_difficulty, qc_num_difficulty):
         # 目前只考虑single concept数据集
-        dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
-        data_type = self.params["datasets_config"]["data_type"]
-        num_question_difficulty = dataset_config_this["kt4dimkt"]["num_question_difficulty"]
-        num_concept_difficulty = dataset_config_this["kt4dimkt"]["num_concept_difficulty"]
-        question_difficulty = self.objects["dimkt"]["question_difficulty"]
-        concept_difficulty = self.objects["dimkt"]["concept_difficulty"]
+        question_difficulty, concept_difficulty = qc_difficulty
+        num_question_difficulty, num_concept_difficulty = qc_num_difficulty
         if data_type == "single_concept":
             for item_data in data_uniformed:
                 item_data["question_diff_seq"] = []

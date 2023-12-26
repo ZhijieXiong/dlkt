@@ -40,7 +40,7 @@ if __name__ == "__main__":
     parser.add_argument("--learning_rate", type=float, default=0.002)
     parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
-    parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
+    parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=5)
@@ -58,6 +58,14 @@ if __name__ == "__main__":
     parser.add_argument("--num_question_diff", type=int, default=100)
     parser.add_argument("--num_concept_diff", type=int, default=100)
     parser.add_argument("--dropout", type=float, default=0.2)
+    # 是否使用LLM的emb初始化
+    parser.add_argument("--use_LLM_emb4question", type=str2bool, default=True)
+    parser.add_argument("--use_LLM_emb4concept", type=str2bool, default=False)
+    parser.add_argument("--train_LLM_emb", type=str2bool, default=True)
+    # 是否将head question的知识迁移到zero shot question
+    parser.add_argument("--transfer_head2zero", type=str2bool, default=True)
+    parser.add_argument("--head2tail_transfer_method", type=str, default="mean_pool",
+                        choices=("mean_pool", ))
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)

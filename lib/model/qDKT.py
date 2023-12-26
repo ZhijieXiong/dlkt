@@ -159,7 +159,6 @@ class qDKT(nn.Module, BaseModel4CL):
         transfer head to tail use gaussian distribution
         :return:
         """
-        data_type = self.params["datasets_config"]["data_type"]
         head2tail_transfer_method = self.params["head2tail_transfer_method"]
         indices = []
         tail_qs_emb = []
@@ -169,23 +168,7 @@ class qDKT(nn.Module, BaseModel4CL):
             if len(head_qs) == 0:
                 continue
             indices.append(z_q)
-            if head2tail_transfer_method == "gaussian_fit":
-                # zero shot question的emb用同一知识点下的其它习题emb拟合高斯分布然后从里面采样
-                if len(head_qs_emb) > 100:
-                    head_qs_emb = head_qs_emb.detach().cpu().numpy()
-                    if data_type == "only_question":
-                        # 多知识点数据集
-                        n_com = 2
-                    else:
-                        # 单知识点数据集
-                        n_com = 1
-                    gmm = GaussianMixture(n_components=n_com, random_state=self.params["seed"])
-                    gmm.fit(head_qs_emb)
-                    gmm_samples = gmm.sample(1)
-                    tail_q_emb = torch.from_numpy(gmm_samples[0][0]).unsqueeze(0).to(self.params["device"])
-                else:
-                    tail_q_emb = head_qs_emb.mean(dim=0).unsqueeze(0)
-            elif head2tail_transfer_method == "mean_pool":
+            if head2tail_transfer_method == "mean_pool":
                 tail_q_emb = head_qs_emb.mean(dim=0).unsqueeze(0)
             else:
                 raise NotImplementedError()

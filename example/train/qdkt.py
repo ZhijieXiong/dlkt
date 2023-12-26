@@ -69,7 +69,7 @@ if __name__ == "__main__":
     # 是否将head question的知识迁移到zero shot question
     parser.add_argument("--transfer_head2zero", type=str2bool, default=False)
     parser.add_argument("--head2tail_transfer_method", type=str, default="mean_pool",
-                        choices=("mean_pool", "gaussian_fit"))
+                        choices=("mean_pool", ))
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)

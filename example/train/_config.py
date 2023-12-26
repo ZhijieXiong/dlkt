@@ -191,8 +191,14 @@ def general_config(local_params, global_params, global_objects):
         datasets_config["train"]["file_name"].replace(".txt", f"_statics.json")
     )
     if not os.path.exists(statics_info_file_path):
-        print("\nWARNING: statics of train dataset is not exist, this file is must for evaluate (fine grain evaluation, such as long tail problem) and some "
-              "model for address long tail problem. if it is necessary, please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset\n")
+        if transfer_head2zero:
+            print(
+                "\nERROR: statics of train dataset is not exist! If you want use transfer_head2zero, this file is necessary. "
+                "Please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset\n")
+        else:
+            print("\nWARNING: statics of train dataset is not exist. This file is required for some cases, e.g., "
+                  "fine grain evaluation such as long tail problem and some model using transfer_head2zero. "
+                  "If it is necessary, please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset\n")
     else:
         with open(statics_info_file_path, "r") as file:
             global_objects["data"]["train_data_statics"] = json.load(file)

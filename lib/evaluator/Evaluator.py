@@ -139,7 +139,7 @@ class Evaluator:
             MAE = mean_absolute_error(y_true=ground_truth_all, y_pred=predict_score_all)
             RMSE = mean_squared_error(y_true=ground_truth_all, y_pred=predict_score_all) ** 0.5
 
-        print(f"AUC: {AUC:<9.5}, ACC: {ACC:<9.5}, RMSE: {MAE:<9.5}, MAE: {RMSE:<9.5}")
+        print(f"overall performance\nAUC: {AUC:<9.5}, ACC: {ACC:<9.5}, RMSE: {MAE:<9.5}, MAE: {RMSE:<9.5}\n")
         evaluate4seq_len(all_label_dis, all_score_dis, seq_len_absolute)
         evaluate_bias(result_all_batch, 3)
 
@@ -160,7 +160,7 @@ class Evaluator:
         result4statics['question_middle_acc'] = get_performance(statics_train['question_middle_acc'], all_question_dis)
         result4statics['question_high_acc'] = get_performance(statics_train['question_high_acc'], all_question_dis)
 
-        print(f"question frequency\n"
+        print(f"\nquestion frequency\n"
               f"zero shot ({result4statics['question_zero_fre']['num_sample']:<9} samples), "
               f"AUC: {result4statics['question_zero_fre']['AUC']:<9.6}, "
               f"ACC: {result4statics['question_zero_fre']['ACC']:<9.6}, "
@@ -180,7 +180,7 @@ class Evaluator:
               f"AUC: {result4statics['question_high_fre']['AUC']:<9.6}, "
               f"ACC: {result4statics['question_high_fre']['ACC']:<9.6}, "
               f"RMSE: {result4statics['question_high_fre']['RMSE']:<9.6}, "
-              f"MAE: {result4statics['question_high_fre']['MAE']:<9.6}\n"
+              f"MAE: {result4statics['question_high_fre']['MAE']:<9.6}\n\n"
               f"question accuracy\n"
               f"low accuracy ({result4statics['question_low_acc']['num_sample']:<9} samples), "
               f"AUC: {result4statics['question_low_acc']['AUC']:<9.6}, "
@@ -211,7 +211,7 @@ class Evaluator:
             result4statics['concept_middle_acc'] = get_performance(statics_train['concept_middle_acc'], all_concept_dis)
             result4statics['concept_high_acc'] = get_performance(statics_train['concept_high_acc'], all_concept_dis)
 
-            print(f"concept frequency\n"
+            print(f"\nconcept frequency\n"
                   f"low frequency ({result4statics['concept_low_fre']['num_sample']:<9} samples), "
                   f"AUC: {result4statics['concept_low_fre']['AUC']:<9.6}, "
                   f"ACC: {result4statics['concept_low_fre']['ACC']:<9.6}, "
@@ -226,7 +226,7 @@ class Evaluator:
                   f"AUC: {result4statics['concept_high_fre']['AUC']:<9.6}, "
                   f"ACC: {result4statics['concept_high_fre']['ACC']:<9.6}, "
                   f"RMSE: {result4statics['concept_high_fre']['RMSE']:<9.6}, "
-                  f"MAE: {result4statics['concept_high_fre']['MAE']:<9.6}\n"
+                  f"MAE: {result4statics['concept_high_fre']['MAE']:<9.6}\n\n"
                   f"concept accuracy\n"
                   f"low accuracy ({result4statics['concept_low_acc']['num_sample']:<9} samples), "
                   f"AUC: {result4statics['concept_low_acc']['AUC']:<9.6}, "
@@ -264,7 +264,7 @@ class Evaluator:
                   f"AUC: {result4statics['qc_high_fre']['AUC']:<9.6}, "
                   f"ACC: {result4statics['qc_high_fre']['ACC']:<9.6}, "
                   f"RMSE: {result4statics['qc_high_fre']['RMSE']:<9.6}, "
-                  f"MAE: {result4statics['qc_high_fre']['MAE']:<9.6}\n"
+                  f"MAE: {result4statics['qc_high_fre']['MAE']:<9.6}\n\n"
                   f"question & concept accuracy\n"
                   f"low accuracy ({result4statics['qc_low_acc']['num_sample']:<9} samples), "
                   f"AUC: {result4statics['qc_low_acc']['AUC']:<9.6}, "

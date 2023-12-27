@@ -2,13 +2,13 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from dimkt_config import dimkt_config
+from dimkt_config import dimkt_mutual_enhance4long_tail_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
 from lib.model.DIMKT import DIMKT
-from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
+from lib.trainer.MutualEnhance4LongTailTrainer import MutualEnhance4LongTailTrainer
 
 
 if __name__ == "__main__":
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_concept_diff", type=int, default=100)
     parser.add_argument("--dropout", type=float, default=0.2)
     # 是否使用LLM的emb初始化
-    parser.add_argument("--use_LLM_emb4question", type=str2bool, default=True)
+    parser.add_argument("--use_LLM_emb4question", type=str2bool, default=False)
     parser.add_argument("--use_LLM_emb4concept", type=str2bool, default=False)
     parser.add_argument("--train_LLM_emb", type=str2bool, default=False)
     # 是否将head question的知识迁移到zero shot question
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = dimkt_config(params)
+    global_params, global_objects = dimkt_mutual_enhance4long_tail_config(params)
     # global_params["device"] = "cpu"
 
     if params["train_strategy"] == "valid_test":
@@ -100,5 +100,5 @@ if __name__ == "__main__":
 
     model = DIMKT(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
-    trainer = KnowledgeTracingTrainer(global_params, global_objects)
+    trainer = MutualEnhance4LongTailTrainer(global_params, global_objects)
     trainer.train()

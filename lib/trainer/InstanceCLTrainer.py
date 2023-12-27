@@ -30,8 +30,8 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
         weight_cl_loss = self.params["loss_config"]["cl loss"]
         instance_cl_config = self.params["other"]["instance_cl"]
         latent_type4cl = instance_cl_config["latent_type4cl"]
-        use_warm_up4cluster_cl = self.params["other"]["instance_cl"]["use_warm_up4cluster_cl"]
-        epoch_warm_up4cluster_cl = self.params["other"]["instance_cl"]["epoch_warm_up4cluster_cl"]
+        use_warm_up4cl = self.params["other"]["instance_cl"]["use_warm_up4cl"]
+        epoch_warm_up4cl = self.params["other"]["instance_cl"]["epoch_warm_up4cl"]
         use_stop_cl_after = self.params["other"]["instance_cl"]["use_stop_cl_after"]
         epoch_stop_cl = self.params["other"]["instance_cl"]["epoch_stop_cl"]
 
@@ -41,7 +41,7 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
 
             do_instance_cl = (
                     (
-                            (not use_warm_up4cluster_cl) or (use_warm_up4cluster_cl and epoch > epoch_warm_up4cluster_cl)
+                            (not use_warm_up4cl) or (use_warm_up4cl and epoch > epoch_warm_up4cl)
                     )
                     and (
                             not use_stop_cl_after or (epoch <= epoch_stop_cl)

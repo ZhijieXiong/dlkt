@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     # 基本配置
     parser.add_argument("--save_model_dir", type=str,
-                        default=r"F:\code\myProjects\dlkt\lab\saved_models\2023-12-26@10-55-57@@DIMKT@@seed_0@@random_split_leave_multi_out_setting@@assist2012_train_split_5")
+                        default=r"F:\code\myProjects\dlkt\lab\saved_models\2023-12-26@21-00-26@@DIMKT@@seed_0@@random_split_leave_multi_out_setting@@assist2012_train_split_5")
     parser.add_argument("--save_model_name", type=str, default="kt_model.pth")
     parser.add_argument("--setting_name", type=str, default="random_split_leave_multi_out_setting")
     parser.add_argument("--data_type", type=str, default="single_concept",
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     # 是否将head question的知识迁移到zero shot question
     parser.add_argument("--transfer_head2zero", type=str2bool, default=True)
     parser.add_argument("--head2tail_transfer_method", type=str, default="mean_pool",
-                        choices=("mean_pool",))
+                        choices=("mean_pool", "max_pool"))
 
     # 如果是DIMKT，需要训练集数据的difficulty信息
     parser.add_argument("--is_dimkt", type=str2bool, default=True)

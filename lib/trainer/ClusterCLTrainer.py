@@ -30,8 +30,8 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
 
         self.print_data_statics()
 
-        use_warm_up4cluster_cl = self.params["other"]["cluster_cl"]["use_warm_up4cluster_cl"]
-        epoch_warm_up4cluster_cl = self.params["other"]["cluster_cl"]["epoch_warm_up4cluster_cl"]
+        use_warm_up4cl = self.params["other"]["cluster_cl"]["use_warm_up4cl"]
+        epoch_warm_up4cl = self.params["other"]["cluster_cl"]["epoch_warm_up4cl"]
         cl_type = self.params["other"]["cluster_cl"]["cl_type"]
         random_select_aug_len = self.params["other"]["cluster_cl"]["random_select_aug_len"]
         use_adv_aug = self.params["other"]["cluster_cl"]["use_adv_aug"]
@@ -42,7 +42,7 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
             self.do_max_entropy_aug()
             self.do_cluster()
 
-            do_cluster_cl = (not use_warm_up4cluster_cl) or (use_warm_up4cluster_cl and epoch > epoch_warm_up4cluster_cl)
+            do_cluster_cl = (not use_warm_up4cl) or (use_warm_up4cl and epoch > epoch_warm_up4cl)
             if do_cluster_cl:
                 train_loader.dataset.set_use_aug()
             else:
@@ -77,16 +77,16 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
                 break
 
     def do_cluster(self):
-        use_warm_up4cluster_cl = self.params["other"]["cluster_cl"]["use_warm_up4cluster_cl"]
-        epoch_warm_up4cluster_cl = self.params["other"]["cluster_cl"]["epoch_warm_up4cluster_cl"]
+        use_warm_up4cl = self.params["other"]["cluster_cl"]["use_warm_up4cl"]
+        epoch_warm_up4cl = self.params["other"]["cluster_cl"]["epoch_warm_up4cl"]
         current_epoch = self.train_record.get_current_epoch()
-        after_warm_up = current_epoch >= epoch_warm_up4cluster_cl
+        after_warm_up = current_epoch >= epoch_warm_up4cl
         model = self.objects["models"]["kt_model"]
         cl_type = self.params["other"]["cluster_cl"]["cl_type"]
         train_loader = self.objects["data_loaders"]["train_loader"]
         random_select_aug_len = self.params["other"]["cluster_cl"]["random_select_aug_len"]
 
-        if not use_warm_up4cluster_cl or after_warm_up:
+        if not use_warm_up4cl or after_warm_up:
             t_start = get_now_time()
             latent_all = []
             model.eval()

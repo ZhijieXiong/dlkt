@@ -63,8 +63,8 @@ if __name__ == "__main__":
     parser.add_argument("--temp", type=float, default=0.05)
     parser.add_argument("--weight_cl_loss", type=float, default=0.1)
     # warm up
-    parser.add_argument("--use_warm_up4cluster_cl", type=str2bool, default=False)
-    parser.add_argument("--epoch_warm_up4cluster_cl", type=float, default=2)
+    parser.add_argument("--use_warm_up4cl", type=str2bool, default=False)
+    parser.add_argument("--epoch_warm_up4cl", type=float, default=2)
     # cl loss weight动态变化
     parser.add_argument("--use_weight_dynamic", type=str2bool, default=False)
     parser.add_argument("--weight_dynamic_type", type=str, default="multi_step",
@@ -84,7 +84,7 @@ if __name__ == "__main__":
                         choices=("original_data_aug", "model_aug", "hybrid"))
     # neg sample参数
     parser.add_argument("--use_neg", type=str2bool, default=True)
-    parser.add_argument("--use_neg_filter", type=str2bool, default=False)
+    parser.add_argument("--use_neg_filter", type=str2bool, default=True)
     parser.add_argument("--neg_sim_threshold", type=float, default=0.7, help="cos sim, between (0, 1)")
     # info aug参数
     parser.add_argument("--use_online_sim", type=str2bool, default=True)

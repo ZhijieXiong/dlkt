@@ -30,10 +30,10 @@ class DIMKT(nn.Module, BaseModel4CL):
         self.embed_correct = nn.Embedding(2, dim_emb)
 
         if use_LLM_emb4question:
-            dim_LLM_emb = self.embed_question_difficulty.weight.shape[1]
+            dim_LLM_emb = self.embed_question.weight.shape[1]
             self.MLP4question = MLP4LLM_emb(dim_LLM_emb, dim_emb, 0.1)
         if use_LLM_emb4concept:
-            dim_LLM_emb = self.embed_concept_variation.weight.shape[1]
+            dim_LLM_emb = self.embed_concept.weight.shape[1]
             self.MLP4concept = MLP4LLM_emb(dim_LLM_emb, dim_emb, 0.1)
 
         self.generate_x_MLP = nn.Linear(4 * dim_emb, dim_emb)
@@ -48,6 +48,7 @@ class DIMKT(nn.Module, BaseModel4CL):
         self.question2concept_list = question2concept_from_Q(objects["data"]["Q_table"])
         self.concept2question_list = concept2question_from_Q(objects["data"]["Q_table"])
         self.embed_question4zero = None
+        self.embed_question_diff4zero = None
         if self.objects["data"].get("train_data_statics", False):
             self.question_head4zero = parse_question_zero_shot(self.objects["data"]["train_data_statics"],
                                                                self.question2concept_list,
@@ -237,29 +238,60 @@ class DIMKT(nn.Module, BaseModel4CL):
 
     def set_emb4zero(self):
         """
-        transfer head to tail use gaussian distribution
+        transfer knowledge of head question to tail question
         :return:
         """
         head2tail_transfer_method = self.params["head2tail_transfer_method"]
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]
+        num_question = encoder_config["num_question"]
+        num_question_diff = encoder_config["num_question_diff"]
+        question_difficulty = self.objects["dimkt"]["question_difficulty"]
+
         indices = []
         tail_qs_emb = []
+        tail_qs_diff_emb = []
+        embed_question_diff = self.embed_question_diff.weight[num_question_diff].detach().clone()
+        embed_question_diff = embed_question_diff.unsqueeze(0).repeat(num_question, 1)
         for z_q, head_qs in self.question_head4zero.items():
+            # transfer question emb and question diff emb
             head_question_indices = torch.tensor(head_qs).long().to(self.params["device"])
             head_qs_emb = self.embed_question(head_question_indices).detach().clone()
+            head_qs_diff = list(map(lambda q_id: question_difficulty.get(q_id, num_question_diff), head_qs))
+            head_qs_diff = list(filter(lambda q_diff: q_diff != num_question_diff, head_qs_diff))
+            head_question_diff_indices = torch.tensor(head_qs_diff).long().to(self.params["device"])
+            head_qs_diff_emb = self.embed_question_diff(head_question_diff_indices).detach().clone()
+
             if len(head_qs) == 0:
                 continue
+
             indices.append(z_q)
             if head2tail_transfer_method == "mean_pool":
                 tail_q_emb = head_qs_emb.mean(dim=0).unsqueeze(0)
+                tail_q_diff_emb = head_qs_diff_emb.mean(dim=0).unsqueeze(0)
+            elif head2tail_transfer_method == "max_pool":
+                tail_q_emb = torch.max(head_qs_emb, dim=1)[0].unsqueeze(0)
+                tail_q_diff_emb = torch.max(head_qs_diff_emb, dim=1)[0].unsqueeze(0)
             else:
                 raise NotImplementedError()
+
             tail_qs_emb.append(tail_q_emb.float())
+            tail_qs_diff_emb.append(tail_q_diff_emb.float())
+
+        not_zero_qs = list(set(range(num_question)) - set(self.question_head4zero.keys()))
+        for not_zero_q_id in not_zero_qs:
+            q_diff_id = question_difficulty.get(not_zero_q_id, num_question_diff)
+            embed_question_diff[not_zero_q_id] = self.embed_question_diff.weight[q_diff_id].detach().clone()
+
         indices = torch.tensor(indices)
         tail_qs_emb = torch.cat(tail_qs_emb, dim=0)
+        tail_qs_diff_emb = torch.cat(tail_qs_diff_emb, dim=0)
 
         embed_question = self.embed_question.weight.detach().clone()
         embed_question[indices] = tail_qs_emb
-        self.embed_question4zero = nn.Embedding(embed_question.shape[0], embed_question.shape[1], _weight=embed_question)
+        # 如果在习题难度层面上迁移知识到零频率，反而效果变差
+        # embed_question_diff[indices] = tail_qs_diff_emb
+        self.embed_question4zero = nn.Embedding(num_question, embed_question.shape[1], _weight=embed_question)
+        self.embed_question_diff4zero = nn.Embedding(num_question, embed_question_diff.shape[1], _weight=embed_question_diff)
 
     def get_predict_score4question_zero(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
@@ -274,7 +306,7 @@ class DIMKT(nn.Module, BaseModel4CL):
         concept_emb = self.embed_concept(batch["concept_seq"])
         if use_LLM_emb4concept:
             concept_emb = self.MLP4concept(concept_emb)
-        question_diff_emb = self.embed_question_diff(batch["question_diff_seq"])
+        question_diff_emb = self.embed_question_diff4zero(batch["question_seq"])
         concept_diff_emb = self.embed_concept_diff(batch["concept_diff_seq"])
         correct_emb = self.embed_correct(batch["correct_seq"])
 

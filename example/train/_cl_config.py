@@ -57,8 +57,8 @@ def instance_cl_general_config(local_params, global_params, global_objects):
 
     # instance CL参数
     temp = local_params["temp"]
-    use_warm_up4cluster_cl = local_params["use_warm_up4cluster_cl"]
-    epoch_warm_up4cluster_cl = local_params["epoch_warm_up4cluster_cl"]
+    use_warm_up4cl = local_params["use_warm_up4cl"]
+    epoch_warm_up4cl = local_params["epoch_warm_up4cl"]
     use_weight_dynamic = local_params["use_weight_dynamic"]
     weight_dynamic_type = local_params["weight_dynamic_type"]
     multi_step_weight = eval(local_params["multi_step_weight"])
@@ -78,8 +78,8 @@ def instance_cl_general_config(local_params, global_params, global_objects):
 
     global_params["other"]["instance_cl"] = {}
     instance_cl_config = global_params["other"]["instance_cl"]
-    instance_cl_config["epoch_warm_up4cluster_cl"] = epoch_warm_up4cluster_cl
-    instance_cl_config["use_warm_up4cluster_cl"] = use_warm_up4cluster_cl
+    instance_cl_config["epoch_warm_up4cl"] = epoch_warm_up4cl
+    instance_cl_config["use_warm_up4cl"] = use_warm_up4cl
     instance_cl_config["temp"] = temp
     instance_cl_config["use_online_sim"] = use_online_sim
     instance_cl_config["use_warm_up4online_sim"] = use_warm_up4online_sim
@@ -139,7 +139,8 @@ def instance_cl_general_config(local_params, global_params, global_objects):
           f"    {'use random data aug' if aug_type == 'random_aug' else f'use info data aug, {info_aug_params_str}'}\n"
           f"    mask prob: {mask_prob}, crop prob: {crop_prob}, replace prob: {replace_prob}, insert prob: {insert_prob}, permute prob: {permute_prob}\n"
           f"instance cl\n"
-          f"    temp: {temp}, weight of cl loss: {weight_cl_loss}, use dynamic weight: {use_weight_dynamic}{f', dynamic weight type: {weight_dynamic_type}, {weight_dynamic_type}: {json.dumps(weight_dynamic)}' if use_weight_dynamic else ''}, "
+          f"    temp: {temp}, weight of cl loss: {weight_cl_loss}\n    use dynamic weight: {use_weight_dynamic}{f', dynamic weight type: {weight_dynamic_type}, {weight_dynamic_type}: {json.dumps(weight_dynamic)}' if use_weight_dynamic else ''}\n"
+          f"    use warm up for cl: {use_warm_up4cl}{f', num of warm up epoch for cl: {epoch_warm_up4cl}' if use_warm_up4cl else ''}, "
           f"use stop cl after specified epoch: {use_stop_cl_after}{f', num of epoch to stop cl: {epoch_stop_cl}' if use_stop_cl_after else ''}\n"
           f"    data aug type: {data_aug_type4cl}, latent type: {latent_type4cl}, use emb dropout: {use_emb_dropout4cl}{f', emb dropout: {emb_dropout4cl}' if use_emb_dropout4cl else ''}\n"
           f"    use neg sample: {use_neg}, use neg sample filter: {use_neg_filter}{f', threshold of neg sample filter (similarity): {neg_sim_threshold}' if use_neg_filter else ''}\n"
@@ -206,8 +207,8 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
         raise NotImplementedError()
 
     # cluster CL参数
-    use_warm_up4cluster_cl = local_params["use_warm_up4cluster_cl"]
-    epoch_warm_up4cluster_cl = local_params["epoch_warm_up4cluster_cl"]
+    use_warm_up4cl = local_params["use_warm_up4cl"]
+    epoch_warm_up4cl = local_params["epoch_warm_up4cl"]
     temp = local_params["temp"]
     use_online_sim = local_params["use_online_sim"]
     use_warm_up4online_sim = local_params["use_warm_up4online_sim"]
@@ -217,8 +218,8 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
 
     global_params["other"]["cluster_cl"] = deepcopy(CLUSTER_CL_PARAMS)
     cluster_cl_config = global_params["other"]["cluster_cl"]
-    cluster_cl_config["use_warm_up4cluster_cl"] = use_warm_up4cluster_cl
-    cluster_cl_config["epoch_warm_up4cluster_cl"] = epoch_warm_up4cluster_cl
+    cluster_cl_config["use_warm_up4cl"] = use_warm_up4cl
+    cluster_cl_config["epoch_warm_up4cl"] = epoch_warm_up4cl
     cluster_cl_config["temp"] = temp
     cluster_cl_config["use_online_sim"] = use_online_sim
     cluster_cl_config["use_warm_up4online_sim"] = use_warm_up4online_sim

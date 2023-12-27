@@ -3,6 +3,7 @@ import os.path
 from _config import *
 from _cl_config import *
 from _data_aug_config import *
+from _melt_config import *
 
 from lib.template.params_template import PARAMS
 from lib.template.objects_template import OBJECTS
@@ -114,7 +115,7 @@ def dimkt_instance_cl_config(local_params):
     }
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-instance_cl@@"))
+            global_params["save_model_dir_name"].replace("@@DIMKT@@", "@@DIMKT-instance_cl@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -128,7 +129,21 @@ def dimkt_max_entropy_adv_aug_config(local_params):
     max_entropy_adv_aug_general_config(local_params, global_params)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT-ME_adv_aug@@"))
+            global_params["save_model_dir_name"].replace("@@DIMKT@@", "@@DIMKT-ME_adv_aug@@"))
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects
+
+
+def dimkt_mutual_enhance4long_tail_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    dimkt_general_config(local_params, global_params, global_objects)
+    mutual_enhance4long_tail_general_config(local_params, global_params, global_objects)
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@DIMKT@@", "@@DIMKT-mutual_enhance4long_tail@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects

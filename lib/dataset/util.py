@@ -60,14 +60,15 @@ def parse_difficulty(data_uniformed, data_type, num_min_question, num_min_concep
     return questions_accuracy, concepts_accuracy
 
 
-def parse_long_tail(data_uniformed, data_type, long_tail_threshold, min_context_seq_len=5):
+def parse_long_tail(data_uniformed, data_type, head_question_threshold, head_seq_len, min_context_seq_len):
     # question context，即每道习题对应的序列，格式为{q_id: [{seq_id, seq_len, correct}, ...], ...}
     question_context = defaultdict(list)
     questions_frequency = defaultdict(int)
-    seq_len_frequency = defaultdict(int)
+    head_seqs = []
     if data_type == "single_concept":
         for seq_id, item_data in enumerate(data_uniformed):
-            seq_len_frequency[item_data["seq_len"]] += 1
+            if item_data["seq_len"] >= head_seq_len:
+                head_seqs.append(seq_id)
             for i in range(1, item_data["seq_len"]):
                 q_id = item_data["question_seq"][i]
                 correct = item_data["correct_seq"][i]
@@ -82,8 +83,8 @@ def parse_long_tail(data_uniformed, data_type, long_tail_threshold, min_context_
     question_list = sorted(question_list, key=lambda x: x[1])
     question_list = list(map(lambda x: x[0], question_list))
     num_question = len(question_list)
-    head_questions = question_list[int(num_question * long_tail_threshold):]
+    head_questions = question_list[int(num_question * head_question_threshold):]
 
-    return question_context, head_questions
+    return question_context, head_questions, head_seqs
 
 

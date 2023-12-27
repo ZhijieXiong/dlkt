@@ -8,9 +8,8 @@ class UserBranch(nn.Module):
         self.params = params
         self.objects = objects
 
-        mutual_enhance4long_tail_config = self.params["other"]["mutual_enhance4long_tail"]
-        dim_latent = mutual_enhance4long_tail_config["dim_latent"]
-        seq_L_max = mutual_enhance4long_tail_config["seq_L_max"]
+        dim_latent = params["other"]["mutual_enhance4long_tail"]["dim_latent"]
+        seq_L_max = self.params["other"]["seq_L_max"]
 
         self.MLP = nn.Linear(dim_latent, dim_latent)
         nn.init.xavier_normal_(self.MLP.weight.data)
@@ -22,9 +21,12 @@ class ItemBranch(nn.Module):
         self.params = params
         self.objects = objects
 
-        mutual_enhance4long_tail_config = self.params["other"]["mutual_enhance4long_tail"]
-        dim_question = mutual_enhance4long_tail_config["dim_question"]
-        question_L_max = mutual_enhance4long_tail_config["question_L_max"]
+        dim_question = params["other"]["mutual_enhance4long_tail"]["dim_question"]
+        dim_latent = params["other"]["mutual_enhance4long_tail"]["dim_latent"]
+        question_L_max = self.params["other"]["question_L_max"]
 
-        self.MLP = nn.Linear(dim_question, dim_question)
+        self.MLP = nn.Linear(dim_latent, dim_question)
         nn.init.xavier_normal_(self.MLP.weight.data)
+
+    def forward(self, kt_model, epoch):
+        pass

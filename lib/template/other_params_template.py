@@ -73,3 +73,9 @@ AC_VAE_PARAMS = {
         "use_vae": True
     }
 }
+
+
+MUTUAL_ENHANCE4LONG_TAIL_PARAMS = {
+    "dim_question": 128,
+    "dim_latent": 128
+}

@@ -137,6 +137,7 @@ class KnowledgeTracingTrainer:
         train_loader = self.objects["data_loaders"]["train_loader"]
         test_loader = self.objects["data_loaders"]["test_loader"]
 
+        print("")
         train_statics = train_loader.dataset.get_statics_kt_dataset()
         print(f"train, seq: {train_statics[0]}, sample: {train_statics[1]}, accuracy: {train_statics[2]:<.4}")
         if train_strategy["type"] == "valid_test":

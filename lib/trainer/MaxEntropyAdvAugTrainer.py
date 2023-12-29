@@ -193,5 +193,11 @@ class MaxEntropyAdvAugTrainer(KnowledgeTracingTrainer):
             self.dataset_adv_generated["embed_interaction_variation"].weight.requires_grad_(False)
             self.dataset_adv_generated["embed_concept"].weight.requires_grad_(False)
             self.dataset_adv_generated["embed_interaction"].weight.requires_grad_(False)
+        elif model_name == "DIMKT":
+            self.dataset_adv_generated["embed_question"].weight.requires_grad_(False),
+            self.dataset_adv_generated["embed_concept"].weight.requires_grad_(False),
+            self.dataset_adv_generated["embed_question_diff"].weight.requires_grad_(False),
+            self.dataset_adv_generated["embed_concept_diff"].weight.requires_grad_(False),
+            self.dataset_adv_generated["embed_correct"].weight.requires_grad_(False)
         else:
             raise NotImplementedError()

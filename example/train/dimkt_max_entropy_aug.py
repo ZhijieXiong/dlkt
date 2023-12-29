@@ -59,15 +59,15 @@ if __name__ == "__main__":
     parser.add_argument("--num_concept_diff", type=int, default=100)
     parser.add_argument("--dropout", type=float, default=0.2)
     # max entropy adv aug参数
-    parser.add_argument("--epoch_interval_generate", type=int, default=2)
+    parser.add_argument("--epoch_interval_generate", type=int, default=1)
     parser.add_argument("--epoch_generate", type=int, default=200)
-    parser.add_argument("--weight_adv_pred_loss", type=float, default=1.2)
-    parser.add_argument("--loop_adv", type=int, default=3)
-    parser.add_argument("--adv_learning_rate", type=float, default=10.0)
+    parser.add_argument("--weight_adv_pred_loss", type=float, default=1.0)
+    parser.add_argument("--loop_adv", type=int, default=1)
+    parser.add_argument("--adv_learning_rate", type=float, default=1.0)
     parser.add_argument("--eta", type=float, default=20.0)
     parser.add_argument("--gamma", type=float, default=10.0)
     # 其它
-    parser.add_argument("--save_model", type=str2bool, default=False)
+    parser.add_argument("--save_model", type=str2bool, default=True)
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()

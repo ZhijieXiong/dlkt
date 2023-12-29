@@ -1,6 +1,6 @@
 import os
 import json
-import numpy
+import torch
 import numpy as np
 from copy import deepcopy
 from collections import defaultdict
@@ -77,7 +77,7 @@ def write_json(json_data, json_path):
         json.dump(json_data, f, indent=2)
 
 
-def get_concept_from_question(q_table: numpy.ndarray, question_id):
+def get_concept_from_question(q_table, question_id):
     return np.argwhere(q_table[question_id] == 1).reshape(-1).tolist()
 
 
@@ -213,3 +213,97 @@ def drop_qc(data_uniformed, num2drop=30):
         data_dropped.append(item_data_new)
 
     return data_dropped
+
+
+def context2batch(dataset_train, context_list, device):
+    """
+    将meta数据转换为batch数据 \n
+    :param dataset_train: uniformed data
+    :param context_list: [{sed_id, seq_len, correct}, ...]
+    :param device: cuda or cpu
+    :return:
+    """
+    batch = {
+        "question_seq": [],
+        "mask_seq": [],
+        "correct_seq": []
+    }
+    if "concept_seq" in dataset_train[0].keys():
+        batch["concept_seq"] = []
+    if "question_diff_seq" in dataset_train[0].keys():
+        batch["question_diff_seq"] = []
+    if "concept_diff_seq" in dataset_train[0].keys():
+        batch["concept_diff_seq"] = []
+
+    seq_keys = list(batch.keys())
+    max_seq_len = 0
+    for ctx in context_list:
+        item_data = dataset_train[ctx["seq_id"]]
+        seq_len = ctx["seq_len"]
+        max_seq_len = max(max_seq_len, seq_len)
+
+        batch["question_seq"].append(item_data["question_seq"][:seq_len])
+        batch["mask_seq"].append(item_data["mask_seq"][:seq_len])
+        batch["correct_seq"].append(item_data["correct_seq"][:seq_len])
+
+        if "concept_seq" in seq_keys:
+            batch["concept_seq"].append(item_data["concept_seq"][:seq_len])
+        if "question_diff_seq" in seq_keys:
+            batch["question_diff_seq"].append(item_data["question_diff_seq"][:seq_len])
+        if "concept_diff_seq" in seq_keys:
+            batch["concept_diff_seq"].append(item_data["concept_diff_seq"][:seq_len])
+
+    for k in batch.keys():
+        for i, seq in enumerate(batch[k]):
+            batch[k][i] += [0] * (max_seq_len - len(seq))
+
+    for k in batch.keys():
+        batch[k] = torch.tensor(batch[k]).long().to(device)
+
+    return batch
+
+
+def batch_item_data2batch(batch_item_data, device):
+    """
+    将一个batch的item data数据转换为batch \n
+    :param batch_item_data: [{seq_id, seq_len, question_seq, ...}, ...]
+    :param device: cuda or cpu
+    :return:
+    """
+    batch = {
+        "question_seq": [],
+        "mask_seq": [],
+        "correct_seq": []
+    }
+    if "concept_seq" in batch_item_data[0].keys():
+        batch["concept_seq"] = []
+    if "question_diff_seq" in batch_item_data[0].keys():
+        batch["question_diff_seq"] = []
+    if "concept_diff_seq" in batch_item_data[0].keys():
+        batch["concept_diff_seq"] = []
+
+    seq_keys = list(batch.keys())
+    max_seq_len = 0
+    for item_data in batch_item_data:
+        seq_len = item_data["seq_len"]
+        max_seq_len = max(max_seq_len, seq_len)
+
+        batch["question_seq"].append(item_data["question_seq"][:seq_len])
+        batch["mask_seq"].append(item_data["mask_seq"][:seq_len])
+        batch["correct_seq"].append(item_data["correct_seq"][:seq_len])
+
+        if "concept_seq" in seq_keys:
+            batch["concept_seq"].append(item_data["concept_seq"][:seq_len])
+        if "question_diff_seq" in seq_keys:
+            batch["question_diff_seq"].append(item_data["question_diff_seq"][:seq_len])
+        if "concept_diff_seq" in seq_keys:
+            batch["concept_diff_seq"].append(item_data["concept_diff_seq"][:seq_len])
+
+    for k in batch.keys():
+        for i, seq in enumerate(batch[k]):
+            batch[k][i] += [0] * (max_seq_len - len(seq))
+
+    for k in batch.keys():
+        batch[k] = torch.tensor(batch[k]).long().to(device)
+
+    return batch

@@ -79,7 +79,7 @@ def dimkt_general_config(local_params, global_params, global_objects):
     print("model params\n"
           f"    num of concept: {num_concept}, num of question: {num_question}, num of min question: {num_min_question}, "
           f"num of min concept: {num_min_concept}, num of question difficulty: {num_question_diff}, "
-          f"num of concept difficulty: {num_concept_diff}, dim of emb: {dim_emb}, dropout: {dropout}\n")
+          f"num of concept difficulty: {num_concept_diff}, dim of emb: {dim_emb}, dropout: {dropout}")
 
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]
@@ -141,9 +141,23 @@ def dimkt_mutual_enhance4long_tail_config(local_params):
     general_config(local_params, global_params, global_objects)
     dimkt_general_config(local_params, global_params, global_objects)
     mutual_enhance4long_tail_general_config(local_params, global_params, global_objects)
+
+    # 需要在global_objects["mutual_enhance4long_tail"]["dataset_train"]里面添加上diff seq
+    num_question_difficulty = local_params["num_question_diff"]
+    num_concept_difficulty = local_params["num_concept_diff"]
+    question_difficulty = global_objects["dimkt"]["question_difficulty"]
+    concept_difficulty = global_objects["dimkt"]["concept_difficulty"]
+    for item_data in global_objects["mutual_enhance4long_tail"]["dataset_train"]:
+        item_data["question_diff_seq"] = []
+        item_data["concept_diff_seq"] = []
+        for q_id in item_data["question_seq"]:
+            item_data["question_diff_seq"].append(question_difficulty.get(q_id, num_question_difficulty))
+        for c_id in item_data["concept_seq"]:
+            item_data["concept_diff_seq"].append(concept_difficulty.get(c_id, num_concept_difficulty))
+
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@DIMKT@@", "@@DIMKT-mutual_enhance4long_tail@@"))
+            global_params["save_model_dir_name"].replace("@@DIMKT@@", "@@DIMKT-ME4long_tail@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects

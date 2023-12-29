@@ -6,6 +6,7 @@ from .Module.MLP import MLP4LLM_emb
 from .util import *
 from .loss_util import binary_entropy
 from ..util.parse import concept2question_from_Q, question2concept_from_Q
+from ..util.data import context2batch
 
 
 class DIMKT(nn.Module, BaseModel4CL):
@@ -120,6 +121,9 @@ class DIMKT(nn.Module, BaseModel4CL):
     def get_concept_emb(self):
         return self.embed_concept.weight
 
+    def get_target_question_emb(self, target_question):
+        return self.embed_question(target_question)
+
     def forward(self, batch):
         use_LLM_emb4question = self.params["use_LLM_emb4question"]
         use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
@@ -226,6 +230,8 @@ class DIMKT(nn.Module, BaseModel4CL):
         latent = self.get_latent(batch, use_emb_dropout, dropout)
         mask4last = get_mask4last_or_penultimate(batch["mask_seq"], penultimate=False)
         latent_last = latent[torch.where(mask4last == 1)]
+        if use_emb_dropout:
+            latent_last = torch.dropout(latent_last, dropout, self.training)
 
         return latent_last
 
@@ -233,6 +239,8 @@ class DIMKT(nn.Module, BaseModel4CL):
         latent = self.get_latent(batch, use_emb_dropout, dropout)
         mask_seq = batch["mask_seq"]
         latent_mean = (latent * mask_seq.unsqueeze(-1)).sum(1) / mask_seq.sum(-1).unsqueeze(-1)
+        if use_emb_dropout:
+            latent_mean = torch.dropout(latent_mean, dropout, self.training)
 
         return latent_mean
 
@@ -284,7 +292,7 @@ class DIMKT(nn.Module, BaseModel4CL):
 
         indices = torch.tensor(indices)
         tail_qs_emb = torch.cat(tail_qs_emb, dim=0)
-        tail_qs_diff_emb = torch.cat(tail_qs_diff_emb, dim=0)
+        # tail_qs_diff_emb = torch.cat(tail_qs_diff_emb, dim=0)
 
         embed_question = self.embed_question.weight.detach().clone()
         embed_question[indices] = tail_qs_emb
@@ -499,10 +507,6 @@ class DIMKT(nn.Module, BaseModel4CL):
         for ite_max in range(loop_adv):
             predict_score = self.get_predict_score_from_adv_data(dataset, batch)
             predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
-            question_seq = batch["question_seq"]
-            question_difficulty_emb = dataset["embed_question_difficulty"](question_seq)
-            rasch_loss = (question_difficulty_emb ** 2.).sum()
-            predict_loss = predict_loss + rasch_loss * self.params["loss_config"]["rasch_loss"]
             entropy_loss = binary_entropy(predict_score)
             latent = self.get_latent_from_adv_data(dataset, batch)
             latent = latent[mask_bool_seq]
@@ -522,3 +526,73 @@ class DIMKT(nn.Module, BaseModel4CL):
 
     def get_predict_score_seq_len_minus1(self, batch):
         return self.forward(batch)[:, :-1]
+
+    def update_tail_question(self, batch_question, question_branch):
+        dataset_train = self.objects["mutual_enhance4long_tail"]["dataset_train"]
+        device = self.params["device"]
+        question_context = self.objects["mutual_enhance4long_tail"]["question_context"]
+        dim_latent = self.params["other"]["mutual_enhance4long_tail"]["dim_latent"]
+
+        right_context_batch = []
+        wrong_context_batch = []
+        right_idx_list = [0]
+        wrong_idx_list = [0]
+        idx4right = 0
+        idx4wrong = 0
+        tail_question_list = []
+        for i, q_id in enumerate(batch_question[0].cpu().tolist()):
+            if not question_context.get(q_id, False):
+                continue
+
+            tail_question_list.append(q_id)
+            right_context_list = []
+            wrong_context_list = []
+            for q_context in question_context[q_id]:
+                if q_context["correct"] == 1:
+                    right_context_list.append(q_context)
+                else:
+                    wrong_context_list.append(q_context)
+            right_context_batch += right_context_list
+            wrong_context_batch += wrong_context_list
+
+            l1 = len(right_context_list)
+            if l1 >= 1:
+                idx4right += l1
+                right_idx_list.append(l1)
+            else:
+                right_idx_list.append(right_idx_list[-1])
+
+            l2 = len(wrong_context_list)
+            if l2 >= 1:
+                idx4wrong += l2
+                wrong_idx_list.append(l2)
+            else:
+                wrong_idx_list.append(wrong_idx_list[-1])
+
+        if len(right_context_batch) == 0 and len(wrong_context_batch) == 0:
+            return
+
+        if len(right_context_batch) > 0:
+            right_context_batch = context2batch(dataset_train, right_context_batch, device)
+            latent_right = self.get_latent_last(right_context_batch)
+            latent_right = question_branch.get_question_emb_transferred(latent_right, wright_branch=True)
+        else:
+            latent_right = torch.empty((0, dim_latent))
+
+        if len(wrong_context_batch) > 0:
+            wrong_context_batch = context2batch(dataset_train, wrong_context_batch, device)
+            latent_wrong = self.get_latent_last(wrong_context_batch)
+            latent_wrong = question_branch.get_question_emb_transferred(latent_wrong, wright_branch=False)
+        else:
+            latent_wrong = torch.empty((0, dim_latent))
+
+        question_emb_transferred = []
+        for i in range(len(tail_question_list)):
+            mean_right_context = latent_right[right_idx_list[i]: right_idx_list[i + 1]]
+            mean_wrong_context = latent_wrong[wrong_idx_list[i]: wrong_idx_list[i + 1]]
+            mean_context = torch.cat((mean_right_context, mean_wrong_context), dim=0)
+            question_emb_transferred.append(mean_context.mean(dim=0))
+
+        question_emb_transferred = torch.stack(question_emb_transferred)
+        # 这里实现和论文上写的不一样，论文时question_emb_transferred + gamma * question_emb
+        self.embed_question.weight.data[tail_question_list] = question_emb_transferred

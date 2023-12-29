@@ -67,15 +67,16 @@ def parse_long_tail(data_uniformed, data_type, head_question_threshold, head_seq
     head_seqs = []
     if data_type == "single_concept":
         for seq_id, item_data in enumerate(data_uniformed):
-            if item_data["seq_len"] >= head_seq_len:
+            if item_data["seq_len"] > head_seq_len:
                 head_seqs.append(seq_id)
-            for i in range(1, item_data["seq_len"]):
+            if min_context_seq_len >= item_data["seq_len"]:
+                continue
+            for i in range(min_context_seq_len, item_data["seq_len"]):
                 q_id = item_data["question_seq"][i]
                 correct = item_data["correct_seq"][i]
                 questions_frequency[q_id] += 1
-                if i > min_context_seq_len:
-                    q_context = {"seq_id": seq_id, "seq_len": i-1, "correct": correct}
-                    question_context[q_id].append(q_context)
+                q_context = {"seq_id": seq_id, "seq_len": i, "correct": correct}
+                question_context[q_id].append(q_context)
     else:
         raise NotImplementedError()
 

@@ -11,6 +11,9 @@ def mutual_enhance4long_tail_general_config(local_params, global_params, global_
     min_context_seq_len = local_params["min_context_seq_len"]
     dim_question = local_params["dim_question"]
     dim_latent = local_params["dim_latent"]
+    use_emb_dropout4transfer = local_params["use_emb_dropout4transfer"]
+    emb_dropout4transfer = local_params["emb_dropout4transfer"]
+    max_seq_len = local_params["max_seq_len"]
 
     dataset_train = read_preprocessed_file(os.path.join(
         global_objects["file_manager"].get_setting_dir(global_params["datasets_config"]["train"]["setting_name"]),
@@ -35,5 +38,8 @@ def mutual_enhance4long_tail_general_config(local_params, global_params, global_
         "head_question_threshold": head_question_threshold,
         "long_tail_seq_len": long_tail_seq_len,
         "head_seq_len": head_seq_len,
-        "min_context_seq_len": min_context_seq_len
+        "min_context_seq_len": min_context_seq_len,
+        "use_emb_dropout4transfer": use_emb_dropout4transfer,
+        "emb_dropout4transfer": emb_dropout4transfer,
+        "max_seq_len": max_seq_len
     }

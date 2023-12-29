@@ -67,12 +67,18 @@ if __name__ == "__main__":
     parser.add_argument("--head2tail_transfer_method", type=str, default="mean_pool",
                         choices=("mean_pool", ))
     # long tail设置
-    parser.add_argument("--min_context_seq_len", type=int, default=10)
+    parser.add_argument("--min_context_seq_len", type=int, default=10,
+                        help="在构建question context时，只用长度大于min_context_seq_len的序列，以保证信息量的充足")
     parser.add_argument("--head_question_threshold", type=float, default=0.8)
-    parser.add_argument("--long_tail_seq_len", type=int, default=10)
-    parser.add_argument("--head_seq_len", type=int, default=20)
+    parser.add_argument("--long_tail_seq_len", type=int, default=10,
+                        help="即论文中的R")
+    parser.add_argument("--head_seq_len", type=int, default=20,
+                        help="只用序列长度大于head_seq_len的序列来训练seq branch")
     parser.add_argument("--dim_question", type=int, default=128)
     parser.add_argument("--dim_latent", type=int, default=128)
+    parser.add_argument("--max_seq_len", type=int, default=200)
+    parser.add_argument("--use_emb_dropout4transfer", type=str2bool, default=False)
+    parser.add_argument("--emb_dropout4transfer", type=float, default=0.1)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)

@@ -8,7 +8,7 @@ from lib.template.objects_template import OBJECTS
 from lib.util.basic import *
 
 
-def qikt_general_config(local_params, global_params):
+def qikt_general_config(local_params, global_params, global_objects):
     global_params["models_config"]["kt_model"] = deepcopy(QIKT_MODEL_PARAMS)
     global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "QIKT"
 
@@ -50,17 +50,19 @@ def qikt_general_config(local_params, global_params):
     global_params["loss_config"]["c all loss"] = local_params["weight_predict_c_all_loss"]
     global_params["loss_config"]["c next loss"] = local_params["weight_predict_c_next_loss"]
 
-    print("model params\n"
-          f"    num of concept: {num_concept}, num of question: {num_question}, dim of emb: {dim_emb}, rnn type: {rnn_type}, "
-          f"num of rnn layer: {num_rnn_layer}, num of mlp layer: {num_mlp_layer}, dropout: {dropout}\n"
-          f"    lambda of q_all: {lambda_q_all}, lambda of c_next: {lambda_c_next}, lambda of c_all: {lambda_c_all}, use irt: {use_irt}")
+    global_objects["logger"].info(
+        "model params\n"
+        f"    num of concept: {num_concept}, num of question: {num_question}, dim of emb: {dim_emb}, rnn type: {rnn_type}, "
+        f"num of rnn layer: {num_rnn_layer}, num of mlp layer: {num_mlp_layer}, dropout: {dropout}\n"
+        f"    lambda of q_all: {lambda_q_all}, lambda of c_next: {lambda_c_next}, lambda of c_all: {lambda_c_all}, use irt: {use_irt}"
+    )
 
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]
 
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '-').replace(':', '-')}@@QIKT@@seed_{local_params['seed']}@@{setting_name}@@"
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@QIKT@@seed_{local_params['seed']}@@{setting_name}@@"
             f"{train_file_name.replace('.txt', '')}")
 
 
@@ -68,7 +70,7 @@ def qikt_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    qikt_general_config(local_params, global_params)
+    qikt_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         save_params(global_params, global_objects)
 

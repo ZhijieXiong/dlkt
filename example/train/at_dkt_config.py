@@ -53,30 +53,10 @@ def at_dkt_general_config(local_params, global_params):
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]
-        train_strategy = local_params["train_strategy"]
-        use_early_stop = local_params["use_early_stop"]
-        epoch_early_stop = local_params["epoch_early_stop"]
-        use_last_average = local_params["use_last_average"]
-        epoch_last_average = local_params["epoch_last_average"]
-        num_epoch = local_params["num_epoch"]
-
-        if train_strategy == "valid_test":
-            if use_early_stop:
-                pick_up_model_str = f"early_stop_{num_epoch}_{epoch_early_stop}"
-            else:
-                pick_up_model_str = f"num_epoch_{num_epoch}"
-        elif train_strategy == "no_valid":
-            if use_last_average:
-                pick_up_model_str = f"last_average_{num_epoch}_{epoch_last_average}"
-            else:
-                pick_up_model_str = f"last_average_{num_epoch}"
-        else:
-            raise NotImplementedError()
 
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '-').replace(':', '-')}@@AT-DKT@@seed_{local_params['seed']}@@{setting_name}@@"
-            f"{train_file_name.replace('.txt', '')}@@{train_strategy}@@{pick_up_model_str}"
-            f"@@{num_concept}-{num_question}-{dim_emb}-{dim_latent}-{rnn_type}-{num_rnn_layer}-{dropout}-")
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@AT-DKT@@seed_{local_params['seed']}@@{setting_name}@@"
+            f"{train_file_name.replace('.txt', '')}")
         QT_params_str = f"{QT_rnn_type}-{QT_num_rnn_layer}" if QT_net_type == 'rnn' else \
             f"transformer-{QT_transformer_num_block}-{QT_transformer_num_head}"
         global_params["save_model_dir_name"] += QT_params_str + f"-{IK_start}-{weight_QT_loss}-{weight_IK_loss}"

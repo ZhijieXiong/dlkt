@@ -86,16 +86,18 @@ class KnowledgeTracingTrainer:
                 best_valid_performance_by_valid = self.train_record.get_evaluate_result_str("valid", "valid")
                 best_test_performance_by_valid = self.train_record.get_evaluate_result_str("test", "valid")
 
-                print(f"best valid epoch: {self.train_record.get_best_epoch('valid'):<3} , "
-                      f"best test epoch: {self.train_record.get_best_epoch('test')}\n"
-                      f"train performance by best valid epoch is {best_train_performance_by_valid}\n"
-                      f"valid performance by best valid epoch is {best_valid_performance_by_valid}\n"
-                      f"test performance by best valid epoch is {best_test_performance_by_valid}\n"
-                      f"{'-'*100}\n"
-                      f"train performance by best train epoch is "
-                      f"{self.train_record.get_evaluate_result_str('train', 'train')}\n"
-                      f"test performance by best test epoch is "
-                      f"{self.train_record.get_evaluate_result_str('test', 'test')}\n")
+                self.objects["logger"].info(
+                    f"best valid epoch: {self.train_record.get_best_epoch('valid'):<3} , "
+                    f"best test epoch: {self.train_record.get_best_epoch('test')}\n"
+                    f"train performance by best valid epoch is {best_train_performance_by_valid}\n"
+                    f"valid performance by best valid epoch is {best_valid_performance_by_valid}\n"
+                    f"test performance by best valid epoch is {best_test_performance_by_valid}\n"
+                    f"{'-'*100}\n"
+                    f"train performance by best train epoch is "
+                    f"{self.train_record.get_evaluate_result_str('train', 'train')}\n"
+                    f"test performance by best test epoch is "
+                    f"{self.train_record.get_evaluate_result_str('test', 'test')}\n"
+                )
 
         return stop_flag
 
@@ -121,9 +123,10 @@ class KnowledgeTracingTrainer:
             valid_performance_str = self.train_record.get_performance_str("valid")
             test_performance_str = self.train_record.get_performance_str("test")
             best_epoch = self.train_record.get_best_epoch("valid")
-            print(f"{get_now_time()} epoch {self.train_record.get_current_epoch():<3} , valid performance is "
-                  f"{valid_performance_str}train loss is {self.loss_record.get_str()}, test performance is "
-                  f"{test_performance_str}current best epoch is {best_epoch}")
+            self.objects["logger"].info(
+                f"{get_now_time()} epoch {self.train_record.get_current_epoch():<3} , valid performance is "
+                f"{valid_performance_str}train loss is {self.loss_record.get_str()}, test performance is "
+                f"{test_performance_str}current best epoch is {best_epoch}")
             self.loss_record.clear_loss()
             current_epoch = self.train_record.get_current_epoch()
             if best_epoch == current_epoch:
@@ -137,14 +140,14 @@ class KnowledgeTracingTrainer:
         train_loader = self.objects["data_loaders"]["train_loader"]
         test_loader = self.objects["data_loaders"]["test_loader"]
 
-        print("")
+        self.objects["logger"].info("")
         train_statics = train_loader.dataset.get_statics_kt_dataset()
-        print(f"train, seq: {train_statics[0]}, sample: {train_statics[1]}, accuracy: {train_statics[2]:<.4}")
+        self.objects["logger"].info(f"train, seq: {train_statics[0]}, sample: {train_statics[1]}, accuracy: {train_statics[2]:<.4}")
         if train_strategy["type"] == "valid_test":
             valid_statics = self.objects["data_loaders"]["valid_loader"].dataset.get_statics_kt_dataset()
-            print(f"valid, seq: {valid_statics[0]}, sample: {valid_statics[1]}, accuracy: {valid_statics[2]:<.4}")
+            self.objects["logger"].info(f"valid, seq: {valid_statics[0]}, sample: {valid_statics[1]}, accuracy: {valid_statics[2]:<.4}")
         test_statics = test_loader.dataset.get_statics_kt_dataset()
-        print(f"test, seq: {test_statics[0]}, sample: {test_statics[1]}, accuracy: {test_statics[2]:<.4}")
+        self.objects["logger"].info(f"test, seq: {test_statics[0]}, sample: {test_statics[1]}, accuracy: {test_statics[2]:<.4}")
 
     def evaluate_kt_dataset(self, model, data_loader):
         transfer_head2zero = self.params["transfer_head2zero"]

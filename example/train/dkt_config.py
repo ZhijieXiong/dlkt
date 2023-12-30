@@ -45,9 +45,8 @@ def dkt_general_config(local_params, global_params):
         train_file_name = local_params["train_file_name"]
 
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '-').replace(':', '-')}@@DKT@@seed_{local_params['seed']}@@{setting_name}@@"
-            f"{train_file_name.replace('.txt', '')}@@{num_concept}-{dim_emb}-{dim_latent}-{rnn_type}-{num_rnn_layer}-"
-            f"{dropout}-{num_predict_layer}-{dim_predict_mid}-{activate_type}")
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@DKT@@seed_{local_params['seed']}@@{setting_name}@@"
+            f"{train_file_name.replace('.txt', '')}")
 
 
 def dkt_config(local_params):

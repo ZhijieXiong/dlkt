@@ -3,9 +3,10 @@ import sys
 import os
 import inspect
 import torch
+import logging
 
 # 防止
-os.environ["OMP_NUM_THREADS"] = '1'
+# os.environ["OMP_NUM_THREADS"] = '1'
 
 current_file_name = inspect.getfile(inspect.currentframe())
 current_dir = os.path.dirname(current_file_name)
@@ -23,7 +24,7 @@ from lib.data_processor.load_raw import load_csv
 from lib.util.parse import get_concept_from_question
 
 
-def config_optimizer(local_params, global_params, model_name="kt_model"):
+def config_optimizer(local_params, global_params, global_objects, model_name="kt_model"):
     # 优化器配置
     optimizer_type = local_params[f"optimizer_type{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
     weight_decay = local_params[f"weight_decay{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
@@ -69,14 +70,22 @@ def config_optimizer(local_params, global_params, model_name="kt_model"):
     if enable_clip_grad:
         grad_clip_config["grad_clipped"] = grad_clipped
 
-    print(f"    model optimized: {model_name}, optimizer type: {optimizer_type}, {optimizer_type} config: {json.dumps(optimizer_config[optimizer_type])}, "
-          f"use lr schedule: {enable_lr_schedule}{f', schedule type is {lr_schedule_type}: {json.dumps(scheduler_config[lr_schedule_type])}' if enable_lr_schedule else ''}, "
-          f"use clip for grad: {enable_clip_grad}{f', norm clipped: {grad_clipped}' if enable_clip_grad else ''}")
+    global_objects["logger"].info(
+        f"    model optimized: {model_name}, optimizer type: {optimizer_type}, {optimizer_type} config: {json.dumps(optimizer_config[optimizer_type])}, "
+        f"use lr schedule: {enable_lr_schedule}{f', schedule type is {lr_schedule_type}: {json.dumps(scheduler_config[lr_schedule_type])}' if enable_lr_schedule else ''}, "
+        f"use clip for grad: {enable_clip_grad}{f', norm clipped: {grad_clipped}' if enable_clip_grad else ''}"
+    )
 
 
 def general_config(local_params, global_params, global_objects):
     file_manager = FileManager(FILE_MANAGER_ROOT)
+    global_objects["logger"] = logging.getLogger("train_log")
+    global_objects["logger"].setLevel(4)
+    ch = logging.StreamHandler(stream=sys.stdout)
+    ch.setLevel(logging.DEBUG)
+    global_objects["logger"].addHandler(ch)
     global_objects["file_manager"] = file_manager
+
     global_params["save_model"] = local_params["save_model"]
     global_params["train_strategy"]["type"] = local_params["train_strategy"]
     global_params["datasets_config"]["data_type"] = local_params["data_type"]
@@ -156,22 +165,24 @@ def general_config(local_params, global_params, global_objects):
     global_params["transfer_head2zero"] = transfer_head2zero
     global_params["head2tail_transfer_method"] = head2tail_transfer_method
 
-    print("basic setting\n"
-          f"    device: {global_params['device']}, seed: {global_params['seed']}\n"
-          "train policy\n"
-          f"    type: {train_strategy_type}, {train_strategy_type}: {json.dumps(train_strategy_config[train_strategy_type])}, train batch size: {local_params['train_batch_size']}, num of epoch: {num_epoch}\n"
-          f"    use sample weight: {use_sample_weight}{f', weight method: {sample_weight_method}' if use_sample_weight else ''}"
-          f"{f', weight value for tail: {tail_weight}' if (use_sample_weight and sample_weight_method == 'highlight_tail') else ''}\n"
-          f"embedding init\n"
-          f"    use LLM emb to init question emb: {use_LLM_emb4question}, use LLM emb to init concept emb: {use_LLM_emb4concept}"
-          f"{f', train LLM emb: {train_LLM_emb}' if (use_LLM_emb4question or use_LLM_emb4concept) else ''}\n"
-          f"    transfer head to zero for question in train data: {transfer_head2zero}{f', transfer method: {head2tail_transfer_method}' if transfer_head2zero else ''}\n"
-          "evaluate metric\n"
-          f"    main metric: {main_metric}, use multi metrics: {use_multi_metrics}{f', multi metrics: {mutil_metrics}' if use_multi_metrics else ''}")
+    global_objects["logger"].info(
+        "basic setting\n"
+        f"    device: {global_params['device']}, seed: {global_params['seed']}\n"
+        "train policy\n"
+        f"    type: {train_strategy_type}, {train_strategy_type}: {json.dumps(train_strategy_config[train_strategy_type])}, train batch size: {local_params['train_batch_size']}, num of epoch: {num_epoch}\n"
+        f"    use sample weight: {use_sample_weight}{f', weight method: {sample_weight_method}' if use_sample_weight else ''}"
+        f"{f', weight value for tail: {tail_weight}' if (use_sample_weight and sample_weight_method == 'highlight_tail') else ''}\n"
+        f"embedding init\n"
+        f"    use LLM emb to init question emb: {use_LLM_emb4question}, use LLM emb to init concept emb: {use_LLM_emb4concept}"
+        f"{f', train LLM emb: {train_LLM_emb}' if (use_LLM_emb4question or use_LLM_emb4concept) else ''}\n"
+        f"    transfer head to zero for question in train data: {transfer_head2zero}{f', transfer method: {head2tail_transfer_method}' if transfer_head2zero else ''}\n"
+        "evaluate metric\n"
+        f"    main metric: {main_metric}, use multi metrics: {use_multi_metrics}{f', multi metrics: {mutil_metrics}' if use_multi_metrics else ''}"
+    )
 
     # 优化器配置
-    print("optimizer setting")
-    config_optimizer(local_params, global_params, model_name="kt_model")
+    global_objects["logger"].info("optimizer setting")
+    config_optimizer(local_params, global_params, global_objects, model_name="kt_model")
 
     # Q table
     dataset_name = local_params["dataset_name"]
@@ -181,9 +192,11 @@ def general_config(local_params, global_params, global_objects):
     else:
         global_objects["data"]["Q_table"] = file_manager.get_q_table(dataset_name, data_type)
 
-    print("dataset\n"
-          f"    setting: {setting_name}, dataset: {dataset_name}, data type: {data_type}, "
-          f"train: {train_file_name}{f', valid: {valid_file_name}' if train_strategy_type == 'valid_test' else ''}, test: {test_file_name}")
+    global_objects["logger"].info(
+        "dataset\n"
+        f"    setting: {setting_name}, dataset: {dataset_name}, data type: {data_type}, "
+        f"train: {train_file_name}{f', valid: {valid_file_name}' if train_strategy_type == 'valid_test' else ''}, test: {test_file_name}"
+    )
 
     # 数据集统计信息
     statics_info_file_path = os.path.join(
@@ -192,13 +205,16 @@ def general_config(local_params, global_params, global_objects):
     )
     if not os.path.exists(statics_info_file_path):
         if transfer_head2zero:
-            print(
+            global_objects["logger"].error(
                 "\nERROR: statics of train dataset is not exist! If you want use transfer_head2zero, this file is necessary. "
-                "Please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset\n")
+                "Please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset\n"
+            )
         else:
-            print("\nWARNING: statics of train dataset is not exist. This file is required for some cases, e.g., "
-                  "fine grain evaluation such as long tail problem and some model using transfer_head2zero. "
-                  "If it is necessary, please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset\n")
+            global_objects["logger"].warning(
+                "\nWARNING: statics of train dataset is not exist. This file is required for some cases, e.g., "
+                "fine grain evaluation such as long tail problem and some model using transfer_head2zero. "
+                "If it is necessary, please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset\n"
+            )
     else:
         with open(statics_info_file_path, "r") as file:
             global_objects["data"]["train_data_statics"] = json.load(file)
@@ -252,3 +268,8 @@ def save_params(global_params, global_objects):
     params_path = os.path.join(model_dir, "params.json")
     params_json = params2str(global_params)
     write_json(params_json, params_path)
+
+    log_path = os.path.join(model_dir, "log.txt")
+    fh = logging.FileHandler(log_path)
+    fh.setLevel(logging.DEBUG)
+    global_objects["logger"].addHandler(fh)

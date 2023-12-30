@@ -46,8 +46,8 @@ def adv_contrast_vae_gru_general_config(local_params, global_params, global_obje
     encoder_layer_config["add_eps"] = add_eps
 
     # 配置dual和prior优化器参数
-    config_optimizer(local_params, global_params, "dual")
-    config_optimizer(local_params, global_params, "prior")
+    config_optimizer(local_params, global_params, global_objects, "dual")
+    config_optimizer(local_params, global_params, global_objects, "prior")
 
     # Q_table
     dataset_name = local_params["dataset_name"]

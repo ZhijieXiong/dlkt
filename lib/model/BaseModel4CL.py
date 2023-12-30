@@ -89,8 +89,9 @@ class BaseModel4CL:
             }
             if "question_diff_seq" in batch.keys():
                 batch_aug0["question_diff_seq"] = batch["question_diff_seq_aug_0"]
-                batch_aug0["concept_diff_seq"] = batch["concept_diff_seq_aug_0"]
                 batch_aug1["question_diff_seq"] = batch["question_diff_seq_aug_1"]
+            if "concept_diff_seq" in batch.keys():
+                batch_aug0["concept_diff_seq"] = batch["concept_diff_seq_aug_0"]
                 batch_aug1["concept_diff_seq"] = batch["concept_diff_seq_aug_1"]
         elif data_aug_type4cl == "model_aug":
             batch_aug0 = batch
@@ -105,6 +106,7 @@ class BaseModel4CL:
             batch_aug1 = batch
             if "question_diff_seq" in batch.keys():
                 batch_aug0["question_diff_seq"] = batch["question_diff_seq_aug_0"]
+            if "concept_diff_seq" in batch.keys():
                 batch_aug0["concept_diff_seq"] = batch["concept_diff_seq_aug_0"]
         else:
             raise NotImplementedError()
@@ -193,6 +195,12 @@ class BaseModel4CL:
                 "correct_seq": batch["correct_seq_aug_1"],
                 "mask_seq": batch["mask_seq_aug_1"]
             }
+            if "question_diff_seq" in batch.keys():
+                batch_aug0["question_diff_seq"] = batch["question_diff_seq_aug_0"]
+                batch_aug1["question_diff_seq"] = batch["question_diff_seq_aug_1"]
+            if "concept_diff_seq" in batch.keys():
+                batch_aug0["concept_diff_seq"] = batch["concept_diff_seq_aug_0"]
+                batch_aug1["concept_diff_seq"] = batch["concept_diff_seq_aug_1"]
         elif data_aug_type4cl == "model_aug":
             batch_aug0 = batch
             batch_aug1 = batch
@@ -204,6 +212,10 @@ class BaseModel4CL:
                 "mask_seq": batch["mask_seq_aug_0"]
             }
             batch_aug1 = batch
+            if "question_diff_seq" in batch.keys():
+                batch_aug0["question_diff_seq"] = batch["question_diff_seq_aug_0"]
+            if "concept_diff_seq" in batch.keys():
+                batch_aug0["concept_diff_seq"] = batch["concept_diff_seq_aug_0"]
         else:
             raise NotImplementedError()
 
@@ -219,11 +231,11 @@ class BaseModel4CL:
         seq_len = latent_aug0.shape[1]
         m = (torch.eye(batch_size) == 0)
 
-        # 将另一增强序列的每个时刻都作为一个neg，但是为了减少计算量，实际取另一增强序列每隔5个时刻
+        # 将另一增强序列的每个时刻都作为一个neg，但是为了减少计算量，实际取另一增强序列每隔3个时刻
         neg_all = latent_aug1.repeat(batch_size, 1, 1).reshape(batch_size, batch_size, seq_len, -1)[m].reshape(batch_size, batch_size - 1, seq_len, -1)
         mask_bool4neg = torch.ne(batch_aug1["mask_seq"].repeat(batch_size, 1).reshape(batch_size, batch_size, -1)[m].reshape(batch_size, batch_size - 1, -1), 0)
         mask4select = torch.zeros_like(mask_bool4neg).to(self.params["device"])
-        mask4select[:, :, 5::5] = True
+        mask4select[:, :, 5::3] = True
         mask4select = mask4select & mask_bool4neg
 
         temp = self.params["other"]["instance_cl"]["temp"]
@@ -231,7 +243,7 @@ class BaseModel4CL:
         for i in range(batch_size):
             anchor = latent_aug0_last[i]
             pos = latent_aug1_last[i]
-            neg = neg_all[i][:, 3:][mask4select[i][:, 3:]]
+            neg = neg_all[i][:, 5:][mask4select[i][:, 5:]]
             sim_i = torch.cosine_similarity(anchor, torch.cat((pos.unsqueeze(dim=0), neg), dim=0)) / temp
             cos_sim_list.append(sim_i.unsqueeze(dim=0))
 

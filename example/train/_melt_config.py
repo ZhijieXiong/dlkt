@@ -6,7 +6,6 @@ from lib.dataset.util import parse_long_tail
 
 def mutual_enhance4long_tail_general_config(local_params, global_params, global_objects):
     head_question_threshold = local_params["head_question_threshold"]
-    long_tail_seq_len = local_params["long_tail_seq_len"]
     head_seq_len = local_params["head_seq_len"]
     min_context_seq_len = local_params["min_context_seq_len"]
     dim_question = local_params["dim_question"]
@@ -32,11 +31,16 @@ def mutual_enhance4long_tail_general_config(local_params, global_params, global_
     global_objects["mutual_enhance4long_tail"]["tail_questions"] = tail_questions
     global_objects["mutual_enhance4long_tail"]["question_context"] = question_context
 
+    # 损失权重
+    weight_seq_loss = local_params["weight_seq_loss"]
+    weight_question_loss = local_params["weight_question_loss"]
+    global_params["loss_config"]["seq transfer loss"] = weight_seq_loss
+    global_params["loss_config"]["question transfer loss"] = weight_question_loss
+
     global_params["other"]["mutual_enhance4long_tail"] = {
         "dim_question": dim_question,
         "dim_latent": dim_latent,
         "head_question_threshold": head_question_threshold,
-        "long_tail_seq_len": long_tail_seq_len,
         "head_seq_len": head_seq_len,
         "min_context_seq_len": min_context_seq_len,
         "use_emb_dropout4transfer": use_emb_dropout4transfer,

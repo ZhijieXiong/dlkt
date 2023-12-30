@@ -1,10 +1,6 @@
-import torch
-import torch.nn as nn
-
 from torch.utils.data import TensorDataset, DataLoader
 
 from .KnowledgeTracingTrainer import KnowledgeTracingTrainer
-from .LossRecord import LossRecord
 from .util import *
 from ..model.Model4LongTail import *
 
@@ -67,15 +63,18 @@ class MutualEnhance4LongTailTrainer(KnowledgeTracingTrainer):
 
     def train(self):
         train_strategy = self.params["train_strategy"]
+        grad_clip_config = self.params["grad_clip_config"]["kt_model"]
+        schedulers_config = self.params["schedulers_config"]["kt_model"]
         num_epoch = train_strategy["num_epoch"]
         train_loader = self.objects["data_loaders"]["train_loader"]
         kt_model = self.objects["models"]["kt_model"]
         optimizer = self.objects["optimizers"]["kt_model"]
         scheduler = self.objects["schedulers"]["kt_model"]
+        weight_seq_loss = self.params["loss_config"]["seq transfer loss"]
+        weight_question_loss = self.params["loss_config"]["seq transfer loss"]
 
         self.print_data_statics()
 
-        dataset_train = self.objects["mutual_enhance4long_tail"]["dataset_train"]
         for epoch in range(1, num_epoch + 1):
             kt_model.eval()
             with torch.no_grad():
@@ -86,11 +85,32 @@ class MutualEnhance4LongTailTrainer(KnowledgeTracingTrainer):
             kt_model.train()
             loaders = zip(train_loader, self.head_question_data_loader, self.head_seq_data_loader)
             for batch, batch_head_question, batch_head_seq in loaders:
-                self.seq_branch.get_transfer_loss(batch_head_seq, kt_model, epoch)
-                self.question_branch.get_transfer_loss(batch_head_question, kt_model, self.seq_branch, epoch)
+                optimizer.zero_grad()
 
-    def question_id2batch(self, batch_question):
-        question_context = self.objects["mutual_enhance4long_tail"]["question_context"]
+                num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+                num_head_q = len(batch_head_question[0])
+                num_head_s = len(batch_head_seq[0])
 
-    def seq_id2batch(self, batch_seq):
-        question_context = self.objects["mutual_enhance4long_tail"]["question_context"]
+                loss = 0.
+                seq_loss = self.seq_branch.get_transfer_loss(batch_head_seq, kt_model, epoch)
+                self.loss_record.add_loss("seq transfer loss", seq_loss.detach().cpu().item() * num_head_s, num_head_s)
+                loss = loss + weight_seq_loss * seq_loss
+
+                question_loss = self.question_branch.get_transfer_loss(batch_head_question, kt_model, self.seq_branch, epoch)
+                self.loss_record.add_loss("question transfer loss", question_loss.detach().cpu().item() * num_head_q, num_head_q)
+                loss = loss + weight_question_loss * question_loss
+
+                predict_loss = kt_model.get_predict_loss(batch)
+                self.loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+                loss = loss + predict_loss
+
+                loss.backward()
+                if grad_clip_config["use_clip"]:
+                    nn.utils.clip_grad_norm_(kt_model.parameters(), max_norm=grad_clip_config["grad_clipped"])
+
+                optimizer.step()
+            if schedulers_config["use_scheduler"]:
+                scheduler.step()
+            self.evaluate()
+            if self.stop_train():
+                break

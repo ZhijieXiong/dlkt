@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import torch.nn as nn
 
-from ..util.data import context2batch
+from ..util.data import context2batch, batch_item_data2batch
 
 
 class LinearSeqBranch(nn.Module):
@@ -13,8 +13,11 @@ class LinearSeqBranch(nn.Module):
 
         dim_latent = params["other"]["mutual_enhance4long_tail"]["dim_latent"]
 
-        self.MLP = nn.Linear(dim_latent, dim_latent)
-        nn.init.xavier_normal_(self.MLP.weight.data)
+        self.W = nn.Linear(dim_latent, dim_latent)
+        nn.init.xavier_normal_(self.W.weight.data)
+
+    def get_latent_transferred(self, latent):
+        return self.W(latent)
 
     def get_transfer_loss(self, batch_seq, kt_model, epoch):
         num_epoch = self.params["train_strategy"]["num_epoch"]
@@ -26,7 +29,8 @@ class LinearSeqBranch(nn.Module):
         full_seq = []
         part_seq = []
         weight_list = []
-        for seq_id in batch_seq[0].cpu().tolist():
+        Rs = np.random.randint(3, head_seq_len-1, len(batch_seq[0]))
+        for R, seq_id in zip(Rs, batch_seq[0].cpu().tolist()):
             # calculate the loss coefficient
             item_data = dataset_train[seq_id]
             seq_len = item_data["seq_len"]
@@ -35,6 +39,25 @@ class LinearSeqBranch(nn.Module):
             weight_list.append(np.abs(np.sin(weight)))
 
             full_seq.append(dataset_train[seq_id])
+            item_data_part = {}
+            for k in item_data.keys():
+                if type(item_data[k]) is list:
+                    item_data_part[k] = item_data[k][seq_len-R:]
+                else:
+                    item_data_part[k] = item_data[k]
+            item_data_part["seq_len"] = R
+            part_seq.append(item_data_part)
+
+        full_batch = batch_item_data2batch(full_seq, device)
+        part_batch = batch_item_data2batch(part_seq, device)
+
+        full_latent = kt_model.get_latent_last(full_batch)
+        part_latent = kt_model.get_latent_last(part_batch)
+
+        weight_list = torch.FloatTensor(weight_list).view(-1, 1).to(self.params["device"])
+        transfer_loss = (weight_list * (self.W(part_latent) - full_latent) ** 2).mean()
+
+        return transfer_loss
 
 
 class LinearQuestionBranch(nn.Module):
@@ -46,10 +69,10 @@ class LinearQuestionBranch(nn.Module):
         dim_question = params["other"]["mutual_enhance4long_tail"]["dim_question"]
         dim_latent = params["other"]["mutual_enhance4long_tail"]["dim_latent"]
 
-        self.MLP4right = nn.Linear(dim_latent, dim_question)
-        self.MLP4wrong = nn.Linear(dim_latent, dim_question)
-        nn.init.xavier_normal_(self.MLP4right.weight.data)
-        nn.init.xavier_normal_(self.MLP4wrong.weight.data)
+        self.W4right = nn.Linear(dim_latent, dim_question)
+        self.W4wrong = nn.Linear(dim_latent, dim_question)
+        nn.init.xavier_normal_(self.W4right.weight.data)
+        nn.init.xavier_normal_(self.W4wrong.weight.data)
 
         self.num_threshold = min(list(map(
             lambda q_id: len(objects["mutual_enhance4long_tail"]["question_context"][q_id]),
@@ -57,19 +80,20 @@ class LinearQuestionBranch(nn.Module):
         )))
 
     def forward(self, batch, kt_model, seq_branch, wright_branch=True):
-        use_dropout = self.params["other"]["mutual_enhance4long_tail"]["use_emb_dropout4transfer"]
-        emb_dropout4transfer = self.params["other"]["mutual_enhance4long_tail"]["emb_dropout4transfer"]
-        latent = kt_model.get_latent_last(batch, use_dropout, emb_dropout4transfer)
+        # use_dropout = self.params["other"]["mutual_enhance4long_tail"]["use_emb_dropout4transfer"]
+        # emb_dropout4transfer = self.params["other"]["mutual_enhance4long_tail"]["emb_dropout4transfer"]
+        latent = kt_model.get_latent_last(batch)
+        latent = latent + seq_branch.get_latent_transferred(latent)
         if wright_branch:
-            return self.MLP4right(latent)
+            return self.W4right(latent)
         else:
-            return self.MLP4wrong(latent)
+            return self.W4wrong(latent)
 
     def get_question_emb_transferred(self, latent, wright_branch=True):
         if wright_branch:
-            return self.MLP4right(latent)
+            return self.W4right(latent)
         else:
-            return self.MLP4wrong(latent)
+            return self.W4wrong(latent)
 
     def get_transfer_loss(self, batch_question, kt_model, seq_branch, epoch):
         num_epoch = self.params["train_strategy"]["num_epoch"]

@@ -75,7 +75,7 @@ if __name__ == "__main__":
     parser.add_argument("--linear_increase_value", type=float, default=0.1)
     parser.add_argument("--use_stop_cl_after", type=str2bool, default=False)
     parser.add_argument("--epoch_stop_cl", type=int, default=3)
-    parser.add_argument("--latent_type4cl", type=str, default="last_time",
+    parser.add_argument("--latent_type4cl", type=str, default="all_time",
                         choices=("last_time", "all_time", "mean_pool"))
     # model aug参数
     parser.add_argument("--use_emb_dropout4cl", type=str2bool, default=True)

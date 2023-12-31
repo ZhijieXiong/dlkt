@@ -279,6 +279,9 @@ class DIMKT(nn.Module, BaseModel4CL):
             elif head2tail_transfer_method == "max_pool":
                 tail_q_emb = torch.max(head_qs_emb, dim=1)[0].unsqueeze(0)
                 tail_q_diff_emb = torch.max(head_qs_diff_emb, dim=1)[0].unsqueeze(0)
+            elif head2tail_transfer_method == "zero_pad":
+                tail_q_emb = torch.zeros((1, head_qs_emb.shape[-1])).to(self.params["device"])
+                tail_q_diff_emb = torch.zeros((1, head_qs_diff_emb.shape[-1])).to(self.params["device"])
             else:
                 raise NotImplementedError()
 
@@ -360,6 +363,69 @@ class DIMKT(nn.Module, BaseModel4CL):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         predict_score = self.forward(batch)
         predict_score = torch.masked_select(predict_score[:, :-1], mask_bool_seq[:, 1:])
+
+        return predict_score
+
+    def get_predict_score4long_tail(self, batch, seq_branch):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        use_LLM_emb4question = self.params["use_LLM_emb4question"]
+        use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
+        dim_emb = self.params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["dim_emb"]
+        head_seq_len = self.params["other"]["mutual_enhance4long_tail"]["head_seq_len"]
+        use_transfer4seq = self.params["other"]["mutual_enhance4long_tail"]["use_transfer4seq"]
+        beta4transfer_seq = self.params["other"]["mutual_enhance4long_tail"]["beta4transfer_seq"]
+        batch_size, seq_len = batch["question_seq"].shape[0], batch["question_seq"].shape[1]
+
+        question_emb = self.embed_question(batch["question_seq"])
+        if use_LLM_emb4question:
+            question_emb = self.MLP4question(question_emb)
+        concept_emb = self.embed_concept(batch["concept_seq"])
+        if use_LLM_emb4concept:
+            concept_emb = self.MLP4concept(concept_emb)
+        question_diff_emb = self.embed_question_diff(batch["question_diff_seq"])
+        concept_diff_emb = self.embed_concept_diff(batch["concept_diff_seq"])
+        correct_emb = self.embed_correct(batch["correct_seq"])
+
+        latent = torch.zeros(batch_size, seq_len, dim_emb).to(self.params["device"])
+        h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_emb)).to(self.params["device"])
+        y = torch.zeros(batch_size, seq_len).to(self.params["device"])
+
+        for t in range(seq_len - 1):
+            input_x = torch.concat((
+                question_emb[:, t],
+                concept_emb[:, t],
+                question_diff_emb[:, t],
+                concept_diff_emb[:, t]
+            ), dim=1)
+            x = self.generate_x_MLP(input_x)
+            input_sdf = x - h_pre
+            sdf = torch.sigmoid(self.SDF_MLP1(input_sdf)) * self.dropout_layer(torch.tanh(self.SDF_MLP2(input_sdf)))
+            input_pka = torch.concat((sdf, correct_emb[:, t]), dim=1)
+            pka = torch.sigmoid(self.PKA_MLP1(input_pka)) * torch.tanh(self.PKA_MLP2(input_pka))
+            input_KI = torch.concat((
+                h_pre,
+                correct_emb[:, t],
+                question_diff_emb[:, t],
+                concept_diff_emb[:, t]
+            ), dim=1)
+            Gamma_ksu = torch.sigmoid(self.knowledge_indicator_MLP(input_KI))
+            h = Gamma_ksu * h_pre + (1 - Gamma_ksu) * pka
+            if use_transfer4seq and t < head_seq_len:
+                h_transferred = beta4transfer_seq * seq_branch.get_latent_transferred(h)
+            else:
+                h_transferred = torch.zeros_like(h)
+            input_x_next = torch.concat((
+                question_emb[:, t + 1],
+                concept_emb[:, t + 1],
+                question_diff_emb[:, t + 1],
+                concept_diff_emb[:, t + 1]
+            ), dim=1)
+            x_next = self.generate_x_MLP(input_x_next)
+            y[:, t] = torch.sigmoid(torch.sum(x_next * (h + h_transferred), dim=-1))
+            latent[:, t + 1, :] = h
+            h_pre = h
+
+        predict_score = torch.masked_select(y[:, :-1], mask_bool_seq[:, 1:])
 
         return predict_score
 
@@ -558,14 +624,14 @@ class DIMKT(nn.Module, BaseModel4CL):
             l1 = len(right_context_list)
             if l1 >= 1:
                 idx4right += l1
-                right_idx_list.append(l1)
+                right_idx_list.append(idx4right)
             else:
                 right_idx_list.append(right_idx_list[-1])
 
             l2 = len(wrong_context_list)
             if l2 >= 1:
                 idx4wrong += l2
-                wrong_idx_list.append(l2)
+                wrong_idx_list.append(idx4wrong)
             else:
                 wrong_idx_list.append(wrong_idx_list[-1])
 

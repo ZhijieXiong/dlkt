@@ -10,8 +10,8 @@ def mutual_enhance4long_tail_general_config(local_params, global_params, global_
     min_context_seq_len = local_params["min_context_seq_len"]
     dim_question = local_params["dim_question"]
     dim_latent = local_params["dim_latent"]
-    use_emb_dropout4transfer = local_params["use_emb_dropout4transfer"]
-    emb_dropout4transfer = local_params["emb_dropout4transfer"]
+    use_transfer4seq = local_params["use_transfer4seq"]
+    beta4transfer_seq = local_params["beta4transfer_seq"]
     max_seq_len = local_params["max_seq_len"]
 
     dataset_train = read_preprocessed_file(os.path.join(
@@ -43,7 +43,15 @@ def mutual_enhance4long_tail_general_config(local_params, global_params, global_
         "head_question_threshold": head_question_threshold,
         "head_seq_len": head_seq_len,
         "min_context_seq_len": min_context_seq_len,
-        "use_emb_dropout4transfer": use_emb_dropout4transfer,
-        "emb_dropout4transfer": emb_dropout4transfer,
+        "use_transfer4seq": use_transfer4seq,
+        "beta4transfer_seq": beta4transfer_seq,
         "max_seq_len": max_seq_len
     }
+
+    global_objects["logger"].info(
+        "long tail params\n"
+        f"    weight of question transfer loss: {weight_question_loss}, dim of question: {dim_question}, dim of latent: {dim_latent}, max seq len: {max_seq_len}\n"
+        f"    threshold of head question (percent): {head_question_threshold}, min seq len of context for question: {min_context_seq_len}, "
+        f"use transfer for tail seq: {use_transfer4seq}"
+        f"{f', weight of seq transfer loss: {weight_seq_loss}, seq len of head seq: {head_seq_len}, beta for transfer seq: {beta4transfer_seq}' if use_transfer4seq else ''}"
+    )

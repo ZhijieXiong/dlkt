@@ -39,8 +39,8 @@ if __name__ == "__main__":
 
     # 是否将head question的知识迁移到zero shot question
     parser.add_argument("--transfer_head2zero", type=str2bool, default=True)
-    parser.add_argument("--head2tail_transfer_method", type=str, default="mean_pool",
-                        choices=("mean_pool", "max_pool"))
+    parser.add_argument("--head2tail_transfer_method", type=str, default="zero_pad",
+                        choices=("mean_pool", "max_pool", "zero_pad"))
 
     # 如果是DIMKT，需要训练集数据的difficulty信息
     parser.add_argument("--is_dimkt", type=str2bool, default=True)

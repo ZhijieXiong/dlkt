@@ -85,7 +85,7 @@ if __name__ == "__main__":
     # neg sample参数
     parser.add_argument("--use_neg", type=str2bool, default=True)
     parser.add_argument("--use_neg_filter", type=str2bool, default=True)
-    parser.add_argument("--neg_sim_threshold", type=float, default=0.8, help="cos sim, between (0, 1)")
+    parser.add_argument("--neg_sim_threshold", type=float, default=0.7, help="cos sim, between (0, 1)")
     # info aug参数
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)

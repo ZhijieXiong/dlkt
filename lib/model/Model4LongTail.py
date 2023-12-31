@@ -29,7 +29,7 @@ class LinearSeqBranch(nn.Module):
         full_seq = []
         part_seq = []
         weight_list = []
-        Rs = np.random.randint(3, head_seq_len-1, len(batch_seq[0]))
+        Rs = np.random.randint(5, head_seq_len-1, len(batch_seq[0]))
         for R, seq_id in zip(Rs, batch_seq[0].cpu().tolist()):
             # calculate the loss coefficient
             item_data = dataset_train[seq_id]
@@ -80,10 +80,11 @@ class LinearQuestionBranch(nn.Module):
         )))
 
     def forward(self, batch, kt_model, seq_branch, wright_branch=True):
-        # use_dropout = self.params["other"]["mutual_enhance4long_tail"]["use_emb_dropout4transfer"]
-        # emb_dropout4transfer = self.params["other"]["mutual_enhance4long_tail"]["emb_dropout4transfer"]
+        use_transfer4seq = self.params["other"]["mutual_enhance4long_tail"]["use_transfer4seq"]
+        beta4transfer_seq = self.params["other"]["mutual_enhance4long_tail"]["beta4transfer_seq"]
         latent = kt_model.get_latent_last(batch)
-        latent = latent + seq_branch.get_latent_transferred(latent)
+        if use_transfer4seq:
+            latent = latent + beta4transfer_seq * seq_branch.get_latent_transferred(latent)
         if wright_branch:
             return self.W4right(latent)
         else:

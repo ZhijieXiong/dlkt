@@ -75,13 +75,13 @@ if __name__ == "__main__":
     parser.add_argument("--dim_question", type=int, default=128)
     parser.add_argument("--dim_latent", type=int, default=128)
     parser.add_argument("--max_seq_len", type=int, default=200)
-    parser.add_argument("--use_emb_dropout4transfer", type=str2bool, default=False)
-    parser.add_argument("--emb_dropout4transfer", type=float, default=0.1)
+    parser.add_argument("--use_transfer4seq", type=str2bool, default=False)
+    parser.add_argument("--beta4transfer_seq", type=float, help="论文公式4中的beta", default=0.1)
     # 损失权重
     parser.add_argument("--weight_seq_loss", type=float, help="lambda U", default=0.1)
     parser.add_argument("--weight_question_loss", type=float, help="lambda I", default=0.1)
     # 其它
-    parser.add_argument("--save_model", type=str2bool, default=False)
+    parser.add_argument("--save_model", type=str2bool, default=True)
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()

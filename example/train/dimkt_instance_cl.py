@@ -61,7 +61,7 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", type=float, default=0.2)
     # instance cl参数
     parser.add_argument("--temp", type=float, default=0.05)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.001)
     # warm up
     parser.add_argument("--use_warm_up4cl", type=str2bool, default=False)
     parser.add_argument("--epoch_warm_up4cl", type=float, default=2)
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     # neg sample参数
     parser.add_argument("--use_neg", type=str2bool, default=True)
     parser.add_argument("--use_neg_filter", type=str2bool, default=True)
-    parser.add_argument("--neg_sim_threshold", type=float, default=0.7, help="cos sim, between (0, 1)")
+    parser.add_argument("--neg_sim_threshold", type=float, default=0.8, help="cos sim, between (0, 1)")
     # info aug参数
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)

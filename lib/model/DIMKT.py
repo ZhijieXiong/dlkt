@@ -145,7 +145,7 @@ class DIMKT(nn.Module, BaseModel4CL):
         y = torch.zeros(batch_size, seq_len).to(self.params["device"])
 
         for t in range(seq_len-1):
-            input_x = torch.concat((
+            input_x = torch.cat((
                 question_emb[:, t],
                 concept_emb[:, t],
                 question_diff_emb[:, t],
@@ -154,9 +154,9 @@ class DIMKT(nn.Module, BaseModel4CL):
             x = self.generate_x_MLP(input_x)
             input_sdf = x - h_pre
             sdf = torch.sigmoid(self.SDF_MLP1(input_sdf)) * self.dropout_layer(torch.tanh(self.SDF_MLP2(input_sdf)))
-            input_pka = torch.concat((sdf, correct_emb[:, t]), dim=1)
+            input_pka = torch.cat((sdf, correct_emb[:, t]), dim=1)
             pka = torch.sigmoid(self.PKA_MLP1(input_pka)) * torch.tanh(self.PKA_MLP2(input_pka))
-            input_KI = torch.concat((
+            input_KI = torch.cat((
                 h_pre,
                 correct_emb[:, t],
                 question_diff_emb[:, t],
@@ -164,7 +164,7 @@ class DIMKT(nn.Module, BaseModel4CL):
             ), dim=1)
             Gamma_ksu = torch.sigmoid(self.knowledge_indicator_MLP(input_KI))
             h = Gamma_ksu * h_pre + (1 - Gamma_ksu) * pka
-            input_x_next = torch.concat((
+            input_x_next = torch.cat((
                 question_emb[:, t+1],
                 concept_emb[:, t+1],
                 question_diff_emb[:, t+1],
@@ -202,7 +202,7 @@ class DIMKT(nn.Module, BaseModel4CL):
         h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_emb)).to(self.params["device"])
 
         for t in range(seq_len - 1):
-            input_x = torch.concat((
+            input_x = torch.cat((
                 question_emb[:, t],
                 concept_emb[:, t],
                 question_diff_emb[:, t],
@@ -211,9 +211,9 @@ class DIMKT(nn.Module, BaseModel4CL):
             x = self.generate_x_MLP(input_x)
             input_sdf = x - h_pre
             sdf = torch.sigmoid(self.SDF_MLP1(input_sdf)) * self.dropout_layer(torch.tanh(self.SDF_MLP2(input_sdf)))
-            input_pka = torch.concat((sdf, correct_emb[:, t]), dim=1)
+            input_pka = torch.cat((sdf, correct_emb[:, t]), dim=1)
             pka = torch.sigmoid(self.PKA_MLP1(input_pka)) * torch.tanh(self.PKA_MLP2(input_pka))
-            input_KI = torch.concat((
+            input_KI = torch.cat((
                 h_pre,
                 correct_emb[:, t],
                 question_diff_emb[:, t],
@@ -326,7 +326,7 @@ class DIMKT(nn.Module, BaseModel4CL):
         y = torch.zeros(batch_size, seq_len).to(self.params["device"])
 
         for t in range(seq_len - 1):
-            input_x = torch.concat((
+            input_x = torch.cat((
                 question_emb[:, t],
                 concept_emb[:, t],
                 question_diff_emb[:, t],
@@ -335,9 +335,9 @@ class DIMKT(nn.Module, BaseModel4CL):
             x = self.generate_x_MLP(input_x)
             input_sdf = x - h_pre
             sdf = torch.sigmoid(self.SDF_MLP1(input_sdf)) * self.dropout_layer(torch.tanh(self.SDF_MLP2(input_sdf)))
-            input_pka = torch.concat((sdf, correct_emb[:, t]), dim=1)
+            input_pka = torch.cat((sdf, correct_emb[:, t]), dim=1)
             pka = torch.sigmoid(self.PKA_MLP1(input_pka)) * torch.tanh(self.PKA_MLP2(input_pka))
-            input_KI = torch.concat((
+            input_KI = torch.cat((
                 h_pre,
                 correct_emb[:, t],
                 question_diff_emb[:, t],
@@ -345,7 +345,7 @@ class DIMKT(nn.Module, BaseModel4CL):
             ), dim=1)
             Gamma_ksu = torch.sigmoid(self.knowledge_indicator_MLP(input_KI))
             h = Gamma_ksu * h_pre + (1 - Gamma_ksu) * pka
-            input_x_next = torch.concat((
+            input_x_next = torch.cat((
                 question_emb[:, t + 1],
                 concept_emb[:, t + 1],
                 question_diff_emb[:, t + 1],
@@ -391,7 +391,7 @@ class DIMKT(nn.Module, BaseModel4CL):
         y = torch.zeros(batch_size, seq_len).to(self.params["device"])
 
         for t in range(seq_len - 1):
-            input_x = torch.concat((
+            input_x = torch.cat((
                 question_emb[:, t],
                 concept_emb[:, t],
                 question_diff_emb[:, t],
@@ -400,9 +400,9 @@ class DIMKT(nn.Module, BaseModel4CL):
             x = self.generate_x_MLP(input_x)
             input_sdf = x - h_pre
             sdf = torch.sigmoid(self.SDF_MLP1(input_sdf)) * self.dropout_layer(torch.tanh(self.SDF_MLP2(input_sdf)))
-            input_pka = torch.concat((sdf, correct_emb[:, t]), dim=1)
+            input_pka = torch.cat((sdf, correct_emb[:, t]), dim=1)
             pka = torch.sigmoid(self.PKA_MLP1(input_pka)) * torch.tanh(self.PKA_MLP2(input_pka))
-            input_KI = torch.concat((
+            input_KI = torch.cat((
                 h_pre,
                 correct_emb[:, t],
                 question_diff_emb[:, t],
@@ -411,17 +411,17 @@ class DIMKT(nn.Module, BaseModel4CL):
             Gamma_ksu = torch.sigmoid(self.knowledge_indicator_MLP(input_KI))
             h = Gamma_ksu * h_pre + (1 - Gamma_ksu) * pka
             if use_transfer4seq and t < head_seq_len:
-                h_transferred = beta4transfer_seq * seq_branch.get_latent_transferred(h)
+                h_transferred = (beta4transfer_seq * h + seq_branch.get_latent_transferred(h)) / (1 + beta4transfer_seq)
             else:
-                h_transferred = torch.zeros_like(h)
-            input_x_next = torch.concat((
+                h_transferred = h
+            input_x_next = torch.cat((
                 question_emb[:, t + 1],
                 concept_emb[:, t + 1],
                 question_diff_emb[:, t + 1],
                 concept_diff_emb[:, t + 1]
             ), dim=1)
             x_next = self.generate_x_MLP(input_x_next)
-            y[:, t] = torch.sigmoid(torch.sum(x_next * (h + h_transferred), dim=-1))
+            y[:, t] = torch.sigmoid(torch.sum(x_next * h_transferred, dim=-1))
             latent[:, t + 1, :] = h
             h_pre = h
 
@@ -456,7 +456,7 @@ class DIMKT(nn.Module, BaseModel4CL):
         y = torch.zeros(batch_size, seq_len).to(self.params["device"])
 
         for t in range(seq_len - 1):
-            input_x = torch.concat((
+            input_x = torch.cat((
                 question_emb[:, t],
                 concept_emb[:, t],
                 question_diff_emb[:, t],
@@ -465,9 +465,9 @@ class DIMKT(nn.Module, BaseModel4CL):
             x = self.generate_x_MLP(input_x)
             input_sdf = x - h_pre
             sdf = torch.sigmoid(self.SDF_MLP1(input_sdf)) * self.dropout_layer(torch.tanh(self.SDF_MLP2(input_sdf)))
-            input_pka = torch.concat((sdf, correct_emb[:, t]), dim=1)
+            input_pka = torch.cat((sdf, correct_emb[:, t]), dim=1)
             pka = torch.sigmoid(self.PKA_MLP1(input_pka)) * torch.tanh(self.PKA_MLP2(input_pka))
-            input_KI = torch.concat((
+            input_KI = torch.cat((
                 h_pre,
                 correct_emb[:, t],
                 question_diff_emb[:, t],
@@ -475,7 +475,7 @@ class DIMKT(nn.Module, BaseModel4CL):
             ), dim=1)
             Gamma_ksu = torch.sigmoid(self.knowledge_indicator_MLP(input_KI))
             h = Gamma_ksu * h_pre + (1 - Gamma_ksu) * pka
-            input_x_next = torch.concat((
+            input_x_next = torch.cat((
                 question_emb[:, t + 1],
                 concept_emb[:, t + 1],
                 question_diff_emb[:, t + 1],
@@ -507,7 +507,7 @@ class DIMKT(nn.Module, BaseModel4CL):
         h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_emb)).to(self.params["device"])
 
         for t in range(seq_len - 1):
-            input_x = torch.concat((
+            input_x = torch.cat((
                 question_emb[:, t],
                 concept_emb[:, t],
                 question_diff_emb[:, t],
@@ -516,9 +516,9 @@ class DIMKT(nn.Module, BaseModel4CL):
             x = self.generate_x_MLP(input_x)
             input_sdf = x - h_pre
             sdf = torch.sigmoid(self.SDF_MLP1(input_sdf)) * self.dropout_layer(torch.tanh(self.SDF_MLP2(input_sdf)))
-            input_pka = torch.concat((sdf, correct_emb[:, t]), dim=1)
+            input_pka = torch.cat((sdf, correct_emb[:, t]), dim=1)
             pka = torch.sigmoid(self.PKA_MLP1(input_pka)) * torch.tanh(self.PKA_MLP2(input_pka))
-            input_KI = torch.concat((
+            input_KI = torch.cat((
                 h_pre,
                 correct_emb[:, t],
                 question_diff_emb[:, t],

@@ -267,7 +267,7 @@ class SimpleKT(nn.Module, BaseModel4CL):
         transfer head to tail use gaussian distribution
         :return:
         """
-        difficulty_scalar = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["difficulty_scalar"]
+        # difficulty_scalar = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["difficulty_scalar"]
         head2tail_transfer_method = self.params["head2tail_transfer_method"]
         data_type = self.params["datasets_config"]["data_type"]
         indices = []

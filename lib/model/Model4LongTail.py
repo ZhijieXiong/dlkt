@@ -29,7 +29,8 @@ class LinearSeqBranch(nn.Module):
         full_seq = []
         part_seq = []
         weight_list = []
-        Rs = np.random.randint(5, head_seq_len-1, len(batch_seq[0]))
+        # 这里和MELT不一样，因为对于知识追踪任务来说，太短的序列没什么信息量
+        Rs = np.random.randint(10, head_seq_len-1, len(batch_seq[0]))
         for R, seq_id in zip(Rs, batch_seq[0].cpu().tolist()):
             # calculate the loss coefficient
             item_data = dataset_train[seq_id]
@@ -79,19 +80,8 @@ class LinearQuestionBranch(nn.Module):
             objects["mutual_enhance4long_tail"]["head_questions"]
         )))
 
-    def forward(self, batch, kt_model, seq_branch, wright_branch=True):
-        use_transfer4seq = self.params["other"]["mutual_enhance4long_tail"]["use_transfer4seq"]
-        beta4transfer_seq = self.params["other"]["mutual_enhance4long_tail"]["beta4transfer_seq"]
-        latent = kt_model.get_latent_last(batch)
-        if use_transfer4seq:
-            latent = latent + beta4transfer_seq * seq_branch.get_latent_transferred(latent)
-        if wright_branch:
-            return self.W4right(latent)
-        else:
-            return self.W4wrong(latent)
-
-    def get_question_emb_transferred(self, latent, wright_branch=True):
-        if wright_branch:
+    def get_question_emb_transferred(self, latent, right_branch=True):
+        if right_branch:
             return self.W4right(latent)
         else:
             return self.W4wrong(latent)
@@ -99,6 +89,9 @@ class LinearQuestionBranch(nn.Module):
     def get_transfer_loss(self, batch_question, kt_model, seq_branch, epoch):
         num_epoch = self.params["train_strategy"]["num_epoch"]
         question_context = self.objects["mutual_enhance4long_tail"]["question_context"]
+        use_transfer4seq = self.params["other"]["mutual_enhance4long_tail"]["use_transfer4seq"]
+        beta = self.params["other"]["mutual_enhance4long_tail"]["beta4transfer_seq"]
+        dim_question = self.params["other"]["mutual_enhance4long_tail"]["dim_question"]
 
         right_context_batch = []
         wrong_context_batch = []
@@ -147,9 +140,13 @@ class LinearQuestionBranch(nn.Module):
         dataset_train = self.objects["mutual_enhance4long_tail"]["dataset_train"]
         device = self.params["device"]
         right_context_batch = context2batch(dataset_train, right_context_batch, device)
-        latent_right = self.forward(right_context_batch, kt_model, seq_branch, wright_branch=True)
+        latent_right = kt_model.get_latent_last(right_context_batch)
+        if use_transfer4seq:
+            latent_right = (latent_right + beta * seq_branch.get_latent_transferred(latent_right)) / (1 + beta)
         wrong_context_batch = context2batch(dataset_train, wrong_context_batch, device)
-        latent_wrong = self.forward(wrong_context_batch, kt_model, seq_branch, wright_branch=False)
+        latent_wrong = kt_model.get_latent_last(wrong_context_batch)
+        if use_transfer4seq:
+            latent_wrong = (latent_wrong + beta * seq_branch.get_latent_transferred(latent_wrong)) / (1 + beta)
         question_emb = kt_model.get_target_question_emb(batch_question[0])
 
         # contextualized representations
@@ -157,8 +154,19 @@ class LinearQuestionBranch(nn.Module):
         for i in range(len(batch_question[0])):
             mean_right_context = latent_right[right_idx_list[i]: right_idx_list[i+1]]
             mean_wrong_context = latent_wrong[wrong_idx_list[i]: wrong_idx_list[i+1]]
-            mean_context = torch.cat((mean_right_context, mean_wrong_context), dim=0)
-            question_emb_transferred.append(mean_context.mean(dim=0))
+            num_right = len(mean_right_context)
+            num_wrong = len(mean_wrong_context)
+            coef_right = num_right / (num_right + num_wrong)
+            coef_wrong = num_wrong / (num_right + num_wrong)
+            if num_right == 0:
+                mean_right_context = torch.zeros(dim_question).float().to(self.params["device"])
+            else:
+                mean_right_context = self.get_question_emb_transferred(mean_right_context.mean(0), True)
+            if num_wrong == 0:
+                mean_wrong_context = torch.zeros(dim_question).float().to(self.params["device"])
+            else:
+                mean_wrong_context = self.get_question_emb_transferred(mean_wrong_context.mean(0), False)
+            question_emb_transferred.append(coef_right * mean_right_context + coef_wrong * mean_wrong_context)
 
         question_emb_transferred = torch.stack(question_emb_transferred)
         weight_list = torch.FloatTensor(weight_list).view(-1, 1).to(self.params["device"])

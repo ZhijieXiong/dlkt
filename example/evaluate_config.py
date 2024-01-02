@@ -1,4 +1,8 @@
+import os.path
+
 import torch
+import logging
+import sys
 from copy import deepcopy
 
 from config import FILE_MANAGER_ROOT
@@ -6,6 +10,7 @@ from config import FILE_MANAGER_ROOT
 from lib.template.evaluate_params_template import EVALUATE_PARAMS
 from lib.template.objects_template import OBJECTS
 from lib.util.FileManager import FileManager
+from lib.util.basic import get_now_time
 
 
 def evaluate_general_config(local_params):
@@ -13,6 +18,15 @@ def evaluate_general_config(local_params):
     global_objects = deepcopy(OBJECTS)
 
     file_manager = FileManager(FILE_MANAGER_ROOT)
+    global_objects["logger"] = logging.getLogger("evaluate_log")
+    global_objects["logger"].setLevel(4)
+    ch = logging.StreamHandler(stream=sys.stdout)
+    ch.setLevel(logging.DEBUG)
+    global_objects["logger"].addHandler(ch)
+    log_path = os.path.join(local_params["save_model_dir"], f"evaluate_log@{get_now_time().replace(' ', '@').replace(':', '-')}.txt")
+    fh = logging.FileHandler(log_path)
+    fh.setLevel(logging.DEBUG)
+    global_objects["logger"].addHandler(fh)
     global_objects["file_manager"] = file_manager
     global_params["save_model_dir"] = local_params["save_model_dir"]
     global_params["datasets_config"]["data_type"] = local_params["data_type"]

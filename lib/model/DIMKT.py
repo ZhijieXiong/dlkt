@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 import torch.nn as nn
 
 from .BaseModel4CL import BaseModel4CL
@@ -54,6 +55,13 @@ class DIMKT(nn.Module, BaseModel4CL):
             self.question_head4zero = parse_question_zero_shot(self.objects["data"]["train_data_statics"],
                                                                self.question2concept_list,
                                                                self.concept2question_list)
+            # question_no_head_qs = []
+            # for z_q, head_qs in self.question_head4zero.items():
+            #     if len(head_qs) == 0:
+            #         question_no_head_qs.append(z_q)
+            #
+            # # 看一下有哪些习题是训练集中没出现过，并且相同知识点下的head习题也为0
+            # self.objects["data"]["question_no_head_qs"] = question_no_head_qs
 
     def get_embed_question(self):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]
@@ -260,19 +268,26 @@ class DIMKT(nn.Module, BaseModel4CL):
         tail_qs_diff_emb = []
         embed_question_diff = self.embed_question_diff.weight[num_question_diff].detach().clone()
         embed_question_diff = embed_question_diff.unsqueeze(0).repeat(num_question, 1)
+        # 哪些习题是训练集中没出现过，并且相同知识点下的head习题也为0
+        self.objects["data"]["question_no_head_qs"] = []
         for z_q, head_qs in self.question_head4zero.items():
-            # transfer question emb and question diff emb
             head_question_indices = torch.tensor(head_qs).long().to(self.params["device"])
             head_qs_emb = self.embed_question(head_question_indices).detach().clone()
+
             head_qs_diff = list(map(lambda q_id: question_difficulty.get(q_id, num_question_diff), head_qs))
             head_qs_diff = list(filter(lambda q_diff: q_diff != num_question_diff, head_qs_diff))
             head_question_diff_indices = torch.tensor(head_qs_diff).long().to(self.params["device"])
             head_qs_diff_emb = self.embed_question_diff(head_question_diff_indices).detach().clone()
 
+            indices.append(z_q)
             if len(head_qs) == 0:
+                self.objects["data"]["question_no_head_qs"].append(z_q)
+                tail_q_emb = self.embed_question.weight.mean(dim=0).detach().clone().unsqueeze(0)
+                tail_q_diff_emb = self.embed_question_diff.weight.mean(dim=0).detach().clone().unsqueeze(0)
+                tail_qs_emb.append(tail_q_emb.float())
+                tail_qs_diff_emb.append(tail_q_diff_emb.float())
                 continue
 
-            indices.append(z_q)
             if head2tail_transfer_method == "mean_pool":
                 tail_q_emb = head_qs_emb.mean(dim=0).unsqueeze(0)
                 tail_q_diff_emb = head_qs_diff_emb.mean(dim=0).unsqueeze(0)
@@ -282,6 +297,10 @@ class DIMKT(nn.Module, BaseModel4CL):
             elif head2tail_transfer_method == "zero_pad":
                 tail_q_emb = torch.zeros((1, head_qs_emb.shape[-1])).to(self.params["device"])
                 tail_q_diff_emb = torch.zeros((1, head_qs_diff_emb.shape[-1])).to(self.params["device"])
+            elif head2tail_transfer_method == "most_popular":
+                # 因为是排过序的，最前面的就是频率最高的
+                tail_q_emb = head_qs_emb[0:1]
+                tail_q_diff_emb = head_qs_diff_emb[0:1]
             else:
                 raise NotImplementedError()
 
@@ -295,12 +314,12 @@ class DIMKT(nn.Module, BaseModel4CL):
 
         indices = torch.tensor(indices)
         tail_qs_emb = torch.cat(tail_qs_emb, dim=0)
-        # tail_qs_diff_emb = torch.cat(tail_qs_diff_emb, dim=0)
+        tail_qs_diff_emb = torch.cat(tail_qs_diff_emb, dim=0)
 
         embed_question = self.embed_question.weight.detach().clone()
         embed_question[indices] = tail_qs_emb
         # 如果在习题难度层面上迁移知识到零频率，反而效果变差
-        # embed_question_diff[indices] = tail_qs_diff_emb
+        embed_question_diff[indices] = tail_qs_diff_emb
         self.embed_question4zero = nn.Embedding(num_question, embed_question.shape[1], _weight=embed_question)
         self.embed_question_diff4zero = nn.Embedding(num_question, embed_question_diff.shape[1], _weight=embed_question_diff)
 
@@ -311,15 +330,20 @@ class DIMKT(nn.Module, BaseModel4CL):
         dim_emb = self.params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["dim_emb"]
         batch_size, seq_len = batch["question_seq"].shape[0], batch["question_seq"].shape[1]
 
-        question_emb = self.embed_question4zero(batch["question_seq"])
+        question_emb = self.embed_question(batch["question_seq"])
         if use_LLM_emb4question:
             question_emb = self.MLP4question(question_emb)
         concept_emb = self.embed_concept(batch["concept_seq"])
         if use_LLM_emb4concept:
             concept_emb = self.MLP4concept(concept_emb)
-        question_diff_emb = self.embed_question_diff4zero(batch["question_seq"])
+        question_diff_emb = self.embed_question_diff(batch["question_diff_seq"])
         concept_diff_emb = self.embed_concept_diff(batch["concept_diff_seq"])
         correct_emb = self.embed_correct(batch["correct_seq"])
+
+        # 聚合的zero question emb只用于最后的预测层
+        question_emb4zero = self.embed_question4zero(batch["question_seq"])
+        # 对于diff如果使用聚合的，只会使效果变差
+        # question_diff_emb4zero = self.embed_question_diff4zero(batch["question_seq"])
 
         latent = torch.zeros(batch_size, seq_len, dim_emb).to(self.params["device"])
         h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_emb)).to(self.params["device"])
@@ -346,8 +370,10 @@ class DIMKT(nn.Module, BaseModel4CL):
             Gamma_ksu = torch.sigmoid(self.knowledge_indicator_MLP(input_KI))
             h = Gamma_ksu * h_pre + (1 - Gamma_ksu) * pka
             input_x_next = torch.cat((
-                question_emb[:, t + 1],
+                question_emb4zero[:, t + 1],
                 concept_emb[:, t + 1],
+                # 对于diff如果使用聚合的，只会使效果变差
+                # question_diff_emb4zero[:, t],
                 question_diff_emb[:, t + 1],
                 concept_diff_emb[:, t + 1]
             ), dim=1)
@@ -371,9 +397,8 @@ class DIMKT(nn.Module, BaseModel4CL):
         use_LLM_emb4question = self.params["use_LLM_emb4question"]
         use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
         dim_emb = self.params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["dim_emb"]
-        head_seq_len = self.params["other"]["mutual_enhance4long_tail"]["head_seq_len"]
         use_transfer4seq = self.params["other"]["mutual_enhance4long_tail"]["use_transfer4seq"]
-        beta4transfer_seq = self.params["other"]["mutual_enhance4long_tail"]["beta4transfer_seq"]
+        beta = self.params["other"]["mutual_enhance4long_tail"]["beta4transfer_seq"]
         batch_size, seq_len = batch["question_seq"].shape[0], batch["question_seq"].shape[1]
 
         question_emb = self.embed_question(batch["question_seq"])
@@ -410,8 +435,8 @@ class DIMKT(nn.Module, BaseModel4CL):
             ), dim=1)
             Gamma_ksu = torch.sigmoid(self.knowledge_indicator_MLP(input_KI))
             h = Gamma_ksu * h_pre + (1 - Gamma_ksu) * pka
-            if use_transfer4seq and t < head_seq_len:
-                h_transferred = (beta4transfer_seq * h + seq_branch.get_latent_transferred(h)) / (1 + beta4transfer_seq)
+            if use_transfer4seq and t <= 10:
+                h_transferred = (beta * h + seq_branch.get_latent_transferred(h)) / (1 + beta)
             else:
                 h_transferred = h
             input_x_next = torch.cat((
@@ -598,6 +623,8 @@ class DIMKT(nn.Module, BaseModel4CL):
         device = self.params["device"]
         question_context = self.objects["mutual_enhance4long_tail"]["question_context"]
         dim_latent = self.params["other"]["mutual_enhance4long_tail"]["dim_latent"]
+        gamma = self.params["other"]["mutual_enhance4long_tail"]["gamma4transfer_question"]
+        dim_question = self.params["other"]["mutual_enhance4long_tail"]["dim_question"]
 
         right_context_batch = []
         wrong_context_batch = []
@@ -641,14 +668,12 @@ class DIMKT(nn.Module, BaseModel4CL):
         if len(right_context_batch) > 0:
             right_context_batch = context2batch(dataset_train, right_context_batch, device)
             latent_right = self.get_latent_last(right_context_batch)
-            latent_right = question_branch.get_question_emb_transferred(latent_right, wright_branch=True)
         else:
             latent_right = torch.empty((0, dim_latent))
 
         if len(wrong_context_batch) > 0:
             wrong_context_batch = context2batch(dataset_train, wrong_context_batch, device)
             latent_wrong = self.get_latent_last(wrong_context_batch)
-            latent_wrong = question_branch.get_question_emb_transferred(latent_wrong, wright_branch=False)
         else:
             latent_wrong = torch.empty((0, dim_latent))
 
@@ -656,9 +681,21 @@ class DIMKT(nn.Module, BaseModel4CL):
         for i in range(len(tail_question_list)):
             mean_right_context = latent_right[right_idx_list[i]: right_idx_list[i + 1]]
             mean_wrong_context = latent_wrong[wrong_idx_list[i]: wrong_idx_list[i + 1]]
-            mean_context = torch.cat((mean_right_context, mean_wrong_context), dim=0)
-            question_emb_transferred.append(mean_context.mean(dim=0))
+            num_right = len(mean_right_context)
+            num_wrong = len(mean_wrong_context)
+            coef_right = num_right / (num_right + num_wrong)
+            coef_wrong = num_wrong / (num_right + num_wrong)
+            if num_right == 0:
+                mean_right_context = torch.zeros(dim_question).float().to(self.params["device"])
+            else:
+                mean_right_context = question_branch.get_question_emb_transferred(mean_right_context.mean(0), True)
+            if num_wrong == 0:
+                mean_wrong_context = torch.zeros(dim_question).float().to(self.params["device"])
+            else:
+                mean_wrong_context = question_branch.get_question_emb_transferred(mean_wrong_context.mean(0), False)
+            question_emb_transferred.append(coef_right * mean_right_context + coef_wrong * mean_wrong_context)
+        question_emb = self.get_target_question_emb(torch.tensor(tail_question_list).long().to(self.params["device"]))
 
         question_emb_transferred = torch.stack(question_emb_transferred)
-        # 这里实现和论文上写的不一样，论文时question_emb_transferred + gamma * question_emb
-        self.embed_question.weight.data[tail_question_list] = question_emb_transferred
+        # 这里代码实现和论文上写的不一样
+        self.embed_question.weight.data[tail_question_list] = (question_emb_transferred + gamma * question_emb) / (1 + gamma)

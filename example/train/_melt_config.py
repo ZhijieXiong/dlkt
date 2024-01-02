@@ -12,6 +12,7 @@ def mutual_enhance4long_tail_general_config(local_params, global_params, global_
     dim_latent = local_params["dim_latent"]
     use_transfer4seq = local_params["use_transfer4seq"]
     beta4transfer_seq = local_params["beta4transfer_seq"]
+    gamma4transfer_question = local_params["gamma4transfer_question"]
     max_seq_len = local_params["max_seq_len"]
 
     dataset_train = read_preprocessed_file(os.path.join(
@@ -45,6 +46,7 @@ def mutual_enhance4long_tail_general_config(local_params, global_params, global_
         "min_context_seq_len": min_context_seq_len,
         "use_transfer4seq": use_transfer4seq,
         "beta4transfer_seq": beta4transfer_seq,
+        "gamma4transfer_question": gamma4transfer_question,
         "max_seq_len": max_seq_len
     }
 

@@ -1,4 +1,5 @@
 import json
+import numpy as np
 from collections import defaultdict
 from sklearn.metrics import roc_auc_score, accuracy_score, mean_absolute_error, mean_squared_error
 
@@ -139,9 +140,27 @@ class Evaluator:
             MAE = mean_absolute_error(y_true=ground_truth_all, y_pred=predict_score_all)
             RMSE = mean_squared_error(y_true=ground_truth_all, y_pred=predict_score_all) ** 0.5
 
-        print(f"overall performance\nAUC: {AUC:<9.5}, ACC: {ACC:<9.5}, RMSE: {MAE:<9.5}, MAE: {RMSE:<9.5}\n")
-        evaluate4seq_len(all_label_dis, all_score_dis, seq_len_absolute)
-        evaluate_bias(result_all_batch, 3)
+        # overall performance
+        self.objects["logger"].info(f"overall performance\nAUC: {AUC:<9.5}, ACC: {ACC:<9.5}, RMSE: {MAE:<9.5}, MAE: {RMSE:<9.5}\n")
+
+        # performance by seq len
+        label_dis4len, score_dis4len, indices4len = evaluate4seq_len(all_label_dis, all_score_dis, seq_len_absolute)
+        self.objects["logger"].info("split by seq length")
+        for i in range(len(label_dis4len)):
+            if len(label_dis4len[i]) == 0:
+                continue
+            g = np.array(label_dis4len[i])
+            p = np.array(score_dis4len[i])
+            p_label = [1 if _ >= 0.5 else 0 for _ in p]
+            answer_acc = g.sum() / len(g)
+            self.objects["logger"].info(
+                f"({indices4len[i][0]:<3}, {indices4len[i][1]:<3}), num of samples is {g.size:<10}, "
+                f"acc of answer is {answer_acc * 100:<4.3}%: "
+                f"auc is {roc_auc_score(y_true=g, y_score=p):<9.5}, "
+                f"acc is {accuracy_score(g, p_label):<9.5}"
+            )
+
+        # evaluate_bias(result_all_batch, 3)
 
         result4statics = {}
         statics_path = fine_grain_config["statics_path"]
@@ -152,6 +171,21 @@ class Evaluator:
         all_question_dis = defaultdict(list)
         for q_id, p, g in zip(question_all, predict_score_all, ground_truth_all):
             all_question_dis[q_id].append((p, g))
+
+        if model.objects["data"].get("question_no_head_qs", False):
+            # performance of zero shot questions of no head questions sharing one concept
+            performance4zero_q = get_performance(model.objects["data"].get("question_no_head_qs"), all_question_dis)
+            self.objects["logger"].info(
+                f"\nzero shot questions of no head questions sharing one concept\n"
+                f"zero shot ({performance4zero_q['num_sample']:<9} samples), "
+                f"AUC: {performance4zero_q['AUC']:<9.6}, "
+                f"ACC: {performance4zero_q['ACC']:<9.6}, "
+                f"RMSE: {performance4zero_q['RMSE']:<9.6}, "
+                f"MAE: {performance4zero_q['MAE']:<9.6}\n"
+            )
+        else:
+            self.objects["logger"].info("")
+
         result4statics['question_zero_fre'] = get_performance(statics_train['question_zero_fre'], all_question_dis)
         result4statics['question_low_fre'] = get_performance(statics_train['question_low_fre'], all_question_dis)
         result4statics['question_middle_fre'] = get_performance(statics_train['question_middle_fre'], all_question_dis)
@@ -160,44 +194,45 @@ class Evaluator:
         result4statics['question_middle_acc'] = get_performance(statics_train['question_middle_acc'], all_question_dis)
         result4statics['question_high_acc'] = get_performance(statics_train['question_high_acc'], all_question_dis)
 
-        print(f"\nquestion frequency\n"
-              f"zero shot ({result4statics['question_zero_fre']['num_sample']:<9} samples), "
-              f"AUC: {result4statics['question_zero_fre']['AUC']:<9.6}, "
-              f"ACC: {result4statics['question_zero_fre']['ACC']:<9.6}, "
-              f"RMSE: {result4statics['question_zero_fre']['RMSE']:<9.6}, "
-              f"MAE: {result4statics['question_zero_fre']['MAE']:<9.6}\n"
-              f"low frequency ({result4statics['question_low_fre']['num_sample']:<9} samples), "
-              f"AUC: {result4statics['question_low_fre']['AUC']:<9.6}, "
-              f"ACC: {result4statics['question_low_fre']['ACC']:<9.6}, "
-              f"RMSE: {result4statics['question_low_fre']['RMSE']:<9.6}, "
-              f"MAE: {result4statics['question_low_fre']['MAE']:<9.6}\n"
-              f"middle frequency ({result4statics['question_middle_fre']['num_sample']:<9} samples), "
-              f"AUC: {result4statics['question_middle_fre']['AUC']:<9.6}, "
-              f"ACC: {result4statics['question_middle_fre']['ACC']:<9.6}, "
-              f"RMSE: {result4statics['question_middle_fre']['RMSE']:<9.6}, "
-              f"MAE: {result4statics['question_middle_fre']['MAE']:<9.6}\n"
-              f"high frequency ({result4statics['question_high_fre']['num_sample']:<9} samples), "
-              f"AUC: {result4statics['question_high_fre']['AUC']:<9.6}, "
-              f"ACC: {result4statics['question_high_fre']['ACC']:<9.6}, "
-              f"RMSE: {result4statics['question_high_fre']['RMSE']:<9.6}, "
-              f"MAE: {result4statics['question_high_fre']['MAE']:<9.6}\n\n"
-              f"question accuracy\n"
-              f"low accuracy ({result4statics['question_low_acc']['num_sample']:<9} samples), "
-              f"AUC: {result4statics['question_low_acc']['AUC']:<9.6}, "
-              f"ACC: {result4statics['question_low_acc']['ACC']:<9.6}, "
-              f"RMSE: {result4statics['question_low_acc']['RMSE']:<9.6}, "
-              f"MAE: {result4statics['question_low_acc']['MAE']:<9.6}\n"
-              f"middle accuracy ({result4statics['question_middle_acc']['num_sample']:<9} samples), "
-              f"AUC: {result4statics['question_middle_acc']['AUC']:<9.6}, "
-              f"ACC: {result4statics['question_middle_acc']['ACC']:<9.6}, "
-              f"RMSE: {result4statics['question_middle_acc']['RMSE']:<9.6}, "
-              f"MAE: {result4statics['question_middle_acc']['MAE']:<9.6}\n"
-              f"high accuracy ({result4statics['question_high_acc']['num_sample']:<9} samples), "
-              f"AUC: {result4statics['question_high_acc']['AUC']:<9.6}, "
-              f"ACC: {result4statics['question_high_acc']['ACC']:<9.6}, "
-              f"RMSE: {result4statics['question_high_acc']['RMSE']:<9.6}, "
-              f"MAE: {result4statics['question_high_acc']['MAE']:<9.6}\n"
-              )
+        self.objects["logger"].info(
+            f"question frequency\n"
+            f"zero shot ({result4statics['question_zero_fre']['num_sample']:<9} samples), "
+            f"AUC: {result4statics['question_zero_fre']['AUC']:<9.6}, "
+            f"ACC: {result4statics['question_zero_fre']['ACC']:<9.6}, "
+            f"RMSE: {result4statics['question_zero_fre']['RMSE']:<9.6}, "
+            f"MAE: {result4statics['question_zero_fre']['MAE']:<9.6}\n"
+            f"low frequency ({result4statics['question_low_fre']['num_sample']:<9} samples), "
+            f"AUC: {result4statics['question_low_fre']['AUC']:<9.6}, "
+            f"ACC: {result4statics['question_low_fre']['ACC']:<9.6}, "
+            f"RMSE: {result4statics['question_low_fre']['RMSE']:<9.6}, "
+            f"MAE: {result4statics['question_low_fre']['MAE']:<9.6}\n"
+            f"middle frequency ({result4statics['question_middle_fre']['num_sample']:<9} samples), "
+            f"AUC: {result4statics['question_middle_fre']['AUC']:<9.6}, "
+            f"ACC: {result4statics['question_middle_fre']['ACC']:<9.6}, "
+            f"RMSE: {result4statics['question_middle_fre']['RMSE']:<9.6}, "
+            f"MAE: {result4statics['question_middle_fre']['MAE']:<9.6}\n"
+            f"high frequency ({result4statics['question_high_fre']['num_sample']:<9} samples), "
+            f"AUC: {result4statics['question_high_fre']['AUC']:<9.6}, "
+            f"ACC: {result4statics['question_high_fre']['ACC']:<9.6}, "
+            f"RMSE: {result4statics['question_high_fre']['RMSE']:<9.6}, "
+            f"MAE: {result4statics['question_high_fre']['MAE']:<9.6}\n\n"
+            f"question accuracy\n"
+            f"low accuracy ({result4statics['question_low_acc']['num_sample']:<9} samples), "
+            f"AUC: {result4statics['question_low_acc']['AUC']:<9.6}, "
+            f"ACC: {result4statics['question_low_acc']['ACC']:<9.6}, "
+            f"RMSE: {result4statics['question_low_acc']['RMSE']:<9.6}, "
+            f"MAE: {result4statics['question_low_acc']['MAE']:<9.6}\n"
+            f"middle accuracy ({result4statics['question_middle_acc']['num_sample']:<9} samples), "
+            f"AUC: {result4statics['question_middle_acc']['AUC']:<9.6}, "
+            f"ACC: {result4statics['question_middle_acc']['ACC']:<9.6}, "
+            f"RMSE: {result4statics['question_middle_acc']['RMSE']:<9.6}, "
+            f"MAE: {result4statics['question_middle_acc']['MAE']:<9.6}\n"
+            f"high accuracy ({result4statics['question_high_acc']['num_sample']:<9} samples), "
+            f"AUC: {result4statics['question_high_acc']['AUC']:<9.6}, "
+            f"ACC: {result4statics['question_high_acc']['ACC']:<9.6}, "
+            f"RMSE: {result4statics['question_high_acc']['RMSE']:<9.6}, "
+            f"MAE: {result4statics['question_high_acc']['MAE']:<9.6}"
+        )
 
         if data_type != "only_question":
             concept_all = np.concatenate(concept_all, axis=0)
@@ -211,39 +246,40 @@ class Evaluator:
             result4statics['concept_middle_acc'] = get_performance(statics_train['concept_middle_acc'], all_concept_dis)
             result4statics['concept_high_acc'] = get_performance(statics_train['concept_high_acc'], all_concept_dis)
 
-            print(f"\nconcept frequency\n"
-                  f"low frequency ({result4statics['concept_low_fre']['num_sample']:<9} samples), "
-                  f"AUC: {result4statics['concept_low_fre']['AUC']:<9.6}, "
-                  f"ACC: {result4statics['concept_low_fre']['ACC']:<9.6}, "
-                  f"RMSE: {result4statics['concept_low_fre']['RMSE']:<9.6}, "
-                  f"MAE: {result4statics['concept_low_fre']['MAE']:<9.6}\n"
-                  f"middle frequency ({result4statics['concept_middle_fre']['num_sample']:<9} samples), "
-                  f"AUC: {result4statics['concept_middle_fre']['AUC']:<9.6}, "
-                  f"ACC: {result4statics['concept_middle_fre']['ACC']:<9.6}, "
-                  f"RMSE: {result4statics['concept_middle_fre']['RMSE']:<9.6}, "
-                  f"MAE: {result4statics['concept_middle_fre']['MAE']:<9.6}\n"
-                  f"high frequency ({result4statics['concept_high_fre']['num_sample']:<9} samples), "
-                  f"AUC: {result4statics['concept_high_fre']['AUC']:<9.6}, "
-                  f"ACC: {result4statics['concept_high_fre']['ACC']:<9.6}, "
-                  f"RMSE: {result4statics['concept_high_fre']['RMSE']:<9.6}, "
-                  f"MAE: {result4statics['concept_high_fre']['MAE']:<9.6}\n\n"
-                  f"concept accuracy\n"
-                  f"low accuracy ({result4statics['concept_low_acc']['num_sample']:<9} samples), "
-                  f"AUC: {result4statics['concept_low_acc']['AUC']:<9.6}, "
-                  f"ACC: {result4statics['concept_low_acc']['ACC']:<9.6}, "
-                  f"RMSE: {result4statics['concept_low_acc']['RMSE']:<9.6}, "
-                  f"MAE: {result4statics['concept_low_acc']['MAE']:<9.6}\n"
-                  f"middle accuracy ({result4statics['concept_middle_acc']['num_sample']:<9} samples), "
-                  f"AUC: {result4statics['concept_middle_acc']['AUC']:<9.6}, "
-                  f"ACC: {result4statics['concept_middle_acc']['ACC']:<9.6}, "
-                  f"RMSE: {result4statics['concept_middle_acc']['RMSE']:<9.6}, "
-                  f"MAE: {result4statics['concept_middle_acc']['MAE']:<9.6}\n"
-                  f"high accuracy ({result4statics['concept_high_acc']['num_sample']:<9} samples), "
-                  f"AUC: {result4statics['concept_high_acc']['AUC']:<9.6}, "
-                  f"ACC: {result4statics['concept_high_acc']['ACC']:<9.6}, "
-                  f"RMSE: {result4statics['concept_high_acc']['RMSE']:<9.6}, "
-                  f"MAE: {result4statics['concept_high_acc']['MAE']:<9.6}\n"
-                  )
+            self.objects["logger"].info(
+                f"\nconcept frequency\n"
+                f"low frequency ({result4statics['concept_low_fre']['num_sample']:<9} samples), "
+                f"AUC: {result4statics['concept_low_fre']['AUC']:<9.6}, "
+                f"ACC: {result4statics['concept_low_fre']['ACC']:<9.6}, "
+                f"RMSE: {result4statics['concept_low_fre']['RMSE']:<9.6}, "
+                f"MAE: {result4statics['concept_low_fre']['MAE']:<9.6}\n"
+                f"middle frequency ({result4statics['concept_middle_fre']['num_sample']:<9} samples), "
+                f"AUC: {result4statics['concept_middle_fre']['AUC']:<9.6}, "
+                f"ACC: {result4statics['concept_middle_fre']['ACC']:<9.6}, "
+                f"RMSE: {result4statics['concept_middle_fre']['RMSE']:<9.6}, "
+                f"MAE: {result4statics['concept_middle_fre']['MAE']:<9.6}\n"
+                f"high frequency ({result4statics['concept_high_fre']['num_sample']:<9} samples), "
+                f"AUC: {result4statics['concept_high_fre']['AUC']:<9.6}, "
+                f"ACC: {result4statics['concept_high_fre']['ACC']:<9.6}, "
+                f"RMSE: {result4statics['concept_high_fre']['RMSE']:<9.6}, "
+                f"MAE: {result4statics['concept_high_fre']['MAE']:<9.6}\n\n"
+                f"concept accuracy\n"
+                f"low accuracy ({result4statics['concept_low_acc']['num_sample']:<9} samples), "
+                f"AUC: {result4statics['concept_low_acc']['AUC']:<9.6}, "
+                f"ACC: {result4statics['concept_low_acc']['ACC']:<9.6}, "
+                f"RMSE: {result4statics['concept_low_acc']['RMSE']:<9.6}, "
+                f"MAE: {result4statics['concept_low_acc']['MAE']:<9.6}\n"
+                f"middle accuracy ({result4statics['concept_middle_acc']['num_sample']:<9} samples), "
+                f"AUC: {result4statics['concept_middle_acc']['AUC']:<9.6}, "
+                f"ACC: {result4statics['concept_middle_acc']['ACC']:<9.6}, "
+                f"RMSE: {result4statics['concept_middle_acc']['RMSE']:<9.6}, "
+                f"MAE: {result4statics['concept_middle_acc']['MAE']:<9.6}\n"
+                f"high accuracy ({result4statics['concept_high_acc']['num_sample']:<9} samples), "
+                f"AUC: {result4statics['concept_high_acc']['AUC']:<9.6}, "
+                f"ACC: {result4statics['concept_high_acc']['ACC']:<9.6}, "
+                f"RMSE: {result4statics['concept_high_acc']['RMSE']:<9.6}, "
+                f"MAE: {result4statics['concept_high_acc']['MAE']:<9.6}\n"
+            )
 
             # 同时考虑习题和知识点
             all_qc_dis = defaultdict(list)
@@ -254,44 +290,47 @@ class Evaluator:
             result4statics['qc_low_acc'] = get_performance_qc(statics_train['question_low_acc'], statics_train['concept_low_acc'], all_qc_dis)
             result4statics['qc_high_acc'] = get_performance_qc(statics_train['question_high_acc'], statics_train['concept_high_acc'], all_qc_dis)
 
-            print(f"question & concept frequency\n"
-                  f"low frequency ({result4statics['qc_low_fre']['num_sample']:<9} samples), "
-                  f"AUC: {result4statics['qc_low_fre']['AUC']:<9.6}, "
-                  f"ACC: {result4statics['qc_low_fre']['ACC']:<9.6}, "
-                  f"RMSE: {result4statics['qc_low_fre']['RMSE']:<9.6}, "
-                  f"MAE: {result4statics['qc_low_fre']['MAE']:<9.6}\n"
-                  f"high frequency ({result4statics['qc_high_fre']['num_sample']:<9} samples), "
-                  f"AUC: {result4statics['qc_high_fre']['AUC']:<9.6}, "
-                  f"ACC: {result4statics['qc_high_fre']['ACC']:<9.6}, "
-                  f"RMSE: {result4statics['qc_high_fre']['RMSE']:<9.6}, "
-                  f"MAE: {result4statics['qc_high_fre']['MAE']:<9.6}\n\n"
-                  f"question & concept accuracy\n"
-                  f"low accuracy ({result4statics['qc_low_acc']['num_sample']:<9} samples), "
-                  f"AUC: {result4statics['qc_low_acc']['AUC']:<9.6}, "
-                  f"ACC: {result4statics['qc_low_acc']['ACC']:<9.6}, "
-                  f"RMSE: {result4statics['qc_low_acc']['RMSE']:<9.6}, "
-                  f"MAE: {result4statics['qc_low_acc']['MAE']:<9.6}\n"
-                  f"high accuracy ({result4statics['qc_high_acc']['num_sample']:<9} samples), "
-                  f"AUC: {result4statics['qc_high_acc']['AUC']:<9.6}, "
-                  f"ACC: {result4statics['qc_high_acc']['ACC']:<9.6}, "
-                  f"RMSE: {result4statics['qc_high_acc']['RMSE']:<9.6}, "
-                  f"MAE: {result4statics['qc_high_acc']['MAE']:<9.6}\n"
-                  )
+            self.objects["logger"].info(
+                f"question & concept frequency\n"
+                f"low frequency ({result4statics['qc_low_fre']['num_sample']:<9} samples), "
+                f"AUC: {result4statics['qc_low_fre']['AUC']:<9.6}, "
+                f"ACC: {result4statics['qc_low_fre']['ACC']:<9.6}, "
+                f"RMSE: {result4statics['qc_low_fre']['RMSE']:<9.6}, "
+                f"MAE: {result4statics['qc_low_fre']['MAE']:<9.6}\n"
+                f"high frequency ({result4statics['qc_high_fre']['num_sample']:<9} samples), "
+                f"AUC: {result4statics['qc_high_fre']['AUC']:<9.6}, "
+                f"ACC: {result4statics['qc_high_fre']['ACC']:<9.6}, "
+                f"RMSE: {result4statics['qc_high_fre']['RMSE']:<9.6}, "
+                f"MAE: {result4statics['qc_high_fre']['MAE']:<9.6}\n\n"
+                f"question & concept accuracy\n"
+                f"low accuracy ({result4statics['qc_low_acc']['num_sample']:<9} samples), "
+                f"AUC: {result4statics['qc_low_acc']['AUC']:<9.6}, "
+                f"ACC: {result4statics['qc_low_acc']['ACC']:<9.6}, "
+                f"RMSE: {result4statics['qc_low_acc']['RMSE']:<9.6}, "
+                f"MAE: {result4statics['qc_low_acc']['MAE']:<9.6}\n"
+                f"high accuracy ({result4statics['qc_high_acc']['num_sample']:<9} samples), "
+                f"AUC: {result4statics['qc_high_acc']['AUC']:<9.6}, "
+                f"ACC: {result4statics['qc_high_acc']['ACC']:<9.6}, "
+                f"RMSE: {result4statics['qc_high_acc']['RMSE']:<9.6}, "
+                f"MAE: {result4statics['qc_high_acc']['MAE']:<9.6}\n"
+            )
 
     def evaluate_base_question4multi_concept(self):
         # 按照PYKT的思路实现的，具体见KTDataset
         model = self.objects["models"]["kt_model"]
         data_loader = self.objects["data_loaders"]["test_loader"]
         test_result = Evaluator.evaluate_kt_dataset_base_question4multi_concept(model, data_loader)
-        print(f"{get_now_time()} test result base question for multi concept dataset\n"
-              f"average result is AUC {test_result['average']['AUC']:<9.6}, "
-              f"ACC: {test_result['average']['ACC']:<9.6}, "
-              f"RMSE: {test_result['average']['RMSE']:<9.6}, "
-              f"MAE: {test_result['average']['MAE']:<9.6}\n"
-              f"lowest result is AUC: {test_result['lowest']['AUC']:<9.6}, "
-              f"ACC: {test_result['lowest']['ACC']:<9.6}, "
-              f"RMSE: {test_result['lowest']['RMSE']:<9.6}, "
-              f"MAE: {test_result['lowest']['MAE']:<9.6}")
+        self.objects["logger"].info(
+            f"{get_now_time()} test result base question for multi concept dataset\n"
+            f"average result is AUC {test_result['average']['AUC']:<9.6}, "
+            f"ACC: {test_result['average']['ACC']:<9.6}, "
+            f"RMSE: {test_result['average']['RMSE']:<9.6}, "
+            f"MAE: {test_result['average']['MAE']:<9.6}\n"
+            f"lowest result is AUC: {test_result['lowest']['AUC']:<9.6}, "
+            f"ACC: {test_result['lowest']['ACC']:<9.6}, "
+            f"RMSE: {test_result['lowest']['RMSE']:<9.6}, "
+            f"MAE: {test_result['lowest']['MAE']:<9.6}"
+        )
 
     @staticmethod
     def evaluate_kt_dataset_base_question4multi_concept(model, data_loader):

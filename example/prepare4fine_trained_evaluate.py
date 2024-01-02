@@ -1,6 +1,8 @@
 import argparse
 import json
 
+import config
+
 from lib.util.data import read_preprocessed_file
 from lib.util.statics import dataset_basic_statics
 from lib.util.parse import str2bool

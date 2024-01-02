@@ -102,12 +102,6 @@ def general_config(local_params, global_params, global_objects):
     use_multi_metrics = local_params["use_multi_metrics"]
     mutil_metrics = local_params["multi_metrics"]
     train_strategy_type = local_params["train_strategy"]
-    # 下面配置不是每个模型都写了的
-    use_LLM_emb4question = local_params.get("use_LLM_emb4question", False)
-    use_LLM_emb4concept = local_params.get("use_LLM_emb4concept", False)
-    train_LLM_emb = local_params.get("train_LLM_emb", False)
-    transfer_head2zero = local_params.get("transfer_head2zero", False)
-    head2tail_transfer_method = local_params.get("head2tail_transfer_method", "mean_pool")
 
     train_strategy_config = global_params["train_strategy"]
     train_strategy_config["num_epoch"] = num_epoch
@@ -152,16 +146,37 @@ def general_config(local_params, global_params, global_objects):
     sample_weight_method = local_params.get("sample_weight_method", "highlight_tail")
     tail_weight = local_params.get("tail_weight", 1)
 
+    global_params["sample_weight"] = {
+        "use_sample_weight": use_sample_weight,
+        "sample_weight_method": sample_weight_method,
+        "tail_weight": tail_weight
+    }
     global_params["use_sample_weight"] = use_sample_weight
     global_params["sample_weight_method"] = sample_weight_method
     global_params["tail_weight"] = tail_weight
 
     # 是否用大模型的emb初始化
+    use_LLM_emb4question = local_params.get("use_LLM_emb4question", False)
+    use_LLM_emb4concept = local_params.get("use_LLM_emb4concept", False)
+    train_LLM_emb = local_params.get("train_LLM_emb", False)
+
+    global_params["LLM_emb_init"] = {
+        "use_LLM_emb4question": use_LLM_emb4question,
+        "use_LLM_emb4concept": use_LLM_emb4concept,
+        "train_LLM_emb": train_LLM_emb
+    }
     global_params["use_LLM_emb4question"] = use_LLM_emb4question
     global_params["use_LLM_emb4concept"] = use_LLM_emb4concept
     global_params["train_LLM_emb"] = train_LLM_emb
 
     # 是否将head的知识迁移到zero shot的知识
+    transfer_head2zero = local_params.get("transfer_head2zero", False)
+    head2tail_transfer_method = local_params.get("head2tail_transfer_method", "mean_pool")
+
+    global_params["transfer_head2zero"] = {
+        "use_transfer_head2zero": transfer_head2zero,
+        "head2tail_transfer_method": head2tail_transfer_method
+    }
     global_params["transfer_head2zero"] = transfer_head2zero
     global_params["head2tail_transfer_method"] = head2tail_transfer_method
 
@@ -269,7 +284,7 @@ def save_params(global_params, global_objects):
     params_json = params2str(global_params)
     write_json(params_json, params_path)
 
-    log_path = os.path.join(model_dir, "log.txt")
+    log_path = os.path.join(model_dir, "train_log.txt")
     fh = logging.FileHandler(log_path)
     fh.setLevel(logging.DEBUG)
     global_objects["logger"].addHandler(fh)

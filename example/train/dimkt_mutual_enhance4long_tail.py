@@ -75,11 +75,11 @@ if __name__ == "__main__":
     parser.add_argument("--dim_question", type=int, default=128)
     parser.add_argument("--dim_latent", type=int, default=128)
     parser.add_argument("--max_seq_len", type=int, default=200)
-    parser.add_argument("--use_transfer4seq", type=str2bool, default=False)
+    parser.add_argument("--use_transfer4seq", type=str2bool, default=True)
     parser.add_argument("--beta4transfer_seq", type=float, help="论文公式4中的beta", default=1)
-    parser.add_argument("--gamma4transfer_question", type=float, help="论文公式8中的gamma", default=1)
+    parser.add_argument("--gamma4transfer_question", type=float, help="论文公式8中的gamma", default=0)
     # 损失权重
-    parser.add_argument("--weight_seq_loss", type=float, help="lambda U", default=0.1)
+    parser.add_argument("--weight_seq_loss", type=float, help="lambda U", default=10)
     parser.add_argument("--weight_question_loss", type=float, help="lambda I", default=0.1)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=True)

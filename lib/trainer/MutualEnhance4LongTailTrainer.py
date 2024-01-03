@@ -79,6 +79,14 @@ class MutualEnhance4LongTailTrainer(KnowledgeTracingTrainer):
         self.print_data_statics()
 
         for epoch in range(1, num_epoch + 1):
+            kt_model.eval()
+            self.seq_branch.eval()
+            self.question_branch.eval()
+            with torch.no_grad():
+                # Knowledge transfer from item branch to user branch
+                for batch_tail_question in self.tail_question_data_loader:
+                    kt_model.update_tail_question(batch_tail_question, self.question_branch)
+
             kt_model.train()
             self.seq_branch.train()
             self.question_branch.train()
@@ -111,14 +119,6 @@ class MutualEnhance4LongTailTrainer(KnowledgeTracingTrainer):
                 optimizer.step()
             if schedulers_config["use_scheduler"]:
                 scheduler.step()
-
-            kt_model.eval()
-            self.seq_branch.eval()
-            self.question_branch.eval()
-            with torch.no_grad():
-                # Knowledge transfer from item branch to user branch
-                for batch_tail_question in self.tail_question_data_loader:
-                    kt_model.update_tail_question(batch_tail_question, self.question_branch)
 
             self.evaluate()
             if self.stop_train():

@@ -142,11 +142,11 @@ class LinearQuestionBranch(nn.Module):
         right_context_batch = context2batch(dataset_train, right_context_batch, device)
         latent_right = kt_model.get_latent_last(right_context_batch)
         if use_transfer4seq:
-            latent_right = (latent_right + beta * seq_branch.get_latent_transferred(latent_right)) / (1 + beta)
+            latent_right = (beta * latent_right + seq_branch.get_latent_transferred(latent_right)) / (1 + beta)
         wrong_context_batch = context2batch(dataset_train, wrong_context_batch, device)
         latent_wrong = kt_model.get_latent_last(wrong_context_batch)
         if use_transfer4seq:
-            latent_wrong = (latent_wrong + beta * seq_branch.get_latent_transferred(latent_wrong)) / (1 + beta)
+            latent_wrong = (beta * latent_wrong + seq_branch.get_latent_transferred(latent_wrong)) / (1 + beta)
         question_emb = kt_model.get_target_question_emb(batch_question[0])
 
         # contextualized representations

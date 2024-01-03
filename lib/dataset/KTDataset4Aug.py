@@ -1,4 +1,3 @@
-import torch
 import random
 from torch.utils.data import Dataset
 
@@ -103,13 +102,21 @@ class KTDataset4Aug(Dataset):
             num_concept_difficulty = dataset_config_this["kt4aug"]["diff4dimkt"]["num_concept_difficulty"]
             question_difficulty = self.objects["dimkt"]["question_difficulty"]
             concept_difficulty = self.objects["dimkt"]["concept_difficulty"]
+            # diff随机波动的范围
+            diff_k = 2
             for data_aug in datas_aug:
                 data_aug["question_diff_seq"] = []
                 data_aug["concept_diff_seq"] = []
                 for q_id in data_aug["question_seq"]:
-                    data_aug["question_diff_seq"].append(question_difficulty.get(q_id, num_question_difficulty))
+                    q_diff = question_difficulty.get(q_id, num_question_difficulty)
+                    if q_diff != num_question_difficulty:
+                        q_diff = random.randint(max(0, q_diff-diff_k), min(num_question_difficulty-1, q_diff+diff_k))
+                    data_aug["question_diff_seq"].append(q_diff)
                 for c_id in data_aug["concept_seq"]:
-                    data_aug["concept_diff_seq"].append(concept_difficulty.get(c_id, num_concept_difficulty))
+                    c_diff = concept_difficulty.get(c_id, num_concept_difficulty)
+                    if c_diff != num_concept_difficulty:
+                        c_diff = random.randint(max(0, c_diff-diff_k), min(num_question_difficulty-1, c_diff+diff_k))
+                    data_aug["concept_diff_seq"].append(c_diff)
 
         # 补零
         for i, data_aug in enumerate(datas_aug):

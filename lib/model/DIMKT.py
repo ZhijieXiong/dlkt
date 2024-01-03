@@ -697,5 +697,5 @@ class DIMKT(nn.Module, BaseModel4CL):
         question_emb = self.get_target_question_emb(torch.tensor(tail_question_list).long().to(self.params["device"]))
 
         question_emb_transferred = torch.stack(question_emb_transferred)
-        # 这里代码实现和论文上写的不一样
+        # 这里官方代码实现和论文上写的不一样
         self.embed_question.weight.data[tail_question_list] = (question_emb_transferred + gamma * question_emb) / (1 + gamma)

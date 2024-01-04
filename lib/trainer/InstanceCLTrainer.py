@@ -79,7 +79,7 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
                     if latent_type4cl in ["mean_pool", "last_time"]:
                         cl_loss = model.get_instance_cl_loss(batch, instance_cl_config, self.dataset_adv_generated)
                     elif latent_type4cl == "all_time":
-                        cl_loss = model.get_instance_cl_loss_all_interaction(batch, instance_cl_config, self.dataset_adv_generated)
+                        cl_loss = model.get_instance_cl_loss_all_interaction(batch, instance_cl_config)
                     else:
                         raise NotImplementedError()
                     self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)

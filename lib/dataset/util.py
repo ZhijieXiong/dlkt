@@ -65,6 +65,7 @@ def parse_long_tail(data_uniformed, data_type, head_question_threshold, head_seq
     question_context = defaultdict(list)
     questions_frequency = defaultdict(int)
     head_seqs = []
+    tail_questions = []
     if data_type == "single_concept":
         for seq_id, item_data in enumerate(data_uniformed):
             if item_data["seq_len"] > head_seq_len:
@@ -80,12 +81,99 @@ def parse_long_tail(data_uniformed, data_type, head_question_threshold, head_seq
     else:
         raise NotImplementedError()
 
+    for q_id, fre in questions_frequency.items():
+        if fre < 5:
+            tail_questions.append(q_id)
+
     question_list = list(questions_frequency.items())
     question_list = sorted(question_list, key=lambda x: x[1])
     question_list = list(map(lambda x: x[0], question_list))
     num_question = len(question_list)
     head_questions = question_list[int(num_question * head_question_threshold):]
 
-    return question_context, head_questions, head_seqs
+    return question_context, head_questions, tail_questions, head_seqs
 
+
+def parse4dataset_enhanced(data_uniformed, data_type, num_min_question, question2concept, concept2question):
+    """
+    将所有习题（同一知识点或者有相同知识点）分为easy、middle、hard、unknown\n
+    基本思想就是做对难的题，可以做对简单的题，但是做对不同的题有不同的权重，比如做对一道hard的题，那么认为能做对easy的题权重就大，如果是做对middle
+    的题，那么做对easy的题的权重相对就小一些
+    :param data_uniformed:
+    :param data_type:
+    :param num_min_question:
+    :param question2concept:
+    :param concept2question:
+    :return:
+    """
+    # 需要生成两个dict，一个是知识点，形式为{c0: {"easy": [q0, q1, ...], "middle": [], "hard": [], "unknown":[]}, ...}
+    # 其中每个难度下的习题列表都是按难度顺序排列，由易到难，除了unknown
+    # 另一个dict是习题，形式为{q0: [(c0, "easy", 0), (c1, "easy", 0), ...]}，表示习题q0是知识点c0下的easy题，并且在easy题中排列第0
+    # 用绝对值区分习题难度档次，如正确率小于0.3为难题，大于0.8为简单题，要考虑数据集整体正确率来确定
+    question_frequency = {}
+    question_accuracy = {}
+    if data_type in ["single_concept", "only_question"]:
+        for item_data in data_uniformed:
+            for i in range(item_data["seq_len"]):
+                q_id = item_data["question_seq"][i]
+                question_frequency.setdefault(q_id, 0)
+                question_accuracy.setdefault(q_id, 0)
+                question_frequency[q_id] += 1
+                if item_data["correct_seq"][i] == 1:
+                    question_accuracy[q_id] += 1
+        for q_id in question_frequency.keys():
+            if question_frequency[q_id] >= num_min_question:
+                question_accuracy[q_id] = question_accuracy[q_id] / question_frequency[q_id]
+    else:
+        raise NotImplementedError()
+
+    concept_dict = {}
+    question_dict = {}
+    for c_id in range(len(concept2question)):
+        concept_dict[c_id] = {
+            "easy": [],
+            "middle": [],
+            "hard": [],
+            "unknown": []
+        }
+        correspond_questions = concept2question[c_id]
+        for q_id in correspond_questions:
+            correspond_concepts = question2concept[q_id]
+            correspond_concepts = list(map(str, sorted(correspond_concepts)))
+            question_dict[q_id] = (",".join(correspond_concepts), [])
+            if not question_frequency.get(q_id, False):
+                concept_dict[c_id]["unknown"].append(q_id)
+                question_dict[q_id][1].append([c_id, "unknown"])
+                continue
+            q_count = question_frequency[q_id]
+            q_acc = question_accuracy[q_id]
+            if q_count < num_min_question:
+                concept_dict[c_id]["unknown"].append(q_id)
+                question_dict[q_id][1].append([c_id, "unknown"])
+            elif q_acc < 0.4:
+                concept_dict[c_id]["hard"].append((q_id, q_acc))
+                question_dict[q_id][1].append([c_id, "hard"])
+            elif q_acc > 0.8:
+                concept_dict[c_id]["easy"].append((q_id, q_acc))
+                question_dict[q_id][1].append([c_id, "easy"])
+            else:
+                concept_dict[c_id]["middle"].append((q_id, q_acc))
+                question_dict[q_id][1].append([c_id, "middle"])
+
+    # 对每个档次下的习题排序
+    for c_id in concept_dict.keys():
+        for k in ["easy", "middle", "hard"]:
+            questions = concept_dict[c_id][k]
+            concept_dict[c_id][k] = list(map(
+                lambda x: x[0],
+                sorted(questions, key=lambda x: x[1], reverse=True)
+            ))
+
+    for q_id in question_dict.keys():
+        for c_pair in question_dict[q_id][1]:
+            c_id = c_pair[0]
+            k = c_pair[1]
+            c_pair.append(concept_dict[c_id][k].index(q_id))
+
+    return concept_dict, question_dict
 

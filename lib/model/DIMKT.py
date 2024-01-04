@@ -618,12 +618,45 @@ class DIMKT(nn.Module, BaseModel4CL):
     def get_predict_score_seq_len_minus1(self, batch):
         return self.forward(batch)[:, :-1]
 
-    def update_tail_question(self, batch_question, question_branch):
+    def get_question_transferred_1_branch(self, batch_question, question_branch):
+        dataset_train = self.objects["mutual_enhance4long_tail"]["dataset_train"]
+        device = self.params["device"]
+        question_context = self.objects["mutual_enhance4long_tail"]["question_context"]
+
+        context_batch = []
+        idx_list = [0]
+        idx = 0
+        tail_question_list = []
+        for i, q_id in enumerate(batch_question[0].cpu().tolist()):
+            if not question_context.get(q_id, False):
+                continue
+
+            tail_question_list.append(q_id)
+            context_list = question_context[q_id]
+            context_batch += context_list
+            idx += len(context_list)
+            idx_list.append(idx)
+
+        if len(context_batch) == 0:
+            return
+
+        context_batch = context2batch(dataset_train, context_batch, device)
+        latent = self.get_latent_last(context_batch)
+
+        question_emb_transferred = []
+        for i in range(len(tail_question_list)):
+            mean_context = latent[idx_list[i]: idx_list[i + 1]]
+            mean_context = question_branch.get_question_emb_transferred(mean_context.mean(0), True)
+            question_emb_transferred.append(mean_context)
+
+        question_emb_transferred = torch.stack(question_emb_transferred)
+        return question_emb_transferred, tail_question_list
+
+    def get_question_transferred_2_branch(self, batch_question, question_branch):
         dataset_train = self.objects["mutual_enhance4long_tail"]["dataset_train"]
         device = self.params["device"]
         question_context = self.objects["mutual_enhance4long_tail"]["question_context"]
         dim_latent = self.params["other"]["mutual_enhance4long_tail"]["dim_latent"]
-        gamma = self.params["other"]["mutual_enhance4long_tail"]["gamma4transfer_question"]
         dim_question = self.params["other"]["mutual_enhance4long_tail"]["dim_question"]
 
         right_context_batch = []
@@ -694,8 +727,21 @@ class DIMKT(nn.Module, BaseModel4CL):
             else:
                 mean_wrong_context = question_branch.get_question_emb_transferred(mean_wrong_context.mean(0), False)
             question_emb_transferred.append(coef_right * mean_right_context + coef_wrong * mean_wrong_context)
-        question_emb = self.get_target_question_emb(torch.tensor(tail_question_list).long().to(self.params["device"]))
 
         question_emb_transferred = torch.stack(question_emb_transferred)
+        return question_emb_transferred, tail_question_list
+
+    def update_tail_question(self, batch_question, question_branch):
+        gamma = self.params["other"]["mutual_enhance4long_tail"]["gamma4transfer_question"]
+        two_branch4question_transfer = self.params["other"]["mutual_enhance4long_tail"]["two_branch4question_transfer"]
+
+        if two_branch4question_transfer:
+            question_emb_transferred, tail_question_list = \
+                self.get_question_transferred_2_branch(batch_question, question_branch)
+        else:
+            question_emb_transferred, tail_question_list = \
+                self.get_question_transferred_1_branch(batch_question, question_branch)
+
+        question_emb = self.get_target_question_emb(torch.tensor(tail_question_list).long().to(self.params["device"]))
         # 这里官方代码实现和论文上写的不一样
         self.embed_question.weight.data[tail_question_list] = (question_emb_transferred + gamma * question_emb) / (1 + gamma)

@@ -234,6 +234,67 @@ class qDKT(nn.Module, BaseModel4CL):
 
         return predict_loss
 
+    def get_predict_enhance_loss(self, batch):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
+        dim_correct = encoder_config["dim_correct"]
+        correct_seq = batch["correct_seq"]
+        data_type = self.params["datasets_config"]["data_type"]
+
+        batch_size = correct_seq.shape[0]
+        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
+        if data_type == "only_question":
+            qc_emb = self.get_qc_emb4only_question(batch)
+        else:
+            qc_emb = self.get_qc_emb4single_concept(batch)
+        interaction_emb = torch.cat((qc_emb[:, :-1], correct_emb[:, :-1]), dim=2)
+
+        self.encoder_layer.flatten_parameters()
+        latent, _ = self.encoder_layer(interaction_emb)
+
+        predict_layer_input = torch.cat((latent, qc_emb[:, 1:]), dim=2)
+        predict_score = self.predict_layer(predict_layer_input).squeeze(dim=-1)
+
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+        predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+
+        # 对于easier和harder习题的损失
+        batch_easier = {
+            "question_seq": batch["question_easier_seq"],
+            "concept_seq": batch["concept_easier_seq"]
+        }
+        batch_harder = {
+            "question_seq": batch["question_harder_seq"],
+            "concept_seq": batch["concept_harder_seq"]
+        }
+        if data_type == "only_question":
+            qc_emb_easier = self.get_qc_emb4only_question(batch_easier)
+            qc_emb_harder = self.get_qc_emb4only_question(batch_harder)
+        else:
+            qc_emb_easier = self.get_qc_emb4single_concept(batch_easier)
+            qc_emb_harder = self.get_qc_emb4only_question(batch_harder)
+        mask_bool_seq_easier = torch.ne(batch["mask_easier_seq"], 0)
+        mask_bool_seq_harder = torch.ne(batch["mask_harder_seq"], 0)
+        predict_input_easier = torch.cat((latent, qc_emb_easier[:, 1:]), dim=2)
+        predict_input_harder = torch.cat((latent, qc_emb_harder[:, 1:]), dim=2)
+        predict_score_easier = self.predict_layer(predict_input_easier).squeeze(dim=-1)
+        predict_score_harder = self.predict_layer(predict_input_harder).squeeze(dim=-1)
+        ground_truth_easier = torch.masked_select(batch["correct_easier_seq"][:, 1:], mask_bool_seq_easier[:, 1:])
+        ground_truth_harder = torch.masked_select(batch["correct_harder_seq"][:, 1:], mask_bool_seq_harder[:, 1:])
+        weight_easier = torch.masked_select(batch["weight_easier_seq"][:, 1:], mask_bool_seq[:, 1:])
+        weight_harder = torch.masked_select(batch["weight_harder_seq"][:, 1:], mask_bool_seq[:, 1:])
+        predict_loss_easier = nn.functional.binary_cross_entropy(predict_score_easier.double(),
+                                                                 ground_truth_easier.double(),
+                                                                 weight=weight_easier)
+        predict_loss_harder = nn.functional.binary_cross_entropy(predict_score_harder.double(),
+                                                                 ground_truth_harder.double(),
+                                                                 weight=weight_harder)
+
+        enhance_loss = (predict_loss_easier + predict_loss_harder) / 2
+
+        return predict_loss, enhance_loss
+
     def get_predict_score_seq_len_minus1(self, batch):
         return self.forward(batch)
 

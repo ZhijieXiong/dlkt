@@ -77,12 +77,8 @@ class MetaOptimizeCLTrainer(KnowledgeTracingTrainer):
                 self.loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
                 loss = loss + predict_loss
                 if cl_type in ["mean_pool", "last_time"] and not use_adv_aug:
-                    cl_loss1, cl_loss2, reg_loss = kt_model.meta_contrast(
+                    cl_loss1, cl_loss2, reg_loss = kt_model.get_meta_contrast_cl_loss(
                         batch, cl_type, meta_extractors, use_regularization
-                    )
-                elif cl_type in ["mean_pool", "last_time"] and use_adv_aug:
-                    cl_loss1, cl_loss2, reg_loss = kt_model.meta_contrast_use_adv_aug(
-                        batch, self.dataset_adv_generated, cl_type, meta_extractors, use_regularization
                     )
                 else:
                     raise NotImplementedError()

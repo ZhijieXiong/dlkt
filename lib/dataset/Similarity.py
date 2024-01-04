@@ -199,6 +199,9 @@ class OfflineSimilarity:
             self.concept_similarity_table[i] = [i]
             self.concept_similarity_table[i] += list(map(lambda three: three[0], concepts_related))
 
+    def cal_concept_similarity_table_RCD_graph(self):
+        pass
+
     def get_concept_similar_table(self):
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         informative_config = dataset_config_this["kt4aug"]["informative_aug"]
@@ -224,6 +227,8 @@ class OfflineSimilarity:
             self.cal_concept_similarity_table_ItemCF_IUF()
         elif offline_sim_type == "order":
             self.cal_concept_similarity_table_order()
+        elif offline_sim_type == "RCD_graph":
+            self.cal_concept_similarity_table_RCD_graph()
         else:
             raise NotImplementedError()
 

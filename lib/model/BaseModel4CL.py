@@ -177,7 +177,7 @@ class BaseModel4CL:
 
         return cl_loss
 
-    def get_instance_cl_loss_all_interaction(self, batch, instance_cl_params, dataset=None):
+    def get_instance_cl_loss_all_interaction(self, batch, instance_cl_params):
         use_neg_filter = instance_cl_params["use_neg_filter"]
         neg_sim_threshold = instance_cl_params["neg_sim_threshold"]
         data_aug_type4cl = instance_cl_params["data_aug_type4cl"]
@@ -320,7 +320,7 @@ class BaseModel4CL:
 
         return (cl_loss0 + cl_loss1) / 2
 
-    def get_meta_contrast_cl_loss(self, batch, latent_type, meta_extractors, use_regularization, use_adv_aug=False, dataset=None):
+    def get_meta_contrast_cl_loss(self, batch, latent_type, meta_extractors, use_regularization):
         batch_size = batch["mask_seq"].shape[0]
         extractor0, extractor1 = meta_extractors
 

@@ -102,8 +102,8 @@ class KTDataset4Aug(Dataset):
             num_concept_difficulty = dataset_config_this["kt4aug"]["diff4dimkt"]["num_concept_difficulty"]
             question_difficulty = self.objects["dimkt"]["question_difficulty"]
             concept_difficulty = self.objects["dimkt"]["concept_difficulty"]
-            # diff随机波动的范围
-            diff_k = 2
+            # question diff随机波动的范围
+            diff_k = 1
             for data_aug in datas_aug:
                 data_aug["question_diff_seq"] = []
                 data_aug["concept_diff_seq"] = []
@@ -114,8 +114,8 @@ class KTDataset4Aug(Dataset):
                     data_aug["question_diff_seq"].append(q_diff)
                 for c_id in data_aug["concept_seq"]:
                     c_diff = concept_difficulty.get(c_id, num_concept_difficulty)
-                    if c_diff != num_concept_difficulty:
-                        c_diff = random.randint(max(0, c_diff-diff_k), min(num_question_difficulty-1, c_diff+diff_k))
+                    # if c_diff != num_concept_difficulty:
+                    #     c_diff = random.randint(max(0, c_diff-diff_k), min(num_concept_difficulty-1, c_diff+diff_k))
                     data_aug["concept_diff_seq"].append(c_diff)
 
         # 补零

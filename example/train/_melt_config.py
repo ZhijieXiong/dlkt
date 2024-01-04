@@ -13,18 +13,19 @@ def mutual_enhance4long_tail_general_config(local_params, global_params, global_
     use_transfer4seq = local_params["use_transfer4seq"]
     beta4transfer_seq = local_params["beta4transfer_seq"]
     gamma4transfer_question = local_params["gamma4transfer_question"]
+    two_branch4question_transfer = local_params["two_branch4question_transfer"]
     max_seq_len = local_params["max_seq_len"]
+    only_update_low_fre = local_params["only_update_low_fre"]
+    data_type = global_params["datasets_config"]["data_type"]
 
     dataset_train = read_preprocessed_file(os.path.join(
         global_objects["file_manager"].get_setting_dir(global_params["datasets_config"]["train"]["setting_name"]),
         global_params["datasets_config"]["train"]["file_name"]
     ))
-    question_context, head_questions, head_seqs = parse_long_tail(dataset_train,
-                                                                  global_params["datasets_config"]["data_type"],
-                                                                  head_question_threshold,
-                                                                  head_seq_len,
-                                                                  min_context_seq_len)
-    tail_questions = list(set(range(local_params["num_question"])) - set(head_questions))
+    parse_results = parse_long_tail(dataset_train, data_type, head_question_threshold, head_seq_len, min_context_seq_len)
+    question_context, head_questions, tail_questions, head_seqs = parse_results
+    if not only_update_low_fre:
+        tail_questions = list(set(range(local_params["num_question"])) - set(head_questions))
     global_objects["mutual_enhance4long_tail"] = {}
     global_objects["mutual_enhance4long_tail"]["dataset_train"] = dataset_train
     global_objects["mutual_enhance4long_tail"]["head_questions"] = head_questions
@@ -47,14 +48,16 @@ def mutual_enhance4long_tail_general_config(local_params, global_params, global_
         "use_transfer4seq": use_transfer4seq,
         "beta4transfer_seq": beta4transfer_seq,
         "gamma4transfer_question": gamma4transfer_question,
-        "max_seq_len": max_seq_len
+        "max_seq_len": max_seq_len,
+        "two_branch4question_transfer": two_branch4question_transfer
     }
 
     global_objects["logger"].info(
         "long tail params\n"
-        f"    dim of question: {dim_question}, dim of latent: {dim_latent}, max seq len: {max_seq_len}, "
-        f"weight of question transfer loss: {weight_question_loss}, min seq len of context for question: {min_context_seq_len}, "
-        f"gamma for transfer question: {gamma4transfer_question} threshold of head question (percent): {head_question_threshold}\n"
+        f"    dim of question: {dim_question}, dim of latent: {dim_latent}, max seq len: {max_seq_len}\n"
+        f"    weight of question transfer loss: {weight_question_loss}, min seq len of context for question: {min_context_seq_len}, "
+        f"gamma for transfer question: {gamma4transfer_question} threshold of head question (percent): {head_question_threshold}, "
+        f"distinguish right and wrong in question transfer: {two_branch4question_transfer}, only update low frequency questions: {only_update_low_fre}\n"
         f"    use transfer for tail seq: {use_transfer4seq}"
         f"{f', weight of seq transfer loss: {weight_seq_loss}, seq len of head seq: {head_seq_len}, beta for transfer seq: {beta4transfer_seq}' if use_transfer4seq else ''}"
     )

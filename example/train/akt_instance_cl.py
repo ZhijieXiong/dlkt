@@ -23,31 +23,33 @@ if __name__ == "__main__":
     parser.add_argument("--valid_file_name", type=str, default="assist2012_valid_split_5.txt")
     parser.add_argument("--test_file_name", type=str, default="assist2012_test_split_5.txt")
     # 优化器相关参数选择
-    parser.add_argument("--optimizer_type", type=str, default="adam",
-                        choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0)
+    parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
+    parser.add_argument("--weight_decay", type=float, default=0.0001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
-    parser.add_argument("--train_strategy", type=str, default="valid_test",
-                        choices=("valid_test", "no_valid"))
-    parser.add_argument("--num_epoch", type=int, default=100)
+    parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
+    parser.add_argument("--num_epoch", type=int, default=200)
     parser.add_argument("--use_early_stop", type=str2bool, default=True)
     parser.add_argument("--epoch_early_stop", type=int, default=10)
     parser.add_argument("--use_last_average", type=str2bool, default=False)
     parser.add_argument("--epoch_last_average", type=int, default=5)
+    # 评价指标选择
     parser.add_argument("--main_metric", type=str, default="AUC")
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
-    parser.add_argument("--learning_rate", type=float, default=0.0004)
-    parser.add_argument("--train_batch_size", type=int, default=32)
-    parser.add_argument("--evaluate_batch_size", type=int, default=256)
+    # 学习率
+    parser.add_argument("--learning_rate", type=float, default=0.002)
     parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
     parser.add_argument("--lr_schedule_milestones", type=str, default="[5]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
-    parser.add_argument("--enable_clip_grad", type=str2bool, default=True)
+    # batch size
+    parser.add_argument("--train_batch_size", type=int, default=64)
+    parser.add_argument("--evaluate_batch_size", type=int, default=256)
+    # 梯度裁剪
+    parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=265)

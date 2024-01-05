@@ -21,7 +21,7 @@ from lib.util.basic import *
 from lib.util.data import write_json
 from lib.util.data import load_json
 from lib.data_processor.load_raw import load_csv
-from lib.util.parse import get_concept_from_question
+from lib.util.parse import *
 
 
 def config_optimizer(local_params, global_params, global_objects, model_name="kt_model"):
@@ -202,10 +202,14 @@ def general_config(local_params, global_params, global_objects):
     # Q table
     dataset_name = local_params["dataset_name"]
     data_type = local_params["data_type"]
-    if data_type == "only_question":
+    if data_type in ["only_question", "multi_concept"]:
         global_objects["data"]["Q_table"] = file_manager.get_q_table(dataset_name, "multi_concept")
     else:
-        global_objects["data"]["Q_table"] = file_manager.get_q_table(dataset_name, data_type)
+        global_objects["data"]["Q_table"] = file_manager.get_q_table(dataset_name, "single_concept")
+
+    # 解析Q table并得到question2concept和concept2question
+    global_objects["data"]["question2concept"] = question2concept_from_Q(global_objects["data"]["Q_table"])
+    global_objects["data"]["concept2question"] = concept2question_from_Q(global_objects["data"]["Q_table"])
 
     global_objects["logger"].info(
         "dataset\n"

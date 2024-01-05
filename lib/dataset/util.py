@@ -94,16 +94,16 @@ def parse_long_tail(data_uniformed, data_type, head_question_threshold, head_seq
     return question_context, head_questions, tail_questions, head_seqs
 
 
-def parse4dataset_enhanced(data_uniformed, data_type, num_min_question, question2concept, concept2question):
+def parse4dataset_enhanced(data_uniformed, data_type, num_min_question, question2concept, concept2question, hard_acc=0.4, easy_acc=0.8):
     """
     将所有习题（同一知识点或者有相同知识点）分为easy、middle、hard、unknown\n
-    基本思想就是做对难的题，可以做对简单的题，但是做对不同的题有不同的权重，比如做对一道hard的题，那么认为能做对easy的题权重就大，如果是做对middle
-    的题，那么做对easy的题的权重相对就小一些
     :param data_uniformed:
     :param data_type:
     :param num_min_question:
     :param question2concept:
     :param concept2question:
+    :param hard_acc:
+    :param easy_acc:
     :return:
     """
     # 需要生成两个dict，一个是知识点，形式为{c0: {"easy": [q0, q1, ...], "middle": [], "hard": [], "unknown":[]}, ...}
@@ -150,10 +150,10 @@ def parse4dataset_enhanced(data_uniformed, data_type, num_min_question, question
             if q_count < num_min_question:
                 concept_dict[c_id]["unknown"].append(q_id)
                 question_dict[q_id][1].append([c_id, "unknown"])
-            elif q_acc < 0.4:
+            elif q_acc < hard_acc:
                 concept_dict[c_id]["hard"].append((q_id, q_acc))
                 question_dict[q_id][1].append([c_id, "hard"])
-            elif q_acc > 0.8:
+            elif q_acc > easy_acc:
                 concept_dict[c_id]["easy"].append((q_id, q_acc))
                 question_dict[q_id][1].append([c_id, "easy"])
             else:
@@ -173,7 +173,10 @@ def parse4dataset_enhanced(data_uniformed, data_type, num_min_question, question
         for c_pair in question_dict[q_id][1]:
             c_id = c_pair[0]
             k = c_pair[1]
-            c_pair.append(concept_dict[c_id][k].index(q_id))
+            if k != "unknown":
+                c_pair.append(concept_dict[c_id][k].index(q_id))
+            else:
+                c_pair.append(0)
 
     return concept_dict, question_dict
 

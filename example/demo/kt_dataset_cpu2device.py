@@ -18,13 +18,15 @@ if __name__ == "__main__":
             "dataset_this": "train",
             "data_type": "single_concept",
             "train": {
-                "type": "kt_enhance",
+                "type": "kt_output_enhance",
                 "setting_name": "random_split_leave_multi_out_setting",
                 "file_name": "assist2012_train_split_5.txt",
                 "dataset_path": "",
                 "unuseful_seq_keys": {"user_id"},
                 "kt_enhance": {
                     "num_min_question4diff": 30,
+                    "hard_acc": 0.4,
+                    "easy_acc": 0.8
                 },
             },
         }
@@ -44,7 +46,9 @@ if __name__ == "__main__":
                                                          params["datasets_config"]["data_type"],
                                                          params["datasets_config"]["train"]["kt_enhance"]["num_min_question4diff"],
                                                          question2concept,
-                                                         concept2question)
+                                                         concept2question,
+                                                         params["datasets_config"]["train"]["kt_enhance"]["hard_acc"],
+                                                         params["datasets_config"]["train"]["kt_enhance"]["easy_acc"])
 
     objects["data"] = {}
     objects["data"]["Q_table"] = Q_table

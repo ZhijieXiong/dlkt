@@ -1,4 +1,5 @@
 import re
+import os
 import argparse
 
 
@@ -27,16 +28,32 @@ if __name__ == "__main__":
     with open(params["target_python_file"], 'r', encoding='utf-8') as f:
         text = f.read()
 
+    script_template_path = os.path.join(
+        os.path.basename(params["script_dir"]),
+        os.path.basename(params["target_python_file"]).replace(".py", ".sh")
+    )
+
     arg_str_all = re.findall(r'parser\.add_argument\((.*?)\)', text)
     arg_parse_result = []
     for arg_str in arg_str_all:
         arg_name = re.search(r'^[\'"](.*?)[\'"]', arg_str).group(1)
+        # 有些参数不好提取，就不提了，比如--multi_metrics "['AUC', 'ACC']"，这种多种引号嵌套的
+        if arg_name in ["--multi_metrics"]:
+            continue
         match = re.search(r'default=(?:"(.*?)"|\'(.*?)\'|([^,]+))(?=[,"]|$)', arg_str)
         if match.group(1) is None:
             arg_default = match.group(0).split("=")[1]
         else:
             arg_default = match.group(1)
         arg_parse_result.append((arg_name, arg_default))
+
+    script_template_text = f"python {params['target_python_file']} \\\n  "
+    for i in range(len(arg_parse_result)):
+        script_template_text += f"{arg_parse_result[i][0]} {arg_parse_result[i][1]} "
+        if i != 0 and i % 5 == 0:
+            script_template_text += "\n  "
+
+    print(script_template_text)
 
     print(arg_parse_result)
     print(len(arg_parse_result))

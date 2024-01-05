@@ -3,9 +3,9 @@ import torch.nn as nn
 from .KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 
-class KTEnhanceTrainer(KnowledgeTracingTrainer):
+class KTOutputEnhanceTrainer(KnowledgeTracingTrainer):
     def __init__(self, params, objects):
-        super(KTEnhanceTrainer, self).__init__(params, objects)
+        super(KTOutputEnhanceTrainer, self).__init__(params, objects)
 
     def train(self):
         train_strategy = self.params["train_strategy"]
@@ -25,7 +25,7 @@ class KTEnhanceTrainer(KnowledgeTracingTrainer):
             model.train()
             for batch in train_loader:
                 optimizer.zero_grad()
-                predict_loss, enhance_loss = model.get_predict_enhance_loss(batch)
+                predict_loss, enhance_loss = model.get_predict_enhance_loss(batch, self.loss_record)
                 loss = predict_loss + enhance_loss * weight_enhance_loss
                 loss.backward()
                 if grad_clip_config["use_clip"]:

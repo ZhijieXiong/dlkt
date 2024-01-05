@@ -1,23 +1,24 @@
 import random
 
-import torch
 from torch.utils.data import Dataset
 
 from ..util.data import *
 from ..util.parse import *
 
-
-# 做对easy题，那么做对更简单的easy题的可信度为0.5，做错hard题的可信度为0.25
-# 做错easy题，那么做对更简单的easy题的可信度为0.25，做错hard题的可信度为1
-# 做对hard题，那么做对easy题的可信度为1，做错更难的hard题的可信度为0.25
-# 做错hard题，那么做对easy题的可信度为0.25，做错更难的hard题的可信度为0.5
-# 以easy为例，(做错该题：(做对更简单题的可信度, 做错更难题的可信度), 做对该题：(做对更简单题的可信度, 做错更难题的可信度))
+# S -> predict score
+# S_easy - S_easier >= 0, weight: 0.1
+# S_easy - S_hard <= 0, weight: 0.5
+# S_hard - S_easy >= 0, weight: 0.5
+# S_hard - S_harder <= 0, weight: 0.1
+# S_middle - S_easy >= 0, weight: 0.2
+# S_middle - S_hard <= 0, weight: 0.2
 WEIGHT_TABLE = {
-    "unknown": ((0.125, 0.125), (0.125, 0.125)),
-    "easy": ((0.25, 1), (0.5, 0.25)),
-    "hard": ((0.25, 0.5), (1, 0.25)),
-    "middle": ((0.25, 0.25), (0.25, 0.25)),
+    "unknown": (0.3, 0.3),
+    "easy": (0.1, 1),
+    "hard": (1, 0.1),
+    "middle": (0.5, 0.5),
 }
+MASK_TABLE = {k: tuple(map(lambda x: 1 if x != 0 else 0, WEIGHT_TABLE[k])) for k, v in WEIGHT_TABLE.items()}
 
 
 class KTDataset_cpu2device(Dataset):
@@ -43,7 +44,7 @@ class KTDataset_cpu2device(Dataset):
         data_type = self.params["datasets_config"]["data_type"]
         kt_dataset_type = dataset_config_this["type"]
 
-        if kt_dataset_type == "kt_enhance":
+        if kt_dataset_type == "kt_output_enhance":
             max_seq_len = len(item_data["mask_seq"])
             pad_len = max_seq_len - item_data["seq_len"]
             concept_dict = self.objects["kt_enhance"]["concept_dict"]
@@ -58,23 +59,27 @@ class KTDataset_cpu2device(Dataset):
             mask_harder_seq = []
             for i in range(item_data["seq_len"]):
                 q_id = item_data["question_seq"][i]
-                correct = item_data["correct_seq"][i]
                 if data_type == "single_concept":
                     c_pair = question_dict[q_id][1][0]
                     c_id = c_pair[0]
                     q_diff = c_pair[1]
                     k = c_pair[2]
-                    weight_easier = WEIGHT_TABLE[q_diff][correct][0]
-                    weight_harder = WEIGHT_TABLE[q_diff][correct][1]
+                    weight_easier = WEIGHT_TABLE[q_diff][0]
+                    weight_harder = WEIGHT_TABLE[q_diff][1]
+                    mask_easier = MASK_TABLE[q_diff][0]
+                    mask_harder = MASK_TABLE[q_diff][1]
                     if q_diff == "easy":
                         questions_easier = concept_dict[c_id]["easy"][:k]
                         questions_harder = concept_dict[c_id]["hard"]
                     elif q_diff == "hard":
                         questions_easier = concept_dict[c_id]["easy"]
                         questions_harder = concept_dict[c_id]["hard"][k:]
-                    else:
+                    elif q_diff == "middle":
                         questions_easier = concept_dict[c_id]["easy"][:10]
                         questions_harder = concept_dict[c_id]["hard"][-10:]
+                    else:
+                        questions_easier = concept_dict[c_id]["easy"][:3]
+                        questions_harder = concept_dict[c_id]["hard"][-3:]
 
                     q_easier = 0
                     c_easier = 0
@@ -83,16 +88,9 @@ class KTDataset_cpu2device(Dataset):
                     if len(questions_easier) > 0:
                         q_easier = random.choice(questions_easier)
                         c_easier = c_id
-                        mask_easier_seq.append(1)
-                    else:
-                        mask_easier_seq.append(0)
-
                     if len(questions_harder) > 0:
                         q_harder = random.choice(questions_harder)
                         c_harder = c_id
-                        mask_harder_seq.append(1)
-                    else:
-                        mask_harder_seq.append(0)
 
                     question_easier_seq.append(q_easier)
                     question_harder_seq.append(q_harder)
@@ -100,6 +98,8 @@ class KTDataset_cpu2device(Dataset):
                     concept_harder_seq.append(c_harder)
                     weight_easier_seq.append(weight_easier)
                     weight_harder_seq.append(weight_harder)
+                    mask_easier_seq.append(mask_easier)
+                    mask_harder_seq.append(mask_harder)
                 else:
                     raise NotImplementedError()
 
@@ -116,8 +116,6 @@ class KTDataset_cpu2device(Dataset):
             result["weight_harder_seq"] = torch.FloatTensor(weight_harder_seq).to(self.params["device"])
             result["mask_easier_seq"] = torch.LongTensor(mask_easier_seq).to(self.params["device"])
             result["mask_harder_seq"] = torch.LongTensor(mask_harder_seq).to(self.params["device"])
-            result["correct_easier_seq"] = torch.ones(max_seq_len).long().to(self.params["device"])
-            result["correct_harder_seq"] = torch.zeros(max_seq_len).long().to(self.params["device"])
 
             if data_type == "single_concept":
                 concept_easier_seq += [0] * pad_len
@@ -152,3 +150,12 @@ class KTDataset_cpu2device(Dataset):
                 del item_data[k]
 
         self.dataset = dataset_original
+
+    def get_statics_kt_dataset(self):
+        num_seq = len(self.dataset)
+        num_sample = 0
+        num_correct = 0
+        for item_data in self.dataset:
+            num_sample += item_data["seq_len"]
+            num_correct += sum(item_data["correct_seq"])
+        return num_seq, num_sample, num_correct / num_sample

@@ -2,13 +2,14 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from qdkt_config import qdkt_config
+from qdkt_config import qdkt_output_enhance_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
+from lib.dataset.KTDataset_cpu2device import KTDataset_cpu2device
 from lib.dataset.KTDataset import KTDataset
 from lib.model.qDKT import qDKT
-from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
+from lib.trainer.KTOutputEnhanceTrainer import KTOutputEnhanceTrainer
 
 
 if __name__ == "__main__":
@@ -64,6 +65,11 @@ if __name__ == "__main__":
     parser.add_argument("--num_predict_layer", type=int, default=3)
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
+    # output enhance参数
+    parser.add_argument("--weight_enhance_loss", type=float, default=10)
+    parser.add_argument("--num_min_question4diff", type=int, default=50)
+    parser.add_argument("--hard_acc", type=float, default=0.3)
+    parser.add_argument("--easy_acc", type=float, default=0.85)
     # 是否使用LLM的emb初始化
     parser.add_argument("--use_LLM_emb4question", type=str2bool, default=False)
     parser.add_argument("--use_LLM_emb4concept", type=str2bool, default=False)
@@ -73,17 +79,18 @@ if __name__ == "__main__":
     parser.add_argument("--head2tail_transfer_method", type=str, default="mean_pool",
                         choices=("mean_pool", ))
     # 其它
-    parser.add_argument("--save_model", type=str2bool, default=True)
+    parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = qdkt_config(params)
+    global_params, global_objects = qdkt_output_enhance_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)
         valid_params["datasets_config"]["dataset_this"] = "valid"
+        valid_params["datasets_config"]["valid"]["type"] = "kt"
         dataset_valid = KTDataset(valid_params, global_objects)
         dataloader_valid = DataLoader(dataset_valid, batch_size=params["evaluate_batch_size"], shuffle=False)
     else:
@@ -91,11 +98,12 @@ if __name__ == "__main__":
 
     train_params = deepcopy(global_params)
     train_params["datasets_config"]["dataset_this"] = "train"
-    dataset_train = KTDataset(train_params, global_objects)
+    dataset_train = KTDataset_cpu2device(train_params, global_objects)
     dataloader_train = DataLoader(dataset_train, batch_size=params["train_batch_size"], shuffle=True)
 
     test_params = deepcopy(global_params)
     test_params["datasets_config"]["dataset_this"] = "test"
+    test_params["datasets_config"]["test"]["type"] = "kt"
     dataset_test = KTDataset(test_params, global_objects)
     dataloader_test = DataLoader(dataset_test, batch_size=params["evaluate_batch_size"], shuffle=False)
 
@@ -105,5 +113,5 @@ if __name__ == "__main__":
 
     model = qDKT(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
-    trainer = KnowledgeTracingTrainer(global_params, global_objects)
+    trainer = KTOutputEnhanceTrainer(global_params, global_objects)
     trainer.train()

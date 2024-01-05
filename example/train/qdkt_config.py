@@ -145,3 +145,17 @@ def qdkt_meta_optimize_cl_config(local_params):
         save_params(global_params, global_objects)
 
     return global_params, global_objects
+
+
+def qdkt_output_enhance_config(local_params):
+    global_params = deepcopy(PARAMS2)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    qdkt_general_config(local_params, global_params, global_objects)
+    output_enhance_general_config(local_params, global_params, global_objects)
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-output_enhance@@"))
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects

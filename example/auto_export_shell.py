@@ -1,6 +1,7 @@
 import re
 import os
 import argparse
+import platform
 
 
 if __name__ == "__main__":
@@ -33,7 +34,7 @@ if __name__ == "__main__":
         os.path.basename(params["target_python_file"]).replace(".py", ".sh")
     )
 
-    arg_str_all = re.findall(r'parser\.add_argument\((.*?)\)', text)
+    arg_str_all = re.findall(r'parser\.add_argument\(([\s\S]*?)\)', text)
     arg_parse_result = []
     for arg_str in arg_str_all:
         arg_name = re.search(r'^[\'"](.*?)[\'"]', arg_str).group(1)
@@ -47,12 +48,16 @@ if __name__ == "__main__":
             arg_default = match.group(1)
         arg_parse_result.append((arg_name, arg_default))
 
-    script_template_text = f"python {params['target_python_file']} \\\n  "
+    if platform.system() == "Windows":
+        py_path = params['target_python_file'].replace("\\", "/")
+    script_template_text = f"python {py_path} \\\n  "
     for i in range(len(arg_parse_result)):
         script_template_text += f"{arg_parse_result[i][0]} {arg_parse_result[i][1]} "
         if i != 0 and i % 5 == 0:
-            script_template_text += "\n  "
+            script_template_text += "\\\n  "
 
+    with open(script_template_path, "w") as f:
+        f.write(script_template_text)
     print(script_template_text)
 
     print(arg_parse_result)

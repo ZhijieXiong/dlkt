@@ -66,7 +66,7 @@ if __name__ == "__main__":
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
     # output enhance参数
-    parser.add_argument("--weight_enhance_loss", type=float, default=10)
+    parser.add_argument("--weight_enhance_loss", type=float, default=20)
     parser.add_argument("--num_min_question4diff", type=int, default=50)
     parser.add_argument("--hard_acc", type=float, default=0.3)
     parser.add_argument("--easy_acc", type=float, default=0.85)

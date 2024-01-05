@@ -1,7 +1,6 @@
 import os
 import json
 import platform
-import pandas as pd
 import numpy as np
 
 

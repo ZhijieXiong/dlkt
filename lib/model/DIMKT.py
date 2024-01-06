@@ -467,6 +467,9 @@ class DIMKT(nn.Module, BaseModel4CL):
 
         return predict_loss
 
+    def get_predict_enhance_loss(self, batch, loss_record=None):
+        pass
+
     def forward_from_adv_data(self, dataset, batch):
         dim_emb = self.params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["dim_emb"]
         batch_size, seq_len = batch["question_seq"].shape[0], batch["question_seq"].shape[1]

@@ -13,10 +13,12 @@ from ..util.parse import *
 # S_middle - S_easy >= 0, weight: 0.2
 # S_middle - S_hard <= 0, weight: 0.2
 WEIGHT_TABLE = {
-    "unknown": (0.3, 0.3),
-    "easy": (0.1, 1),
-    "hard": (1, 0.1),
-    "middle": (0.5, 0.5),
+    "zero_shot": (0.5, 0.5),
+    "few_shot": (0.5, 0.5),
+    "middle_fre": (0, 0),
+    "easy": (0, 1),
+    "hard": (1, 0),
+    "middle": (0, 0),
 }
 MASK_TABLE = {k: tuple(map(lambda x: 1 if x != 0 else 0, WEIGHT_TABLE[k])) for k, v in WEIGHT_TABLE.items()}
 
@@ -41,68 +43,56 @@ class KTDataset_cpu2device(Dataset):
             result[k] = torch.tensor(item_data[k]).long().to(self.params["device"])
 
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
-        data_type = self.params["datasets_config"]["data_type"]
         kt_dataset_type = dataset_config_this["type"]
 
         if kt_dataset_type == "kt_output_enhance":
-            max_seq_len = len(item_data["mask_seq"])
-            pad_len = max_seq_len - item_data["seq_len"]
-            concept_dict = self.objects["kt_enhance"]["concept_dict"]
-            question_dict = self.objects["kt_enhance"]["question_dict"]
-            question_easier_seq = []
-            question_harder_seq = []
-            concept_easier_seq = []
-            concept_harder_seq = []
-            weight_easier_seq = []
-            weight_harder_seq = []
-            mask_easier_seq = []
-            mask_harder_seq = []
-            for i in range(item_data["seq_len"]):
-                q_id = item_data["question_seq"][i]
-                if data_type == "single_concept":
-                    c_pair = question_dict[q_id][1][0]
-                    c_id = c_pair[0]
-                    q_diff = c_pair[1]
-                    k = c_pair[2]
-                    weight_easier = WEIGHT_TABLE[q_diff][0]
-                    weight_harder = WEIGHT_TABLE[q_diff][1]
-                    mask_easier = MASK_TABLE[q_diff][0]
-                    mask_harder = MASK_TABLE[q_diff][1]
-                    if q_diff == "easy":
-                        questions_easier = concept_dict[c_id]["easy"][:k]
-                        questions_harder = concept_dict[c_id]["hard"]
-                    elif q_diff == "hard":
-                        questions_easier = concept_dict[c_id]["easy"]
-                        questions_harder = concept_dict[c_id]["hard"][k:]
-                    elif q_diff == "middle":
-                        questions_easier = concept_dict[c_id]["easy"][:10]
-                        questions_harder = concept_dict[c_id]["hard"][-10:]
-                    else:
-                        questions_easier = concept_dict[c_id]["easy"][:3]
-                        questions_harder = concept_dict[c_id]["hard"][-3:]
+            self.output_enhance(item_data, result)
 
-                    q_easier = 0
-                    c_easier = 0
-                    q_harder = 0
-                    c_harder = 0
-                    if len(questions_easier) > 0:
-                        q_easier = random.choice(questions_easier)
-                        c_easier = c_id
-                    if len(questions_harder) > 0:
-                        q_harder = random.choice(questions_harder)
-                        c_harder = c_id
+        return result
 
-                    question_easier_seq.append(q_easier)
-                    question_harder_seq.append(q_harder)
-                    concept_easier_seq.append(c_easier)
-                    concept_harder_seq.append(c_harder)
-                    weight_easier_seq.append(weight_easier)
-                    weight_harder_seq.append(weight_harder)
-                    mask_easier_seq.append(mask_easier)
-                    mask_harder_seq.append(mask_harder)
-                else:
-                    raise NotImplementedError()
+    def output_enhance(self, item_data, result):
+        data_type = self.params["datasets_config"]["data_type"]
+        enhance_method = self.params["other"]["output_enhance"]["enhance_method"]
 
+        max_seq_len = len(item_data["mask_seq"])
+        pad_len = max_seq_len - item_data["seq_len"]
+        # enhance method 1
+        question_easier_seq = []
+        question_harder_seq = []
+        concept_easier_seq = []
+        concept_harder_seq = []
+        weight_easier_seq = []
+        weight_harder_seq = []
+        mask_easier_seq = []
+        mask_harder_seq = []
+        # enhance method 2
+        question_zero_shot_seq = []
+        concept_zero_shot_seq = []
+        mask_zero_shot_seq = []
+        for i in range(item_data["seq_len"]):
+            q_id = item_data["question_seq"][i]
+            correct = item_data["correct_seq"][i]
+            if data_type == "single_concept":
+                if enhance_method == 0 or enhance_method == 1:
+                    enhance_method1_out = self.output_enhance_method1(q_id)
+
+                    question_easier_seq.append(enhance_method1_out["q_easier"])
+                    question_harder_seq.append(enhance_method1_out["q_harder"])
+                    concept_easier_seq.append(enhance_method1_out["c_easier"])
+                    concept_harder_seq.append(enhance_method1_out["c_harder"])
+                    weight_easier_seq.append(enhance_method1_out["weight_easier"])
+                    weight_harder_seq.append(enhance_method1_out["weight_harder"])
+                    mask_easier_seq.append(enhance_method1_out["mask_easier"])
+                    mask_harder_seq.append(enhance_method1_out["mask_harder"])
+                if enhance_method == 0 or enhance_method == 2:
+                    enhance_method2_out = self.output_enhance_method2(q_id, correct)
+                    question_zero_shot_seq.append(enhance_method2_out["q_zero_shot"])
+                    concept_zero_shot_seq.append(enhance_method2_out["c4q_zero_shot"])
+                    mask_zero_shot_seq.append(enhance_method2_out["mask_zero_shot"])
+            else:
+                raise NotImplementedError()
+
+        if enhance_method == 0 or enhance_method == 1:
             question_easier_seq += [0] * pad_len
             question_harder_seq += [0] * pad_len
             weight_easier_seq += [0] * pad_len
@@ -117,15 +107,100 @@ class KTDataset_cpu2device(Dataset):
             result["mask_easier_seq"] = torch.LongTensor(mask_easier_seq).to(self.params["device"])
             result["mask_harder_seq"] = torch.LongTensor(mask_harder_seq).to(self.params["device"])
 
-            if data_type == "single_concept":
+        if enhance_method == 0 or enhance_method == 2:
+            question_zero_shot_seq += [0] * pad_len
+            mask_zero_shot_seq += [0] * pad_len
+
+            result["question_zero_shot_seq"] = torch.LongTensor(question_zero_shot_seq).to(self.params["device"])
+            result["mask_zero_shot_seq"] = torch.LongTensor(mask_zero_shot_seq).to(self.params["device"])
+
+        if data_type == "single_concept":
+            if enhance_method == 0 or enhance_method == 1:
                 concept_easier_seq += [0] * pad_len
                 concept_harder_seq += [0] * pad_len
                 result["concept_easier_seq"] = torch.LongTensor(concept_easier_seq).to(self.params["device"])
                 result["concept_harder_seq"] = torch.LongTensor(concept_harder_seq).to(self.params["device"])
-            else:
-                raise NotImplementedError()
+            if enhance_method == 0 or enhance_method == 2:
+                concept_zero_shot_seq += [0] * pad_len
+                result["concept_zero_shot_seq"] = torch.LongTensor(concept_zero_shot_seq).to(self.params["device"])
+        else:
+            raise NotImplementedError()
 
-        return result
+    def output_enhance_method1(self, q_id):
+        concept_dict = self.objects["kt_enhance"]["concept_dict"]
+        question_dict = self.objects["kt_enhance"]["question_dict"]
+
+        c_pair = question_dict[q_id][1][0]
+        c_id = c_pair[0]
+        q_diff = c_pair[1]
+        k = c_pair[2]
+        weight_easier = WEIGHT_TABLE[q_diff][0]
+        weight_harder = WEIGHT_TABLE[q_diff][1]
+        mask_easier = MASK_TABLE[q_diff][0]
+        mask_harder = MASK_TABLE[q_diff][1]
+        if q_diff == "easy":
+            questions_easier = concept_dict[c_id]["easy"][:k]
+            questions_harder = concept_dict[c_id]["hard"]
+        elif q_diff == "hard":
+            questions_easier = concept_dict[c_id]["easy"]
+            questions_harder = concept_dict[c_id]["hard"][k:]
+        elif q_diff == "middle":
+            questions_easier = concept_dict[c_id]["easy"][:10]
+            questions_harder = concept_dict[c_id]["hard"][-10:]
+        else:
+            questions_easier = concept_dict[c_id]["easy"][:5]
+            questions_harder = concept_dict[c_id]["hard"][-5:]
+
+        q_easier = 0
+        c_easier = 0
+        q_harder = 0
+        c_harder = 0
+        if len(questions_easier) > 0:
+            q_easier = random.choice(questions_easier)
+            c_easier = c_id
+        if len(questions_harder) > 0:
+            q_harder = random.choice(questions_harder)
+            c_harder = c_id
+
+        return {
+            "q_easier": q_easier,
+            "q_harder": q_harder,
+            "c_easier": c_easier,
+            "c_harder": c_harder,
+            "weight_easier": weight_easier,
+            "weight_harder": weight_harder,
+            "mask_easier": mask_easier,
+            "mask_harder": mask_harder
+        }
+
+    def output_enhance_method2(self, q_id, correct):
+        concept_dict = self.objects["kt_enhance"]["concept_dict"]
+        question_dict = self.objects["kt_enhance"]["question_dict"]
+
+        c_pair = question_dict[q_id][1][0]
+        c_id = c_pair[0]
+
+        if correct == 0:
+            return {
+                "q_zero_shot": 0,
+                "c4q_zero_shot": 0,
+                "mask_zero_shot": 0
+            }
+
+        zero_shot_qs = concept_dict[c_id]["zero_shot"]
+        if len(zero_shot_qs) == 0:
+            return {
+                "q_zero_shot": 0,
+                "c4q_zero_shot": 0,
+                "mask_zero_shot": 0
+            }
+
+        q_zero_shot = random.choice(zero_shot_qs)
+        return {
+            "q_zero_shot": q_zero_shot,
+            "c4q_zero_shot": c_id,
+            "mask_zero_shot": 1
+        }
 
     def load_dataset(self):
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]

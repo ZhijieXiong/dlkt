@@ -94,12 +94,31 @@ def parse_long_tail(data_uniformed, data_type, head_question_threshold, head_seq
     return question_context, head_questions, tail_questions, head_seqs
 
 
-def parse4dataset_enhanced(data_uniformed, data_type, num_min_question, question2concept, concept2question, hard_acc=0.4, easy_acc=0.8):
+def parse_low_fre_question(data_uniformed, data_type, num_few_shot, num_question):
+    questions_frequency = defaultdict(int)
+    few_shot_questions = []
+    if data_type == "single_concept":
+        for seq_id, item_data in enumerate(data_uniformed):
+            for i in range(item_data["seq_len"]):
+                q_id = item_data["question_seq"][i]
+                questions_frequency[q_id] += 1
+
+    for q_id, fre in questions_frequency.items():
+        if fre < num_few_shot:
+            few_shot_questions.append(q_id)
+
+    zero_shot_questions = list(set(range(num_question)) - set(questions_frequency.keys()))
+
+    return zero_shot_questions, few_shot_questions
+
+
+def parse4dataset_enhanced(data_uniformed, data_type, num_min_question4diff, num_few_shot, question2concept, concept2question, hard_acc=0.4, easy_acc=0.8):
     """
     将所有习题（同一知识点或者有相同知识点）分为easy、middle、hard、unknown\n
     :param data_uniformed:
     :param data_type:
-    :param num_min_question:
+    :param num_min_question4diff:
+    :param num_few_shot:
     :param question2concept:
     :param concept2question:
     :param hard_acc:
@@ -122,7 +141,7 @@ def parse4dataset_enhanced(data_uniformed, data_type, num_min_question, question
                 if item_data["correct_seq"][i] == 1:
                     question_accuracy[q_id] += 1
         for q_id in question_frequency.keys():
-            if question_frequency[q_id] >= num_min_question:
+            if question_frequency[q_id] >= num_min_question4diff:
                 question_accuracy[q_id] = question_accuracy[q_id] / question_frequency[q_id]
     else:
         raise NotImplementedError()
@@ -134,7 +153,9 @@ def parse4dataset_enhanced(data_uniformed, data_type, num_min_question, question
             "easy": [],
             "middle": [],
             "hard": [],
-            "unknown": []
+            "zero_shot": [],
+            "few_shot": [],
+            "middle_fre": []
         }
         correspond_questions = concept2question[c_id]
         for q_id in correspond_questions:
@@ -142,14 +163,17 @@ def parse4dataset_enhanced(data_uniformed, data_type, num_min_question, question
             correspond_concepts = list(map(str, sorted(correspond_concepts)))
             question_dict[q_id] = (",".join(correspond_concepts), [])
             if not question_frequency.get(q_id, False):
-                concept_dict[c_id]["unknown"].append(q_id)
-                question_dict[q_id][1].append([c_id, "unknown"])
+                concept_dict[c_id]["zero_shot"].append(q_id)
+                question_dict[q_id][1].append([c_id, "zero_shot"])
                 continue
             q_count = question_frequency[q_id]
             q_acc = question_accuracy[q_id]
-            if q_count < num_min_question:
-                concept_dict[c_id]["unknown"].append(q_id)
-                question_dict[q_id][1].append([c_id, "unknown"])
+            if q_count <= num_few_shot:
+                concept_dict[c_id]["few_shot"].append(q_id)
+                question_dict[q_id][1].append([c_id, "few_shot"])
+            elif q_count < num_min_question4diff:
+                concept_dict[c_id]["middle_fre"].append(q_id)
+                question_dict[q_id][1].append([c_id, "middle_fre"])
             elif q_acc < hard_acc:
                 concept_dict[c_id]["hard"].append((q_id, q_acc))
                 question_dict[q_id][1].append([c_id, "hard"])
@@ -173,7 +197,7 @@ def parse4dataset_enhanced(data_uniformed, data_type, num_min_question, question
         for c_pair in question_dict[q_id][1]:
             c_id = c_pair[0]
             k = c_pair[1]
-            if k != "unknown":
+            if k in ["easy", "middle", "hard"]:
                 c_pair.append(concept_dict[c_id][k].index(q_id))
             else:
                 c_pair.append(0)

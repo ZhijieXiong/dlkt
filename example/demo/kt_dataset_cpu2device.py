@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 
 from lib.util.FileManager import FileManager
 from lib.dataset.KTDataset_cpu2device import KTDataset_cpu2device
-from lib.dataset.util import parse4dataset_enhanced
+from lib.dataset.util import parse4dataset_enhanced, parse_low_fre_question
 from lib.util.data import read_preprocessed_file
 from lib.util.parse import question2concept_from_Q, concept2question_from_Q
 
@@ -41,6 +41,13 @@ if __name__ == "__main__":
     Q_table = FileManager(r"F:\code\myProjects\dlkt").get_q_table("assist2012", "single_concept")
     question2concept = question2concept_from_Q(Q_table)
     concept2question = concept2question_from_Q(Q_table)
+
+    parse_low_fre_question(
+        objects["dataset_this"],
+        params["datasets_config"]["data_type"],
+        5,
+        53091
+    )
 
     concept_dict, question_dict = parse4dataset_enhanced(objects["dataset_this"],
                                                          params["datasets_config"]["data_type"],

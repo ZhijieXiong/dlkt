@@ -33,10 +33,12 @@ def max_entropy_adv_aug_general_config(local_params, global_params, global_objec
 
 
 def output_enhance_general_config(local_params, global_params, global_objects):
+    enhance_method = local_params["enhance_method"]
     num_min_question4diff = local_params["num_min_question4diff"]
     hard_acc = local_params["hard_acc"]
     easy_acc = local_params["easy_acc"]
     weight_enhance_loss = local_params["weight_enhance_loss"]
+    num_few_shot = local_params["num_few_shot"]
 
     datasets_train_config = global_params["datasets_config"]["train"]
     datasets_train_config["type"] = "kt_output_enhance"
@@ -49,6 +51,7 @@ def output_enhance_general_config(local_params, global_params, global_objects):
     concept_dict, question_dict = parse4dataset_enhanced(dataset_train,
                                                          global_params["datasets_config"]["data_type"],
                                                          num_min_question4diff,
+                                                         num_few_shot,
                                                          global_objects["data"]["question2concept"],
                                                          global_objects["data"]["concept2question"],
                                                          hard_acc,
@@ -57,3 +60,11 @@ def output_enhance_general_config(local_params, global_params, global_objects):
     global_objects["kt_enhance"] = {}
     global_objects["kt_enhance"]["concept_dict"] = concept_dict
     global_objects["kt_enhance"]["question_dict"] = question_dict
+
+    global_params["other"]["output_enhance"] = {"enhance_method": enhance_method}
+
+    global_objects["logger"].info(
+        "output enhance params\n"
+        f"    enhance_method: {enhance_method}, weight of enhance loss: {weight_enhance_loss}, min num of question for calculate difficulty: {num_min_question4diff}\n"
+        f"    accuracy of hard question: {hard_acc}, accuracy of easy question: {easy_acc},  num of few shot question: {num_few_shot}"
+    )

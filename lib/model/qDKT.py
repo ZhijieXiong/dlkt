@@ -1,5 +1,3 @@
-# from sklearn.mixture import GaussianMixture
-
 from .BaseModel4CL import BaseModel4CL
 from .Module.KTEmbedLayer import KTEmbedLayer
 from .Module.PredictorLayer import PredictorLayer

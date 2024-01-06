@@ -76,5 +76,6 @@ def output_enhance_general_config(local_params, global_params, global_objects):
         "output enhance params\n"
         f"    enhance_method: {enhance_method}, weight of enhance loss1: {weight_enhance_loss1}, weight of enhance loss2: {weight_enhance_loss2}, "
         f"min num of question for calculate difficulty: {num_min_question4diff}\n"
-        f"    accuracy of hard question: {hard_acc}, accuracy of easy question: {easy_acc},  num of few shot question: {num_few_shot}"
+        f"    accuracy of hard question: {hard_acc}, accuracy of easy question: {easy_acc},  num of few shot question: {num_few_shot}, "
+        f"use enhance method2 to update few shot question: {enhance_method2_update_few_shot}"
     )

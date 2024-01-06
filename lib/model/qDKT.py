@@ -1,5 +1,4 @@
 # from sklearn.mixture import GaussianMixture
-import torch
 
 from .BaseModel4CL import BaseModel4CL
 from .Module.KTEmbedLayer import KTEmbedLayer
@@ -236,72 +235,106 @@ class qDKT(nn.Module, BaseModel4CL):
         return predict_loss
 
     def get_predict_enhance_loss(self, batch, loss_record=None):
-        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
+        enhance_method = self.params["other"]["output_enhance"]["enhance_method"]
+        weight_enhance_loss1 = self.params["loss_config"]["enhance loss 1"]
+        weight_enhance_loss2 = self.params["loss_config"]["enhance loss 2"]
         dim_correct = encoder_config["dim_correct"]
         correct_seq = batch["correct_seq"]
         data_type = self.params["datasets_config"]["data_type"]
 
+        loss = 0.
+        # 预测损失
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         batch_size = correct_seq.shape[0]
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
         if data_type == "only_question":
             qc_emb = self.get_qc_emb4only_question(batch)
         else:
             qc_emb = self.get_qc_emb4single_concept(batch)
-        interaction_emb = torch.cat((qc_emb[:, :-1], correct_emb[:, :-1]), dim=2)
+        interaction_emb = torch.cat((qc_emb, correct_emb), dim=2)
 
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(interaction_emb)
+        latent_current = latent[:, :-1]
+        latent_next = latent[:, 1:]
 
-        predict_layer_input = torch.cat((latent, qc_emb[:, 1:]), dim=2)
+        predict_layer_input = torch.cat((latent_current, qc_emb[:, 1:]), dim=2)
         predict_score_all = self.predict_layer(predict_layer_input).squeeze(dim=-1)
         predict_score = torch.masked_select(predict_score_all, mask_bool_seq[:, 1:])
 
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
         predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
 
-        # 对于easier和harder习题的损失
-        mask_bool_seq_easier = torch.ne(batch["mask_easier_seq"], 0)
-        mask_bool_seq_harder = torch.ne(batch["mask_harder_seq"], 0)
-        weight_easier = torch.masked_select(batch["weight_easier_seq"][:, 1:], mask_bool_seq_easier[:, 1:])
-        weight_harder = torch.masked_select(batch["weight_harder_seq"][:, 1:], mask_bool_seq_harder[:, 1:])
-        batch_easier = {
-            "question_seq": batch["question_easier_seq"],
-            "concept_seq": batch["concept_easier_seq"]
-        }
-        batch_harder = {
-            "question_seq": batch["question_harder_seq"],
-            "concept_seq": batch["concept_harder_seq"]
-        }
-
-        if data_type == "only_question":
-            qc_emb_easier = self.get_qc_emb4only_question(batch_easier)
-            qc_emb_harder = self.get_qc_emb4only_question(batch_harder)
-        else:
-            qc_emb_easier = self.get_qc_emb4single_concept(batch_easier)
-            qc_emb_harder = self.get_qc_emb4only_question(batch_harder)
-
-        predict_input_easier = torch.cat((latent, qc_emb_easier[:, 1:]), dim=2)
-        predict_input_harder = torch.cat((latent, qc_emb_harder[:, 1:]), dim=2)
-        predict_score_easier_all = self.predict_layer(predict_input_easier).squeeze(dim=-1)
-        predict_score_harder_all = self.predict_layer(predict_input_harder).squeeze(dim=-1)
-
-        predict_score_diff1 = torch.masked_select(predict_score_easier_all - predict_score_all, mask_bool_seq_easier[:, 1:])
-        predict_score_diff2 = torch.masked_select(predict_score_all - predict_score_harder_all, mask_bool_seq_harder[:, 1:])
-        enhance_loss1 = -torch.min(torch.zeros_like(predict_score_diff1).to(self.params["device"]), predict_score_diff1)
-        enhance_loss1 = enhance_loss1 * weight_easier
-        enhance_loss2 = -torch.min(torch.zeros_like(predict_score_diff2).to(self.params["device"]), predict_score_diff2)
-        enhance_loss2 = enhance_loss2 * weight_harder
-
-        enhance_loss = enhance_loss1.mean() + enhance_loss2.mean()
-
         if loss_record is not None:
             num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
             loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
-            loss_record.add_loss("enhance loss", enhance_loss.detach().cpu().item(), 1)
+        loss = loss + predict_loss
 
-        return predict_loss, enhance_loss
+        # enhance method 1: 对于easier和harder习题的损失
+        if enhance_method == 0 or enhance_method == 1:
+            mask_bool_seq_easier = torch.ne(batch["mask_easier_seq"], 0)
+            mask_bool_seq_harder = torch.ne(batch["mask_harder_seq"], 0)
+            weight_easier = torch.masked_select(batch["weight_easier_seq"][:, 1:], mask_bool_seq_easier[:, 1:])
+            weight_harder = torch.masked_select(batch["weight_harder_seq"][:, 1:], mask_bool_seq_harder[:, 1:])
+            batch_easier = {
+                "question_seq": batch["question_easier_seq"],
+                "concept_seq": batch["concept_easier_seq"]
+            }
+            batch_harder = {
+                "question_seq": batch["question_harder_seq"],
+                "concept_seq": batch["concept_harder_seq"]
+            }
+
+            if data_type == "only_question":
+                qc_emb_easier = self.get_qc_emb4only_question(batch_easier)
+                qc_emb_harder = self.get_qc_emb4only_question(batch_harder)
+            else:
+                qc_emb_easier = self.get_qc_emb4single_concept(batch_easier)
+                qc_emb_harder = self.get_qc_emb4only_question(batch_harder)
+
+            predict_input_easier = torch.cat((latent_current, qc_emb_easier[:, 1:]), dim=2)
+            predict_input_harder = torch.cat((latent_current, qc_emb_harder[:, 1:]), dim=2)
+            predict_score_easier_all = self.predict_layer(predict_input_easier).squeeze(dim=-1)
+            predict_score_harder_all = self.predict_layer(predict_input_harder).squeeze(dim=-1)
+
+            predict_score_diff1 = torch.masked_select(predict_score_easier_all - predict_score_all, mask_bool_seq_easier[:, 1:])
+            predict_score_diff2 = torch.masked_select(predict_score_all - predict_score_harder_all, mask_bool_seq_harder[:, 1:])
+            enhance_loss_easier = -torch.min(torch.zeros_like(predict_score_diff1).to(self.params["device"]), predict_score_diff1)
+            enhance_loss_easier = enhance_loss_easier * weight_easier
+            enhance_loss_harder = -torch.min(torch.zeros_like(predict_score_diff2).to(self.params["device"]), predict_score_diff2)
+            enhance_loss_harder = enhance_loss_harder * weight_harder
+
+            enhance_loss1 = enhance_loss_easier.mean() + enhance_loss_harder.mean()
+
+            if loss_record is not None:
+                loss_record.add_loss("enhance loss 1", enhance_loss1.detach().cpu().item(), 1)
+            loss = loss + enhance_loss1 * weight_enhance_loss1
+
+        # enhance loss2: 对于zero shot的习题，用单调理论约束
+        if enhance_method == 0 or enhance_method == 2:
+            mask_zero_shot_seq = torch.ne(batch["mask_zero_shot_seq"], 0)
+            batch_zero_shot = {
+                "question_seq": batch["question_zero_shot_seq"],
+                "concept_seq": batch["concept_zero_shot_seq"]
+            }
+            if data_type == "only_question":
+                qc_emb_zero_shot = self.get_qc_emb4only_question(batch_zero_shot)
+            else:
+                qc_emb_zero_shot = self.get_qc_emb4single_concept(batch_zero_shot)
+            predict_input_current4zero = torch.cat((latent_current, qc_emb_zero_shot[:, :-1]), dim=2)
+            predict_input_next4zero = torch.cat((latent_next, qc_emb_zero_shot[:, :-1]), dim=2)
+            predict_score_current4zero = self.predict_layer(predict_input_current4zero).squeeze(dim=-1)
+            predict_score_next4zero = self.predict_layer(predict_input_next4zero).squeeze(dim=-1)
+            predict_score_diff4zero = torch.masked_select(predict_score_next4zero - predict_score_current4zero,
+                                                          mask_zero_shot_seq[:, :-1])
+            enhance_loss2 = -torch.min(torch.zeros_like(predict_score_diff4zero).to(self.params["device"]), predict_score_diff4zero).mean()
+
+            if loss_record is not None:
+                loss_record.add_loss("enhance loss 2", enhance_loss2.detach().cpu().item(), 1)
+            loss = loss + enhance_loss2 * weight_enhance_loss2
+
+        return loss
 
     def get_predict_score_seq_len_minus1(self, batch):
         return self.forward(batch)

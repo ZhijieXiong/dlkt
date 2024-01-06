@@ -112,23 +112,25 @@ def parse_low_fre_question(data_uniformed, data_type, num_few_shot, num_question
     return zero_shot_questions, few_shot_questions
 
 
-def parse4dataset_enhanced(data_uniformed, data_type, num_min_question4diff, num_few_shot, question2concept, concept2question, hard_acc=0.4, easy_acc=0.8):
+def parse4dataset_enhanced(data_uniformed, data_type, question2concept, concept2question, enhance_params):
     """
     将所有习题（同一知识点或者有相同知识点）分为easy、middle、hard、unknown\n
     :param data_uniformed:
     :param data_type:
-    :param num_min_question4diff:
-    :param num_few_shot:
     :param question2concept:
     :param concept2question:
-    :param hard_acc:
-    :param easy_acc:
+    :param enhance_params:
     :return:
     """
     # 需要生成两个dict，一个是知识点，形式为{c0: {"easy": [q0, q1, ...], "middle": [], "hard": [], "unknown":[]}, ...}
-    # 其中每个难度下的习题列表都是按难度顺序排列，由易到难，除了unknown
+    # 其中每个难度（easy、middle、hard）下的习题列表都是按难度顺序排列，由易到难
     # 另一个dict是习题，形式为{q0: [(c0, "easy", 0), (c1, "easy", 0), ...]}，表示习题q0是知识点c0下的easy题，并且在easy题中排列第0
-    # 用绝对值区分习题难度档次，如正确率小于0.3为难题，大于0.8为简单题，要考虑数据集整体正确率来确定
+    # 用绝对值区分习题难度档次，如正确率小于0.3为难题，大于0.85为简单题，要考虑数据集整体正确率来确定
+    num_min_question4diff = enhance_params.get("num_min_question4diff", 100)
+    num_few_shot = enhance_params.get("num_few_shot", 5)
+    hard_acc = enhance_params.get("hard_acc", 0.3)
+    easy_acc = enhance_params.get("easy_acc", 0.85)
+
     question_frequency = {}
     question_accuracy = {}
     if data_type in ["single_concept", "only_question"]:

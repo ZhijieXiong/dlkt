@@ -75,7 +75,6 @@ class KTDataset_cpu2device(Dataset):
             if data_type == "single_concept":
                 if enhance_method == 0 or enhance_method == 1:
                     enhance_method1_out = self.output_enhance_method1(q_id)
-
                     question_easier_seq.append(enhance_method1_out["q_easier"])
                     question_harder_seq.append(enhance_method1_out["q_harder"])
                     concept_easier_seq.append(enhance_method1_out["c_easier"])
@@ -176,6 +175,7 @@ class KTDataset_cpu2device(Dataset):
     def output_enhance_method2(self, q_id, correct):
         concept_dict = self.objects["kt_enhance"]["concept_dict"]
         question_dict = self.objects["kt_enhance"]["question_dict"]
+        enhance_method2_update_few_shot = self.params["other"]["output_enhance"]["enhance_method2_update_few_shot"]
 
         c_pair = question_dict[q_id][1][0]
         c_id = c_pair[0]
@@ -188,6 +188,9 @@ class KTDataset_cpu2device(Dataset):
             }
 
         zero_shot_qs = concept_dict[c_id]["zero_shot"]
+        if enhance_method2_update_few_shot:
+            few_shot_qs = concept_dict[c_id]["few_shot"]
+            zero_shot_qs += few_shot_qs
         if len(zero_shot_qs) == 0:
             return {
                 "q_zero_shot": 0,

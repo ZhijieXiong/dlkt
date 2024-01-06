@@ -37,34 +37,44 @@ def output_enhance_general_config(local_params, global_params, global_objects):
     num_min_question4diff = local_params["num_min_question4diff"]
     hard_acc = local_params["hard_acc"]
     easy_acc = local_params["easy_acc"]
-    weight_enhance_loss = local_params["weight_enhance_loss"]
+    weight_enhance_loss1 = local_params["weight_enhance_loss1"]
+    weight_enhance_loss2 = local_params["weight_enhance_loss2"]
     num_few_shot = local_params["num_few_shot"]
+    enhance_method2_update_few_shot = local_params["enhance_method2_update_few_shot"]
 
     datasets_train_config = global_params["datasets_config"]["train"]
     datasets_train_config["type"] = "kt_output_enhance"
-    global_params["loss_config"]["enhance loss"] = weight_enhance_loss
+    global_params["loss_config"]["enhance loss 1"] = weight_enhance_loss1
+    global_params["loss_config"]["enhance loss 2"] = weight_enhance_loss2
 
     dataset_train = read_preprocessed_file(os.path.join(
         global_objects["file_manager"].get_setting_dir(global_params["datasets_config"]["train"]["setting_name"]),
         global_params["datasets_config"]["train"]["file_name"]
     ))
+
+    global_params["other"]["output_enhance"] = {
+        "enhance_method": enhance_method,
+        "weight_enhance_loss1": weight_enhance_loss1,
+        "weight_enhance_loss2": weight_enhance_loss2,
+        "num_min_question4diff": num_min_question4diff,
+        "hard_acc": hard_acc,
+        "easy_acc": easy_acc,
+        "num_few_shot": num_few_shot,
+        "enhance_method2_update_few_shot": enhance_method2_update_few_shot
+    }
     concept_dict, question_dict = parse4dataset_enhanced(dataset_train,
                                                          global_params["datasets_config"]["data_type"],
-                                                         num_min_question4diff,
-                                                         num_few_shot,
                                                          global_objects["data"]["question2concept"],
                                                          global_objects["data"]["concept2question"],
-                                                         hard_acc,
-                                                         easy_acc)
+                                                         global_params["other"]["output_enhance"])
 
     global_objects["kt_enhance"] = {}
     global_objects["kt_enhance"]["concept_dict"] = concept_dict
     global_objects["kt_enhance"]["question_dict"] = question_dict
 
-    global_params["other"]["output_enhance"] = {"enhance_method": enhance_method}
-
     global_objects["logger"].info(
         "output enhance params\n"
-        f"    enhance_method: {enhance_method}, weight of enhance loss: {weight_enhance_loss}, min num of question for calculate difficulty: {num_min_question4diff}\n"
+        f"    enhance_method: {enhance_method}, weight of enhance loss1: {weight_enhance_loss1}, weight of enhance loss2: {weight_enhance_loss2}, "
+        f"min num of question for calculate difficulty: {num_min_question4diff}\n"
         f"    accuracy of hard question: {hard_acc}, accuracy of easy question: {easy_acc},  num of few shot question: {num_few_shot}"
     )

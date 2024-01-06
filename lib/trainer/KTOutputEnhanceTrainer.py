@@ -19,14 +19,11 @@ class KTOutputEnhanceTrainer(KnowledgeTracingTrainer):
 
         self.print_data_statics()
 
-        weight_enhance_loss = self.params["loss_config"]["enhance loss"]
-
         for epoch in range(1, num_epoch + 1):
             model.train()
             for batch in train_loader:
                 optimizer.zero_grad()
-                predict_loss, enhance_loss = model.get_predict_enhance_loss(batch, self.loss_record)
-                loss = predict_loss + enhance_loss * weight_enhance_loss
+                loss = model.get_predict_enhance_loss(batch, self.loss_record)
                 loss.backward()
                 if grad_clip_config["use_clip"]:
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])

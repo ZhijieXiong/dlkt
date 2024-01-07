@@ -161,3 +161,26 @@ def dimkt_mutual_enhance4long_tail_config(local_params):
         save_params(global_params, global_objects)
 
     return global_params, global_objects
+
+
+def dimkt_output_enhance_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    dimkt_general_config(local_params, global_params, global_objects)
+    output_enhance_general_config(local_params, global_params, global_objects)
+
+    global_params["datasets_config"]["train"]["kt_output_enhance"] = {}
+    train_aug_config = global_params["datasets_config"]["train"]["kt_output_enhance"]
+    train_aug_config["use_diff4dimkt"] = True
+    train_aug_config["diff4dimkt"] = {
+        "num_question_difficulty": local_params["num_question_diff"],
+        "num_concept_difficulty": local_params["num_concept_diff"]
+    }
+
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@DIMKT@@", "@@DIMKT-output_enhance@@"))
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects

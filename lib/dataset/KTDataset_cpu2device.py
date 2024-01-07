@@ -39,11 +39,26 @@ class KTDataset_cpu2device(Dataset):
         result = dict()
         item_data = self.dataset[index]
 
-        for k in item_data.keys():
-            result[k] = torch.tensor(item_data[k]).long().to(self.params["device"])
-
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         kt_dataset_type = dataset_config_this["type"]
+        use_diff4dimkt = dataset_config_this[kt_dataset_type]["use_diff4dimkt"]
+
+        if use_diff4dimkt:
+            num_question_difficulty = dataset_config_this[kt_dataset_type]["diff4dimkt"]["num_question_difficulty"]
+            num_concept_difficulty = dataset_config_this[kt_dataset_type]["diff4dimkt"]["num_concept_difficulty"]
+            question_difficulty = self.objects["dimkt"]["question_difficulty"]
+            concept_difficulty = self.objects["dimkt"]["concept_difficulty"]
+            item_data["question_diff_seq"] = []
+            item_data["concept_diff_seq"] = []
+            for q_id in item_data["question_seq"]:
+                q_diff = question_difficulty.get(q_id, num_question_difficulty)
+                item_data["question_diff_seq"].append(q_diff)
+            for c_id in item_data["concept_seq"]:
+                c_diff = concept_difficulty.get(c_id, num_concept_difficulty)
+                item_data["concept_diff_seq"].append(c_diff)
+
+        for k in item_data.keys():
+            result[k] = torch.tensor(item_data[k]).long().to(self.params["device"])
 
         if kt_dataset_type == "kt_output_enhance":
             self.output_enhance(item_data, result)
@@ -53,6 +68,9 @@ class KTDataset_cpu2device(Dataset):
     def output_enhance(self, item_data, result):
         data_type = self.params["datasets_config"]["data_type"]
         enhance_method = self.params["other"]["output_enhance"]["enhance_method"]
+        dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
+        kt_dataset_type = dataset_config_this["type"]
+        use_diff4dimkt = dataset_config_this[kt_dataset_type]["use_diff4dimkt"]
 
         max_seq_len = len(item_data["mask_seq"])
         pad_len = max_seq_len - item_data["seq_len"]
@@ -61,6 +79,10 @@ class KTDataset_cpu2device(Dataset):
         question_harder_seq = []
         concept_easier_seq = []
         concept_harder_seq = []
+        question_easier_diff_seq = []
+        question_harder_diff_seq = []
+        concept_easier_diff_seq = []
+        concept_harder_diff_seq = []
         weight_easier_seq = []
         weight_harder_seq = []
         mask_easier_seq = []
@@ -68,6 +90,8 @@ class KTDataset_cpu2device(Dataset):
         # enhance method 2
         question_zero_shot_seq = []
         concept_zero_shot_seq = []
+        question_zero_shot_diff_seq = []
+        concept_zero_shot_diff_seq = []
         mask_zero_shot_seq = []
         for i in range(item_data["seq_len"]):
             q_id = item_data["question_seq"][i]
@@ -91,6 +115,32 @@ class KTDataset_cpu2device(Dataset):
             else:
                 raise NotImplementedError()
 
+        if use_diff4dimkt:
+            num_question_difficulty = dataset_config_this[kt_dataset_type]["diff4dimkt"]["num_question_difficulty"]
+            num_concept_difficulty = dataset_config_this[kt_dataset_type]["diff4dimkt"]["num_concept_difficulty"]
+            question_difficulty = self.objects["dimkt"]["question_difficulty"]
+            concept_difficulty = self.objects["dimkt"]["concept_difficulty"]
+            if enhance_method == 0 or enhance_method == 1:
+                for q_id in question_easier_seq:
+                    q_diff = question_difficulty.get(q_id, num_question_difficulty)
+                    question_easier_diff_seq.append(q_diff)
+                for q_id in question_harder_seq:
+                    q_diff = question_difficulty.get(q_id, num_question_difficulty)
+                    question_harder_diff_seq.append(q_diff)
+                for c_id in concept_easier_seq:
+                    c_diff = concept_difficulty.get(c_id, num_concept_difficulty)
+                    concept_easier_diff_seq.append(c_diff)
+                for c_id in concept_harder_seq:
+                    c_diff = concept_difficulty.get(c_id, num_concept_difficulty)
+                    concept_harder_diff_seq.append(c_diff)
+            if enhance_method == 0 or enhance_method == 2:
+                for q_id in question_zero_shot_seq:
+                    q_diff = question_difficulty.get(q_id, num_question_difficulty)
+                    question_zero_shot_diff_seq.append(q_diff)
+                for c_id in concept_zero_shot_seq:
+                    c_diff = concept_difficulty.get(c_id, num_concept_difficulty)
+                    concept_zero_shot_diff_seq.append(c_diff)
+
         if enhance_method == 0 or enhance_method == 1:
             question_easier_seq += [0] * pad_len
             question_harder_seq += [0] * pad_len
@@ -98,7 +148,6 @@ class KTDataset_cpu2device(Dataset):
             weight_harder_seq += [0] * pad_len
             mask_easier_seq += [0] * pad_len
             mask_harder_seq += [0] * pad_len
-
             result["question_easier_seq"] = torch.LongTensor(question_easier_seq).to(self.params["device"])
             result["question_harder_seq"] = torch.LongTensor(question_harder_seq).to(self.params["device"])
             result["weight_easier_seq"] = torch.FloatTensor(weight_easier_seq).to(self.params["device"])
@@ -106,12 +155,21 @@ class KTDataset_cpu2device(Dataset):
             result["mask_easier_seq"] = torch.LongTensor(mask_easier_seq).to(self.params["device"])
             result["mask_harder_seq"] = torch.LongTensor(mask_harder_seq).to(self.params["device"])
 
+            if use_diff4dimkt:
+                question_easier_diff_seq += [0] * pad_len
+                question_harder_diff_seq += [0] * pad_len
+                result["question_easier_diff_seq"] = torch.LongTensor(question_easier_diff_seq).to(self.params["device"])
+                result["question_harder_diff_seq"] = torch.LongTensor(question_harder_diff_seq).to(self.params["device"])
+
         if enhance_method == 0 or enhance_method == 2:
             question_zero_shot_seq += [0] * pad_len
             mask_zero_shot_seq += [0] * pad_len
-
             result["question_zero_shot_seq"] = torch.LongTensor(question_zero_shot_seq).to(self.params["device"])
             result["mask_zero_shot_seq"] = torch.LongTensor(mask_zero_shot_seq).to(self.params["device"])
+
+            if use_diff4dimkt:
+                question_zero_shot_diff_seq += [0] * pad_len
+                result["question_zero_shot_diff_seq"] = torch.LongTensor(question_zero_shot_diff_seq).to(self.params["device"])
 
         if data_type == "single_concept":
             if enhance_method == 0 or enhance_method == 1:
@@ -119,9 +177,20 @@ class KTDataset_cpu2device(Dataset):
                 concept_harder_seq += [0] * pad_len
                 result["concept_easier_seq"] = torch.LongTensor(concept_easier_seq).to(self.params["device"])
                 result["concept_harder_seq"] = torch.LongTensor(concept_harder_seq).to(self.params["device"])
+
+                if use_diff4dimkt:
+                    concept_easier_diff_seq += [0] * pad_len
+                    concept_harder_diff_seq += [0] * pad_len
+                    result["concept_easier_diff_seq"] = torch.LongTensor(concept_easier_diff_seq).to(self.params["device"])
+                    result["concept_harder_diff_seq"] = torch.LongTensor(concept_harder_diff_seq).to(self.params["device"])
+
             if enhance_method == 0 or enhance_method == 2:
                 concept_zero_shot_seq += [0] * pad_len
                 result["concept_zero_shot_seq"] = torch.LongTensor(concept_zero_shot_seq).to(self.params["device"])
+
+                if use_diff4dimkt:
+                    concept_zero_shot_diff_seq += [0] * pad_len
+                    result["concept_zero_shot_diff_seq"] = torch.LongTensor(concept_zero_shot_diff_seq).to(self.params["device"])
         else:
             raise NotImplementedError()
 
@@ -187,7 +256,7 @@ class KTDataset_cpu2device(Dataset):
                 "mask_zero_shot": 0
             }
 
-        zero_shot_qs = concept_dict[c_id]["zero_shot"]
+        zero_shot_qs = deepcopy(concept_dict[c_id]["zero_shot"])
         if enhance_method2_update_few_shot:
             few_shot_qs = concept_dict[c_id]["few_shot"]
             zero_shot_qs += few_shot_qs

@@ -49,21 +49,13 @@ def demo_kt(ask_question_seq, ask_correct_seq, use_question_content=False):
     ))
     example_correct_seq = list(map(lambda x: "做对" if x else "做错", example_correct_seq))
 
-    ask_question_seq = list(map(str, ask_question_seq))
-    ask_question_content_seq = list(map(lambda x: QUESTION_CONTENT[x]["content_only_text"], ask_question_seq))
-    ask_concept_content_seq = list(map(
-        lambda x: "; ".join(QUESTION_CONTENT[x]["kc_routes"]),
-        ask_question_seq
-    ))
-    ask_correct_seq = list(map(lambda x: "做对" if x else "做错", ask_correct_seq))
-
     example_seq_lens = [2, 8]
     example_prompts = []
     for example_seq_len in example_seq_lens:
         if use_question_content:
-            example_prompt = f"[`{', '.join([f'(`{ask_question_content_seq[i]}`, `{ask_concept_content_seq[i]}`, `{ask_correct_seq[i]}`)' for i in range(example_seq_len)])}]"
+            example_prompt = f"[`{', '.join([f'(`{example_question_content_seq[i]}`, `{example_concept_content_seq[i]}`, `{example_correct_seq[i]}`)' for i in range(example_seq_len)])}]"
         else:
-            example_prompt = f"[`{', '.join([f'(`{ask_concept_content_seq[i]}`, `{ask_correct_seq[i]}`)' for i in range(example_seq_len)])}]"
+            example_prompt = f"[`{', '.join([f'(`{example_concept_content_seq[i]}`, `{example_correct_seq[i]}`)' for i in range(example_seq_len)])}]"
         example_prompt += f", Please determine whether Student A can do this exercise correctly: {ask_question_content_seq[example_seq_len]}\n"
         example_prompts.append(example_prompt)
     example_outputs = [
@@ -93,6 +85,13 @@ def demo_kt(ask_question_seq, ask_correct_seq, use_question_content=False):
         example_prompt_all += f"input: {example_prompt}"
         example_prompt_all += example_output
 
+    ask_question_seq = list(map(str, ask_question_seq))
+    ask_question_content_seq = list(map(lambda x: QUESTION_CONTENT[x]["content_only_text"], ask_question_seq))
+    ask_concept_content_seq = list(map(
+        lambda x: "; ".join(QUESTION_CONTENT[x]["kc_routes"]),
+        ask_question_seq
+    ))
+    ask_correct_seq = list(map(lambda x: "做对" if x else "做错", ask_correct_seq))
     ask_seq_len = 9
     if use_question_content:
         qa_prompt = f"[`{', '.join([f'(`{ask_question_content_seq[i]}`, `{ask_concept_content_seq[i]}`, `{ask_correct_seq[i]}`)' for i in range(ask_seq_len)])}]"

@@ -2,6 +2,7 @@ import argparse
 import numpy as np
 
 from collections import defaultdict
+from copy import deepcopy
 
 from .. import DATASET_INFO
 from . import data as data_util
@@ -66,41 +67,29 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
-def cal_accuracy4data(data_uniformed, min_seq_len=10):
-    accuracy_list = []
-    count_statics = 0
-    for item_data in data_uniformed:
-        seq_len = item_data["seq_len"]
-        if seq_len < min_seq_len:
-            continue
-        num_right = 0
-        num_wrong = 0
-        for i, m in enumerate(item_data["mask_seq"]):
-            if m == 0:
-                break
-            num_right += item_data["correct_seq"][i]
-            num_wrong += (1 - item_data["correct_seq"][i])
-        accuracy = num_right / (num_right + num_wrong)
-        item_data["acc"] = accuracy
-        accuracy_list.append(accuracy)
-        count_statics += 1
-    return accuracy_list
+def get_high_dis_qc(data_uniformed, data_type, params):
+    """
+    获取高区分的的知识点和习题
+    :param data_uniformed:
+    :param data_type:
+    :param params:
+    :return:
+    """
+    # 公式：总分最高的27%学生（H）和总分最低的27%学生（L），计算H和L对某道题的通过率，之差为区分度
+    NUM2DROP4QUESTION = params.get("num2drop4question", 30)
+    NUM2DROP4CONCEPT = params.get("num2drop4concept", 500)
+    MIN_SEQ_LEN = params.get("min_seq_len", 20)
+    DIS_THRESHOLD = params.get("dis_threshold", 0.3)
 
-
-def cal_distinction(data_uniformed, data_type, min_count2drop=30, min_seq_len=10):
-    # 公式：总分最高的27%学生（H）和总分最低的27%学生（L），计算H和L对某道题的通过率，之差为区分度，区分度大于0.4为高区分度习题，低于0.2表示区分度不好
-    concepts_high_distinction = []
-    questions_high_distinction = []
-
-    def cal_diff(D, k):
+    def cal_diff(D, k, min_count2drop):
         # 计算正确率，习题或者知识点
-        seqs = [item[k] for item in D]
-        correct_seqs = [item["correct_seq"] for item in D]
         corrects = defaultdict(int)
         counts = defaultdict(int)
 
-        for seq, correct_seq in zip(seqs, correct_seqs):
-            for k_id, correct in zip(seq, correct_seq):
+        for item_data in D:
+            for i in range(item_data["seq_len"]):
+                k_id = item_data[k][i]
+                correct = item_data["correct_seq"][i]
                 corrects[k_id] += correct
                 counts[k_id] += 1
 
@@ -113,13 +102,27 @@ def cal_distinction(data_uniformed, data_type, min_count2drop=30, min_seq_len=10
 
         return {k_id: corrects[k_id] / float(counts[k_id]) for k_id in corrects}
 
-    def get_high_distinction(H, L, update_target):
-        intersection_H_L = set(H.keys()).intersection(set(L.keys()))
-        for k_id in intersection_H_L:
-            if H[k_id] - L[k_id] >= 0.35:
-                update_target.append(k_id)
+    def cal_accuracy4data(D):
+        # 计算每条序列的正确率
+        for item_data in D:
+            num_right = 0
+            num_wrong = 0
+            for i in range(item_data["seq_len"]):
+                num_right += item_data["correct_seq"][i]
+                num_wrong += (1 - item_data["correct_seq"][i])
+            accuracy = num_right / (num_right + num_wrong)
+            item_data["acc"] = accuracy
 
-    def get_high_low_accuracy_seqs(acc_list, data_added_acc):
+    def get_high_distinction(H, L, dis_threshold):
+        intersection_H_L = set(H.keys()).intersection(set(L.keys()))
+        res = []
+        for k_id in intersection_H_L:
+            if H[k_id] - L[k_id] >= dis_threshold:
+                res.append(k_id)
+        return res
+
+    def get_high_low_accuracy_seqs(data_added_acc, min_seq_len):
+        acc_list = list(map(lambda x: x["acc"], data_added_acc))
         acc_list = sorted(acc_list)
         count_statics = len(acc_list)
         high_acc = acc_list[int(count_statics * (1 - 0.27))]
@@ -128,29 +131,29 @@ def cal_distinction(data_uniformed, data_type, min_count2drop=30, min_seq_len=10
         L_acc = list(filter(lambda item: item["seq_len"] >= min_seq_len and item["acc"] <= low_acc, data_added_acc))
         return H_acc, L_acc
 
-    dataset_concept = data_util.dataset_delete_pad(data_uniformed)
+    dataset_concept = deepcopy(data_uniformed)
     # 统计知识点正确率
-    accuracy_list = cal_accuracy4data(dataset_concept, min_seq_len)
-    H_concept, L_concept = get_high_low_accuracy_seqs(accuracy_list, dataset_concept)
-    H_concept_diff = cal_diff(H_concept, "concept_seq")
-    L_concept_diff = cal_diff(L_concept, "concept_seq")
-    get_high_distinction(H_concept_diff, L_concept_diff, concepts_high_distinction)
+    cal_accuracy4data(dataset_concept)
+    H_concept, L_concept = get_high_low_accuracy_seqs(dataset_concept, MIN_SEQ_LEN)
+    H_concept_diff = cal_diff(H_concept, "concept_seq", NUM2DROP4CONCEPT)
+    L_concept_diff = cal_diff(L_concept, "concept_seq", NUM2DROP4CONCEPT)
+    concepts_high_distinction = get_high_distinction(H_concept_diff, L_concept_diff, DIS_THRESHOLD)
 
     # 如果是多知识点数据集，并且数据格式是multi concept，需要获取习题序列
     if data_type == "multi_concept":
-        dataset_question = data_util.dataset_delete_pad(data_util.dataset_agg_concept(data_uniformed))
+        dataset_question = data_util.dataset_agg_concept(data_uniformed)
     else:
         dataset_question = dataset_concept
 
     # 统计习题正确率
     if data_type == "multi_concept":
-        accuracy_list = cal_accuracy4data(dataset_question, min_seq_len)
-        H_question, L_question = get_high_low_accuracy_seqs(accuracy_list, dataset_question)
+        cal_accuracy4data(dataset_question)
+        H_question, L_question = get_high_low_accuracy_seqs(dataset_question, MIN_SEQ_LEN)
     else:
         H_question = H_concept
         L_question = L_concept
-    H_question_diff = cal_diff(H_question, "question_seq")
-    L_question_diff = cal_diff(L_question, "question_seq")
-    get_high_distinction(H_question_diff, L_question_diff, questions_high_distinction)
+    H_question_diff = cal_diff(H_question, "question_seq", NUM2DROP4QUESTION)
+    L_question_diff = cal_diff(L_question, "question_seq", NUM2DROP4QUESTION)
+    questions_high_distinction = get_high_distinction(H_question_diff, L_question_diff, DIS_THRESHOLD)
 
     return concepts_high_distinction, questions_high_distinction

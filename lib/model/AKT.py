@@ -274,6 +274,110 @@ class AKT(nn.Module, BaseModel4CL):
 
         return loss
 
+    def get_predict_enhance_loss(self, batch, loss_record=None):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
+        enhance_method = self.params["other"]["output_enhance"]["enhance_method"]
+        weight_enhance_loss1 = self.params["loss_config"]["enhance loss 1"]
+        weight_enhance_loss2 = self.params["loss_config"]["enhance loss 2"]
+        separate_qa = encoder_config["separate_qa"]
+        concept_seq = batch["concept_seq"]
+        question_seq = batch["question_seq"]
+        correct_seq = batch["correct_seq"]
+
+        concept_emb, interaction_emb = self.base_emb(batch)
+        concept_variation_emb = self.embed_concept_variation(concept_seq)
+        question_difficulty_emb = self.embed_question_difficulty(question_seq)
+        question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
+        interaction_variation_emb = self.embed_interaction_variation(correct_seq)
+        if separate_qa:
+            interaction_emb = interaction_emb + question_difficulty_emb * interaction_variation_emb
+        else:
+            interaction_emb = \
+                interaction_emb + question_difficulty_emb * (interaction_variation_emb + concept_variation_emb)
+        encoder_input = {
+            "question_emb": question_emb,
+            "interaction_emb": interaction_emb,
+            "question_difficulty_emb": question_difficulty_emb
+        }
+
+        loss = 0.
+        # 预测损失
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        latent = self.encoder_layer(encoder_input)
+        predict_layer_input = torch.cat((latent, question_emb), dim=2)
+        predict_score_all = self.predict_layer(predict_layer_input).squeeze(dim=-1)
+        predict_score = torch.masked_select(predict_score_all[:, 1:], mask_bool_seq[:, 1:])
+
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+        predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+
+        if loss_record is not None:
+            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+        loss = loss + predict_loss
+
+        # enhance method 1: 对于easier和harder习题的损失
+        if enhance_method == 0 or enhance_method == 1:
+            mask_bool_seq_easier = torch.ne(batch["mask_easier_seq"], 0)
+            mask_bool_seq_harder = torch.ne(batch["mask_harder_seq"], 0)
+            weight_easier = torch.masked_select(batch["weight_easier_seq"][:, 1:], mask_bool_seq_easier[:, 1:])
+            weight_harder = torch.masked_select(batch["weight_harder_seq"][:, 1:], mask_bool_seq_harder[:, 1:])
+
+            concept_emb_easier = self.embed_concept(batch["concept_easier_seq"])
+            concept_variation_emb_easier = self.embed_concept_variation(batch["concept_easier_seq"])
+            question_difficulty_emb_easier = self.embed_question_difficulty(batch["question_easier_seq"])
+            question_emb_easier = concept_emb_easier + question_difficulty_emb_easier * concept_variation_emb_easier
+
+            concept_emb_harder = self.embed_concept(batch["concept_harder_seq"])
+            concept_variation_emb_harder = self.embed_concept_variation(batch["concept_harder_seq"])
+            question_difficulty_emb_harder = self.embed_question_difficulty(batch["question_harder_seq"])
+            question_emb_harder = concept_emb_harder + question_difficulty_emb_harder * concept_variation_emb_harder
+
+            predict_input_easier = torch.cat((latent, question_emb_easier), dim=2)
+            predict_score_easier_all = self.predict_layer(predict_input_easier).squeeze(dim=-1)
+            predict_input_harder = torch.cat((latent, question_emb_harder), dim=2)
+            predict_score_harder_all = self.predict_layer(predict_input_harder).squeeze(dim=-1)
+
+            predict_score_diff1 = predict_score_easier_all[:, 1:] - predict_score_all[:, 1:]
+            predict_score_diff1 = torch.masked_select(predict_score_diff1, mask_bool_seq_easier[:, 1:])
+            predict_score_diff2 = predict_score_all[:, 1:] - predict_score_harder_all[:, 1:]
+            predict_score_diff2 = torch.masked_select(predict_score_diff2, mask_bool_seq_harder[:, 1:])
+            enhance_loss_easier = -torch.min(torch.zeros_like(predict_score_diff1).to(self.params["device"]), predict_score_diff1)
+            enhance_loss_easier = enhance_loss_easier * weight_easier
+            enhance_loss_harder = -torch.min(torch.zeros_like(predict_score_diff2).to(self.params["device"]), predict_score_diff2)
+            enhance_loss_harder = enhance_loss_harder * weight_harder
+
+            enhance_loss1 = enhance_loss_easier.mean() + enhance_loss_harder.mean()
+
+            if loss_record is not None:
+                loss_record.add_loss("enhance loss 1", enhance_loss1.detach().cpu().item(), 1)
+            loss = loss + enhance_loss1 * weight_enhance_loss1
+
+        # enhance loss2: 对于zero shot的习题，用单调理论约束
+        if enhance_method == 0 or enhance_method == 2:
+            mask_zero_shot_seq = torch.ne(batch["mask_zero_shot_seq"], 0)
+            latent_current = latent[:, :-1]
+            latent_next = latent[:, 1:]
+
+            concept_emb4zero = self.embed_concept(batch["concept_zero_shot_seq"])
+            concept_variation_emb4zero = self.embed_concept_variation(batch["concept_zero_shot_seq"])
+            question_difficulty_emb4zero = self.embed_question_difficulty(batch["question_zero_shot_seq"])
+            question_emb4zero = concept_emb4zero + question_difficulty_emb4zero * concept_variation_emb4zero
+
+            predict_input_current4zero = torch.cat((latent_current, question_emb4zero[:, :-1]), dim=2)
+            predict_input_next4zero = torch.cat((latent_next, question_emb4zero[:, :-1]), dim=2)
+            predict_score_current4zero = self.predict_layer(predict_input_current4zero).squeeze(dim=-1)
+            predict_score_next4zero = self.predict_layer(predict_input_next4zero).squeeze(dim=-1)
+            predict_score_diff4zero = torch.masked_select(predict_score_next4zero - predict_score_current4zero,
+                                                          mask_zero_shot_seq[:, :-1])
+            enhance_loss2 = -torch.min(torch.zeros_like(predict_score_diff4zero).to(self.params["device"]), predict_score_diff4zero).mean()
+
+            if loss_record is not None:
+                loss_record.add_loss("enhance loss 2", enhance_loss2.detach().cpu().item(), 1)
+            loss = loss + enhance_loss2 * weight_enhance_loss2
+
+        return loss
+
     def get_rasch_loss(self, batch):
         question_seq = batch["question_seq"]
         question_difficulty_emb = self.embed_question_difficulty(question_seq)

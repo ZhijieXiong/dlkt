@@ -156,9 +156,25 @@ def akt_meta_optimize_cl_config(local_params):
     general_config(local_params, global_params, global_objects)
     akt_general_config(local_params, global_params)
     meta_optimize_cl_general_config(local_params, global_params, global_objects)
+
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
             global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT-meta_optimize_cl@@"))
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects
+
+
+def akt_output_enhance_config(local_params):
+    global_params = deepcopy(PARAMS2)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    akt_general_config(local_params, global_params)
+    output_enhance_general_config(local_params, global_params, global_objects)
+    global_params["datasets_config"]["train"]["kt_output_enhance"] = {}
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT-output_enhance@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects

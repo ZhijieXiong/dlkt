@@ -153,6 +153,7 @@ def qdkt_output_enhance_config(local_params):
     general_config(local_params, global_params, global_objects)
     qdkt_general_config(local_params, global_params, global_objects)
     output_enhance_general_config(local_params, global_params, global_objects)
+    global_params["datasets_config"]["train"]["kt_output_enhance"] = {}
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
             global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-output_enhance@@"))

@@ -41,7 +41,7 @@ class KTDataset_cpu2device(Dataset):
 
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         kt_dataset_type = dataset_config_this["type"]
-        use_diff4dimkt = dataset_config_this[kt_dataset_type]["use_diff4dimkt"]
+        use_diff4dimkt = dataset_config_this[kt_dataset_type].get("use_diff4dimkt", False)
 
         if use_diff4dimkt:
             num_question_difficulty = dataset_config_this[kt_dataset_type]["diff4dimkt"]["num_question_difficulty"]
@@ -70,7 +70,7 @@ class KTDataset_cpu2device(Dataset):
         enhance_method = self.params["other"]["output_enhance"]["enhance_method"]
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         kt_dataset_type = dataset_config_this["type"]
-        use_diff4dimkt = dataset_config_this[kt_dataset_type]["use_diff4dimkt"]
+        use_diff4dimkt = dataset_config_this[kt_dataset_type].get("use_diff4dimkt", False)
 
         max_seq_len = len(item_data["mask_seq"])
         pad_len = max_seq_len - item_data["seq_len"]

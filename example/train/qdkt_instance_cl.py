@@ -91,9 +91,9 @@ if __name__ == "__main__":
                         choices=("last_time", "all_time", "mean_pool"))
     # model aug参数
     parser.add_argument("--use_emb_dropout4cl", type=str2bool, default=True)
-    parser.add_argument("--emb_dropout4cl", type=float, default=0.1)
+    parser.add_argument("--emb_dropout4cl", type=float, default=0.2)
     # original_data_aug：生成两个原始数据view； model_aug：不生成原始数据aug view，只是对原始样本使用dropout生成两个view； hybrid：混合使用，生成一个原始数据view
-    parser.add_argument("--data_aug_type4cl", type=str, default="original_data_aug",
+    parser.add_argument("--data_aug_type4cl", type=str, default="model_aug",
                         choices=("original_data_aug", "model_aug", "hybrid"))
     # 是否使用负样本以及是否对负样本过滤
     parser.add_argument("--use_neg", type=str2bool, default=True)
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     parser.add_argument("--eta", type=float, default=5.0)
     parser.add_argument("--gamma", type=float, default=1.0)
     # 其它
-    parser.add_argument("--save_model", type=str2bool, default=False)
+    parser.add_argument("--save_model", type=str2bool, default=True)
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()

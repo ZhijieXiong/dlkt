@@ -6,15 +6,12 @@ from ..util.data import *
 from ..util.parse import *
 
 # S -> predict score
-# S_easy - S_easier >= 0, weight: 0.1
-# S_easy - S_hard <= 0, weight: 0.5
-# S_hard - S_easy >= 0, weight: 0.5
-# S_hard - S_harder <= 0, weight: 0.1
-# S_middle - S_easy >= 0, weight: 0.2
-# S_middle - S_hard <= 0, weight: 0.2
+# best params
+# S_easy - S_hard >= 0, weight: 1
+# S_hard - S_easy <= 0, weight: 1
 WEIGHT_TABLE = {
-    "zero_shot": (0.5, 0.5),
-    "few_shot": (0.5, 0.5),
+    "zero_shot": (0, 0),
+    "few_shot": (0, 0),
     "middle_fre": (0, 0),
     "easy": (0, 1),
     "hard": (1, 0),

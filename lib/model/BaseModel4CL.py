@@ -248,19 +248,17 @@ class BaseModel4CL:
         predict_score_aug0 = self.get_predict_score4target_question(latent_aug0, high_distinction_q, high_distinction_c)
         predict_score_aug1 = self.get_predict_score4target_question(latent_aug1, high_distinction_q, high_distinction_c)
 
-        # KL散度作为分布距离
-        # bidirectional_KL = 0.5 * torch.nn.functional.kl_div(torch.log(predict_score_aug0 + 1e-10), predict_score_aug1) + \
-        #                    0.5 * torch.nn.functional.kl_div(torch.log(predict_score_aug1 + 1e-10), predict_score_aug0)
+        # KL散度作为分布距离，当作对比损失
+        # KL1 = torch.nn.functional.kl_div(torch.log(predict_score_aug0 + 1e-10), predict_score_aug1, reduction="batchmean")
+        # KL2 = torch.nn.functional.kl_div(torch.log(predict_score_aug1 + 1e-10), predict_score_aug0, reduction="batchmean")
+        # bidirectional_KL = 0.5 * KL1 + 0.5 * KL2
         # cl_loss = torch.sum(bidirectional_KL)
 
-        # MSE作为分布距离
-        cl_loss = torch.nn.functional.mse_loss(predict_score_aug0, predict_score_aug1)
-
-        # cos_sim = torch.cosine_similarity(predict_score_aug0.unsqueeze(1), predict_score_aug1.unsqueeze(0),
-        #                                   dim=-1) / temp
-        # batch_size = cos_sim.size(0)
-        # labels = torch.arange(batch_size).long().to(self.params["device"])
-        # cl_loss = nn.functional.cross_entropy(cos_sim, labels)
+        # INFO CL loss
+        cos_sim = torch.cosine_similarity(predict_score_aug0.unsqueeze(1), predict_score_aug1.unsqueeze(0), dim=-1) / temp
+        batch_size = cos_sim.size(0)
+        labels = torch.arange(batch_size).long().to(self.params["device"])
+        cl_loss = nn.functional.cross_entropy(cos_sim, labels)
 
         return cl_loss
 

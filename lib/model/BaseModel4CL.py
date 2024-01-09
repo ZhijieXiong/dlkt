@@ -17,6 +17,10 @@ class BaseModel4CL:
         pass
 
     @abstractmethod
+    def get_predict_score4target_question(self, latent, question_seq, concept_seq=None):
+        pass
+
+    @abstractmethod
     def get_latent_last(self, batch, use_emb_dropout=False, dropout=0.1):
         pass
 
@@ -63,7 +67,7 @@ class BaseModel4CL:
 
         return cl_loss
 
-    def get_instance_cl_loss(self, batch, instance_cl_params, dataset=None):
+    def get_instance_cl_loss_latent_space(self, batch, instance_cl_params, dataset=None):
         latent_type4cl = instance_cl_params["latent_type4cl"]
         random_select_aug_len = instance_cl_params["random_select_aug_len"]
         use_adv_aug = instance_cl_params["use_adv_aug"]
@@ -118,11 +122,15 @@ class BaseModel4CL:
             latent_aug0_pooled = self.get_latent_mean(batch_aug0, use_emb_dropout4cl, emb_dropout4cl)
             latent_aug1_pooled = self.get_latent_mean(batch_aug1, use_emb_dropout4cl, emb_dropout4cl)
         elif latent_type4cl == "last_time" and use_adv_aug:
-            latent_aug0_pooled = self.get_latent_last_from_adv_data(dataset, batch_aug0, use_emb_dropout4cl, emb_dropout4cl)
-            latent_aug1_pooled = self.get_latent_last_from_adv_data(dataset, batch_aug1, use_emb_dropout4cl, emb_dropout4cl)
+            latent_aug0_pooled = self.get_latent_last_from_adv_data(dataset, batch_aug0, use_emb_dropout4cl,
+                                                                    emb_dropout4cl)
+            latent_aug1_pooled = self.get_latent_last_from_adv_data(dataset, batch_aug1, use_emb_dropout4cl,
+                                                                    emb_dropout4cl)
         elif latent_type4cl == "mean_pool" and use_adv_aug:
-            latent_aug0_pooled = self.get_latent_mean_from_adv_data(dataset, batch_aug0, use_emb_dropout4cl, emb_dropout4cl)
-            latent_aug1_pooled = self.get_latent_mean_from_adv_data(dataset, batch_aug1, use_emb_dropout4cl, emb_dropout4cl)
+            latent_aug0_pooled = self.get_latent_mean_from_adv_data(dataset, batch_aug0, use_emb_dropout4cl,
+                                                                    emb_dropout4cl)
+            latent_aug1_pooled = self.get_latent_mean_from_adv_data(dataset, batch_aug1, use_emb_dropout4cl,
+                                                                    emb_dropout4cl)
         else:
             raise NotImplementedError()
 
@@ -156,9 +164,11 @@ class BaseModel4CL:
             elif latent_type4cl == "mean_pool" and not use_adv_aug:
                 latent_hard_neg_pooled = self.get_latent_mean(batch_hard_neg, use_emb_dropout4cl, emb_dropout4cl)
             elif latent_type4cl == "last_time" and use_adv_aug:
-                latent_hard_neg_pooled = self.get_latent_last_from_adv_data(dataset, batch_hard_neg, use_emb_dropout4cl, emb_dropout4cl)
+                latent_hard_neg_pooled = self.get_latent_last_from_adv_data(dataset, batch_hard_neg, use_emb_dropout4cl,
+                                                                            emb_dropout4cl)
             elif latent_type4cl == "mean_pool" and use_adv_aug:
-                latent_hard_neg_pooled = self.get_latent_mean_from_adv_data(dataset, batch_hard_neg, use_emb_dropout4cl, emb_dropout4cl)
+                latent_hard_neg_pooled = self.get_latent_mean_from_adv_data(dataset, batch_hard_neg, use_emb_dropout4cl,
+                                                                            emb_dropout4cl)
             else:
                 raise NotImplementedError()
             cos_sim_neg = torch.cosine_similarity(latent_aug0_pooled.unsqueeze(1),
@@ -174,6 +184,94 @@ class BaseModel4CL:
                            torch.ne(torch.eye(batch_size), 1).to(self.params["device"]))
             cos_sim[mask4filter] = -1 / temp
         cl_loss = nn.functional.cross_entropy(cos_sim, labels)
+
+        return cl_loss
+
+    def get_instance_cl_loss_output_space(self, batch, instance_cl_params, dataset):
+        use_adv_aug = instance_cl_params["use_adv_aug"]
+        use_emb_dropout4cl = instance_cl_params["use_emb_dropout4cl"]
+        emb_dropout4cl = instance_cl_params["emb_dropout4cl"]
+        data_aug_type4cl = instance_cl_params["data_aug_type4cl"]
+        high_distinction_q = self.objects["data"]["high_distinction_q"]
+        high_distinction_q = torch.LongTensor(high_distinction_q).to(self.params["device"])
+        high_distinction_c = self.objects["data"].get("high_distinction_c", None)
+        high_distinction_c = torch.LongTensor(high_distinction_c).to(self.params["device"])
+
+        if data_aug_type4cl == "original_data_aug":
+            batch_aug0 = {
+                "concept_seq": batch["concept_seq_aug_0"],
+                "question_seq": batch["question_seq_aug_0"],
+                "correct_seq": batch["correct_seq_aug_0"],
+                "mask_seq": batch["mask_seq_aug_0"]
+            }
+            batch_aug1 = {
+                "concept_seq": batch["concept_seq_aug_1"],
+                "question_seq": batch["question_seq_aug_1"],
+                "correct_seq": batch["correct_seq_aug_1"],
+                "mask_seq": batch["mask_seq_aug_1"]
+            }
+            if "question_diff_seq" in batch.keys():
+                batch_aug0["question_diff_seq"] = batch["question_diff_seq_aug_0"]
+                batch_aug1["question_diff_seq"] = batch["question_diff_seq_aug_1"]
+            if "concept_diff_seq" in batch.keys():
+                batch_aug0["concept_diff_seq"] = batch["concept_diff_seq_aug_0"]
+                batch_aug1["concept_diff_seq"] = batch["concept_diff_seq_aug_1"]
+        elif data_aug_type4cl == "model_aug":
+            batch_aug0 = batch
+            batch_aug1 = batch
+        elif data_aug_type4cl == "hybrid":
+            batch_aug0 = {
+                "concept_seq": batch["concept_seq_aug_0"],
+                "question_seq": batch["question_seq_aug_0"],
+                "correct_seq": batch["correct_seq_aug_0"],
+                "mask_seq": batch["mask_seq_aug_0"]
+            }
+            batch_aug1 = batch
+            if "question_diff_seq" in batch.keys():
+                batch_aug0["question_diff_seq"] = batch["question_diff_seq_aug_0"]
+            if "concept_diff_seq" in batch.keys():
+                batch_aug0["concept_diff_seq"] = batch["concept_diff_seq_aug_0"]
+        else:
+            raise NotImplementedError()
+
+        if not use_adv_aug:
+            latent_aug0 = self.get_latent_last(batch_aug0, use_emb_dropout4cl, emb_dropout4cl)
+            latent_aug1 = self.get_latent_last(batch_aug1, use_emb_dropout4cl, emb_dropout4cl)
+        else:
+            latent_aug0 = self.get_latent_last_from_adv_data(dataset, batch_aug0, use_emb_dropout4cl,
+                                                                    emb_dropout4cl)
+            latent_aug1 = self.get_latent_last_from_adv_data(dataset, batch_aug1, use_emb_dropout4cl,
+                                                                    emb_dropout4cl)
+
+        temp = self.params["other"]["instance_cl"]["temp"]
+
+        predict_score_aug0 = self.get_predict_score4target_question(latent_aug0, high_distinction_q, high_distinction_c)
+        predict_score_aug1 = self.get_predict_score4target_question(latent_aug1, high_distinction_q, high_distinction_c)
+
+        # KL散度作为分布距离
+        # bidirectional_KL = 0.5 * torch.nn.functional.kl_div(torch.log(predict_score_aug0 + 1e-10), predict_score_aug1) + \
+        #                    0.5 * torch.nn.functional.kl_div(torch.log(predict_score_aug1 + 1e-10), predict_score_aug0)
+        # cl_loss = torch.sum(bidirectional_KL)
+
+        # MSE作为分布距离
+        cl_loss = torch.nn.functional.mse_loss(predict_score_aug0, predict_score_aug1)
+
+        # cos_sim = torch.cosine_similarity(predict_score_aug0.unsqueeze(1), predict_score_aug1.unsqueeze(0),
+        #                                   dim=-1) / temp
+        # batch_size = cos_sim.size(0)
+        # labels = torch.arange(batch_size).long().to(self.params["device"])
+        # cl_loss = nn.functional.cross_entropy(cos_sim, labels)
+
+        return cl_loss
+
+    def get_instance_cl_loss(self, batch, instance_cl_params, dataset=None):
+        cl_space = instance_cl_params["cl_space"]
+        if cl_space == "latent":
+            cl_loss = self.get_instance_cl_loss_latent_space(batch, instance_cl_params, dataset)
+        elif cl_space == "output":
+            cl_loss = self.get_instance_cl_loss_output_space(batch, instance_cl_params, dataset)
+        else:
+            raise NotImplementedError()
 
         return cl_loss
 

@@ -62,7 +62,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_concept_diff", type=int, default=100)
     parser.add_argument("--dropout", type=float, default=0.2)
     # output enhance参数
-    parser.add_argument("--enhance_method", type=int, default=1,
+    parser.add_argument("--enhance_method", type=int, default=2,
                         help="0: all\n"
                              "1: only score constraint (S_easier - S >= 0 and S - S_harder >= 0)\n"
                              "2: only study constraint (if correct == 1, S_{q, t} - S_{q, t-1} >= 0, q is zero (or and few) shot question)")

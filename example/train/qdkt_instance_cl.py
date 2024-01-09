@@ -38,7 +38,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
     # 学习率
-    parser.add_argument("--learning_rate", type=float, default=0.002)
+    parser.add_argument("--learning_rate", type=float, default=0.001)
     parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
@@ -64,9 +64,15 @@ if __name__ == "__main__":
     parser.add_argument("--num_predict_layer", type=int, default=3)
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
-    # 对比学习温度系数和损失权重
+    # 对比学习
+    parser.add_argument("--cl_space", type=str, default="output", choices=("latent", "output"))
     parser.add_argument("--temp", type=float, default=0.05)
     parser.add_argument("--weight_cl_loss", type=float, default=0.1)
+    # output：挑选高区分度习题的参数
+    parser.add_argument("--num2drop_question4dis", type=int, default=30)
+    parser.add_argument("--num2drop_concept4dis", type=int, default=500)
+    parser.add_argument("--min_seq_len4dis", type=int, default=20)
+    parser.add_argument("--dis_threshold", type=float, default=0.3)
     # warm up和early stop
     parser.add_argument("--use_warm_up4cl", type=str2bool, default=False)
     parser.add_argument("--epoch_warm_up4cl", type=float, default=2)

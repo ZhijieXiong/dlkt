@@ -67,7 +67,7 @@ if __name__ == "__main__":
                         choices=("encoder_output", "knowledge_encoder_output"))
     parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
     # output enhance参数
-    parser.add_argument("--enhance_method", type=int, default=1,
+    parser.add_argument("--enhance_method", type=int, default=2,
                         help="0: all\n"
                              "1: only score constraint (S_easier - S >= 0 and S - S_harder >= 0)\n"
                              "2: only study constraint (if correct == 1, S_{q, t} - S_{q, t-1} >= 0, q is zero (or and few) shot question)")
@@ -75,8 +75,8 @@ if __name__ == "__main__":
     parser.add_argument("--num_min_question4diff", type=int, default=100)
     parser.add_argument("--hard_acc", type=float, default=0.3)
     parser.add_argument("--easy_acc", type=float, default=0.85)
-    parser.add_argument("--weight_enhance_loss2", type=float, default=3)
-    parser.add_argument("--enhance_method2_update_few_shot", type=str2bool, default=True)
+    parser.add_argument("--weight_enhance_loss2", type=float, default=10)
+    parser.add_argument("--enhance_method2_update_few_shot", type=str2bool, default=False)
     parser.add_argument("--num_few_shot", type=int, default=5)
     # 是否使用LLM的emb初始化
     parser.add_argument("--use_LLM_emb4question", type=str2bool, default=False)

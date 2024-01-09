@@ -19,11 +19,11 @@ class LossRecord:
         loss_str = ""
         for loss_name in self.loss_all:
             if len(self.loss_all[loss_name]["loss_all"]) == 0:
-                loss_mean = 0.
+                loss_str += f"{loss_name}: {'not record':<12}, "
             else:
                 loss_mean = np.sum(self.loss_all[loss_name]["loss_all"]) / \
                             np.sum(self.loss_all[loss_name]["num_sample_all"])
-            loss_str += f"{loss_name}: {loss_mean:<12.6}, "
+                loss_str += f"{loss_name}: {loss_mean:<12.6}, "
         return loss_str[:-2]
 
     def add_loss(self, loss_name, loss, num_sample):

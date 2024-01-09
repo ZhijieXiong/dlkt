@@ -219,6 +219,29 @@ class qDKT(nn.Module, BaseModel4CL):
 
         return predict_score
 
+    def get_predict_score4target_question(self, latent, question_seq, concept_seq=None):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
+        dim_concept = encoder_config["dim_concept"]
+        dim_question = encoder_config["dim_question"]
+        dim_latent = encoder_config["dim_latent"]
+        data_type = self.params["datasets_config"]["data_type"]
+        num_latent = len(latent)
+        num_question = len(question_seq)
+
+        if data_type == "only_question":
+            qc_emb = self.get_qc_emb4only_question({"question_seq": question_seq})
+        else:
+            qc_emb = self.get_qc_emb4single_concept({
+                "question_seq": question_seq,
+                "concept_seq": concept_seq
+            })
+        predict_layer_input = torch.cat((
+            latent.repeat(1, num_question).view(num_latent, num_question, dim_latent),
+            qc_emb.view(1, num_question, dim_concept + dim_question).repeat(num_latent, 1, 1)
+        ), dim=-1)
+
+        return self.predict_layer(predict_layer_input).squeeze(dim=-1)
+
     def get_predict_loss(self, batch, loss_record=None):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
 

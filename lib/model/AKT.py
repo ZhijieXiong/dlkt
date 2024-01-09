@@ -310,11 +310,13 @@ class AKT(nn.Module, BaseModel4CL):
 
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
         predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+        rasch_loss = self.get_rasch_loss(batch)
 
         if loss_record is not None:
             num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
             loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
-        loss = loss + predict_loss
+            loss_record.add_loss("rasch_loss", rasch_loss.detach().cpu().item(), 1)
+        loss = loss + predict_loss + rasch_loss * self.params["loss_config"]["rasch_loss"]
 
         # enhance method 1: 对于easier和harder习题的损失
         if enhance_method == 0 or enhance_method == 1:

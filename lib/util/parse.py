@@ -76,10 +76,10 @@ def get_high_dis_qc(data_uniformed, data_type, params):
     :return:
     """
     # 公式：总分最高的27%学生（H）和总分最低的27%学生（L），计算H和L对某道题的通过率，之差为区分度
-    NUM2DROP4QUESTION = params.get("num2drop4question", 30)
+    NUM2DROP4QUESTION = params.get("num2drop4question", 50)
     NUM2DROP4CONCEPT = params.get("num2drop4concept", 500)
-    MIN_SEQ_LEN = params.get("min_seq_len", 20)
-    DIS_THRESHOLD = params.get("dis_threshold", 0.3)
+    MIN_SEQ_LEN = params.get("min_seq_len", 30)
+    DIS_THRESHOLD = params.get("dis_threshold", 0.25)
 
     def cal_diff(D, k, min_count2drop):
         # 计算正确率，习题或者知识点

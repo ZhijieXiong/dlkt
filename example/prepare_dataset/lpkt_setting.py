@@ -4,32 +4,34 @@ import config
 
 from lib.util.FileManager import FileManager
 from lib.util.parse import parse_data_type
-from lib.util.data import read_preprocessed_file, drop_qc
-from lib.data_processor.util import process4DIMKT
+from lib.util.data import read_preprocessed_file
 from lib.dataset.split_seq import dataset_truncate2multi_seq
 from lib.dataset.split_dataset import n_fold_split2
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="assist2012", choices=("assist2012", "edi2020-task1"))
+    # ednet-kt1是选择第一个知识点当作习题知识点，这个并没有实现
+    parser.add_argument("--dataset_name", type=str, default="assist2017", choices=("assist2012", "assist2017"))
+    parser.add_argument("--setting_name", type=str, default="lpkt_setting")
     args = parser.parse_args()
     params = vars(args)
 
-    params["setting_name"] = "dimkt_setting"
+    params["setting_name"] = "lpkt_setting"
     params["data_type"] = "single_concept"
-    params["max_seq_len"] = 100
-    params["min_seq_len"] = 2
+    if params["dataset_name"] == "assist2012":
+        params["max_seq_len"] = 100
+    else:
+        params["max_seq_len"] = 500
+    params["min_seq_len"] = 3
     params["n_fold"] = 5
+    params["test_radio"] = 0.2
     params["valid_radio"] = 0.2
 
     objects = {"file_manager": FileManager(config.FILE_MANAGER_ROOT)}
 
     params["lab_setting"] = {
         "name": params["setting_name"],
-        "description": "序列处理：（1）序列长度小于n，则在后面补零；（2）序列长度大于n，则截断成多条序列；"
-                       "（3）丢弃练习次数少于30次的习题\n"
-                       "数据集划分：先用k折交叉划分为训练集和测试集，再在训练集中划分一部分数据为验证集",
         "data_type": params["data_type"],
         "max_seq_len": params["max_seq_len"],
         "min_seq_len": params["min_seq_len"],
@@ -42,8 +44,6 @@ if __name__ == "__main__":
     parse_data_type(params["dataset_name"], params["data_type"])
     data_uniformed_path = objects["file_manager"].get_preprocessed_path(params["dataset_name"], params["data_type"])
     data_uniformed = read_preprocessed_file(data_uniformed_path)
-    data_uniformed = drop_qc(data_uniformed, num2drop=30)
-    data_uniformed = process4DIMKT(data_uniformed, num_q_level=100, num_c_level=100)
     dataset_truncated = dataset_truncate2multi_seq(data_uniformed,
                                                    params["min_seq_len"],
                                                    params["max_seq_len"],

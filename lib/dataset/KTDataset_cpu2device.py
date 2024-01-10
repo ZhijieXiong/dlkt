@@ -12,10 +12,10 @@ from ..util.parse import *
 WEIGHT_TABLE = {
     "zero_shot": (0, 0),
     "few_shot": (0, 0),
-    "middle_fre": (0, 0),
+    "middle_fre": (0.01, 0.01),
     "easy": (0, 1),
     "hard": (1, 0),
-    "middle": (0, 0),
+    "middle": (0.1, 0.1),
 }
 MASK_TABLE = {k: tuple(map(lambda x: 1 if x != 0 else 0, WEIGHT_TABLE[k])) for k, v in WEIGHT_TABLE.items()}
 
@@ -210,11 +210,11 @@ class KTDataset_cpu2device(Dataset):
             questions_easier = concept_dict[c_id]["easy"]
             questions_harder = concept_dict[c_id]["hard"][k:]
         elif q_diff == "middle":
-            questions_easier = concept_dict[c_id]["easy"][:10]
-            questions_harder = concept_dict[c_id]["hard"][-10:]
+            questions_easier = concept_dict[c_id]["easy"][:3]
+            questions_harder = concept_dict[c_id]["hard"][-3:]
         else:
-            questions_easier = concept_dict[c_id]["easy"][:5]
-            questions_harder = concept_dict[c_id]["hard"][-5:]
+            questions_easier = concept_dict[c_id]["easy"][:1]
+            questions_harder = concept_dict[c_id]["hard"][-1:]
 
         q_easier = 0
         c_easier = 0

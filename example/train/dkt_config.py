@@ -1,13 +1,15 @@
-from copy import deepcopy
 from _config import *
 
-
-from lib.template.params_template import PARAMS
+from lib.template.params_template_v2 import PARAMS
+from lib.template.model.DKT import MODEL_PARAMS as DKT_MODEL_PARAMS
 from lib.template.objects_template import OBJECTS
 from lib.util.basic import *
 
 
 def dkt_general_config(local_params, global_params):
+    global_params["models_config"]["kt_model"] = deepcopy(DKT_MODEL_PARAMS)
+    global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "DKT"
+
     # 配置模型参数
     num_concept = local_params["num_concept"]
     dim_emb = local_params["dim_emb"]

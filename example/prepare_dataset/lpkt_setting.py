@@ -13,7 +13,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # ednet-kt1是选择第一个知识点当作习题知识点，这个并没有实现
     parser.add_argument("--dataset_name", type=str, default="assist2017", choices=("assist2012", "assist2017"))
-    parser.add_argument("--setting_name", type=str, default="lpkt_setting")
     args = parser.parse_args()
     params = vars(args)
 
@@ -25,7 +24,6 @@ if __name__ == "__main__":
         params["max_seq_len"] = 500
     params["min_seq_len"] = 3
     params["n_fold"] = 5
-    params["test_radio"] = 0.2
     params["valid_radio"] = 0.2
 
     objects = {"file_manager": FileManager(config.FILE_MANAGER_ROOT)}
@@ -36,7 +34,6 @@ if __name__ == "__main__":
         "max_seq_len": params["max_seq_len"],
         "min_seq_len": params["min_seq_len"],
         "n_fold": params["n_fold"],
-        "test_radio": params["test_radio"],
         "valid_radio": params["valid_radio"]
     }
     objects["file_manager"].add_new_setting(params["lab_setting"]["name"], params["lab_setting"])

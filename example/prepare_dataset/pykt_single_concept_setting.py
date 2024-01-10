@@ -11,26 +11,25 @@ from lib.dataset.split_dataset import n_fold_split1
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="xes3g5m",
-                        choices=("assist2009", "assist2009-new", "ednet-kt1", "xes3g5m"))
-    # setting config
-    parser.add_argument("--setting_name", type=str, default="pykt_setting_multi_concept")
-    parser.add_argument("--max_seq_len", type=int, default=200)
-    parser.add_argument("--min_seq_len", type=int, default=3)
-    parser.add_argument("--n_fold", type=int, default=5)
-    parser.add_argument("--test_radio", type=float, default=0.2)
-    parser.add_argument("--valid_radio", type=float, default=0.2)
-
+    parser.add_argument("--dataset_name", type=str, default="assist2017",
+                        choices=("assist2012", "assist2015", "assist2017", "statics2011", "edi2020-task1", "edi2020-task34"))
     args = parser.parse_args()
     params = vars(args)
-    params["data_type"] = "multi_concept"
-    objects = {"file_manager": FileManager(config.FILE_MANAGER_ROOT)}
 
+    params["setting_name"] = "pykt_single_concept_setting"
+    if params["dataset_name"] in ["assist2015", "statics2011"]:
+        params["data_type"] = "only_question"
+    else:
+        params["data_type"] = "single_concept"
+    params["max_seq_len"] = 200
+    params["min_seq_len"] = 3
+    params["n_fold"] = 5
+    params["test_radio"] = 0.2
+    params["valid_radio"] = 0.2
+
+    objects = {"file_manager": FileManager(config.FILE_MANAGER_ROOT)}
     params["lab_setting"] = {
         "name": params["setting_name"],
-        "description": "数据预处理：多知识点习题拆成多个单知识点习题\n"
-                       "序列处理：（1）序列长度小于200，则在后面补零；（2）序列长度大于200，则截断成多条序列；\n"
-                       "数据集划分：选一部分数据做测试集，剩余数据用k折交叉划分为训练集和验证集",
         "data_type": params["data_type"],
         "max_seq_len": params["max_seq_len"],
         "min_seq_len": params["min_seq_len"],
@@ -38,8 +37,8 @@ if __name__ == "__main__":
         "test_radio": params["test_radio"],
         "valid_radio": params["valid_radio"]
     }
-    objects["file_manager"].add_new_setting(params["lab_setting"]["name"], params["lab_setting"])
 
+    objects["file_manager"].add_new_setting(params["lab_setting"]["name"], params["lab_setting"])
     parse_data_type(params["dataset_name"], params["data_type"])
     data_uniformed_path = objects["file_manager"].get_preprocessed_path(params["dataset_name"], params["data_type"])
     data_uniformed = read_preprocessed_file(data_uniformed_path)

@@ -24,7 +24,7 @@ def demo():
     print(completion.choices[0].message)
 
 
-def call_chatgpt(chatgpt_messages, max_tokens=4000, model="gpt-3.5-turbo"):
+def call_chatgpt(chatgpt_messages):
     client = OpenAI(api_key=OPENAI_KEY)
     completion = client.chat.completions.create(
         model="gpt-3.5-turbo",
@@ -56,7 +56,7 @@ def demo_kt(ask_question_seq, ask_correct_seq, use_question_content=False):
             example_prompt = f"[`{', '.join([f'(`{example_question_content_seq[i]}`, `{example_concept_content_seq[i]}`, `{example_correct_seq[i]}`)' for i in range(example_seq_len)])}]"
         else:
             example_prompt = f"[`{', '.join([f'(`{example_concept_content_seq[i]}`, `{example_correct_seq[i]}`)' for i in range(example_seq_len)])}]"
-        example_prompt += f", Please determine whether Student A can do this exercise correctly: {ask_question_content_seq[example_seq_len]}\n"
+        example_prompt += f", Please determine whether Student A can do this exercise correctly: {example_question_content_seq[example_seq_len]}\n"
         example_prompts.append(example_prompt)
     example_outputs = [
         "output: I think Student A can do this exercise correctly. The reasons are as follows,\n"
@@ -117,6 +117,16 @@ def demo_kt(ask_question_seq, ask_correct_seq, use_question_content=False):
 
 
 def demo_question_rec(question_seq, correct_seq, use_question_content=False):
+    example_question_seq = [3751, 3752, 3753, 3754, 1990, 3739, 3740, 3742, 3756, 3757]
+    example_correct_seq = [1, 1, 1, 0, 1, 1, 1, 1, 0, 0]
+    example_question_seq = list(map(str, example_question_seq))
+    example_question_content_seq = list(map(lambda x: QUESTION_CONTENT[x]["content_only_text"], example_question_seq))
+    example_concept_content_seq = list(map(
+        lambda x: "; ".join(QUESTION_CONTENT[x]["kc_routes"]),
+        example_question_seq
+    ))
+    example_correct_seq = list(map(lambda x: "做对" if x else "做错", example_correct_seq))
+
     question_seq = list(map(str, question_seq))
     question_content_seq = list(map(lambda x: QUESTION_CONTENT[x]["content_only_text"], question_seq))
     concept_content_seq = list(map(

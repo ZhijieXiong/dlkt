@@ -688,7 +688,7 @@ class DataProcessor:
         }
 
         # single_concept
-        id_keys = list(set(df.columns) - set(info_name_table.values()))
+        id_keys = list(set(df.columns) - set(info_name_table.values()) - {"concept_name"})
         dataset_seq_keys = CONSTANT.datasets_seq_keys()["assist2012"]
         seqs = []
         for user_id in pd.unique(df["user_id"]):

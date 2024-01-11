@@ -1,7 +1,5 @@
 MODEL_PARAMS = {
-    "kt_embed_layer": {
-        "interaction": []
-    },
+    "kt_embed_layer": {},
     "encoder_layer": {
         "DKT": {
             "dim_emb": 64,

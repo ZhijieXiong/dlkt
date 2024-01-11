@@ -76,7 +76,7 @@ class AKT(nn.Module, BaseModel4CL):
                 self.objects["data"]["q2c_table"],
                 self.objects["data"]["q2c_mask_table"],
                 batch["question_seq"],
-                concept_fusion="mean"
+                fusion_type="mean"
             )
         else:
             concept_emb = self.embed_concept(batch["concept_seq"])
@@ -91,7 +91,7 @@ class AKT(nn.Module, BaseModel4CL):
                 self.objects["data"]["q2c_table"],
                 self.objects["data"]["q2c_mask_table"],
                 batch["question_seq"],
-                concept_fusion="mean"
+                fusion_type="mean"
             )
         else:
             concept_emb = self.embed_concept_variation(batch["concept_seq"])
@@ -427,7 +427,7 @@ class AKT(nn.Module, BaseModel4CL):
                 self.objects["data"]["q2c_table"],
                 self.objects["data"]["q2c_mask_table"],
                 batch["question_seq"],
-                concept_fusion="mean"
+                fusion_type="mean"
             )
         else:
             concept_emb = dataset["embed_concept"](batch["concept_seq"])
@@ -455,7 +455,7 @@ class AKT(nn.Module, BaseModel4CL):
                 self.objects["data"]["q2c_table"],
                 self.objects["data"]["q2c_mask_table"],
                 batch["question_seq"],
-                concept_fusion="mean"
+                fusion_type="mean"
             )
         else:
             concept_variation_emb = dataset["embed_concept_variation"](batch["concept_seq"])
@@ -492,7 +492,7 @@ class AKT(nn.Module, BaseModel4CL):
                 self.objects["data"]["q2c_table"],
                 self.objects["data"]["q2c_mask_table"],
                 batch["question_seq"],
-                concept_fusion="mean"
+                fusion_type="mean"
             )
         else:
             concept_variation_emb = dataset["embed_concept_variation"](batch["concept_seq"])

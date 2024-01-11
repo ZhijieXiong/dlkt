@@ -1,6 +1,4 @@
-from copy import deepcopy
-
-from _config import *
+from ._config import *
 
 from lib.template.params_template_v2 import PARAMS
 from lib.template.model.AC_VAE import MODEL_PARAMS as AC_VAE_PARAMS

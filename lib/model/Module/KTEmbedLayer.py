@@ -91,12 +91,12 @@ class KTEmbedLayer(nn.Module):
             result = torch.cat((result, self.get_emb(seq, emb_indices2cat[i+1])), dim=-1)
         return result
 
-    def get_emb_question_with_concept_fused(self, question_seq, concept_fusion="mean"):
+    def get_emb_question_with_concept_fused(self, question_seq, fusion_type="mean"):
         # 对于多知识点数据集，获取拼接了知识点emb（以某种方式融合）的习题emb
         emb_question = self.get_emb("question", question_seq)
         emb_concept = self.get_emb("concept", self.objects["data"]["q2c_table"][question_seq])
         mask_concept = self.objects["data"]["q2c_mask_table"][question_seq]
-        if concept_fusion == "mean":
+        if fusion_type == "mean":
             emb_concept_fusion = (emb_concept * mask_concept.unsqueeze(-1)).sum(-2)
             emb_concept_fusion = emb_concept_fusion / mask_concept.sum(-1).unsqueeze(-1)
         else:
@@ -106,19 +106,28 @@ class KTEmbedLayer(nn.Module):
     def get_question2concept_mask(self, question_seq):
         return self.objects["data"]["q2c_table"][question_seq], self.objects["data"]["q2c_mask_table"][question_seq]
 
-    def get_concept_fused_emb(self, question_seq, concept_fusion="mean"):
+    def get_concept_fused_emb(self, question_seq, fusion_type="mean"):
         # 对于多知识点数据集，获取知识点emb（以某种方式融合）
-        emb_concept = self.get_emb("concept", self.objects["data"]["q2c_table"][question_seq])
+        concept_emb = self.get_emb("concept", self.objects["data"]["q2c_table"][question_seq])
         mask_concept = self.objects["data"]["q2c_mask_table"][question_seq]
-        if concept_fusion == "mean":
-            emb_concept_fusion = (emb_concept * mask_concept.unsqueeze(-1)).sum(-2)
-            emb_concept_fusion = emb_concept_fusion / mask_concept.sum(-1).unsqueeze(-1)
+        if fusion_type == "mean":
+            concept_fusion_emb = (concept_emb * mask_concept.unsqueeze(-1)).sum(-2)
+            concept_fusion_emb = concept_fusion_emb / mask_concept.sum(-1).unsqueeze(-1)
         else:
             raise NotImplementedError()
-        return emb_concept_fusion
+        return concept_fusion_emb
 
-    def get_interaction_fused_emb(self, question_seq, correct_seq, fusion="mean"):
-        pass
+    def get_interaction_fused_emb(self, question_seq, correct_seq, num_concept, fusion_type="mean"):
+        concept_seq = self.objects["data"]["q2c_table"][question_seq]
+        interaction_seq = concept_seq + num_concept * correct_seq.unsqueeze(dim=-1)
+        interaction_emb = self.get_emb("interaction", interaction_seq)
+        mask_concept = self.objects["data"]["q2c_mask_table"][question_seq]
+        if fusion_type == "mean":
+            interaction_emb_fusion = (interaction_emb * mask_concept.unsqueeze(-1)).sum(-2)
+            interaction_emb_fusion = interaction_emb_fusion / mask_concept.sum(-1).unsqueeze(-1)
+        else:
+            raise NotImplementedError()
+        return interaction_emb_fusion
 
     def get_c_from_q(self, q_id):
         return self.objects["data"]["question2concept"][q_id]
@@ -146,10 +155,10 @@ class KTEmbedLayer(nn.Module):
         return question2concept_table, question2concept_mask_table, num_max_c_in_q
 
     @staticmethod
-    def concept_fused_emb(embed_concept, q2c_table, q2c_mask_table, question_seq, concept_fusion="mean"):
+    def concept_fused_emb(embed_concept, q2c_table, q2c_mask_table, question_seq, fusion_type="mean"):
         emb_concept = embed_concept(q2c_table[question_seq])
         mask_concept = q2c_mask_table[question_seq]
-        if concept_fusion == "mean":
+        if fusion_type == "mean":
             emb_concept_fusion = (emb_concept * mask_concept.unsqueeze(-1)).sum(-2)
             emb_concept_fusion = emb_concept_fusion / mask_concept.sum(-1).unsqueeze(-1)
         else:

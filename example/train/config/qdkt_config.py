@@ -1,6 +1,6 @@
-from _config import *
-from _cl_config import *
-from _data_aug_config import *
+from ._config import *
+from ._cl_config import *
+from ._data_aug_config import *
 
 from lib.template.params_template import PARAMS
 from lib.template.params_template_v2 import PARAMS as PARAMS2

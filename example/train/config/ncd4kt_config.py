@@ -1,10 +1,7 @@
-from copy import deepcopy
-
-from _config import *
+from ._config import *
 from lib.template.params_template import PARAMS
 from lib.template.model.NCD4KT import MODEL_PARAMS as NCD4KT_MODEL_PARAMS
 from lib.template.objects_template import OBJECTS
-from lib.util.basic import *
 
 
 def ncd4kt_general_config(local_params, global_params, global_objects):

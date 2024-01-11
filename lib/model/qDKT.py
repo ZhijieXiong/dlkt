@@ -74,7 +74,7 @@ class qDKT(nn.Module, BaseModel4CL):
         return concept_question_emb
 
     def get_qc_emb4only_question(self, batch):
-        return self.embed_layer.get_emb_question_with_concept_fused(batch["question_seq"], concept_fusion="mean")
+        return self.embed_layer.get_emb_question_with_concept_fused(batch["question_seq"], fusion_type="mean")
 
     def forward(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]

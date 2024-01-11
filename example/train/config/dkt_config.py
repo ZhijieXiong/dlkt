@@ -1,4 +1,4 @@
-from _config import *
+from ._config import *
 
 from lib.template.params_template_v2 import PARAMS
 from lib.template.model.DKT import MODEL_PARAMS as DKT_MODEL_PARAMS
@@ -9,9 +9,11 @@ from lib.util.basic import *
 def dkt_general_config(local_params, global_params):
     global_params["models_config"]["kt_model"] = deepcopy(DKT_MODEL_PARAMS)
     global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "DKT"
+    data_type = global_params["datasets_config"]["data_type"]
 
     # 配置模型参数
     num_concept = local_params["num_concept"]
+    num_question = local_params["num_question"]
     dim_emb = local_params["dim_emb"]
     dim_latent = local_params["dim_latent"]
     rnn_type = local_params["rnn_type"]
@@ -24,10 +26,18 @@ def dkt_general_config(local_params, global_params):
 
     # embed layer
     kt_embed_layer_config = global_params["models_config"]["kt_model"]["kt_embed_layer"]
-    kt_embed_layer_config["interaction"] = [num_concept * 2, dim_emb]
+    if use_concept and data_type == "only_question":
+        # 将知识点当作习题（多个知识点构成一个习题）
+        kt_embed_layer_config["concept"] = [num_concept, dim_emb]
+    elif use_concept:
+        kt_embed_layer_config["interaction"] = [num_concept * 2, dim_emb]
+    else:
+        kt_embed_layer_config["question"] = [num_question, dim_emb]
 
     # encoder layer
     dkt_encoder_layer_config = global_params["models_config"]["kt_model"]["encoder_layer"]["DKT"]
+    dkt_encoder_layer_config["num_concept"] = num_concept
+    dkt_encoder_layer_config["num_question"] = num_question
     dkt_encoder_layer_config["dim_emb"] = dim_emb
     dkt_encoder_layer_config["dim_latent"] = dim_latent
     dkt_encoder_layer_config["rnn_type"] = rnn_type
@@ -39,10 +49,17 @@ def dkt_general_config(local_params, global_params):
     predict_layer_config["type"] = "direct"
     predict_layer_config["direct"]["dropout"] = dropout
     predict_layer_config["direct"]["num_predict_layer"] = num_predict_layer
-    predict_layer_config["direct"]["dim_predict_in"] = dim_latent
     predict_layer_config["direct"]["dim_predict_mid"] = dim_predict_mid
     predict_layer_config["direct"]["activate_type"] = activate_type
-    predict_layer_config["direct"]["dim_predict_out"] = num_concept
+    # 当使用知识点输入，并且data type为multi 或者 single concept时，预测层输出为num concept，即每个知识点上的状态
+    # 其它情况都是RNN输出的latent拼接上对应知识点（1、多个知识点embedding平均；2、对于像assist2015数据集，只有习题，则是习题emb）
+    # 然后送入预测层，直接输出score
+    if use_concept and data_type != "only_question":
+        predict_layer_config["direct"]["dim_predict_in"] = dim_latent
+        predict_layer_config["direct"]["dim_predict_out"] = num_concept
+    else:
+        predict_layer_config["direct"]["dim_predict_in"] = dim_latent + dim_emb
+        predict_layer_config["direct"]["dim_predict_out"] = 1
 
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]

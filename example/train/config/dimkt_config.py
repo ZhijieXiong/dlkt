@@ -1,9 +1,9 @@
 import os.path
 
-from _config import *
-from _cl_config import *
-from _data_aug_config import *
-from _melt_config import *
+from ._config import *
+from ._cl_config import *
+from ._data_aug_config import *
+from ._melt_config import *
 
 from lib.template.params_template import PARAMS
 from lib.template.objects_template import OBJECTS

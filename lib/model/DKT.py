@@ -37,7 +37,12 @@ class DKT(nn.Module):
         self.predict_layer = PredictorLayer(self.params, self.objects)
 
     def get_concept_emb4single_concept(self, batch):
-        return self.embed_layer.get_emb("concept", batch["concept_seq"])
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DKT"]
+        use_concept = encoder_config["use_concept"]
+        if use_concept:
+            return self.embed_layer.get_emb("concept", batch["concept_seq"])
+        else:
+            return self.embed_layer.get_emb("question", batch["question_seq"])
 
     def get_concept_emb4only_question(self, batch):
         return self.embed_layer.get_concept_fused_emb(batch["question_seq"], fusion_type="mean")

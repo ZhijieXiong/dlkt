@@ -20,6 +20,7 @@ def dkt_general_config(local_params, global_params):
     num_predict_layer = local_params["num_predict_layer"]
     dim_predict_mid = local_params["dim_predict_mid"]
     activate_type = local_params["activate_type"]
+    use_concept = local_params["use_concept"]
 
     # embed layer
     kt_embed_layer_config = global_params["models_config"]["kt_model"]["kt_embed_layer"]
@@ -31,6 +32,7 @@ def dkt_general_config(local_params, global_params):
     dkt_encoder_layer_config["dim_latent"] = dim_latent
     dkt_encoder_layer_config["rnn_type"] = rnn_type
     dkt_encoder_layer_config["num_rnn_layer"] = num_rnn_layer
+    dkt_encoder_layer_config["use_concept"] = use_concept
 
     # predict layer
     predict_layer_config = global_params["models_config"]["kt_model"]["predict_layer"]

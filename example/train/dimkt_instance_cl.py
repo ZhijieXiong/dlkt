@@ -2,7 +2,7 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from dimkt_config import dimkt_instance_cl_config
+from config.dimkt_config import dimkt_instance_cl_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed

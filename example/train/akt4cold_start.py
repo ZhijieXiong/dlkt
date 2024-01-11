@@ -2,7 +2,7 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from akt_config import akt4cold_start_config
+from config.akt_config import akt4cold_start_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed

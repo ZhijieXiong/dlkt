@@ -2,7 +2,7 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from qdkt_config import qdkt_instance_cl_config
+from config.qdkt_config import qdkt_instance_cl_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed

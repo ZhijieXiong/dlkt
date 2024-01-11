@@ -101,13 +101,13 @@ class AKT(nn.Module, BaseModel4CL):
     def base_emb(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
         separate_qa = encoder_config["separate_qa"]
-        concept_seq = batch["concept_seq"]
         correct_seq = batch["correct_seq"]
 
         # c_ct
         concept_emb = self.get_concept_emb(batch)
         if separate_qa:
             # todo: 有问题，如果是only question也要融合
+            concept_seq = batch["concept_seq"]
             interaction_seq = concept_seq + self.num_concept * correct_seq
             interaction_emb = self.embed_interaction(interaction_seq)
         else:
@@ -419,7 +419,6 @@ class AKT(nn.Module, BaseModel4CL):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
         separate_qa = encoder_config["separate_qa"]
         data_type = self.params["datasets_config"]["data_type"]
-        concept_seq = batch["concept_seq"]
         correct_seq = batch["correct_seq"]
 
         if data_type == "only_question":
@@ -433,6 +432,8 @@ class AKT(nn.Module, BaseModel4CL):
         else:
             concept_emb = dataset["embed_concept"](batch["concept_seq"])
         if separate_qa:
+            # todo: 有问题，如果是only question也要融合
+            concept_seq = batch["concept_seq"]
             interaction_seq = concept_seq + self.num_concept * correct_seq
             interaction_emb = dataset["embed_interaction"](interaction_seq)
         else:

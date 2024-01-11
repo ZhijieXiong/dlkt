@@ -2,7 +2,7 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from simple_kt_config import simple_kt_cluster_cl_config
+from config.simple_kt_config import simple_kt_cluster_cl_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed

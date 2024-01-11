@@ -9,7 +9,7 @@ from lib.template.model.AKT import MODEL_PARAMS as AKT_MODEL_PARAMS
 from lib.util.basic import *
 
 
-def akt_general_config(local_params, global_params):
+def akt_general_config(local_params, global_params, global_objects):
     global_params["models_config"]["kt_model"] = deepcopy(AKT_MODEL_PARAMS)
     global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "AKT"
 
@@ -43,10 +43,12 @@ def akt_general_config(local_params, global_params):
     # 损失权重
     global_params["loss_config"]["rasch_loss"] = local_params["weight_rasch_loss"]
 
-    print("model params\n"
-          f"    num of concept: {num_concept}, num of question: {num_question}, dim of model: {dim_model}, num of block: {num_block}, "
-          f"num of attention head: {num_head}, dim of ff: {dim_ff}, dim of final fc: {dim_final_fc}, dropout: {dropout}\n"
-          f"    separate question answer: {separate_qa}, key and query of attention are same: {key_query_same}, representation of seq in AKT: {seq_representation}")
+    global_objects["logger"].info(
+        "model params\n"
+        f"    num of concept: {num_concept}, num of question: {num_question}, dim of model: {dim_model}, num of block: {num_block}, "
+        f"num of attention head: {num_head}, dim of ff: {dim_ff}, dim of final fc: {dim_final_fc}, dropout: {dropout}\n"
+        f"    separate question answer: {separate_qa}, key and query of attention are same: {key_query_same}, representation of seq in AKT: {seq_representation}"
+    )
 
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]
@@ -61,7 +63,7 @@ def akt_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    akt_general_config(local_params, global_params)
+    akt_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         save_params(global_params, global_objects)
 
@@ -72,7 +74,7 @@ def akt_duo_cl_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    akt_general_config(local_params, global_params)
+    akt_general_config(local_params, global_params, global_objects)
     duo_cl_general_config(local_params, global_params)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
@@ -86,7 +88,7 @@ def akt_instance_cl_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    akt_general_config(local_params, global_params)
+    akt_general_config(local_params, global_params, global_objects)
     instance_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
@@ -100,7 +102,7 @@ def akt_cluster_cl_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    akt_general_config(local_params, global_params)
+    akt_general_config(local_params, global_params, global_objects)
     cluster_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
@@ -114,7 +116,7 @@ def akt_max_entropy_adv_aug_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    akt_general_config(local_params, global_params)
+    akt_general_config(local_params, global_params, global_objects)
     max_entropy_adv_aug_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
@@ -128,7 +130,7 @@ def akt4cold_start_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    akt_general_config(local_params, global_params)
+    akt_general_config(local_params, global_params, global_objects)
 
     # 冷启动参数
     cold_start_step1 = local_params["cold_start_step1"]
@@ -154,7 +156,7 @@ def akt_meta_optimize_cl_config(local_params):
     global_params = deepcopy(PARAMS2)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    akt_general_config(local_params, global_params)
+    akt_general_config(local_params, global_params, global_objects)
     meta_optimize_cl_general_config(local_params, global_params, global_objects)
 
     if local_params["save_model"]:
@@ -169,7 +171,7 @@ def akt_output_enhance_config(local_params):
     global_params = deepcopy(PARAMS2)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    akt_general_config(local_params, global_params)
+    akt_general_config(local_params, global_params, global_objects)
     output_enhance_general_config(local_params, global_params, global_objects)
     global_params["datasets_config"]["train"]["kt_output_enhance"] = {}
     if local_params["save_model"]:

@@ -2,7 +2,7 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from adv_contrast_vae_config import adv_contrast_vae_gru_config
+from config.adv_contrast_vae_config import adv_contrast_vae_gru_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed

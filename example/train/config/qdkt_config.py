@@ -51,11 +51,13 @@ def qdkt_general_config(local_params, global_params, global_objects):
     predict_layer_config["direct"]["activate_type"] = activate_type
     predict_layer_config["direct"]["dim_predict_out"] = 1
 
-    print("model params\n"
-          f"    num of concept: {num_concept}, num of question: {num_question}, dim of question emb: {dim_question}, "
-          f"dim of concept emb: {dim_concept}, dim of correct emb: {dim_correct}, dim of latent: {dim_latent}\n"
-          f"    rnn type: {rnn_type}, num of rnn layer: {num_rnn_layer}, dropout: {dropout}, num of predict layer: {num_predict_layer}, "
-          f"dim of middle predict layer: {dim_predict_mid}, type of activate function: {activate_type}")
+    global_objects["logger"].info(
+        "model params\n"
+        f"    num of concept: {num_concept}, num of question: {num_question}, dim of question emb: {dim_question}, "
+        f"dim of concept emb: {dim_concept}, dim of correct emb: {dim_correct}, dim of latent: {dim_latent}\n"
+        f"    rnn type: {rnn_type}, num of rnn layer: {num_rnn_layer}, dropout: {dropout}, num of predict layer: {num_predict_layer}, "
+        f"dim of middle predict layer: {dim_predict_mid}, type of activate function: {activate_type}"
+    )
 
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]

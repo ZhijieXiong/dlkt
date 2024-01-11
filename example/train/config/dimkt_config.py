@@ -76,10 +76,12 @@ def dimkt_general_config(local_params, global_params, global_objects):
     dimkt_encoder_layer_config["dim_emb"] = dim_emb
     dimkt_encoder_layer_config["dropout"] = dropout
 
-    print("model params\n"
-          f"    num of concept: {num_concept}, num of question: {num_question}, num of min question: {num_min_question}, "
-          f"num of min concept: {num_min_concept}, num of question difficulty: {num_question_diff}, "
-          f"num of concept difficulty: {num_concept_diff}, dim of emb: {dim_emb}, dropout: {dropout}")
+    global_objects["logger"].info(
+        "model params\n"
+        f"    num of concept: {num_concept}, num of question: {num_question}, num of min question: {num_min_question}, "
+        f"num of min concept: {num_min_concept}, num of question difficulty: {num_question_diff}, "
+        f"num of concept difficulty: {num_concept_diff}, dim of emb: {dim_emb}, dropout: {dropout}"
+    )
 
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]

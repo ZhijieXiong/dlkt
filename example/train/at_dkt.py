@@ -2,7 +2,7 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from at_dkt_config import at_dkt_config
+from config.at_dkt_config import at_dkt_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed

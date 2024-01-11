@@ -8,6 +8,7 @@ MODEL_PARAMS = {
             "dim_latent": 64,
             "rnn_type": "gru",
             "num_rnn_layer": 1,
+            "use_concept": True
         },
     },
     "predict_layer": {

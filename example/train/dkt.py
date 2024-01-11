@@ -2,7 +2,7 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from dkt_config import dkt_config
+from config.dkt_config import dkt_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
@@ -60,6 +60,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_predict_layer", type=int, default=1)
     parser.add_argument("--dim_predict_mid", type=int, default=256)
     parser.add_argument("--activate_type", type=str, default="sigmoid")
+    parser.add_argument("--use_concept", type=str2bool, default=True)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)

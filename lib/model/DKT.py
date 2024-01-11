@@ -32,6 +32,12 @@ class DKT(nn.Module):
         self.predict_layer = PredictorLayer(self.params, self.objects)
 
     def forward(self, batch):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DKT"]
+        use_concept = encoder_config["use_concept"]
+        if use_concept:
+            pass
+        else:
+            pass
         correct_seq = batch["correct_seq"]
         concept_seq = batch["concept_seq"]
         dim_predict_out = self.params["models_config"]["kt_model"]["predict_layer"]["direct"]["dim_predict_out"]

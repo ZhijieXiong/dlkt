@@ -1,15 +1,14 @@
 from _config import *
 from _cl_config import *
-from _data_aug_config import *
+# from _data_aug_config import *
 
 from lib.template.params_template_v2 import PARAMS
 from lib.template.model.SimpleKT import MODEL_PARAMS as SimpleKT_MODEL_PARAMS
-from lib.template.other_params_template import *
 from lib.template.objects_template import OBJECTS
 from lib.util.basic import *
 
 
-def simple_kt_general_config(local_params, global_params):
+def simple_kt_general_config(local_params, global_params, global_objects):
     global_params["models_config"]["kt_model"] = deepcopy(SimpleKT_MODEL_PARAMS)
     global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "SimpleKT"
 
@@ -44,11 +43,13 @@ def simple_kt_general_config(local_params, global_params):
     qdkt_encoder_layer_config["separate_qa"] = separate_qa
     qdkt_encoder_layer_config["difficulty_scalar"] = difficulty_scalar
 
-    print("model params\n"
-          f"    num of concept: {num_concept}, num of question: {num_question}, dim of model: {dim_model}, num of block: {num_block}, "
-          f"num of attention head: {num_head}, dim of ff: {dim_ff}, dim of final fc: {dim_final_fc}, dim of final fc2: {dim_final_fc2} "
-          f"dropout: {dropout}, length of sequence: {seq_len}\n"
-          f"    separate question answer: {separate_qa}, key and query of attention are same: {key_query_same}, use scalar difficulty: {difficulty_scalar}")
+    global_objects["logger"].info(
+        "model params\n"
+        f"    num of concept: {num_concept}, num of question: {num_question}, dim of model: {dim_model}, num of block: {num_block}, "
+        f"num of attention head: {num_head}, dim of ff: {dim_ff}, dim of final fc: {dim_final_fc}, dim of final fc2: {dim_final_fc2} "
+        f"dropout: {dropout}, length of sequence: {seq_len}\n"
+        f"    separate question answer: {separate_qa}, key and query of attention are same: {key_query_same}, use scalar difficulty: {difficulty_scalar}"
+    )
 
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]
@@ -63,7 +64,7 @@ def simple_kt_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    simple_kt_general_config(local_params, global_params)
+    simple_kt_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         save_params(global_params, global_objects)
 
@@ -74,7 +75,7 @@ def simple_kt_instance_cl_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    simple_kt_general_config(local_params, global_params)
+    simple_kt_general_config(local_params, global_params, global_objects)
     params_str = instance_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
@@ -89,7 +90,7 @@ def simple_kt_cluster_cl_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    simple_kt_general_config(local_params, global_params)
+    simple_kt_general_config(local_params, global_params, global_objects)
     params_str = cluster_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (

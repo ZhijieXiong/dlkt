@@ -2,7 +2,7 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from akt_config import akt_config
+from config.akt_config import akt_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
@@ -15,12 +15,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="our_setting")
-    parser.add_argument("--dataset_name", type=str, default="assist2012")
-    parser.add_argument("--data_type", type=str, default="single_concept",
+    parser.add_argument("--dataset_name", type=str, default="assist2009")
+    parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2012_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2012_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2012_test_fold_0.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
     parser.add_argument("--weight_decay", type=float, default=0)
@@ -51,8 +51,8 @@ if __name__ == "__main__":
     parser.add_argument("--enable_clip_grad", type=str2bool, default=True)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=265)
-    parser.add_argument("--num_question", type=int, default=53091)
+    parser.add_argument("--num_concept", type=int, default=123)
+    parser.add_argument("--num_question", type=int, default=17751)
     parser.add_argument("--dim_model", type=int, default=256)
     parser.add_argument("--key_query_same", type=str2bool, default=True)
     parser.add_argument("--num_head", type=int, default=8)
@@ -66,7 +66,7 @@ if __name__ == "__main__":
                         choices=("encoder_output", "knowledge_encoder_output"))
     parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
     # 其它
-    parser.add_argument("--save_model", type=str2bool, default=True)
+    parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()

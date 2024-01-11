@@ -117,6 +117,9 @@ class KTEmbedLayer(nn.Module):
             raise NotImplementedError()
         return emb_concept_fusion
 
+    def get_interaction_fused_emb(self, question_seq, correct_seq, fusion="mean"):
+        pass
+
     def get_c_from_q(self, q_id):
         return self.objects["data"]["question2concept"][q_id]
 
@@ -144,7 +147,7 @@ class KTEmbedLayer(nn.Module):
 
     @staticmethod
     def concept_fused_emb(embed_concept, q2c_table, q2c_mask_table, question_seq, concept_fusion="mean"):
-        emb_concept = embed_concept("concept", q2c_table[question_seq])
+        emb_concept = embed_concept(q2c_table[question_seq])
         mask_concept = q2c_mask_table[question_seq]
         if concept_fusion == "mean":
             emb_concept_fusion = (emb_concept * mask_concept.unsqueeze(-1)).sum(-2)

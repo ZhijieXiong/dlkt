@@ -11,18 +11,18 @@ from lib.dataset.split_dataset import n_fold_split2
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="assist2009",
-                        choices=("assist2009", "assist2017", "assist2015", "statics2011"))
+    parser.add_argument("--dataset_name", type=str, default="assist2012",
+                        choices=("assist2009", "assist2012", "assist2017", "edi2020-task34", "ednet-kt1", "xes3g5m"))
     args = parser.parse_args()
     params = vars(args)
 
-    params["setting_name"] = "akt_table6_setting"
-    if params["dataset_name"] == "assist2017":
+    params["setting_name"] = "our_setting"
+    if params["dataset_name"] in ["assist2012", "assist2017", "edi2020-task34"]:
         params["data_type"] = "single_concept"
     else:
         params["data_type"] = "only_question"
     params["max_seq_len"] = 200
-    params["min_seq_len"] = 3
+    params["min_seq_len"] = 10
     params["n_fold"] = 5
     params["valid_radio"] = 0.2
 

@@ -326,7 +326,7 @@ class qDKT(nn.Module, BaseModel4CL):
             enhance_loss_harder = -torch.min(torch.zeros_like(predict_score_diff2).to(self.params["device"]), predict_score_diff2)
             enhance_loss_harder = enhance_loss_harder * weight_harder
 
-            enhance_loss1 = enhance_loss_easier.mean() + enhance_loss_harder.mean()
+            enhance_loss1 = (enhance_loss_easier.mean() + enhance_loss_harder.mean()) / 2
 
             if loss_record is not None:
                 loss_record.add_loss("enhance loss 1", enhance_loss1.detach().cpu().item(), 1)

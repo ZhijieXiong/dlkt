@@ -22,6 +22,7 @@ from lib.util.data import write_json
 from lib.util.data import load_json
 from lib.data_processor.load_raw import load_csv
 from lib.util.parse import *
+from lib.model.Module.KTEmbedLayer import KTEmbedLayer
 
 
 def config_optimizer(local_params, global_params, global_objects, model_name="kt_model"):
@@ -199,14 +200,23 @@ def general_config(local_params, global_params, global_objects):
     global_objects["logger"].info("optimizer setting")
     config_optimizer(local_params, global_params, global_objects, model_name="kt_model")
 
-    # Q table
+    # Q table，并解析Q table并得到相关数据
     dataset_name = local_params["dataset_name"]
     data_type = local_params["data_type"]
-    global_objects["data"]["Q_table"] = file_manager.get_q_table(dataset_name, data_type)
-
-    # 解析Q table并得到question2concept和concept2question
-    global_objects["data"]["question2concept"] = question2concept_from_Q(global_objects["data"]["Q_table"])
-    global_objects["data"]["concept2question"] = concept2question_from_Q(global_objects["data"]["Q_table"])
+    Q_table = file_manager.get_q_table(dataset_name, data_type)
+    global_objects["data"]["Q_table"] = Q_table
+    if Q_table is not None:
+        # 如果有Q table的话，可以分析出question2concept_list和concept2question_list
+        # 前者index表示习题id，value表示该习题对应的知识点列表
+        # 后者index表示知识点id，value表示该知识点对应的习题列表
+        global_objects["data"]["question2concept"] = question2concept_from_Q(global_objects["data"]["Q_table"])
+        global_objects["data"]["concept2question"] = concept2question_from_Q(global_objects["data"]["Q_table"])
+        # 如果有Q table的话，q2c_table和q2c_mask_table都是(num_q, num_max_c)的tensor
+        # num_max_c表示在该数据集中一道习题最多对应几个知识点
+        q2c_table, q2c_mask_table, num_max_concept = KTEmbedLayer.parse_Q_table(Q_table, global_params["device"])
+        global_objects["data"]["q2c_table"] = q2c_table
+        global_objects["data"]["q2c_mask_table"] = q2c_mask_table
+        global_objects["data"]["num_max_concept"] = num_max_concept
 
     global_objects["logger"].info(
         "dataset\n"

@@ -163,7 +163,10 @@ class FileManager:
             Q_table_path = os.path.join(preprocessed_dir, "Q_table_multi_concept.npy")
         else:
             Q_table_path = os.path.join(preprocessed_dir, f"Q_table_{data_type}.npy")
-        Q_table = np.load(Q_table_path)
+        try:
+            Q_table = np.load(Q_table_path)
+        except FileNotFoundError:
+            Q_table = None
         return Q_table
 
     def get_data_statics_processed(self, dataset_name, data_type):

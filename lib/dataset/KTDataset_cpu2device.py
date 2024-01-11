@@ -12,10 +12,10 @@ from ..util.parse import *
 WEIGHT_TABLE = {
     "zero_shot": (0, 0),
     "few_shot": (0, 0),
-    "middle_fre": (0.01, 0.01),
+    "middle_fre": (0, 0),
     "easy": (0, 1),
     "hard": (1, 0),
-    "middle": (0.01, 0.01),
+    "middle": (0.1, 0.1),
 }
 MASK_TABLE = {k: tuple(map(lambda x: 1 if x != 0 else 0, WEIGHT_TABLE[k])) for k, v in WEIGHT_TABLE.items()}
 
@@ -256,7 +256,9 @@ class KTDataset_cpu2device(Dataset):
         zero_shot_qs = deepcopy(concept_dict[c_id]["zero_shot"])
         if enhance_method2_update_few_shot:
             few_shot_qs = concept_dict[c_id]["few_shot"]
+            middle_fre_qs = concept_dict[c_id]["middle_fre"]
             zero_shot_qs += few_shot_qs
+            zero_shot_qs += middle_fre_qs
         if len(zero_shot_qs) == 0:
             return {
                 "q_zero_shot": 0,

@@ -125,7 +125,7 @@ class DIMKT(nn.Module, BaseModel4CL):
 
         return embed
 
-    def get_concept_emb(self):
+    def get_concept_emb_all(self):
         return self.embed_concept.weight
 
     def get_target_question_emb(self, target_question):

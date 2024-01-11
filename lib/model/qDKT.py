@@ -4,7 +4,6 @@ from .Module.PredictorLayer import PredictorLayer
 from .Module.MLP import MLP4LLM_emb
 from .loss_util import *
 from .util import *
-from ..util.parse import concept2question_from_Q, question2concept_from_Q
 
 
 class qDKT(nn.Module, BaseModel4CL):
@@ -15,10 +14,6 @@ class qDKT(nn.Module, BaseModel4CL):
         super(nn.Module, self).__init__(params, objects)
 
         self.embed_layer = KTEmbedLayer(self.params, self.objects)
-        data_type = self.params["datasets_config"]["data_type"]
-        if data_type == "only_question":
-            self.embed_layer.parse_Q_table()
-
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
         dim_concept = encoder_config["dim_concept"]
         dim_question = encoder_config["dim_question"]
@@ -38,11 +33,9 @@ class qDKT(nn.Module, BaseModel4CL):
 
         # 解析q table
         if params["transfer_head2zero"]:
-            self.question2concept_list = question2concept_from_Q(objects["data"]["Q_table"])
-            self.concept2question_list = concept2question_from_Q(objects["data"]["Q_table"])
             self.question_head4zero = parse_question_zero_shot(self.objects["data"]["train_data_statics"],
-                                                               self.question2concept_list,
-                                                               self.concept2question_list)
+                                                               self.objects["data"]["question2concept"],
+                                                               self.objects["data"]["concept2question"])
             self.embed_question4zero = None
 
         use_LLM_emb4question = self.params["use_LLM_emb4question"]
@@ -57,7 +50,7 @@ class qDKT(nn.Module, BaseModel4CL):
             dim_concept = embed_config["question"][1]
             self.MLP4concept = MLP4LLM_emb(dim_LLM_emb, dim_concept, 0.1)
 
-    def get_concept_emb(self):
+    def get_concept_emb_all(self):
         return self.embed_layer.get_emb_all("concept")
 
     def get_qc_emb4single_concept(self, batch):

@@ -148,7 +148,7 @@ class SimpleKT(nn.Module, BaseModel4CL):
             if p.size(0) == num_question:
                 nn.init.constant_(p, 0.)
 
-    def get_concept_emb(self):
+    def get_concept_emb_all(self):
         return self.embed_concept.weight
 
     def base_emb(self, batch):

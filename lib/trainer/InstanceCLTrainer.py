@@ -117,7 +117,7 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
 
         if do_instance_cl and aug_type == "informative_aug" and use_online_sim and (not use_warm_up4online_sim or after_warm_up):
             t_start = get_now_time()
-            concept_emb = model.get_concept_emb()
+            concept_emb = model.get_concept_emb_all()
             train_loader.dataset.online_similarity.analysis(concept_emb)
             t_end = get_now_time()
             print(f"online similarity analysis: from {t_start} to {t_end}")

@@ -64,7 +64,7 @@ class QIKT(nn.Module):
         self.predict_layer4c_all = MLP(num_mlp_layer, dim_emb, num_concept, dropout)
         self.que_discrimination_layer = MLP(num_mlp_layer, dim_emb * 2, 1, dropout)
 
-    def get_concept_emb(self):
+    def get_concept_emb_all(self):
         return self.embed_layer.get_emb_all("concept")
 
     def get_qc_emb4single_concept(self, batch):

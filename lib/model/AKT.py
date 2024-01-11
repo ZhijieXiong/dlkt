@@ -4,9 +4,9 @@ from sklearn.mixture import GaussianMixture
 
 from .BaseModel4CL import BaseModel4CL
 from .Module.EncoderLayer import EncoderLayer
+from .Module.KTEmbedLayer import KTEmbedLayer
 from .loss_util import binary_entropy
 from .util import get_mask4last_or_penultimate, parse_question_zero_shot
-from ..util.parse import concept2question_from_Q, question2concept_from_Q
 
 
 class AKT(nn.Module, BaseModel4CL):
@@ -58,17 +58,45 @@ class AKT(nn.Module, BaseModel4CL):
 
         # 解析q table
         if params["transfer_head2zero"]:
-            self.question2concept_list = question2concept_from_Q(objects["data"]["Q_table"])
-            self.concept2question_list = concept2question_from_Q(objects["data"]["Q_table"])
             self.question_head4zero = parse_question_zero_shot(self.objects["data"]["train_data_statics"],
-                                                               self.question2concept_list,
-                                                               self.concept2question_list)
+                                                               self.objects["data"]["question2concept"],
+                                                               self.objects["data"]["concept2question"])
             self.embed_question_difficulty4zero = None
             self.embed_question4zero = None
             self.embed_interaction4zero = None
 
-    def get_concept_emb(self):
+    def get_concept_emb_all(self):
         return self.embed_concept.weight
+
+    def get_concept_emb(self, batch):
+        data_type = self.params["datasets_config"]["data_type"]
+        if data_type == "only_question":
+            concept_emb = KTEmbedLayer.concept_fused_emb(
+                self.embed_concept,
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                batch["question_seq"],
+                concept_fusion="mean"
+            )
+        else:
+            concept_emb = self.embed_concept(batch["concept_seq"])
+
+        return concept_emb
+
+    def get_concept_variation_emb(self, batch):
+        data_type = self.params["datasets_config"]["data_type"]
+        if data_type == "only_question":
+            concept_emb = KTEmbedLayer.concept_fused_emb(
+                self.embed_concept_variation,
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                batch["question_seq"],
+                concept_fusion="mean"
+            )
+        else:
+            concept_emb = self.embed_concept_variation(batch["concept_seq"])
+
+        return concept_emb
 
     def base_emb(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
@@ -77,8 +105,9 @@ class AKT(nn.Module, BaseModel4CL):
         correct_seq = batch["correct_seq"]
 
         # c_ct
-        concept_emb = self.embed_concept(concept_seq)
+        concept_emb = self.get_concept_emb(batch)
         if separate_qa:
+            # todo: 有问题，如果是only question也要融合
             interaction_seq = concept_seq + self.num_concept * correct_seq
             interaction_emb = self.embed_interaction(interaction_seq)
         else:
@@ -89,13 +118,12 @@ class AKT(nn.Module, BaseModel4CL):
     def forward(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
         separate_qa = encoder_config["separate_qa"]
-        concept_seq = batch["concept_seq"]
         question_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
 
         # c_{c_t}和e_(ct, rt)
         concept_emb, interaction_emb = self.base_emb(batch)
-        concept_variation_emb = self.embed_concept_variation(concept_seq)
+        concept_variation_emb = self.get_concept_variation_emb(batch)
         question_difficulty_emb = self.embed_question_difficulty(question_seq)
         # mu_{q_t} * d_ct + c_ct
         question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
@@ -121,13 +149,12 @@ class AKT(nn.Module, BaseModel4CL):
     def get_latent(self, batch, use_emb_dropout=False, dropout=0.1):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
         separate_qa = encoder_config["separate_qa"]
-        concept_seq = batch["concept_seq"]
         question_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
 
         # c_{c_t}和e_(ct, rt)
         concept_emb, interaction_emb = self.base_emb(batch)
-        concept_variation_emb = self.embed_concept_variation(concept_seq)
+        concept_variation_emb = self.get_concept_variation_emb(batch)
         question_difficulty_emb = self.embed_question_difficulty(question_seq)
         # mu_{q_t} * d_ct + c_ct
         question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
@@ -227,14 +254,13 @@ class AKT(nn.Module, BaseModel4CL):
     def get_predict_score4question_zero(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
         separate_qa = encoder_config["separate_qa"]
-        concept_seq = batch["concept_seq"]
         question_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
 
         # c_{c_t}和e_(ct, rt)
         concept_emb, interaction_emb = self.base_emb(batch)
-        concept_variation_emb = self.embed_concept_variation(concept_seq)
+        concept_variation_emb = self.get_concept_variation_emb(batch)
         question_difficulty_emb = self.embed_question_difficulty(question_seq)
         # mu_{q_t} * d_ct + c_ct
         question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
@@ -281,12 +307,11 @@ class AKT(nn.Module, BaseModel4CL):
         weight_enhance_loss1 = self.params["loss_config"]["enhance loss 1"]
         weight_enhance_loss2 = self.params["loss_config"]["enhance loss 2"]
         separate_qa = encoder_config["separate_qa"]
-        concept_seq = batch["concept_seq"]
         question_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
 
         concept_emb, interaction_emb = self.base_emb(batch)
-        concept_variation_emb = self.embed_concept_variation(concept_seq)
+        concept_variation_emb = self.get_concept_variation_emb(batch)
         question_difficulty_emb = self.embed_question_difficulty(question_seq)
         question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
         interaction_variation_emb = self.embed_interaction_variation(correct_seq)
@@ -393,11 +418,20 @@ class AKT(nn.Module, BaseModel4CL):
     def base_emb_from_adv_data(self, dataset, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
         separate_qa = encoder_config["separate_qa"]
+        data_type = self.params["datasets_config"]["data_type"]
         concept_seq = batch["concept_seq"]
         correct_seq = batch["correct_seq"]
 
-        # c_ct
-        concept_emb = dataset["embed_concept"](concept_seq)
+        if data_type == "only_question":
+            concept_emb = KTEmbedLayer.concept_fused_emb(
+                dataset["embed_concept"],
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                batch["question_seq"],
+                concept_fusion="mean"
+            )
+        else:
+            concept_emb = dataset["embed_concept"](batch["concept_seq"])
         if separate_qa:
             interaction_seq = concept_seq + self.num_concept * correct_seq
             interaction_emb = dataset["embed_interaction"](interaction_seq)
@@ -409,22 +443,27 @@ class AKT(nn.Module, BaseModel4CL):
     def forward_from_adv_data(self, dataset, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
         separate_qa = encoder_config["separate_qa"]
-        concept_seq = batch["concept_seq"]
+        data_type = self.params["datasets_config"]["data_type"]
         question_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
 
-        # c_{c_t}和e_(ct, rt)
         concept_emb, interaction_emb = self.base_emb_from_adv_data(dataset, batch)
-        concept_variation_emb = dataset["embed_concept_variation"](concept_seq)
+        if data_type == "only_question":
+            concept_variation_emb = KTEmbedLayer.concept_fused_emb(
+                dataset["embed_concept_variation"],
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                batch["question_seq"],
+                concept_fusion="mean"
+            )
+        else:
+            concept_variation_emb = dataset["embed_concept_variation"](batch["concept_seq"])
         question_difficulty_emb = dataset["embed_question_difficulty"](question_seq)
-        # mu_{q_t} * d_ct + c_ct
         question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
         interaction_variation_emb = dataset["embed_interaction_variation"](correct_seq)
         if separate_qa:
-            # uq * f_(ct,rt) + e_(ct,rt)
             interaction_emb = interaction_emb + question_difficulty_emb * interaction_variation_emb
         else:
-            # + uq *(h_rt+d_ct) # （q-response emb diff + question emb diff）
             interaction_emb = \
                 interaction_emb + question_difficulty_emb * (interaction_variation_emb + concept_variation_emb)
         encoder_input = {
@@ -441,22 +480,27 @@ class AKT(nn.Module, BaseModel4CL):
     def get_latent_from_adv_data(self, dataset, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
         separate_qa = encoder_config["separate_qa"]
-        concept_seq = batch["concept_seq"]
+        data_type = self.params["datasets_config"]["data_type"]
         question_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
 
-        # c_{c_t}和e_(ct, rt)
         concept_emb, interaction_emb = self.base_emb_from_adv_data(dataset, batch)
-        concept_variation_emb = dataset["embed_concept_variation"](concept_seq)
+        if data_type == "only_question":
+            concept_variation_emb = KTEmbedLayer.concept_fused_emb(
+                dataset["embed_concept_variation"],
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                batch["question_seq"],
+                concept_fusion="mean"
+            )
+        else:
+            concept_variation_emb = dataset["embed_concept_variation"](batch["concept_seq"])
         question_difficulty_emb = dataset["embed_question_difficulty"](question_seq)
-        # mu_{q_t} * d_ct + c_ct
         question_emb = concept_emb + question_difficulty_emb * concept_variation_emb
         interaction_variation_emb = dataset["embed_interaction_variation"](correct_seq)
         if separate_qa:
-            # uq * f_(ct,rt) + e_(ct,rt)
             interaction_emb = interaction_emb + question_difficulty_emb * interaction_variation_emb
         else:
-            # + uq *(h_rt+d_ct) # （q-response emb diff + question emb diff）
             interaction_emb = \
                 interaction_emb + question_difficulty_emb * (interaction_variation_emb + concept_variation_emb)
         encoder_input = {

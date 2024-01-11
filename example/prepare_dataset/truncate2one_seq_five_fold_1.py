@@ -47,6 +47,6 @@ if __name__ == "__main__":
     dataset_truncated = dataset_truncate2one_seq(data_uniformed,
                                                  params["min_seq_len"],
                                                  params["max_seq_len"],
-                                                 multi_concept=params["data_type"] == "multi_concept",
+                                                 single_concept=params["data_type"] != "multi_concept",
                                                  from_start=params["from_start"])
     n_fold_split1(dataset_truncated, params, objects)

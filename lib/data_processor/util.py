@@ -59,6 +59,46 @@ def process4DIMKT(data_uniformed, num_q_level=100, num_c_level=100):
     return data_processed
 
 
+def process4Akt_assist2009(data_uniformed, concept_id2name, concept_id_map):
+    """
+    AKT中对于Assist2009是丢弃没有concept name的数据（知识点数量由123变为110）
+    :param data_uniformed:
+    :param concept_id2name:
+    :param concept_id_map:
+    :return:
+    """
+    concepts_original_w_name = set(pd.unique(concept_id2name["concept_id"]))
+    concepts_mapped_w_name = []
+    concepts_mapped_all = set(pd.unique(concept_id_map["concept_mapped_id"]))
+    for c_id_ori in concepts_original_w_name:
+        c_id_mapped = concept_id_map[concept_id_map["concept_id"] == c_id_ori]["concept_mapped_id"].iloc[0]
+        concepts_mapped_w_name.append(c_id_mapped)
+    concept2drop = concepts_mapped_all - set(concepts_mapped_w_name)
+
+    data_uniformed = deepcopy(data_uniformed)
+    id_keys, seq_keys = get_keys_from_uniform(data_uniformed)
+
+    data_dropped = []
+    num_drop_interactions = 0
+    for item_data in data_uniformed:
+        item_data_new = {}
+        for k in id_keys:
+            item_data_new[k] = item_data[k]
+        for k in seq_keys:
+            item_data_new[k] = []
+        for i in range(item_data["seq_len"]):
+            c_id = item_data["concept_seq"][i]
+            if c_id in concept2drop:
+                num_drop_interactions += 1
+                continue
+            for k in seq_keys:
+                item_data_new[k].append(item_data[k][i])
+        item_data_new["seq_len"] = len(item_data_new["question_seq"])
+        data_dropped.append(item_data_new)
+
+    return data_dropped
+
+
 def id_remap4data_uniformed(data_uniformed, seq_names2remap):
     """
     将指定的seq id进行重映射，如LPKT用到的time相关信息，有很多time id在数据集中没出现，就可以重映射，减少id数量，从而减少后面训练模型用的显存

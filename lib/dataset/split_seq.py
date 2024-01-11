@@ -1,11 +1,11 @@
 from ..util import parse
 
 
-def dataset_truncate2one_seq(data_uniformed, min_seq_len=2, max_seq_len=200, multi_concept=True, from_start=True):
+def dataset_truncate2one_seq(data_uniformed, min_seq_len=2, max_seq_len=200, single_concept=True, from_start=True):
     """
     截断数据，取最前面或者最后面一段，不足的在后面补0
     :param data_uniformed:
-    :param multi_concept:
+    :param single_concept:
     :param from_start:
     :param min_seq_len:
     :param max_seq_len:
@@ -18,7 +18,7 @@ def dataset_truncate2one_seq(data_uniformed, min_seq_len=2, max_seq_len=200, mul
         item_data_new = {key: item_data[key] for key in id_keys}
         seq_len = item_data["seq_len"]
         start_index, end_index = 0, seq_len
-        if not multi_concept:
+        if single_concept:
             if seq_len > max_seq_len and from_start:
                 end_index = max_seq_len
             if seq_len > max_seq_len and not from_start:
@@ -155,7 +155,7 @@ def truncate2multi_seq4multi_concept(item_data, seq_keys, id_keys, max_seq_len):
     return result
 
 
-def dataset_truncate2multi_seq(data_uniformed, min_seq_len=2, max_seq_len=200, single_concept=False):
+def dataset_truncate2multi_seq(data_uniformed, min_seq_len=2, max_seq_len=200, single_concept=True):
     """
     截断数据，不足补0，多的当新数据
     :param data_uniformed:

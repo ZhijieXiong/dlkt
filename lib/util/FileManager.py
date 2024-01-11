@@ -5,6 +5,7 @@ import numpy as np
 
 
 from .data import load_json, write_json
+from ..data_processor.load_raw import load_csv
 
 
 class FileManager:
@@ -158,7 +159,10 @@ class FileManager:
     def get_q_table(self, dataset_name, data_type):
         assert data_type in ["multi_concept", "single_concept", "only_question"]
         preprocessed_dir = self.get_preprocessed_dir(dataset_name)
-        Q_table_path = os.path.join(preprocessed_dir, f"Q_table_{data_type}.npy")
+        if data_type == "only_question":
+            Q_table_path = os.path.join(preprocessed_dir, "Q_table_multi_concept.npy")
+        else:
+            Q_table_path = os.path.join(preprocessed_dir, f"Q_table_{data_type}.npy")
         Q_table = np.load(Q_table_path)
         return Q_table
 
@@ -173,6 +177,17 @@ class FileManager:
         assert data_type in ["multi_concept", "single_concept", "only_question"]
         preprocessed_dir = self.get_preprocessed_dir(dataset_name)
         return os.path.join(preprocessed_dir, f"data_{data_type}.txt")
+
+    def get_concept_id2name(self, dataset_name):
+        preprocessed_dir = self.get_preprocessed_dir(dataset_name)
+        concept_id2name_path = os.path.join(preprocessed_dir, "concept_id2name_map.csv")
+        return load_csv(concept_id2name_path)
+
+    def get_concept_id_map(self, dataset_name, data_type):
+        assert data_type in ["multi_concept", "single_concept"]
+        preprocessed_dir = self.get_preprocessed_dir(dataset_name)
+        concept_id_map_path = os.path.join(preprocessed_dir, f"concept_id_map_{data_type}.csv")
+        return load_csv(concept_id_map_path)
 
     # ==================================================================================================================
 

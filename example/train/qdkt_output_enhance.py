@@ -70,8 +70,8 @@ if __name__ == "__main__":
                         help="0: all\n"
                              "1: only score constraint (S_easier - S >= 0 and S - S_harder >= 0)\n"
                              "2: only study constraint (if correct == 1, S_{q, t} - S_{q, t-1} >= 0, q is zero (or and few) shot question)")
-    parser.add_argument("--weight_enhance_loss1", type=float, default=100)
-    parser.add_argument("--num_min_question4diff", type=int, default=100)
+    parser.add_argument("--weight_enhance_loss1", type=float, default=50)
+    parser.add_argument("--num_min_question4diff", type=int, default=25)
     parser.add_argument("--hard_acc", type=float, default=0.4)
     parser.add_argument("--easy_acc", type=float, default=0.8)
     parser.add_argument("--weight_enhance_loss2", type=float, default=3)

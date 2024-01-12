@@ -1,8 +1,8 @@
 # DLKT
 
-[Doc] | [Datasets] | [Models] | [中文版]
+[Document] | [Datasets] | [Models] | [中文版]
 
-[Doc]: DOC.md
+[Document]: DOC.md
 [Datasets]: KT_DATASETS.md
 [Models]: KT_MODELS.md
 [中文版]: README_CN.md
@@ -28,4 +28,26 @@
      python example/set_up.py
      ```
 
-2. Place the original files of the dataset in the corresponding directory
+2. Place the original files of the dataset in the corresponding directory (Please refer to [Document](DOC.md) for details)
+
+3. Data Preprocessing: Run ` example/reprocess.py`, for example
+
+   ```shell
+   python example/preprocess.py --dataset_name assist2009
+   ```
+
+4. Divide the dataset according to the specified experimental settings. For example, dividing the dataset according to the experimental setup of the AKT paper, i.e. 
+
+   ```shell
+   python example/prepare_dataset/akt_setting.py
+   ```
+
+   - For details on dataset partitioning, please refer to [Document](DOC.md)
+
+5. Run the file under `example/train`, for example
+
+   ```shell
+   python example/train/dkt.py
+   ```
+
+   - Regarding the meaning of parameters, please refer to [Document](Doc.md)

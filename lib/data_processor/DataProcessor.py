@@ -639,7 +639,7 @@ class DataProcessor:
         }
 
         # only_question
-        id_keys = list(set(df.columns) - set(info_name_table.values()) - {"order_id"})
+        id_keys = list(set(df.columns) - set(info_name_table.values()) - {"order_id", "concept_name"})
         dataset_seq_keys = CONSTANT.datasets_seq_keys()["assist2009"]
         # 去除多知识点习题的冗余
         df = df[~df.duplicated(subset=["user_id", "order_id", "question_id"])]

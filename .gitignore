@@ -24,3 +24,5 @@ back_up/
 /example/lab_result.txt
 /example/record.txt
 /.DS_Store
+/freeze.yml
+/requirements.txt

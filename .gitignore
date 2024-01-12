@@ -5,11 +5,8 @@ lab/
 tmp/
 cluster_models/
 server_models/
-example/script_cluster
 example/result_cluster
-example/script_server
 example/result_server
-example/script_local
 example/result_local
 back_up/
 .idea/

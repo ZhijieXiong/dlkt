@@ -3,13 +3,11 @@ import os.path
 import random
 import json
 import torch
-import numpy as np
-
 from collections import Counter
 from copy import deepcopy
 
 from ..util import data as data_util
-from ..util import parse as parse_util
+from lib.util.graph import *
 
 
 def cos_sim_self(matrix):
@@ -31,8 +29,6 @@ class OfflineSimilarity:
 
         self.data = None
         self.data_type = None
-        self.question2concept = parse_util.question2concept_from_Q(self.objects["data"]["Q_table"])
-        self.concept2question = parse_util.concept2question_from_Q(self.objects["data"]["Q_table"])
         self.question_frequency = None
         self.concept_frequency = None
         self.low_frequency_q = None
@@ -48,6 +44,8 @@ class OfflineSimilarity:
         self.concept_next_candidate = None
         self.concept_similarity_table = None
         self.question_similarity_table = None
+        self.concept_prerequisite_table = None
+        self.offline_sim_type = None
 
     def parse(self, data, data_type):
         """
@@ -56,14 +54,15 @@ class OfflineSimilarity:
         :param data_type:
         :return:
         """
-        self.data_type = data_type
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         num_concept = dataset_config_this["kt4aug"]["informative_aug"]["num_concept"]
         num_question = dataset_config_this["kt4aug"]["informative_aug"]["num_question"]
         self.concept_similarity_table = {c_id: None for c_id in range(num_concept)}
+        self.concept_prerequisite_table = {c_id: None for c_id in range(num_concept)}
         self.question_similarity_table = {q_id: None for q_id in range(num_question)}
 
         self.data = data
+        self.data_type = data_type
 
         if num_concept is not None:
             self.get_concept_similar_table()
@@ -99,10 +98,10 @@ class OfflineSimilarity:
             self.question_dissimilarity[q] -= 0.1
         # 存储习题不相似度为table，方便后面查询（习题只存同一知识点下的习题）
         for q in range(num_question):
-            cs_correspond = self.question2concept[q]
+            cs_correspond = self.objects["data"]["question2concept"][q]
             qs_share_concept = []
             for c_correspond in cs_correspond:
-                qs_share_concept += self.concept2question[c_correspond]
+                qs_share_concept += self.objects["data"]["concept2question"][c_correspond]
             qs_share_concept = list(set(qs_share_concept))
             dissimilarity_score = self.question_dissimilarity[qs_share_concept, q]
             sort_index = np.argsort(dissimilarity_score)
@@ -171,11 +170,11 @@ class OfflineSimilarity:
                 self.concept_next_candidate[i][j] = [0, 0]
         for item_data in data:
             q_first = item_data["question_seq"][0]
-            cs_first = self.question2concept[q_first]
+            cs_first = self.objects["data"]["question2concept"][q_first]
             cs_previous = set(cs_first)
             cs_last = cs_first
-            for q_cur in item_data["question_seq"][1:]:
-                cs_cur = self.question2concept[q_cur]
+            for q_cur in item_data["question_seq"][1:item_data["seq_len"]]:
+                cs_cur = self.objects["data"]["question2concept"][q_cur]
                 for c_previous in cs_previous:
                     for c_cur in cs_cur:
                         self.concept_next_candidate[c_previous][c_cur][0] += 1
@@ -199,8 +198,15 @@ class OfflineSimilarity:
             self.concept_similarity_table[i] = [i]
             self.concept_similarity_table[i] += list(map(lambda three: three[0], concepts_related))
 
-    def cal_concept_similarity_table_RCD_graph(self):
-        pass
+    def cal_concept_table_RCD_graph(self):
+        # 根据RCD构造的有向图和无向图提取知识点的相似和先修关系
+        dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
+        num_concept = dataset_config_this["kt4aug"]["informative_aug"]["num_concept"]
+
+        concept_edge = RCD_construct_dependency_matrix(self.data, num_concept, self.objects["data"]["Q_table"])
+        concept_undirected, concept_directed = RCD_process_edge(concept_edge)
+        self.concept_similarity_table = undirected_graph2similar(concept_undirected)
+        self.concept_prerequisite_table = directed_graph2pre_and_post(concept_directed)
 
     def get_concept_similar_table(self):
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
@@ -209,12 +215,22 @@ class OfflineSimilarity:
         file_name = dataset_config_this["file_name"]
         setting_dir = self.objects["file_manager"].get_setting_dir(setting_name)
         offline_sim_type = informative_config["offline_sim_type"]
+        self.offline_sim_type = offline_sim_type
         concept_similar_table_name = file_name.replace(".txt", f"_concept_similar_table_by_{offline_sim_type}.json")
         similar_table_path = os.path.join(setting_dir, concept_similar_table_name)
+
         if os.path.exists(similar_table_path):
             concept_similarity_table = data_util.load_json(similar_table_path)
-            for k in concept_similarity_table:
-                self.concept_similarity_table[int(k)] = concept_similarity_table[k]
+            if offline_sim_type == "order":
+                for k in concept_similarity_table:
+                    self.concept_similarity_table[int(k)] = concept_similarity_table[k]
+            if offline_sim_type == "RCD_graph":
+                concept_similarity_table = concept_similarity_table["similar"]
+                concept_prerequisite_table = concept_similarity_table["prerequisite"]
+                for k in concept_similarity_table:
+                    self.concept_similarity_table[int(k)] = concept_similarity_table[k]
+                for k in concept_prerequisite_table:
+                    self.concept_prerequisite_table[int(k)] = concept_prerequisite_table[k]
             return
 
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
@@ -228,7 +244,7 @@ class OfflineSimilarity:
         elif offline_sim_type == "order":
             self.cal_concept_similarity_table_order()
         elif offline_sim_type == "RCD_graph":
-            self.cal_concept_similarity_table_RCD_graph()
+            self.cal_concept_table_RCD_graph()
         else:
             raise NotImplementedError()
 
@@ -247,7 +263,16 @@ class OfflineSimilarity:
         if self.data_type == "multi_concept" and target == "question":
             data = data_util.dataset_agg_concept(data)
         num_item = num_concept if target == "concept" else num_question
-        item_seqs = list(map(lambda item_data: item_data[target_seq], data))
+        if target == "concept" and self.data_type == "only_question":
+            item_seqs = []
+            for item_data in self.data:
+                item_seq = []
+                for q_id in item_data["question_seq"][:item_data["seq_len"]]:
+                    c_ids = self.objects["data"]["question2concept"][q_id]
+                    item_seq += c_ids
+                item_seqs.append(item_seq)
+        else:
+            item_seqs = list(map(lambda x: x[target_seq], data))
         items = []
         for question_seq in item_seqs:
             items += question_seq
@@ -275,7 +300,8 @@ class OfflineSimilarity:
         count = {i: 0 for i in range(num_question)}
         correct = {i: 0 for i in range(num_question)}
         for item_data in data:
-            for q_id, c in zip(item_data["question_seq"], item_data["correct_seq"]):
+            seq_len = item_data["seq_len"]
+            for q_id, c in zip(item_data["question_seq"][:seq_len], item_data["correct_seq"][:seq_len]):
                 count[q_id] += 1
                 if c == 1:
                     correct[q_id] += 1
@@ -297,7 +323,8 @@ class OfflineSimilarity:
         count = {i: 0 for i in range(num_concept)}
         correct = {i: 0 for i in range(num_concept)}
         for item_data in self.data:
-            for c_id, c in zip(item_data["concept_seq"], item_data["correct_seq"]):
+            seq_len = item_data["seq_len"]
+            for c_id, c in zip(item_data["concept_seq"][:seq_len], item_data["correct_seq"][:seq_len]):
                 count[c_id] += 1
                 if c == 1:
                     correct[c_id] += 1
@@ -324,14 +351,14 @@ class OfflineSimilarity:
             return self.question_similarity_table[question_id]
 
     def get_qs_in_concept(self, concept_id):
-        return self.concept2question[concept_id]
+        return self.objects["data"]["concept2question"][concept_id]
 
     def get_random_q_in_concept(self, concept_id):
-        num_qs = len(self.concept2question[concept_id])
+        num_qs = len(self.objects["data"]["concept2question"][concept_id])
         num_seg = num_qs // 100
         index_selected = int(random.random() * num_seg) + int(random.random() * 100)
         index_selected = min(index_selected, num_qs - 1)
-        return self.concept2question[concept_id][index_selected]
+        return self.objects["data"]["concept2question"][concept_id][index_selected]
 
 
 class OnlineSimilarity:

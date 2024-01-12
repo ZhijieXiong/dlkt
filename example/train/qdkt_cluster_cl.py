@@ -15,13 +15,13 @@ from lib.trainer.ClusterCLTrainer import ClusterCLTrainer
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
-    parser.add_argument("--setting_name", type=str, default="random_split_leave_multi_out_setting")
-    parser.add_argument("--dataset_name", type=str, default="assist2012")
+    parser.add_argument("--setting_name", type=str, default="our_setting")
+    parser.add_argument("--dataset_name", type=str, default="edi2020-task34")
     parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2012_train_split_5.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2012_valid_split_5.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2012_test_split_5.txt")
+    parser.add_argument("--train_file_name", type=str, default="edi2020-task34_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="edi2020-task34_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="edi2020-task34_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
     parser.add_argument("--weight_decay", type=float, default=0.0001)
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
     # cluster CL参数（对比学习）
-    parser.add_argument("--use_warm_up4cl", type=str2bool, default=True)
+    parser.add_argument("--use_warm_up4cl", type=str2bool, default=False)
     parser.add_argument("--epoch_warm_up4cl", type=float, default=4)
     parser.add_argument("--num_cluster", type=int, default=256)
     parser.add_argument("--temp", type=float, default=0.05)
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     parser.add_argument("--cl_type", type=str, default="last_time",
                         choices=("last_time", "mean_pool"))
     # random aug和informative aug参数
-    parser.add_argument("--aug_type", type=str, default="informative_aug",
+    parser.add_argument("--aug_type", type=str, default="random_aug",
                         choices=("random_aug", "informative_aug"))
     parser.add_argument("--use_random_select_aug_len", type=str2bool, default=True)
     parser.add_argument("--mask_prob", type=float, default=0.1)
@@ -85,11 +85,11 @@ if __name__ == "__main__":
     parser.add_argument("--crop_prob", type=float, default=0.1)
     parser.add_argument("--permute_prob", type=float, default=0.1)
     parser.add_argument("--hard_neg_prob", type=float, default=1)
-    parser.add_argument("--aug_order", type=str, default="['crop', 'replace', 'insert']",
+    parser.add_argument("--aug_order", type=str, default="['mask', 'replace', 'permute', 'crop']",
                         help="CL4KT: ['mask', 'replace', 'permute', 'crop']"
                              "info aug: ['mask', 'crop', 'replace', 'insert']")
     parser.add_argument("--offline_sim_type", type=str, default="order",
-                        choices=("order",))
+                        choices=("order", "RCD_graph"))
     # max entropy adv aug参数
     parser.add_argument("--use_adv_aug", type=str2bool, default=False)
     parser.add_argument("--epoch_interval_generate", type=int, default=3)

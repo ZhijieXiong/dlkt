@@ -122,7 +122,7 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
 
             self.clus.train(latent_all)
             t_end = get_now_time()
-            print(f"cluster: from {t_start} to {t_end}")
+            self.objects["logger"].info(f"cluster: from {t_start} to {t_end}")
 
     def do_online_sim(self):
         use_online_sim = self.params["other"]["cluster_cl"]["use_online_sim"]
@@ -140,7 +140,7 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
             concept_emb = model.get_concept_emb_all()
             train_loader.dataset.online_similarity.analysis(concept_emb)
             t_end = get_now_time()
-            print(f"online similarity analysis: from {t_start} to {t_end}")
+            self.objects["logger"].info(f"online similarity analysis: from {t_start} to {t_end}")
 
     def do_max_entropy_aug(self):
         use_adv_aug = self.params["other"]["cluster_cl"]["use_adv_aug"]
@@ -175,7 +175,7 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
             # torch.backends.cudnn.enabled = True
             self.num_epoch_adv_gen += 1
             t_end = get_now_time()
-            print(f"max entropy adversarial data augment: from {t_start} to {t_end}, {self.adv_loss.get_str()}")
+            self.objects["logger"].info(f"max entropy adversarial data augment: from {t_start} to {t_end}, {self.adv_loss.get_str()}")
             self.adv_loss.clear_loss()
             self.data_generated_remove_grad()
 

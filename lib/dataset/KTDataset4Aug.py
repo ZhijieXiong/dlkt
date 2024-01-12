@@ -61,6 +61,8 @@ class KTDataset4Aug(Dataset):
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         aug_type = dataset_config_this["kt4aug"]["aug_type"]
         item_data2aug = deepcopy(self.data_uniformed[index])
+        if "age_seq" in item_data2aug.keys():
+            del item_data2aug["age_seq"]
         if aug_type in ["random_aug", "informative_aug"]:
             random_select_aug_len = dataset_config_this["kt4aug"][aug_type]["random_select_aug_len"]
             seq_len = item_data2aug["seq_len"]
@@ -102,20 +104,14 @@ class KTDataset4Aug(Dataset):
             num_concept_difficulty = dataset_config_this["kt4aug"]["diff4dimkt"]["num_concept_difficulty"]
             question_difficulty = self.objects["dimkt"]["question_difficulty"]
             concept_difficulty = self.objects["dimkt"]["concept_difficulty"]
-            # question diff随机波动的范围
-            diff_k = 2
             for data_aug in datas_aug:
                 data_aug["question_diff_seq"] = []
                 data_aug["concept_diff_seq"] = []
                 for q_id in data_aug["question_seq"]:
                     q_diff = question_difficulty.get(q_id, num_question_difficulty)
-                    # if q_diff != num_question_difficulty:
-                    #     q_diff = random.randint(max(0, q_diff-diff_k), min(num_question_difficulty-1, q_diff+diff_k))
                     data_aug["question_diff_seq"].append(q_diff)
                 for c_id in data_aug["concept_seq"]:
                     c_diff = concept_difficulty.get(c_id, num_concept_difficulty)
-                    # if c_diff != num_concept_difficulty:
-                    #     c_diff = random.randint(max(0, c_diff-diff_k), min(num_concept_difficulty-1, c_diff+diff_k))
                     data_aug["concept_diff_seq"].append(c_diff)
 
         # 补零
@@ -383,7 +379,7 @@ class KTDataset4Aug(Dataset):
         id_keys, seq_keys = get_keys_from_uniform(dataset_original)
         all_keys = set(id_keys).union(seq_keys)
         id_keys = list(set(id_keys) - unuseful_keys)
-        seq_keys = list(set(seq_keys) - unuseful_keys)
+        seq_keys = list(set(seq_keys) - unuseful_keys - {"age_seq"})
         unuseful_keys = all_keys - set(id_keys).union(set(seq_keys))
         for item_data in dataset_original:
             for k in unuseful_keys:
@@ -508,9 +504,8 @@ class KTDataset4Aug(Dataset):
         else:
             data = self.objects["dataset_this"]
         self.max_seq_len = len(data[0]["mask_seq"])
-        data = data_util.dataset_delete_pad(data)
         self.offline_similarity = OfflineSimilarity(self.params, self.objects)
-        self.offline_similarity.parse(data, data_type)
+        self.offline_similarity.parse(deepcopy(data), data_type)
         self.online_similarity = OnlineSimilarity()
 
     def update_online_sim4info_aug(self):

@@ -120,7 +120,7 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
             concept_emb = model.get_concept_emb_all()
             train_loader.dataset.online_similarity.analysis(concept_emb)
             t_end = get_now_time()
-            print(f"online similarity analysis: from {t_start} to {t_end}")
+            self.objects["logger"].info(f"online similarity analysis: from {t_start} to {t_end}")
 
     def do_max_entropy_aug(self):
         use_adv_aug = self.params["other"]["instance_cl"]["use_adv_aug"]
@@ -155,7 +155,7 @@ class InstanceCLTrainer(KnowledgeTracingTrainer):
             # torch.backends.cudnn.enabled = True
             self.num_epoch_adv_gen += 1
             t_end = get_now_time()
-            print(f"max entropy adversarial data augment: from {t_start} to {t_end}, {self.adv_loss.get_str()}")
+            self.objects["logger"].info(f"max entropy adversarial data augment: from {t_start} to {t_end}, {self.adv_loss.get_str()}")
             self.adv_loss.clear_loss()
             self.data_generated_remove_grad()
 

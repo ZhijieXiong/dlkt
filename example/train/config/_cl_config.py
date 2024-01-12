@@ -311,6 +311,22 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
     data_type = local_params["data_type"]
     global_objects["data"]["Q_table"] = global_objects["file_manager"].get_q_table(dataset_name, data_type)
 
+    # 打印参数
+    info_aug_params_str = f"offline sim type: {local_params['offline_sim_type']}, use online sim: {use_online_sim}, " \
+                          f"use warm up for online sim: {use_warm_up4online_sim}, num of warm up epoch for online sim: {epoch_warm_up4online_sim}"
+    global_objects["logger"].info(
+        f"input data aug\n"
+        f"    aug_type: {aug_type}, aug order: {local_params['aug_order']}, random aug len: {random_select_aug_len}\n"
+        f"    {'use random data aug' if aug_type == 'random_aug' else f'use info data aug, {info_aug_params_str}'}\n"
+        f"    mask prob: {mask_prob}, crop prob: {crop_prob}, replace prob: {replace_prob}, insert prob: {insert_prob}, permute prob: {permute_prob}\n"
+        f"instance cl\n"
+        f"    temp: {temp}, weight of cl loss: {weight_cl_loss}, num of cluster: {num_cluster}\n"
+        f"    use warm up for cl: {use_warm_up4cl}{f', num of warm up epoch for cl: {epoch_warm_up4cl}' if use_warm_up4cl else ''}, "
+        f"max_entropy_adv_aug\n"
+        f"    use max entropy adv aug: {use_adv_aug}, interval epoch of generation: {epoch_interval_generate}, generate loops: {loop_adv}, num of generation epoch: {epoch_generate}\n"
+        f"    adv lr: {adv_learning_rate}, eta: {eta}, gamma: {gamma}"
+    )
+
 
 def meta_optimize_cl_general_config(local_params, global_params, global_objects):
     # 配置Extractor参数

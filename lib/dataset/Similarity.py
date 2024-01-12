@@ -49,7 +49,6 @@ class OfflineSimilarity:
 
     def parse(self, data, data_type):
         """
-        传入的data需要是去掉padding的
         :param data:
         :param data_type:
         :return:
@@ -74,7 +73,7 @@ class OfflineSimilarity:
         setting_name = dataset_config_this["setting_name"]
         file_name = dataset_config_this["file_name"]
         setting_dir = self.objects["file_manager"].get_setting_dir(setting_name)
-        question_similar_table_name = file_name.replace(".txt", "_question_similar_table.json")
+        question_similar_table_name = file_name.replace(".txt", "_question_table4info_aug.json")
         similar_table_path = os.path.join(setting_dir, question_similar_table_name)
 
         if os.path.exists(similar_table_path):
@@ -111,14 +110,14 @@ class OfflineSimilarity:
             with open(similar_table_path, "w") as f:
                 json.dump(self.question_similarity_table, f)
 
-    def cal_concept_similarity_table_ItemCF_IUF(self):
+    def get_concept_table_by_ItemCF_IUF(self):
         # 用推荐系统的公式计算知识点相似度
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         num_concept = dataset_config_this["kt4aug"]["informative_aug"]["num_concept"]
         C = dict()
         N = dict()
         data = deepcopy(self.data)
-        concept_seqs = list(map(lambda item_data: item_data["concept_seq"], data))
+        concept_seqs = list(map(lambda item_data: item_data["concept_seq"][:item_data["seq_len"]], data))
         for concept_seq in concept_seqs:
             for i in concept_seq:
                 N.setdefault(i, 0)
@@ -140,7 +139,7 @@ class OfflineSimilarity:
         for c in range(num_concept):
             self.concept_similarity_table[c] = np.argsort(self.concept_dissimilarity[:, c])[::-1].tolist()
 
-    def cal_concept_similarity_table_difficulty(self):
+    def get_concept_table_by_difficulty(self):
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         num_concept = dataset_config_this["kt4aug"]["informative_aug"]["num_concept"]
         self.cal_concept_difficulty()
@@ -183,7 +182,7 @@ class OfflineSimilarity:
                 cs_previous.union(cs_cur)
                 cs_last = cs_cur
 
-    def cal_concept_similarity_table_order(self):
+    def get_concept_table_by_order(self):
         self.concept_order()
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         num_concept = dataset_config_this["kt4aug"]["informative_aug"]["num_concept"]
@@ -198,7 +197,7 @@ class OfflineSimilarity:
             self.concept_similarity_table[i] = [i]
             self.concept_similarity_table[i] += list(map(lambda three: three[0], concepts_related))
 
-    def cal_concept_table_RCD_graph(self):
+    def get_concept_table_by_RCD_graph(self):
         # 根据RCD构造的有向图和无向图提取知识点的相似和先修关系
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         num_concept = dataset_config_this["kt4aug"]["informative_aug"]["num_concept"]
@@ -216,7 +215,7 @@ class OfflineSimilarity:
         setting_dir = self.objects["file_manager"].get_setting_dir(setting_name)
         offline_sim_type = informative_config["offline_sim_type"]
         self.offline_sim_type = offline_sim_type
-        concept_similar_table_name = file_name.replace(".txt", f"_concept_similar_table_by_{offline_sim_type}.json")
+        concept_similar_table_name = file_name.replace(".txt", f"_concept_table4info_aug_by_{offline_sim_type}.json")
         similar_table_path = os.path.join(setting_dir, concept_similar_table_name)
 
         if os.path.exists(similar_table_path):
@@ -238,13 +237,13 @@ class OfflineSimilarity:
         self.concept_frequency, self.low_frequency_c, self.high_frequency_c = self.cal_frequency(
             int(num_concept * 0.8), "concept")
         if offline_sim_type == "difficulty":
-            self.cal_concept_similarity_table_difficulty()
+            self.get_concept_table_by_difficulty()
         elif offline_sim_type == "ItemCF_IUF":
-            self.cal_concept_similarity_table_ItemCF_IUF()
+            self.get_concept_table_by_ItemCF_IUF()
         elif offline_sim_type == "order":
-            self.cal_concept_similarity_table_order()
+            self.get_concept_table_by_order()
         elif offline_sim_type == "RCD_graph":
-            self.cal_concept_table_RCD_graph()
+            self.get_concept_table_by_RCD_graph()
         else:
             raise NotImplementedError()
 
@@ -253,7 +252,7 @@ class OfflineSimilarity:
                 json.dump(self.concept_similarity_table, f)
 
     def cal_frequency(self, freq_threshold=30, target="question"):
-        # 统计频率，对于低频率的知识点/习题，其难度和区分度赋值为中间水平
+        # 统计频率
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         num_concept = dataset_config_this["kt4aug"]["informative_aug"]["num_concept"]
         num_question = dataset_config_this["kt4aug"]["informative_aug"]["num_question"]
@@ -262,6 +261,7 @@ class OfflineSimilarity:
         data = self.data
         if self.data_type == "multi_concept" and target == "question":
             data = data_util.dataset_agg_concept(data)
+
         num_item = num_concept if target == "concept" else num_question
         if target == "concept" and self.data_type == "only_question":
             item_seqs = []
@@ -324,10 +324,18 @@ class OfflineSimilarity:
         correct = {i: 0 for i in range(num_concept)}
         for item_data in self.data:
             seq_len = item_data["seq_len"]
-            for c_id, c in zip(item_data["concept_seq"][:seq_len], item_data["correct_seq"][:seq_len]):
-                count[c_id] += 1
-                if c == 1:
-                    correct[c_id] += 1
+            if self.data_type == "only_question":
+                for q_id, c in zip(item_data["question_seq"][:seq_len], item_data["correct_seq"][:seq_len]):
+                    c_ids = self.objects["data"]["question2concept"][q_id]
+                    for c_id in c_ids:
+                        count[c_id] += 1
+                        if c == 1:
+                            correct[c_id] += 1
+            else:
+                for c_id, c in zip(item_data["concept_seq"][:seq_len], item_data["correct_seq"][:seq_len]):
+                    count[c_id] += 1
+                    if c == 1:
+                        correct[c_id] += 1
 
         for c_id in range(num_concept):
             if count[c_id] == 0:
@@ -343,6 +351,13 @@ class OfflineSimilarity:
             return self.concept_similarity_table[concept_id][1:top_k + 1]
         else:
             return self.concept_similarity_table[concept_id]
+
+    def get_pre_or_post_concept(self, concept_id, prerequisite=True):
+        k = "pre" if prerequisite else "post"
+        if len(self.concept_prerequisite_table[concept_id][k]) > 0:
+            return self.concept_similarity_table[concept_id][k]
+        else:
+            return [concept_id]
 
     def get_similar_question(self, question_id, top_k=10):
         if len(self.question_similarity_table[question_id]) > 1:

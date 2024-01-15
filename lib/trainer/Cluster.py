@@ -1,10 +1,12 @@
 import torch
 import numpy as np
-try:
-    from sklearnex import patch_sklearn
-    patch_sklearn()
-except ModuleNotFoundError:
-    print("not module sklearnex, can not use it to speed cluster")
+
+# try:
+#     # 会导致日志输出重复（多线程），还不知道怎么解决
+#     from sklearnex import patch_sklearn
+#     patch_sklearn()
+# except ModuleNotFoundError:
+#     print("not module sklearnex, can not use it to speed cluster")
 from sklearn.cluster import KMeans
 # from kmeans_pytorch import kmeans, kmeans_predict
 

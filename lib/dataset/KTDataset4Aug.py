@@ -215,18 +215,21 @@ class KTDataset4Aug(Dataset):
         insert_prob = informative_aug_config["insert_prob"]
         replace_prob = informative_aug_config["replace_prob"]
         crop_prob = informative_aug_config["crop_prob"]
+        permute_prob = informative_aug_config["permute_prob"]
         aug_result = []
         for _ in range(num_aug):
             item_data_aug = deepcopy(item_data2aug)
             for aug_type in aug_order:
                 if aug_type == "mask":
-                    item_data_aug = self.informative_mask(item_data_aug, mask_prob, 6)
+                    item_data_aug = KTDataRandomAug.mask_seq(item_data_aug, mask_prob, 6)
                 elif aug_type == "insert":
                     item_data_aug = self.informative_insert(item_data_aug, insert_prob)
                 elif aug_type == "replace":
                     item_data_aug = self.informative_replace(item_data_aug, replace_prob)
                 elif aug_type == "crop":
                     item_data_aug = KTDataRandomAug.crop_seq(item_data_aug, crop_prob, 6)
+                elif aug_type == "permute":
+                    item_data_aug = KTDataRandomAug.permute_seq(item_data_aug, permute_prob, 6)
                 else:
                     raise NotImplementedError()
             item_data_aug["seq_len"] = len(item_data_aug["mask_seq"])
@@ -235,47 +238,62 @@ class KTDataset4Aug(Dataset):
 
     def informative_replace(self, sample, prob):
         """
-        目前只考虑习题和知识点信息都有的数据集
+        目前只考虑习题和知识点信息都有的数据集，替换时可能只替换习题（相同知识点），或者知识点和习题（从对应知识点下随机抽选）都替换
         :param sample:
         :param prob:
         :return:
         """
+        data_type = self.params["datasets_config"]["data_type"]
         sample = deepcopy(sample)
         seq_len = sample["seq_len"]
         replace_idx = random.sample([i for i in range(seq_len)], k=max(1, int(seq_len*prob)))
         replace_func = self.replace_aug[self.similarity_type]
         for i in replace_idx:
-            similar_questions = replace_func(sample["question_seq"][i])
-            sample["question_seq"][i] = random.choice(similar_questions)
+            q_id = sample["question_seq"][i]
+            if random.choice([0, 1]) == 0:
+                # 只替换习题
+                similar_questions = replace_func(q_id)
+                sample["question_seq"][i] = random.choice(similar_questions)
+            else:
+                # 替换知识点时，从该习题对应知识点下随机选一个知识点找其相似知识点
+                c_ids = self.objects["data"]["question2concept"][q_id]
+                c_id = random.choice(c_ids)
+                similar_cs = self.offline_similarity.get_similar_concepts(c_id)
+                similar_c = random.choice(similar_cs)
+                similar_q = self.offline_similarity.get_random_q_in_concept(similar_c)
+
+                if data_type != "only_question":
+                    sample["concept_seq"][i] = similar_c
+                sample["question_seq"][i] = similar_q
 
         return sample
 
-    def informative_replace_offline(self, item_id, target="question", top_k=100):
+    def informative_replace_offline(self, item_id, target="question"):
         if target == "question":
-            similar_items = self.offline_similarity.get_similar_question(item_id, top_k)
+            similar_items = self.offline_similarity.get_similar_questions(item_id)
         else:
-            similar_items = self.offline_similarity.get_similar_concept(item_id, 10)
+            similar_items = self.offline_similarity.get_similar_concepts(item_id)
         return similar_items
 
-    def informative_replace_online(self, item_id, target="question", top_k=100):
+    def informative_replace_online(self, item_id, target="question"):
         if target == "question":
-            similar_items = self.offline_similarity.get_similar_question(item_id, top_k)
+            similar_items = self.offline_similarity.get_similar_questions(item_id)
         else:
-            similar_items = self.online_similarity.get_similar_concept(item_id, 10)
+            similar_items = self.online_similarity.get_similar_concepts(item_id)
         return similar_items
 
-    def informative_replace_hybrid(self, item_id, target="question", top_k=(3, 7)):
+    def informative_replace_hybrid(self, item_id, target="question"):
         if target == "question":
-            similar_items = self.offline_similarity.get_similar_question(item_id, 100)
+            similar_items = self.offline_similarity.get_similar_questions(item_id)
         else:
-            similar_items1 = self.offline_similarity.get_similar_concept(item_id, top_k[0])
-            similar_items2 = self.online_similarity.get_similar_concept(item_id, top_k[1])
+            similar_items1 = self.offline_similarity.get_similar_concepts(item_id)
+            similar_items2 = self.online_similarity.get_similar_concepts(item_id, 10)
             similar_items = np.concatenate((similar_items1, similar_items2))
         return similar_items
 
     def informative_insert(self, sample, prob):
         """
-        目前只考虑习题和知识点信息都有的数据集
+        目前只考虑习题和知识点信息都有的数据集，如果做对，则在前面插入一个先修知识点习题，并且做对；如果做错，则在后面插入一个后修知识点，并且做错
         :param sample:
         :param prob:
         :return:
@@ -296,51 +314,89 @@ class KTDataset4Aug(Dataset):
 
         sample_new = {k: [] for k in seq_keys}
         replace_func = self.replace_aug[self.similarity_type]
+        data_type = self.params["datasets_config"]["data_type"]
+        dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
+        offline_sim_type = dataset_config_this["kt4aug"]["informative_aug"]["offline_sim_type"]
+
         for i, insert_flag in enumerate(do_insert):
+            correct = sample["correct_seq"][i]
+            q_id = sample["question_seq"][i]
+            if data_type != "only_question":
+                c_id = sample["concept_seq"][i]
+            else:
+                c_ids = self.objects["data"]["question2concept"][q_id]
+                c_id = random.choice(c_ids)
+
+            if insert_flag and offline_sim_type == "RCD_graph" and correct == 1:
+                # 在前面插入一道先修知识点习题，并且做对
+                prerequisite_cs = self.offline_similarity.get_pre_or_post_concepts(c_id, prerequisite=True)
+                prerequisite_c = random.choice(prerequisite_cs)
+                prerequisite_q = self.offline_similarity.get_random_q_in_concept(prerequisite_c)
+                sample_new["question_seq"].append(prerequisite_q)
+                sample_new["mask_seq"].append(1)
+                sample_new["correct_seq"].append(1)
+                if data_type != "only_question":
+                    sample_new["concept_seq"].append(prerequisite_c)
+
             for k in seq_keys:
                 sample_new[k].append(sample[k][i])
-            if insert_flag:
-                similar_concepts = replace_func(sample["concept_seq"][i], target="concept")
-                similar_concept = random.choice(similar_concepts)
-                sample_new["concept_seq"].append(similar_concept)
-                # 当前做错了，则插入的interaction也为做错，否则有1/2概率作对
-                if sample["correct_seq"][i] == 0:
-                    sample_new["correct_seq"].append(0)
-                else:
-                    sample_new["correct_seq"].append(random.choice([0, 1]))
-                sample_new["question_seq"].append(self.offline_similarity.get_random_q_in_concept(similar_concept))
+
+            if insert_flag and offline_sim_type == "RCD_graph" and correct == 0:
+                # 在后面插入一道后修知识点习题，并且做错
+                post_cs = self.offline_similarity.get_pre_or_post_concepts(c_id, prerequisite=False)
+                post_c = random.choice(post_cs)
+                post_q = self.offline_similarity.get_random_q_in_concept(post_c)
+                sample_new["question_seq"].append(post_q)
                 sample_new["mask_seq"].append(1)
+                sample_new["correct_seq"].append(0)
+                if data_type != "only_question":
+                    sample_new["concept_seq"].append(post_c)
+
+            if insert_flag and offline_sim_type != "RCD_graph":
+                # 在后面插入一道相同知识点下的相似习题，结果相同
+                similar_questions = replace_func(q_id)
+                similar_question = random.choice(similar_questions)
+                sample_new["question_seq"].append(similar_question)
+                sample_new["mask_seq"].append(1)
+                sample_new["correct_seq"].append(correct)
+                if data_type != "only_question":
+                    sample_new["concept_seq"].append(c_id)
+
         sample_new["seq_len"] = sample["seq_len"] + insert_num
         return sample_new
 
     def informative_mask(self, sample, mask_prob, mask_min_seq_len=10):
-        seq_len = sample["seq_len"]
-        if seq_len < mask_min_seq_len:
-            return sample
-        seq_keys = []
-        for k, v in sample.items():
-            if type(v) == list:
-                seq_keys.append(k)
-        sample_new = {k: [] for k in seq_keys}
-        mask_idx = random.sample(list(range(seq_len)), k=max(1, int(seq_len * mask_prob)))
-        replace_func = self.replace_aug[self.similarity_type]
-        for j, i in enumerate(mask_idx):
-            if i == 0 or i == (seq_len - 1):
-                continue
-            # 相对无关的知识点可以被mask，即如果当前知识点和前后知识点关联较大，则不能mask
-            condition1 = sample["concept_seq"][i] not in replace_func(sample["concept_seq"][i-1], target="concept")
-            condition2 = sample["concept_seq"][i+1] not in replace_func(sample["concept_seq"][i], target="concept")
-            if condition1 and condition2:
-                mask_idx[j] = -1
-        mask_idx = list(filter(lambda x: x != -1, mask_idx))
-        for i in mask_idx:
-            for k in seq_keys:
-                sample_new[k][i] = -1
-        for k in seq_keys:
-            sample_new[k] = list(filter(lambda x: x != -1, sample_new[k]))
-        sample_new["seq_len"] = len(sample_new["correct_seq"])
-
-        return sample_new
+        # 还没想好怎么实现，所以info mask暂时用random mask代替
+        # seq_len = sample["seq_len"]
+        # if seq_len < mask_min_seq_len:
+        #     return sample
+        # seq_keys = []
+        # for k, v in sample.items():
+        #     if type(v) == list:
+        #         seq_keys.append(k)
+        # sample_new = {k: [] for k in seq_keys}
+        # mask_idx = random.sample(list(range(seq_len)), k=max(1, int(seq_len * mask_prob)))
+        # replace_func = self.replace_aug[self.similarity_type]
+        #
+        # for j, i in enumerate(mask_idx):
+        #     if i == 0 or i == (seq_len - 1):
+        #         continue
+        #     # 相对无关的知识点可以被mask，即如果当前知识点和前后知识点关联较大，则不能mask
+        #     condition1 = sample["concept_seq"][i] not in replace_func(sample["concept_seq"][i-1], target="concept")
+        #     condition2 = sample["concept_seq"][i+1] not in replace_func(sample["concept_seq"][i], target="concept")
+        #     if condition1 and condition2:
+        #         mask_idx[j] = -1
+        # mask_idx = list(filter(lambda x: x != -1, mask_idx))
+        #
+        # for i in mask_idx:
+        #     for k in seq_keys:
+        #         sample_new[k][i] = -1
+        # for k in seq_keys:
+        #     sample_new[k] = list(filter(lambda x: x != -1, sample_new[k]))
+        # sample_new["seq_len"] = len(sample_new["correct_seq"])
+        #
+        # return sample_new
+        pass
 
     def set_sim_type(self, sim_type):
         if sim_type in ["offline", "online", "hybrid"]:
@@ -507,6 +563,3 @@ class KTDataset4Aug(Dataset):
         self.offline_similarity = OfflineSimilarity(self.params, self.objects)
         self.offline_similarity.parse(deepcopy(data), data_type)
         self.online_similarity = OnlineSimilarity()
-
-    def update_online_sim4info_aug(self):
-        pass

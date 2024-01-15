@@ -80,13 +80,11 @@ class BaseModel4CL:
 
         if data_aug_type4cl == "original_data_aug":
             batch_aug0 = {
-                "concept_seq": batch["concept_seq_aug_0"],
                 "question_seq": batch["question_seq_aug_0"],
                 "correct_seq": batch["correct_seq_aug_0"],
                 "mask_seq": batch["mask_seq_aug_0"]
             }
             batch_aug1 = {
-                "concept_seq": batch["concept_seq_aug_1"],
                 "question_seq": batch["question_seq_aug_1"],
                 "correct_seq": batch["correct_seq_aug_1"],
                 "mask_seq": batch["mask_seq_aug_1"]
@@ -97,12 +95,14 @@ class BaseModel4CL:
             if "concept_diff_seq" in batch.keys():
                 batch_aug0["concept_diff_seq"] = batch["concept_diff_seq_aug_0"]
                 batch_aug1["concept_diff_seq"] = batch["concept_diff_seq_aug_1"]
+            if "concept_seq" in batch.keys():
+                batch_aug0["concept_seq"] = batch["concept_seq_aug_0"]
+                batch_aug1["concept_seq"] = batch["concept_seq_aug_1"]
         elif data_aug_type4cl == "model_aug":
             batch_aug0 = batch
             batch_aug1 = batch
         elif data_aug_type4cl == "hybrid":
             batch_aug0 = {
-                "concept_seq": batch["concept_seq_aug_0"],
                 "question_seq": batch["question_seq_aug_0"],
                 "correct_seq": batch["correct_seq_aug_0"],
                 "mask_seq": batch["mask_seq_aug_0"]
@@ -112,6 +112,8 @@ class BaseModel4CL:
                 batch_aug0["question_diff_seq"] = batch["question_diff_seq_aug_0"]
             if "concept_diff_seq" in batch.keys():
                 batch_aug0["concept_diff_seq"] = batch["concept_diff_seq_aug_0"]
+            if "concept_seq" in batch.keys():
+                batch_aug0["concept_seq"] = batch["concept_seq_aug_0"]
         else:
             raise NotImplementedError()
 
@@ -147,18 +149,20 @@ class BaseModel4CL:
         if "correct_seq_hard_neg" in batch.keys():
             if random_select_aug_len:
                 batch_hard_neg = {
-                    "concept_seq": batch["concept_seq_random_len"],
                     "question_seq": batch["question_seq_random_len"],
                     "correct_seq": batch["correct_seq_random_len"],
                     "mask_seq": batch["mask_seq_random_len"]
                 }
+                if "concept_seq" in batch.keys():
+                    batch_hard_neg["concept_seq"] = batch["concept_seq_random_len"]
             else:
                 batch_hard_neg = {
-                    "concept_seq": batch["concept_seq"],
                     "question_seq": batch["question_seq"],
                     "correct_seq": batch["correct_seq_hard_neg"],
                     "mask_seq": batch["mask_seq"]
                 }
+                if "concept_seq" in batch.keys():
+                    batch_hard_neg["concept_seq"] = batch["concept_seq"]
             if latent_type4cl == "last_time" and not use_adv_aug:
                 latent_hard_neg_pooled = self.get_latent_last(batch_hard_neg, use_emb_dropout4cl, emb_dropout4cl)
             elif latent_type4cl == "mean_pool" and not use_adv_aug:
@@ -199,13 +203,11 @@ class BaseModel4CL:
 
         if data_aug_type4cl == "original_data_aug":
             batch_aug0 = {
-                "concept_seq": batch["concept_seq_aug_0"],
                 "question_seq": batch["question_seq_aug_0"],
                 "correct_seq": batch["correct_seq_aug_0"],
                 "mask_seq": batch["mask_seq_aug_0"]
             }
             batch_aug1 = {
-                "concept_seq": batch["concept_seq_aug_1"],
                 "question_seq": batch["question_seq_aug_1"],
                 "correct_seq": batch["correct_seq_aug_1"],
                 "mask_seq": batch["mask_seq_aug_1"]
@@ -216,6 +218,9 @@ class BaseModel4CL:
             if "concept_diff_seq" in batch.keys():
                 batch_aug0["concept_diff_seq"] = batch["concept_diff_seq_aug_0"]
                 batch_aug1["concept_diff_seq"] = batch["concept_diff_seq_aug_1"]
+            if "concept_seq" in batch.keys():
+                batch_aug0["concept_seq"] = batch["concept_seq_aug_0"]
+                batch_aug1["concept_seq"] = batch["concept_seq_aug_1"]
         elif data_aug_type4cl == "model_aug":
             batch_aug0 = batch
             batch_aug1 = batch
@@ -231,6 +236,8 @@ class BaseModel4CL:
                 batch_aug0["question_diff_seq"] = batch["question_diff_seq_aug_0"]
             if "concept_diff_seq" in batch.keys():
                 batch_aug0["concept_diff_seq"] = batch["concept_diff_seq_aug_0"]
+            if "concept_seq" in batch.keys():
+                batch_aug0["concept_seq"] = batch["concept_seq_aug_0"]
         else:
             raise NotImplementedError()
 
@@ -280,13 +287,11 @@ class BaseModel4CL:
 
         if data_aug_type4cl == "original_data_aug":
             batch_aug0 = {
-                "concept_seq": batch["concept_seq_aug_0"],
                 "question_seq": batch["question_seq_aug_0"],
                 "correct_seq": batch["correct_seq_aug_0"],
                 "mask_seq": batch["mask_seq_aug_0"]
             }
             batch_aug1 = {
-                "concept_seq": batch["concept_seq_aug_1"],
                 "question_seq": batch["question_seq_aug_1"],
                 "correct_seq": batch["correct_seq_aug_1"],
                 "mask_seq": batch["mask_seq_aug_1"]
@@ -297,12 +302,14 @@ class BaseModel4CL:
             if "concept_diff_seq" in batch.keys():
                 batch_aug0["concept_diff_seq"] = batch["concept_diff_seq_aug_0"]
                 batch_aug1["concept_diff_seq"] = batch["concept_diff_seq_aug_1"]
+            if "concept_seq" in batch.keys():
+                batch_aug0["concept_seq"] = batch["concept_seq_aug_0"]
+                batch_aug1["concept_seq"] = batch["concept_seq_aug_1"]
         elif data_aug_type4cl == "model_aug":
             batch_aug0 = batch
             batch_aug1 = batch
         elif data_aug_type4cl == "hybrid":
             batch_aug0 = {
-                "concept_seq": batch["concept_seq_aug_0"],
                 "question_seq": batch["question_seq_aug_0"],
                 "correct_seq": batch["correct_seq_aug_0"],
                 "mask_seq": batch["mask_seq_aug_0"]
@@ -312,6 +319,8 @@ class BaseModel4CL:
                 batch_aug0["question_diff_seq"] = batch["question_diff_seq_aug_0"]
             if "concept_diff_seq" in batch.keys():
                 batch_aug0["concept_diff_seq"] = batch["concept_diff_seq_aug_0"]
+            if "concept_seq" in batch.keys():
+                batch_aug0["concept_seq"] = batch["concept_seq_aug_0"]
         else:
             raise NotImplementedError()
 
@@ -358,25 +367,28 @@ class BaseModel4CL:
     def get_cluster_cl_loss(self, batch, clus, latent_type, use_random_seq_len=False, use_adv_aug=False, dataset=None):
         if use_random_seq_len:
             batch_ori = {
-                "concept_seq": batch["concept_seq_random_len"],
                 "question_seq": batch["question_seq_random_len"],
                 "correct_seq": batch["correct_seq_random_len"],
                 "mask_seq": batch["mask_seq_random_len"]
             }
+            if "concept_seq" in batch.keys():
+                # 对于only question格式，没有concept seq
+                batch_ori["concept_seq"] = batch["concept_seq_random_len"]
         else:
             batch_ori = batch
         batch_aug0 = {
-            "concept_seq": batch["concept_seq_aug_0"],
             "question_seq": batch["question_seq_aug_0"],
             "correct_seq": batch["correct_seq_aug_0"],
             "mask_seq": batch["mask_seq_aug_0"]
         }
         batch_aug1 = {
-            "concept_seq": batch["concept_seq_aug_1"],
             "question_seq": batch["question_seq_aug_1"],
             "correct_seq": batch["correct_seq_aug_1"],
             "mask_seq": batch["mask_seq_aug_1"]
         }
+        if "concept_seq" in batch.keys():
+            batch_aug0["concept_seq"] = batch["concept_seq_aug_0"]
+            batch_aug1["concept_seq"] = batch["concept_seq_aug_1"]
         batch_size = batch["mask_seq"].shape[0]
 
         if latent_type == "last_time" and not use_adv_aug:
@@ -407,8 +419,8 @@ class BaseModel4CL:
         temp = self.params["other"]["cluster_cl"]["temp"]
         cos_sim_aug0 = torch.cosine_similarity(intent.unsqueeze(1), latent_aug0_pooled.unsqueeze(0), dim=-1) / temp
         cos_sim_aug1 = torch.cosine_similarity(intent.unsqueeze(1), latent_aug1_pooled.unsqueeze(0), dim=-1) / temp
-        cos_sim_aug0[mask4inf] = 1 / temp
-        cos_sim_aug1[mask4inf] = 1 / temp
+        cos_sim_aug0[mask4inf] = -1 / temp
+        cos_sim_aug1[mask4inf] = -1 / temp
 
         labels = torch.arange(batch_size).long().to(self.params["device"])
         cl_loss0 = nn.functional.cross_entropy(cos_sim_aug0, labels)

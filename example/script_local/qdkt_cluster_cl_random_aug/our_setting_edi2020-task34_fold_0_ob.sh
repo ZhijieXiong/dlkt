@@ -5,8 +5,8 @@
   data_type="single_concept"
   fold=0
 
-  weights_cl='0.1 0.3 0.5'
-  for num_cluster in 32 64 128 256
+  weights_cl='0.001 0.01'
+  for num_cluster in 32 64 128 256 512
   do
     for weight_cl in ${weights_cl}
     do
@@ -24,12 +24,12 @@
         --enable_clip_grad False --grad_clipped 10.0 \
         --num_concept 53 --num_question 948 \
         --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 128 --rnn_type gru --num_rnn_layer 1 --dropout 0.1 --num_predict_layer 3 --dim_predict_mid 128 --activate_type relu \
-        --use_warm_up4cl True --epoch_warm_up4cl 4 --cl_type "last_time" \
+        --use_warm_up4cl True --epoch_warm_up4cl 2 --cl_type "last_time" \
         --num_cluster "${num_cluster}" --temp 0.05 --weight_cl_loss "${weight_cl}" \
-        --use_online_sim False --use_warm_up4online_sim False --epoch_warm_up4online_sim 4 \
-        --aug_type "random_aug" --use_random_select_aug_len False \
+        --use_online_sim False --use_warm_up4online_sim False --epoch_warm_up4online_sim 2 \
+        --aug_type "random_aug" --use_random_select_aug_len True \
         --mask_prob 0.2 --insert_prob 0.2 --replace_prob 0.1 --crop_prob 0.2 --permute_prob 0.3 --hard_neg_prob 1 \
-        --aug_order "['mask', 'replace', 'permute', 'crop']" --offline_sim_type "order" \
+        --aug_order "['mask', 'replace', 'permute', 'crop']" --offline_sim_type "RCD_graph" \
         --use_adv_aug False --epoch_interval_generate 3 --loop_adv 3 --epoch_generate 200 --adv_learning_rate 30.0 --eta 20.0 --gamma 10.0 \
         --save_model True --seed 0
     done

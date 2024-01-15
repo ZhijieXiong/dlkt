@@ -14,6 +14,6 @@ echo -n "Gpus:"
 cat $PBS_GPUFILE
 echo "CUDA_VISIBLE_DEVICES:"$CUDA_VISIBLE_DEVICES
 
-BASH_FILE="dimkt_instance_cl.sh"
-echo "file: observe/${BASH_FILE}"
-startdocker -P /ghome/xiongzj -c "bash /ghome/xiongzj/code/dlkt/example/script_cluster/observe/${BASH_FILE}" bit:5000/chenxh_py3.8_torch_1.8_cu11.1
+BASH_FILE="our_setting_ednet-kt1_fold_0_ob.sh"
+echo "file: qdkt_instance_cl_info_aug_all_time/${BASH_FILE}"
+startdocker -P /ghome/xiongzj -c "bash /ghome/xiongzj/code/dlkt/example/script_cluster/qdkt_instance_cl_info_aug_all_time/${BASH_FILE}" bit:5000/chenxh_py3.8_torch_1.8_cu11.1

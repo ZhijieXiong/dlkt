@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 {
-  dataset_name="assist2009"
+  dataset_name="ednet-kt1"
   data_type="only_question"
   fold=0
 
@@ -19,8 +19,8 @@
       --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type MultiStepLR --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
       --train_batch_size 64 --evaluate_batch_size 256 \
       --enable_clip_grad False --grad_clipped 10.0 \
-      --num_concept 123 --num_question 17751 \
-      --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.3 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
+      --num_concept 188 --num_question 11858 \
+      --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.2 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
       --cl_space "latent" --temp 0.05 --weight_cl_loss "${weight_cl}" --latent_type4cl "all_time" \
       --num2drop_question4dis 30 --num2drop_concept4dis 500 --min_seq_len4dis 20 --dis_threshold 0.3 \
       --use_warm_up4cl False --epoch_warm_up4cl 2 --use_stop_cl_after False --epoch_stop_cl 3 \
@@ -34,4 +34,4 @@
       --use_adv_aug False --epoch_interval_generate 1 --loop_adv 3 --epoch_generate 40 --adv_learning_rate 20.0 --eta 5.0 --gamma 1.0 \
       --save_model False --seed 0
   done
-} >> /ghome/xiongzj/code/dlkt/example/result_cluster/qdkt_instance_cl_info_aug_all_time_our_setting_assist2009_fold_0_ob.txt
+} >> /ghome/xiongzj/code/dlkt/example/result_cluster/qdkt_instance_cl_info_aug_all_time_our_setting_ednet-kt1_fold_0_ob.txt

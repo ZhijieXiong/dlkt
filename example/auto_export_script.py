@@ -21,8 +21,8 @@ if __name__ == "__main__":
     #         arg_default = match.group(1)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--target_python_file", type=str, default=r"F:\code\myProjects\dlkt\example\train\qdkt_cluster_cl.py")
-    parser.add_argument("--script_dir", type=str, default=r"F:\code\myProjects\dlkt\example\script_template")
+    parser.add_argument("--target_python_file", type=str, default=r"/Users/dream/Desktop/code/projects/dlkt/example/train/qdkt_instance_cl.py")
+    parser.add_argument("--script_dir", type=str, default=r"/Users/dream/Desktop/code/projects/dlkt/example/script_template")
     args = parser.parse_args()
     params = vars(args)
 
@@ -50,6 +50,8 @@ if __name__ == "__main__":
 
     if platform.system() == "Windows":
         py_path = params['target_python_file'].replace("\\", "/")
+    else:
+        py_path = params['target_python_file']
     script_template_text = f"python {py_path} \\\n  "
     for i in range(len(arg_parse_result)):
         script_template_text += f"{arg_parse_result[i][0]} {arg_parse_result[i][1]} "

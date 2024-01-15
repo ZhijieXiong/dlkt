@@ -1,0 +1,26 @@
+python /Users/dream/Desktop/code/projects/dlkt/example/train/qdkt_instance_cl.py \
+  --setting_name "our_setting" --dataset_name "assist2009" --data_type "only_question" \
+  --train_file_name "assist2009_train_fold_0.txt" --valid_file_name "assist2009_valid_fold_0.txt" --test_file_name "assist2009_test_fold_0.txt" \
+  --optimizer_type "adam" --weight_decay 0.001 --momentum 0.9 \
+  --train_strategy "valid_test" --num_epoch 200 \
+  --use_early_stop True --epoch_early_stop 10 --use_last_average False --epoch_last_average 5 \
+  --main_metric "AUC" --use_multi_metrics False \
+  --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type MultiStepLR --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
+  --train_batch_size 64 --evaluate_batch_size 256 \
+  --enable_clip_grad False --grad_clipped 10.0 \
+  --num_concept 123 --num_question 17751 \
+  --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 128 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.1 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
+  --cl_space latent --temp 0.05 --weight_cl_loss 0.1 \
+  --num2drop_question4dis 30 --num2drop_concept4dis 500 --min_seq_len4dis 20 --dis_threshold 0.3 \
+  --use_warm_up4cl False --epoch_warm_up4cl 2 --use_stop_cl_after False --epoch_stop_cl 3 \
+  --use_weight_dynamic False --weight_dynamic_type multi_step --multi_step_weight "[[1, 0.1], [3, 0.03], [5, 0.01], [10, 0.0001], [200, 0.000001]]" \
+  --linear_increase_epoch 1 --linear_increase_value 0.1 \
+  --latent_type4cl "last_time" \
+  --use_emb_dropout4cl True --emb_dropout4cl 0.1 \
+  --data_aug_type4cl "original_data_aug" --use_neg True --use_neg_filter False --neg_sim_threshold 0.8 \
+  --aug_type "informative_aug" --use_random_select_aug_len True \
+  --mask_prob 0.05 --insert_prob 0.05 --replace_prob 0.05 --crop_prob 0.05 --permute_prob 0.1 --aug_order "['mask', 'crop', 'replace', 'insert']" \
+  --offline_sim_type "RCD_graph" --use_online_sim True --use_warm_up4online_sim True --epoch_warm_up4online_sim 4 \
+  --use_hard_neg False --hard_neg_prob 1 \
+  --use_adv_aug False --epoch_interval_generate 1 --loop_adv 3 --epoch_generate 40 --adv_learning_rate 20.0 --eta 5.0 --gamma 1.0 \
+  --save_model False --seed 0

@@ -6,11 +6,11 @@ python F:/code/myProjects/dlkt/example/train/qdkt_cluster_cl.py \
   --use_early_stop True --epoch_early_stop 10 \
   --use_last_average False --epoch_last_average 5 \
   --main_metric "AUC" --use_multi_metrics False \
-  --learning_rate 0.002 --enable_lr_schedule True --lr_schedule_type MultiStepLR --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
+  --learning_rate 0.002 --enable_lr_schedule True --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
   --train_batch_size 64 --evaluate_batch_size 256 \
   --enable_clip_grad False --grad_clipped 10.0 \
   --num_concept 265 --num_question 53091 \
-  --dim_concept 64 --dim_question 64 --dim_correct 128 --dim_latent 128 --rnn_type gru --num_rnn_layer 1 --dropout 0.1 --num_predict_layer 3 --dim_predict_mid 128 --activate_type relu \
+  --dim_concept 64 --dim_question 64 --dim_correct 128 --dim_latent 128 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.1 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
   --use_warm_up4cl True --epoch_warm_up4cl 4 --cl_type "last_time" \
   --num_cluster 256 --temp 0.05 --weight_cl_loss 0.01 \
   --use_online_sim True --use_warm_up4online_sim True --epoch_warm_up4online_sim 4 \

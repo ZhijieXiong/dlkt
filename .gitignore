@@ -5,9 +5,9 @@ lab/
 tmp/
 cluster_models/
 server_models/
-#example/result_cluster
-#example/result_server
-#example/result_local
+example/result_cluster
+example/result_server
+example/result_local
 back_up/
 .idea/
 

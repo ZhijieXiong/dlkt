@@ -361,6 +361,7 @@ class BaseModel4CL:
                 mask4filter[0, 0] = True
                 cos_sim = cos_sim[mask4filter].unsqueeze(0)
             cl_loss = cl_loss + nn.functional.cross_entropy(cos_sim, labels)
+        cl_loss = cl_loss / batch_size
 
         return cl_loss
 

@@ -93,7 +93,7 @@ class KTDataset_cpu2device(Dataset):
         for i in range(item_data["seq_len"]):
             q_id = item_data["question_seq"][i]
             correct = item_data["correct_seq"][i]
-            if data_type == "single_concept":
+            if data_type != "only_question":
                 if enhance_method == 0 or enhance_method == 1:
                     enhance_method1_out = self.output_enhance_method1(q_id)
                     question_easier_seq.append(enhance_method1_out["q_easier"])
@@ -168,7 +168,7 @@ class KTDataset_cpu2device(Dataset):
                 question_zero_shot_diff_seq += [0] * pad_len
                 result["question_zero_shot_diff_seq"] = torch.LongTensor(question_zero_shot_diff_seq).to(self.params["device"])
 
-        if data_type == "single_concept":
+        if data_type != "only_question":
             if enhance_method == 0 or enhance_method == 1:
                 concept_easier_seq += [0] * pad_len
                 concept_harder_seq += [0] * pad_len

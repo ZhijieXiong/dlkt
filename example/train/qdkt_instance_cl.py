@@ -67,8 +67,8 @@ if __name__ == "__main__":
     # 对比学习
     parser.add_argument("--cl_space", type=str, default="latent", choices=("latent", "output"))
     parser.add_argument("--temp", type=float, default=0.05)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
-    # output：挑选高区分度习题的参数
+    parser.add_argument("--weight_cl_loss", type=float, default=0.001)
+    # cl_space output：挑选高区分度习题的参数
     parser.add_argument("--num2drop_question4dis", type=int, default=30)
     parser.add_argument("--num2drop_concept4dis", type=int, default=500)
     parser.add_argument("--min_seq_len4dis", type=int, default=20)
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     parser.add_argument("--linear_increase_epoch", type=int, default=1)
     parser.add_argument("--linear_increase_value", type=float, default=0.1)
     # cl使用的latent
-    parser.add_argument("--latent_type4cl", type=str, default="last_time",
+    parser.add_argument("--latent_type4cl", type=str, default="all_time",
                         choices=("last_time", "all_time", "mean_pool"))
     # model aug参数
     parser.add_argument("--use_emb_dropout4cl", type=str2bool, default=True)
@@ -97,16 +97,16 @@ if __name__ == "__main__":
                         choices=("original_data_aug", "model_aug", "hybrid"))
     # 是否使用负样本以及是否对负样本过滤
     parser.add_argument("--use_neg", type=str2bool, default=True)
-    parser.add_argument("--use_neg_filter", type=str2bool, default=False)
+    parser.add_argument("--use_neg_filter", type=str2bool, default=True)
     parser.add_argument("--neg_sim_threshold", type=float, default=0.8, help="cos sim, between (0, 1)")
     # random aug和informative aug参数
     parser.add_argument("--aug_type", type=str, default="informative_aug",
                         choices=("random_aug", "informative_aug"))
     parser.add_argument("--use_random_select_aug_len", type=str2bool, default=True)
-    parser.add_argument("--mask_prob", type=float, default=0.05)
-    parser.add_argument("--insert_prob", type=float, default=0.05)
-    parser.add_argument("--replace_prob", type=float, default=0.05)
-    parser.add_argument("--crop_prob", type=float, default=0.05)
+    parser.add_argument("--mask_prob", type=float, default=0.1)
+    parser.add_argument("--insert_prob", type=float, default=0.1)
+    parser.add_argument("--replace_prob", type=float, default=0.1)
+    parser.add_argument("--crop_prob", type=float, default=0.1)
     parser.add_argument("--permute_prob", type=float, default=0.1)
     parser.add_argument("--aug_order", type=str, default="['mask', 'crop', 'replace', 'insert']",
                         help="random aug: ['mask', 'crop', 'replace', 'permute']"

@@ -1,0 +1,38 @@
+original dimkt in test
+overall performance
+AUC: 0.75019  , ACC: 0.74832  , RMSE: 0.33743  , MAE: 0.4153
+
+split by seq length
+(0  , 5  ), num of samples is 34535     , acc of answer is 74.1%: auc is 0.70846  , acc is 0.75503
+(5  , 10 ), num of samples is 33028     , acc of answer is 73.7%: auc is 0.72883  , acc is 0.76372
+(10 , 20 ), num of samples is 61476     , acc of answer is 72.5%: auc is 0.73644  , acc is 0.75711
+(20 , 30 ), num of samples is 56071     , acc of answer is 71.4%: auc is 0.74676  , acc is 0.75454
+
+question frequency
+zero shot (87170     samples), AUC: 0.694386 , ACC: 0.72455  , RMSE: 0.433703 , MAE: 0.366928
+low frequency (29662     samples), AUC: 0.708783 , ACC: 0.684512 , RMSE: 0.451515 , MAE: 0.384743
+middle frequency (208146    samples), AUC: 0.751141 , ACC: 0.750387 , RMSE: 0.415194 , MAE: 0.333807
+high frequency (365947    samples), AUC: 0.764402 , ACC: 0.75797  , RMSE: 0.407756 , MAE: 0.328624
+
+question accuracy
+low accuracy (100571    samples), AUC: 0.728345 , ACC: 0.716379 , RMSE: 0.438977 , MAE: 0.368095
+middle accuracy (370190    samples), AUC: 0.734072 , ACC: 0.709876 , RMSE: 0.437856 , MAE: 0.380662
+high accuracy (212113    samples), AUC: 0.72328  , ACC: 0.82894  , RMSE: 0.360822 , MAE: 0.248794
+
+concept frequency
+low frequency (21752     samples), AUC: 0.764414 , ACC: 0.702556 , RMSE: 0.449661 , MAE: 0.36234
+middle frequency (141733    samples), AUC: 0.746189 , ACC: 0.753649 , RMSE: 0.41267  , MAE: 0.333544
+high frequency (527440    samples), AUC: 0.749768 , ACC: 0.74877  , RMSE: 0.414534 , MAE: 0.337443
+
+concept accuracy
+low accuracy (4882      samples), AUC: 0.707351 , ACC: 0.633142 , RMSE: 0.507001 , MAE: 0.367222
+middle accuracy (600825    samples), AUC: 0.744289 , ACC: 0.736735 , RMSE: 0.422412 , MAE: 0.349584
+high accuracy (85218     samples), AUC: 0.714095 , ACC: 0.83656  , RMSE: 0.354474 , MAE: 0.250009
+
+question & concept frequency
+low frequency (3274      samples), AUC: 0.690671 , ACC: 0.707392 , RMSE: 0.442158 , MAE: 0.365086
+high frequency (334733    samples), AUC: 0.761472 , ACC: 0.758324 , RMSE: 0.407394 , MAE: 0.328969
+
+question & concept accuracy
+low accuracy (4235      samples), AUC: 0.689529 , ACC: 0.649115 , RMSE: 0.502375 , MAE: 0.352125
+high accuracy (58089     samples), AUC: 0.706452 , ACC: 0.8629   , RMSE: 0.332177 , MAE: 0.213461

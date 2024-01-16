@@ -100,18 +100,16 @@ class KTDataset4Aug(Dataset):
 
         # 如果是DIMKT，加上difficulty信息
         if dataset_config_this["kt4aug"]["use_diff4dimkt"]:
-            num_question_difficulty = dataset_config_this["kt4aug"]["diff4dimkt"]["num_question_difficulty"]
-            num_concept_difficulty = dataset_config_this["kt4aug"]["diff4dimkt"]["num_concept_difficulty"]
             question_difficulty = self.objects["dimkt"]["question_difficulty"]
             concept_difficulty = self.objects["dimkt"]["concept_difficulty"]
             for data_aug in datas_aug:
                 data_aug["question_diff_seq"] = []
                 data_aug["concept_diff_seq"] = []
                 for q_id in data_aug["question_seq"]:
-                    q_diff = question_difficulty.get(q_id, num_question_difficulty)
+                    q_diff = question_difficulty[q_id]
                     data_aug["question_diff_seq"].append(q_diff)
                 for c_id in data_aug["concept_seq"]:
-                    c_diff = concept_difficulty.get(c_id, num_concept_difficulty)
+                    c_diff = concept_difficulty[c_id]
                     data_aug["concept_diff_seq"].append(c_diff)
 
         # 补零

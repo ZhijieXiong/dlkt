@@ -26,8 +26,8 @@ class DIMKT(nn.Module, BaseModel4CL):
 
         self.embed_question = self.get_embed_question()
         self.embed_concept = self.get_embed_concept()
-        self.embed_question_diff = nn.Embedding(num_question_diff + 1, dim_emb)
-        self.embed_concept_diff = nn.Embedding(num_concept_diff + 1, dim_emb)
+        self.embed_question_diff = nn.Embedding(num_question_diff, dim_emb)
+        self.embed_concept_diff = nn.Embedding(num_concept_diff, dim_emb)
         self.embed_correct = nn.Embedding(2, dim_emb)
 
         if use_LLM_emb4question:

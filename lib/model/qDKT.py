@@ -293,12 +293,13 @@ class qDKT(nn.Module, BaseModel4CL):
             weight_harder = torch.masked_select(batch["weight_harder_seq"][:, 1:], mask_bool_seq_harder[:, 1:])
             batch_easier = {
                 "question_seq": batch["question_easier_seq"],
-                "concept_seq": batch["concept_easier_seq"]
             }
             batch_harder = {
                 "question_seq": batch["question_harder_seq"],
-                "concept_seq": batch["concept_harder_seq"]
             }
+            if "concept_seq" in batch.keys():
+                batch_easier["concept_seq"] = batch["concept_easier_seq"]
+                batch_harder["concept_seq"] = batch["concept_harder_seq"]
 
             if data_type == "only_question":
                 qc_emb_easier = self.get_qc_emb4only_question(batch_easier)
@@ -329,9 +330,10 @@ class qDKT(nn.Module, BaseModel4CL):
         if enhance_method == 0 or enhance_method == 2:
             mask_zero_shot_seq = torch.ne(batch["mask_zero_shot_seq"], 0)
             batch_zero_shot = {
-                "question_seq": batch["question_zero_shot_seq"],
-                "concept_seq": batch["concept_zero_shot_seq"]
+                "question_seq": batch["question_zero_shot_seq"]
             }
+            if "concept_seq" in batch.keys():
+                batch_zero_shot["concept_seq"] = batch["concept_zero_shot_seq"]
             if data_type == "only_question":
                 qc_emb_zero_shot = self.get_qc_emb4only_question(batch_zero_shot)
             else:

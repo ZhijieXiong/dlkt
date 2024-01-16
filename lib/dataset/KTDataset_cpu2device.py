@@ -41,17 +41,15 @@ class KTDataset_cpu2device(Dataset):
         use_diff4dimkt = dataset_config_this[kt_dataset_type].get("use_diff4dimkt", False)
 
         if use_diff4dimkt:
-            num_question_difficulty = dataset_config_this[kt_dataset_type]["diff4dimkt"]["num_question_difficulty"]
-            num_concept_difficulty = dataset_config_this[kt_dataset_type]["diff4dimkt"]["num_concept_difficulty"]
             question_difficulty = self.objects["dimkt"]["question_difficulty"]
             concept_difficulty = self.objects["dimkt"]["concept_difficulty"]
             item_data["question_diff_seq"] = []
             item_data["concept_diff_seq"] = []
             for q_id in item_data["question_seq"]:
-                q_diff = question_difficulty.get(q_id, num_question_difficulty)
+                q_diff = question_difficulty[q_id]
                 item_data["question_diff_seq"].append(q_diff)
             for c_id in item_data["concept_seq"]:
-                c_diff = concept_difficulty.get(c_id, num_concept_difficulty)
+                c_diff = concept_difficulty[c_id]
                 item_data["concept_diff_seq"].append(c_diff)
 
         for k in item_data.keys():
@@ -93,49 +91,44 @@ class KTDataset_cpu2device(Dataset):
         for i in range(item_data["seq_len"]):
             q_id = item_data["question_seq"][i]
             correct = item_data["correct_seq"][i]
-            if data_type != "only_question":
-                if enhance_method == 0 or enhance_method == 1:
-                    enhance_method1_out = self.output_enhance_method1(q_id)
-                    question_easier_seq.append(enhance_method1_out["q_easier"])
-                    question_harder_seq.append(enhance_method1_out["q_harder"])
-                    concept_easier_seq.append(enhance_method1_out["c_easier"])
-                    concept_harder_seq.append(enhance_method1_out["c_harder"])
-                    weight_easier_seq.append(enhance_method1_out["weight_easier"])
-                    weight_harder_seq.append(enhance_method1_out["weight_harder"])
-                    mask_easier_seq.append(enhance_method1_out["mask_easier"])
-                    mask_harder_seq.append(enhance_method1_out["mask_harder"])
-                if enhance_method == 0 or enhance_method == 2:
-                    enhance_method2_out = self.output_enhance_method2(q_id, correct)
-                    question_zero_shot_seq.append(enhance_method2_out["q_zero_shot"])
-                    concept_zero_shot_seq.append(enhance_method2_out["c4q_zero_shot"])
-                    mask_zero_shot_seq.append(enhance_method2_out["mask_zero_shot"])
-            else:
-                raise NotImplementedError()
+            if enhance_method == 0 or enhance_method == 1:
+                enhance_method1_out = self.output_enhance_method1(q_id)
+                question_easier_seq.append(enhance_method1_out["q_easier"])
+                question_harder_seq.append(enhance_method1_out["q_harder"])
+                concept_easier_seq.append(enhance_method1_out["c_easier"])
+                concept_harder_seq.append(enhance_method1_out["c_harder"])
+                weight_easier_seq.append(enhance_method1_out["weight_easier"])
+                weight_harder_seq.append(enhance_method1_out["weight_harder"])
+                mask_easier_seq.append(enhance_method1_out["mask_easier"])
+                mask_harder_seq.append(enhance_method1_out["mask_harder"])
+            if enhance_method == 0 or enhance_method == 2:
+                enhance_method2_out = self.output_enhance_method2(q_id, correct)
+                question_zero_shot_seq.append(enhance_method2_out["q_zero_shot"])
+                concept_zero_shot_seq.append(enhance_method2_out["c4q_zero_shot"])
+                mask_zero_shot_seq.append(enhance_method2_out["mask_zero_shot"])
 
         if use_diff4dimkt:
-            num_question_difficulty = dataset_config_this[kt_dataset_type]["diff4dimkt"]["num_question_difficulty"]
-            num_concept_difficulty = dataset_config_this[kt_dataset_type]["diff4dimkt"]["num_concept_difficulty"]
             question_difficulty = self.objects["dimkt"]["question_difficulty"]
             concept_difficulty = self.objects["dimkt"]["concept_difficulty"]
             if enhance_method == 0 or enhance_method == 1:
                 for q_id in question_easier_seq:
-                    q_diff = question_difficulty.get(q_id, num_question_difficulty)
+                    q_diff = question_difficulty[q_id]
                     question_easier_diff_seq.append(q_diff)
                 for q_id in question_harder_seq:
-                    q_diff = question_difficulty.get(q_id, num_question_difficulty)
+                    q_diff = question_difficulty[q_id]
                     question_harder_diff_seq.append(q_diff)
                 for c_id in concept_easier_seq:
-                    c_diff = concept_difficulty.get(c_id, num_concept_difficulty)
+                    c_diff = concept_difficulty[c_id]
                     concept_easier_diff_seq.append(c_diff)
                 for c_id in concept_harder_seq:
-                    c_diff = concept_difficulty.get(c_id, num_concept_difficulty)
+                    c_diff = concept_difficulty[c_id]
                     concept_harder_diff_seq.append(c_diff)
             if enhance_method == 0 or enhance_method == 2:
                 for q_id in question_zero_shot_seq:
-                    q_diff = question_difficulty.get(q_id, num_question_difficulty)
+                    q_diff = question_difficulty[q_id]
                     question_zero_shot_diff_seq.append(q_diff)
                 for c_id in concept_zero_shot_seq:
-                    c_diff = concept_difficulty.get(c_id, num_concept_difficulty)
+                    c_diff = concept_difficulty[c_id]
                     concept_zero_shot_diff_seq.append(c_diff)
 
         if enhance_method == 0 or enhance_method == 1:
@@ -188,14 +181,13 @@ class KTDataset_cpu2device(Dataset):
                 if use_diff4dimkt:
                     concept_zero_shot_diff_seq += [0] * pad_len
                     result["concept_zero_shot_diff_seq"] = torch.LongTensor(concept_zero_shot_diff_seq).to(self.params["device"])
-        else:
-            raise NotImplementedError()
 
     def output_enhance_method1(self, q_id):
+        data_type = self.params["datasets_config"]["data_type"]
         concept_dict = self.objects["kt_enhance"]["concept_dict"]
         question_dict = self.objects["kt_enhance"]["question_dict"]
 
-        c_pair = question_dict[q_id][1][0]
+        c_pair = random.choice(question_dict[q_id][1])
         c_id = c_pair[0]
         q_diff = c_pair[1]
         k = c_pair[2]
@@ -223,9 +215,15 @@ class KTDataset_cpu2device(Dataset):
         if len(questions_easier) > 0:
             q_easier = random.choice(questions_easier)
             c_easier = c_id
+            if (data_type == "only_question") and (question_dict[q_id][0] != question_dict[q_easier][0]):
+                weight_easier *= 0.5
+                weight_harder *= 0.5
         if len(questions_harder) > 0:
             q_harder = random.choice(questions_harder)
             c_harder = c_id
+            if (data_type == "only_question") and (question_dict[q_id][0] != question_dict[q_harder][0]):
+                weight_easier *= 0.5
+                weight_harder *= 0.5
 
         return {
             "q_easier": q_easier,

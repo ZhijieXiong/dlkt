@@ -27,7 +27,7 @@
         --use_warm_up4cl True --epoch_warm_up4cl 1 --cl_type "last_time" \
         --num_cluster "${num_cluster}" --temp 0.05 --weight_cl_loss "${weight_cl}" \
         --use_online_sim True --use_warm_up4online_sim True --epoch_warm_up4online_sim 1 \
-        --aug_type "informative_aug" --use_random_select_aug_len True \
+        --aug_type "informative_aug" --use_random_select_aug_len False \
         --mask_prob 0.1 --insert_prob 0.1 --replace_prob 0.1 --crop_prob 0.1 --permute_prob 0.1 \
         --aug_order "['mask', 'replace', 'insert']" --offline_sim_type "RCD_graph" \
         --use_adv_aug False --epoch_interval_generate 3 --loop_adv 3 --epoch_generate 200 --adv_learning_rate 30.0 --eta 20.0 --gamma 10.0 \
@@ -35,4 +35,4 @@
     done
   done
 
-} >> F:/code/myProjects/dlkt/example/result_local/qdkt_cluster_cl_random_aug_random_seq_len_our_setting_edi2020-task34_fold_0_ob.txt
+} >> F:/code/myProjects/dlkt/example/result_local/qdkt_cluster_cl_random_aug_not_random_seq_len_our_setting_edi2020-task34_fold_0_ob.txt

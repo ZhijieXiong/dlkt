@@ -60,15 +60,8 @@ if __name__ == "__main__":
     parser.add_argument("--num_question_diff", type=int, default=100)
     parser.add_argument("--num_concept_diff", type=int, default=100)
     parser.add_argument("--dropout", type=float, default=0.2)
-    # 是否使用LLM的emb初始化
-    parser.add_argument("--use_LLM_emb4question", type=str2bool, default=False)
-    parser.add_argument("--use_LLM_emb4concept", type=str2bool, default=False)
-    parser.add_argument("--train_LLM_emb", type=str2bool, default=False)
-    # 是否将head question的知识迁移到zero shot question
-    parser.add_argument("--transfer_head2zero", type=str2bool, default=False)
-    parser.add_argument("--head2tail_transfer_method", type=str, default="mean_pool",
-                        choices=("mean_pool", ))
-    # long tail设置
+    # MELT设置
+    parser.add_argument("--two_stage", type=str2bool, default=True)
     parser.add_argument("--min_context_seq_len", type=int, default=10,
                         help="在构建question context时，只用长度大于min_context_seq_len的序列，以保证信息量的充足")
     parser.add_argument("--head_question_threshold", type=float, default=0.8)

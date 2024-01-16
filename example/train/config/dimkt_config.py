@@ -45,11 +45,20 @@ def dimkt_general_config(local_params, global_params, global_objects):
             global_objects["file_manager"].get_setting_dir(global_params["datasets_config"]["train"]["setting_name"]),
             global_params["datasets_config"]["train"]["file_name"]
         ))
+        parse_difficulty_params = {
+            "data_type": global_params["datasets_config"]["data_type"],
+            "num_min_question": num_min_question,
+            "num_min_concept": num_min_concept,
+            "num_question_diff": num_question_diff,
+            "num_concept_diff": num_concept_diff,
+            "num_concept": num_concept,
+            "num_question": num_question
+        }
         question_difficulty, concept_difficulty = \
-            parse_difficulty(dataset_train, global_params["datasets_config"]["data_type"],
-                             num_min_question, num_min_concept, num_question_diff, num_concept_diff)
+            parse_difficulty(dataset_train, parse_difficulty_params, global_objects["data"])
         difficulty_info = {"question_difficulty": question_difficulty, "concept_difficulty": concept_difficulty}
         write_json(difficulty_info, difficulty_info_path)
+
     global_objects["dimkt"] = {}
     global_objects["dimkt"]["question_difficulty"] = question_difficulty
     global_objects["dimkt"]["concept_difficulty"] = concept_difficulty
@@ -97,6 +106,13 @@ def dimkt_config(local_params):
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
     dimkt_general_config(local_params, global_params, global_objects)
+    # 需要改一下DIMKT的模型参数
+    question_difficulty = global_objects["dimkt"]["question_difficulty"]
+    concept_difficulty = global_objects["dimkt"]["concept_difficulty"]
+    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_question_diff"] = max(
+        question_difficulty.values()) + 1
+    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_concept_diff"] = max(
+        concept_difficulty.values()) + 1
     if local_params["save_model"]:
         save_params(global_params, global_objects)
 
@@ -111,10 +127,6 @@ def dimkt_instance_cl_config(local_params):
     instance_cl_general_config(local_params, global_params, global_objects)
     train_aug_config = global_params["datasets_config"]["train"]["kt4aug"]
     train_aug_config["use_diff4dimkt"] = True
-    train_aug_config["diff4dimkt"] = {
-        "num_question_difficulty": local_params["num_question_diff"],
-        "num_concept_difficulty": local_params["num_concept_diff"]
-    }
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
             global_params["save_model_dir_name"].replace("@@DIMKT@@", "@@DIMKT-instance_cl@@"))

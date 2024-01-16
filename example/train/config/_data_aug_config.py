@@ -63,7 +63,6 @@ def output_enhance_general_config(local_params, global_params, global_objects):
         "enhance_method2_update_few_shot": enhance_method2_update_few_shot
     }
     concept_dict, question_dict = parse4dataset_enhanced(dataset_train,
-                                                         global_params["datasets_config"]["data_type"],
                                                          global_objects["data"]["question2concept"],
                                                          global_objects["data"]["concept2question"],
                                                          global_params["other"]["output_enhance"])

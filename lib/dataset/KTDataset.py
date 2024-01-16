@@ -40,13 +40,10 @@ class KTDataset(Dataset):
             dataset_original = self.objects["dataset_this"]
 
         if dataset_type == "kt4dimkt":
-            num_question_difficulty = dataset_config_this["kt4dimkt"]["num_question_difficulty"]
-            num_concept_difficulty = dataset_config_this["kt4dimkt"]["num_concept_difficulty"]
-            qc_num_difficulty = (num_question_difficulty, num_concept_difficulty)
             question_difficulty = self.objects["dimkt"]["question_difficulty"]
             concept_difficulty = self.objects["dimkt"]["concept_difficulty"]
             qc_difficulty = (question_difficulty, concept_difficulty)
-            KTDataset.parse_difficulty(dataset_original, data_type, qc_difficulty, qc_num_difficulty)
+            KTDataset.parse_difficulty(dataset_original, data_type, qc_difficulty)
 
         id_keys, seq_keys = get_keys_from_uniform(dataset_original)
         all_keys = set(id_keys).union(seq_keys)
@@ -125,17 +122,16 @@ class KTDataset(Dataset):
         return num_seq, num_sample, num_correct / num_interaction
 
     @staticmethod
-    def parse_difficulty(data_uniformed, data_type, qc_difficulty, qc_num_difficulty):
+    def parse_difficulty(data_uniformed, data_type, qc_difficulty):
         # 目前只考虑single concept数据集
         question_difficulty, concept_difficulty = qc_difficulty
-        num_question_difficulty, num_concept_difficulty = qc_num_difficulty
         if data_type == "single_concept":
             for item_data in data_uniformed:
                 item_data["question_diff_seq"] = []
                 item_data["concept_diff_seq"] = []
                 for q_id, c_id in zip(item_data["question_seq"], item_data["concept_seq"]):
-                    item_data["question_diff_seq"].append(question_difficulty.get(q_id, num_question_difficulty))
-                    item_data["concept_diff_seq"].append(concept_difficulty.get(c_id, num_concept_difficulty))
+                    item_data["question_diff_seq"].append(question_difficulty[q_id])
+                    item_data["concept_diff_seq"].append(concept_difficulty[c_id])
         else:
             raise NotImplementedError()
 

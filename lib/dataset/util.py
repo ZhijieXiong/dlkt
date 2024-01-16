@@ -31,9 +31,20 @@ def data_kt2srs(data_uniformed, data_type):
     return data_transformed
 
 
-def parse_difficulty(data_uniformed, data_type, num_min_question, num_min_concept, num_question_diff, num_concept_diff):
+def parse_difficulty(data_uniformed, params, objects):
+    data_type = params["data_type"]
+    num_min_question = params["num_min_question"]
+    num_min_concept = params["num_min_concept"]
+    num_question_diff = params["num_question_diff"]
+    num_concept_diff = params["num_concept_diff"]
+    num_concept = params["num_concept"]
+    num_question = params["num_question"]
+
     questions_frequency, concepts_frequency = defaultdict(int), defaultdict(int)
     questions_accuracy, concepts_accuracy = defaultdict(int), defaultdict(int)
+    # 用于给统计信息不足的知识点和习题赋值难度
+    num_few_shot_q = 0
+    num_few_shot_c = 0
     if data_type == "single_concept":
         for item_data in data_uniformed:
             for i in range(item_data["seq_len"]):
@@ -44,18 +55,35 @@ def parse_difficulty(data_uniformed, data_type, num_min_question, num_min_concep
                 if item_data["correct_seq"][i] == 1:
                     questions_accuracy[q_id] += 1
                     concepts_accuracy[c_id] += 1
-        for q_id in questions_frequency.keys():
-            if questions_frequency[q_id] < num_min_question:
-                questions_accuracy[q_id] = num_question_diff
-            else:
-                questions_accuracy[q_id] = int((num_question_diff - 1) * questions_accuracy[q_id] / questions_frequency[q_id])
-        for c_id in concepts_frequency.keys():
-            if concepts_frequency[c_id] < num_min_concept:
-                concepts_accuracy[c_id] = num_concept_diff
-            else:
-                concepts_accuracy[c_id] = int((num_concept_diff - 1) * concepts_accuracy[c_id] / concepts_frequency[c_id])
+    elif data_type == "only_question":
+        question2concept = objects["question2concept"]
+        for item_data in data_uniformed:
+            for i in range(item_data["seq_len"]):
+                q_id = item_data["question_seq"][i]
+                questions_frequency[q_id] += 1
+                c_ids = question2concept[q_id]
+                for c_id in c_ids:
+                    concepts_frequency[c_id] += 1
+                if item_data["correct_seq"][i] == 1:
+                    questions_accuracy[q_id] += 1
+                    for c_id in c_ids:
+                        concepts_accuracy[c_id] += 1
     else:
         raise NotImplementedError()
+
+    for q_id in range(num_question):
+        if questions_frequency[q_id] < num_min_question:
+            questions_accuracy[q_id] = num_question_diff + num_few_shot_q
+            num_few_shot_q += 1
+        else:
+            questions_accuracy[q_id] = int(
+                (num_question_diff - 1) * questions_accuracy[q_id] / questions_frequency[q_id])
+    for c_id in range(num_concept):
+        if concepts_frequency[c_id] < num_min_concept:
+            concepts_accuracy[c_id] = num_concept_diff + num_few_shot_c
+            num_few_shot_c += 1
+        else:
+            concepts_accuracy[c_id] = int((num_concept_diff - 1) * concepts_accuracy[c_id] / concepts_frequency[c_id])
 
     return questions_accuracy, concepts_accuracy
 
@@ -112,11 +140,10 @@ def parse_low_fre_question(data_uniformed, data_type, num_few_shot, num_question
     return zero_shot_questions, few_shot_questions
 
 
-def parse4dataset_enhanced(data_uniformed, data_type, question2concept, concept2question, enhance_params):
+def parse4dataset_enhanced(data_uniformed, question2concept, concept2question, enhance_params):
     """
     将所有习题（同一知识点或者有相同知识点）分为easy、middle、hard、unknown\n
     :param data_uniformed:
-    :param data_type:
     :param question2concept:
     :param concept2question:
     :param enhance_params:
@@ -133,20 +160,17 @@ def parse4dataset_enhanced(data_uniformed, data_type, question2concept, concept2
 
     question_frequency = {}
     question_accuracy = {}
-    if data_type in ["single_concept", "only_question"]:
-        for item_data in data_uniformed:
-            for i in range(item_data["seq_len"]):
-                q_id = item_data["question_seq"][i]
-                question_frequency.setdefault(q_id, 0)
-                question_accuracy.setdefault(q_id, 0)
-                question_frequency[q_id] += 1
-                if item_data["correct_seq"][i] == 1:
-                    question_accuracy[q_id] += 1
-        for q_id in question_frequency.keys():
-            if question_frequency[q_id] >= num_min_question4diff:
-                question_accuracy[q_id] = question_accuracy[q_id] / question_frequency[q_id]
-    else:
-        raise NotImplementedError()
+    for item_data in data_uniformed:
+        for i in range(item_data["seq_len"]):
+            q_id = item_data["question_seq"][i]
+            question_frequency.setdefault(q_id, 0)
+            question_accuracy.setdefault(q_id, 0)
+            question_frequency[q_id] += 1
+            if item_data["correct_seq"][i] == 1:
+                question_accuracy[q_id] += 1
+    for q_id in question_frequency.keys():
+        if question_frequency[q_id] >= num_min_question4diff:
+            question_accuracy[q_id] = question_accuracy[q_id] / question_frequency[q_id]
 
     concept_dict = {}
     question_dict = {}

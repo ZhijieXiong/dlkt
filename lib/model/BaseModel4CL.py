@@ -365,7 +365,7 @@ class BaseModel4CL:
 
         return cl_loss
 
-    def get_cluster_cl_loss(self, batch, clus, latent_type, use_random_seq_len=False, use_adv_aug=False, dataset=None):
+    def get_cluster_cl_loss(self, batch, clus, cl_type, use_random_seq_len=False, use_adv_aug=False, dataset=None):
         if use_random_seq_len:
             batch_ori = {
                 "question_seq": batch["question_seq_random_len"],
@@ -392,19 +392,19 @@ class BaseModel4CL:
             batch_aug1["concept_seq"] = batch["concept_seq_aug_1"]
         batch_size = batch["mask_seq"].shape[0]
 
-        if latent_type == "last_time" and not use_adv_aug:
+        if cl_type == "last_time" and not use_adv_aug:
             latent_aug0_pooled = self.get_latent_last(batch_aug0)
             latent_aug1_pooled = self.get_latent_last(batch_aug1)
             latent_ori_pooled = self.get_latent_last(batch_ori)
-        elif latent_type == "mean_pool" and not use_adv_aug:
+        elif cl_type == "mean_pool" and not use_adv_aug:
             latent_aug0_pooled = self.get_latent_mean(batch_aug0)
             latent_aug1_pooled = self.get_latent_mean(batch_aug1)
             latent_ori_pooled = self.get_latent_mean(batch_ori)
-        elif latent_type == "last_time" and use_adv_aug:
+        elif cl_type == "last_time" and use_adv_aug:
             latent_aug0_pooled = self.get_latent_last_from_adv_data(dataset, batch_aug0)
             latent_aug1_pooled = self.get_latent_last_from_adv_data(dataset, batch_aug1)
             latent_ori_pooled = self.get_latent_last_from_adv_data(dataset, batch_ori)
-        elif latent_type == "mean_pool" and use_adv_aug:
+        elif cl_type == "mean_pool" and use_adv_aug:
             latent_aug0_pooled = self.get_latent_mean_from_adv_data(dataset, batch_aug0)
             latent_aug1_pooled = self.get_latent_mean_from_adv_data(dataset, batch_aug1)
             latent_ori_pooled = self.get_latent_mean_from_adv_data(dataset, batch_ori)

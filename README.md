@@ -28,7 +28,7 @@
      python example/set_up.py
      ```
 
-2. Place the original files of the dataset in the corresponding directory (Please refer to [Document](DOC.md) for details)
+2. Place the original files of the dataset in the corresponding directory (Please refer to [Document](DOC.md) (Section 3) for details)
 
 3. Data Preprocessing: Run ` example/reprocess.py`, for example
 

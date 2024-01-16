@@ -1,4 +1,4 @@
-import os
+from ._config import *
 
 from lib.util.data import read_preprocessed_file
 from lib.dataset.util import parse_long_tail
@@ -17,6 +17,7 @@ def mutual_enhance4long_tail_general_config(local_params, global_params, global_
     max_seq_len = local_params["max_seq_len"]
     only_update_low_fre = local_params["only_update_low_fre"]
     data_type = global_params["datasets_config"]["data_type"]
+    two_stage = local_params["two_stage"]
 
     dataset_train = read_preprocessed_file(os.path.join(
         global_objects["file_manager"].get_setting_dir(global_params["datasets_config"]["train"]["setting_name"]),
@@ -39,6 +40,12 @@ def mutual_enhance4long_tail_general_config(local_params, global_params, global_
     global_params["loss_config"]["seq transfer loss"] = weight_seq_loss
     global_params["loss_config"]["question transfer loss"] = weight_question_loss
 
+    # 如果是两阶段的，单独配置Item branch的优化器，目前two stage只有Item branch
+    if two_stage:
+        global_objects["logger"].info("")
+        config_optimizer(local_params, global_params, global_objects, "question_branch")
+        use_transfer4seq = False
+
     global_params["other"]["mutual_enhance4long_tail"] = {
         "dim_question": dim_question,
         "dim_latent": dim_latent,
@@ -49,12 +56,13 @@ def mutual_enhance4long_tail_general_config(local_params, global_params, global_
         "beta4transfer_seq": beta4transfer_seq,
         "gamma4transfer_question": gamma4transfer_question,
         "max_seq_len": max_seq_len,
-        "two_branch4question_transfer": two_branch4question_transfer
+        "two_branch4question_transfer": two_branch4question_transfer,
+        "two_stage": two_stage
     }
 
     global_objects["logger"].info(
         "long tail params\n"
-        f"    dim of question: {dim_question}, dim of latent: {dim_latent}, max seq len: {max_seq_len}\n"
+        f"    one stage: {not two_stage}, dim of question: {dim_question}, dim of latent: {dim_latent}, max seq len: {max_seq_len}\n"
         f"    weight of question transfer loss: {weight_question_loss}, min seq len of context for question: {min_context_seq_len}, "
         f"gamma for transfer question: {gamma4transfer_question} threshold of head question (percent): {head_question_threshold}, "
         f"distinguish right and wrong in question transfer: {two_branch4question_transfer}, only update low frequency questions: {only_update_low_fre}\n"

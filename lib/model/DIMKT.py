@@ -936,3 +936,20 @@ class DIMKT(nn.Module, BaseModel4CL):
         question_emb = self.get_target_question_emb(torch.tensor(tail_question_list).long().to(self.params["device"]))
         # 这里官方代码实现和论文上写的不一样
         self.embed_question.weight.data[tail_question_list] = (question_emb_transferred + gamma * question_emb) / (1 + gamma)
+
+    def freeze_emb(self):
+        use_LLM_emb4question = self.params["use_LLM_emb4question"]
+        use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
+
+        self.embed_question.weight.requires_grad = False
+        self.embed_concept.weight.requires_grad = False
+        self.embed_question_diff.weight.requires_grad = False
+        self.embed_concept_diff.weight.requires_grad = False
+        self.embed_correct.weight.requires_grad = False
+
+        if use_LLM_emb4question:
+            for param in self.MLP4question.parameters():
+                param.requires_grad = False
+        if use_LLM_emb4concept:
+            for param in self.MLP4concept.parameters():
+                param.requires_grad = False

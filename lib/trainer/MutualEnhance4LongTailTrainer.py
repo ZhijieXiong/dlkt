@@ -9,7 +9,9 @@ from ..model.Model4LongTail import *
 
 class MutualEnhance4LongTailTrainer(KnowledgeTracingTrainer):
     def __init__(self, params, objects):
-        self.seq_branch = LinearSeqBranch(params, objects).to(params["device"])
+        two_stage = params["other"]["mutual_enhance4long_tail"]
+        if not two_stage:
+            self.seq_branch = LinearSeqBranch(params, objects).to(params["device"])
         self.question_branch = LinearQuestionBranch(params, objects).to(params["device"])
 
         super(MutualEnhance4LongTailTrainer, self).__init__(params, objects)
@@ -44,7 +46,13 @@ class MutualEnhance4LongTailTrainer(KnowledgeTracingTrainer):
         )
 
     def init_trainer(self):
-        # 初始化optimizer和scheduler
+        two_stage = self.params["other"]["mutual_enhance4long_tail"]
+        if not two_stage:
+            self.init_trainer4one_stage()
+        else:
+            self.init_trainer4two_stage()
+
+    def init_trainer4one_stage(self):
         optimizers = self.objects["optimizers"]
         schedulers = self.objects["schedulers"]
 
@@ -63,7 +71,73 @@ class MutualEnhance4LongTailTrainer(KnowledgeTracingTrainer):
         else:
             schedulers["kt_model"] = None
 
-    def train(self):
+    def init_trainer4two_stage(self):
+        optimizers = self.objects["optimizers"]
+        schedulers = self.objects["schedulers"]
+
+        kt_model = self.objects["models"]["kt_model"]
+        kt_model_optimizer_config = self.params["optimizers_config"]["kt_model"]
+        que_branch_optimizer_config = self.params["optimizers_config"]["question_branch"]
+        kt_model_scheduler_config = self.params["schedulers_config"]["kt_model"]
+        que_branch_scheduler_config = self.params["schedulers_config"]["question_branch"]
+
+        optimizers["kt_model"] = create_optimizer(kt_model.parameters(), kt_model_optimizer_config)
+        if kt_model_scheduler_config["use_scheduler"]:
+            schedulers["kt_model"] = create_scheduler(optimizers["kt_model"], kt_model_scheduler_config)
+        else:
+            schedulers["kt_model"] = None
+
+        optimizers["question_branch"] = create_optimizer(self.question_branch.parameters(), que_branch_optimizer_config)
+        if que_branch_scheduler_config["use_scheduler"]:
+            schedulers["question_branch"] = create_scheduler(optimizers["question_branch"], que_branch_scheduler_config)
+        else:
+            schedulers["question_branch"] = None
+
+    def train_two_stage(self):
+        self.objects["logger"].info("\nfirst stage:")
+        if self.params["other"]["mutual_enhance4long_tail"]["train_kt"]:
+            self.train()
+        else:
+            save_model_path = self.params["other"]["mutual_enhance4long_tail"]["kt_model_path"]
+            self.objects["logger"].info(f"kt model has been trained (from {save_model_path})")
+        self.objects["logger"].info("\nsecond stage:")
+
+        kt_model = self.objects["models"]["kt_model"]
+        kt_model.freeze_emb()
+
+        que_branch_grad_clip_config = self.params["grad_clip_config"]["question_branch"]
+        que_branch_scheduler_config = self.params["schedulers_config"]["question_branch"]
+        que_branch_optimizer = self.objects["optimizers"]["question_branch"]
+        que_branch_scheduler = self.objects["schedulers"]["question_branch"]
+
+        for epoch in range(1, 10):
+            kt_model.train()
+            self.question_branch.train()
+            for batch_head_question in self.head_question_data_loader:
+                que_branch_optimizer.zero_grad()
+
+                num_head_q = len(batch_head_question[0])
+                loss = self.question_branch.get_transfer_loss(batch_head_question, kt_model, None, epoch)
+                self.loss_record.add_loss("question transfer loss", loss.detach().cpu().item() * num_head_q, num_head_q)
+
+                if que_branch_grad_clip_config["use_clip"]:
+                    nn.utils.clip_grad_norm_(kt_model.parameters(), max_norm=que_branch_grad_clip_config["grad_clipped"])
+
+                que_branch_optimizer.step()
+
+            if que_branch_scheduler_config["use_scheduler"]:
+                que_branch_scheduler.step()
+
+            kt_model.eval()
+            self.question_branch.eval()
+            with torch.no_grad():
+                # Knowledge transfer from item branch to user branch
+                for batch_tail_question in self.tail_question_data_loader:
+                    kt_model.update_tail_question(batch_tail_question, self.question_branch)
+
+            self.evaluate()
+
+    def train_one_stage(self):
         train_strategy = self.params["train_strategy"]
         grad_clip_config = self.params["grad_clip_config"]["kt_model"]
         schedulers_config = self.params["schedulers_config"]["kt_model"]
@@ -125,8 +199,12 @@ class MutualEnhance4LongTailTrainer(KnowledgeTracingTrainer):
                 break
 
     def evaluate_kt_dataset(self, model, data_loader):
+        two_stage = self.params["other"]["mutual_enhance4long_tail"]
+        seq_branch = None if two_stage else self.seq_branch
+
         model.eval()
-        self.seq_branch.eval()
+        if not two_stage:
+            seq_branch.eval()
         self.question_branch.eval()
         with torch.no_grad():
             predict_score_all = []
@@ -134,7 +212,7 @@ class MutualEnhance4LongTailTrainer(KnowledgeTracingTrainer):
             for batch in data_loader:
                 correct_seq = batch["correct_seq"]
                 mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-                predict_score = model.get_predict_score4long_tail(batch, self.seq_branch).detach().cpu().numpy()
+                predict_score = model.get_predict_score4long_tail(batch, seq_branch).detach().cpu().numpy()
                 ground_truth = torch.masked_select(correct_seq[:, 1:], mask_bool_seq[:, 1:]).detach().cpu().numpy()
                 predict_score_all.append(predict_score)
                 ground_truth_all.append(ground_truth)

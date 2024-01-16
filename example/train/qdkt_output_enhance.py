@@ -16,15 +16,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="our_setting")
-    parser.add_argument("--dataset_name", type=str, default="assist2009")
-    parser.add_argument("--data_type", type=str, default="only_question",
+    parser.add_argument("--dataset_name", type=str, default="assist2012")
+    parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2012_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2012_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2012_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0.001)
+    parser.add_argument("--weight_decay", type=float, default=0.0001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
@@ -52,12 +52,12 @@ if __name__ == "__main__":
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=123)
-    parser.add_argument("--num_question", type=int, default=17751)
+    parser.add_argument("--num_concept", type=int, default=265)
+    parser.add_argument("--num_question", type=int, default=53091)
     parser.add_argument("--dim_concept", type=int, default=64)
     parser.add_argument("--dim_question", type=int, default=64)
-    parser.add_argument("--dim_correct", type=int, default=64)
-    parser.add_argument("--dim_latent", type=int, default=64)
+    parser.add_argument("--dim_correct", type=int, default=128)
+    parser.add_argument("--dim_latent", type=int, default=128)
     parser.add_argument("--rnn_type", type=str, default="gru",
                         choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=1)
@@ -70,8 +70,8 @@ if __name__ == "__main__":
                         help="0: all\n"
                              "1: only score constraint (S_easier - S >= 0 and S - S_harder >= 0)\n"
                              "2: only study constraint (if correct == 1, S_{q, t} - S_{q, t-1} >= 0, q is zero (or and few) shot question)")
-    parser.add_argument("--weight_enhance_loss1", type=float, default=10)
-    parser.add_argument("--num_min_question4diff", type=int, default=25)
+    parser.add_argument("--weight_enhance_loss1", type=float, default=5)
+    parser.add_argument("--num_min_question4diff", type=int, default=100)
     parser.add_argument("--hard_acc", type=float, default=0.4)
     parser.add_argument("--easy_acc", type=float, default=0.8)
     parser.add_argument("--weight_enhance_loss2", type=float, default=3)
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_LLM_emb4concept", type=str2bool, default=False)
     parser.add_argument("--train_LLM_emb", type=str2bool, default=True)
     # 其它
-    parser.add_argument("--save_model", type=str2bool, default=False)
+    parser.add_argument("--save_model", type=str2bool, default=True)
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()

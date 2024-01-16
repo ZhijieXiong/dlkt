@@ -15,13 +15,13 @@ from lib.trainer.KTOutputEnhanceTrainer import KTOutputEnhanceTrainer
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
-    parser.add_argument("--setting_name", type=str, default="random_split_leave_multi_out_setting")
+    parser.add_argument("--setting_name", type=str, default="our_setting")
     parser.add_argument("--dataset_name", type=str, default="assist2012")
     parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2012_train_split_5.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2012_valid_split_5.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2012_test_split_5.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2012_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2012_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2012_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
     parser.add_argument("--weight_decay", type=float, default=0.0001)
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
     # 学习率
     parser.add_argument("--learning_rate", type=float, default=0.002)
-    parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
+    parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
@@ -62,12 +62,12 @@ if __name__ == "__main__":
     parser.add_argument("--num_concept_diff", type=int, default=100)
     parser.add_argument("--dropout", type=float, default=0.2)
     # output enhance参数
-    parser.add_argument("--enhance_method", type=int, default=1,
+    parser.add_argument("--enhance_method", type=int, default=2,
                         help="0: all\n"
                              "1: only score constraint (S_easier - S >= 0 and S - S_harder >= 0)\n"
                              "2: only study constraint (if correct == 1, S_{q, t} - S_{q, t-1} >= 0, q is zero (or and few) shot question)")
-    parser.add_argument("--weight_enhance_loss1", type=float, default=50)
-    parser.add_argument("--num_min_question4diff", type=int, default=50)
+    parser.add_argument("--weight_enhance_loss1", type=float, default=1)
+    parser.add_argument("--num_min_question4diff", type=int, default=25)
     parser.add_argument("--hard_acc", type=float, default=0.4)
     parser.add_argument("--easy_acc", type=float, default=0.8)
     parser.add_argument("--weight_enhance_loss2", type=float, default=3)
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_LLM_emb4concept", type=str2bool, default=False)
     parser.add_argument("--train_LLM_emb", type=str2bool, default=True)
     # 其它
-    parser.add_argument("--save_model", type=str2bool, default=False)
+    parser.add_argument("--save_model", type=str2bool, default=True)
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()

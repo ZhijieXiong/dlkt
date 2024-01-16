@@ -5,8 +5,8 @@
   data_type="single_concept"
   fold=0
 
-  weights_cl='0.0001 0.001 0.01 0.1'
-  for num_cluster in 64 256
+  weights_cl='0.001 0.01'
+  for num_cluster in 512 1024 2048
   do
     for weight_cl in ${weights_cl}
     do
@@ -24,9 +24,9 @@
         --enable_clip_grad False --grad_clipped 10.0 \
         --num_concept 53 --num_question 948 \
         --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 128 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.1 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
-        --use_warm_up4cl True --epoch_warm_up4cl 1 --cl_type "last_time" \
+        --use_warm_up4cl True --epoch_warm_up4cl 2 --cl_type "last_time" \
         --num_cluster "${num_cluster}" --temp 0.05 --weight_cl_loss "${weight_cl}" \
-        --use_online_sim True --use_warm_up4online_sim True --epoch_warm_up4online_sim 1 \
+        --use_online_sim True --use_warm_up4online_sim True --epoch_warm_up4online_sim 2 \
         --aug_type "informative_aug" --use_random_select_aug_len True \
         --mask_prob 0.1 --insert_prob 0.1 --replace_prob 0.1 --crop_prob 0.1 --permute_prob 0.1 \
         --aug_order "['mask', 'replace', 'insert']" --offline_sim_type "RCD_graph" \

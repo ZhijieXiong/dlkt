@@ -125,8 +125,7 @@ def dimkt_instance_cl_config(local_params):
     general_config(local_params, global_params, global_objects)
     dimkt_general_config(local_params, global_params, global_objects)
     instance_cl_general_config(local_params, global_params, global_objects)
-    train_aug_config = global_params["datasets_config"]["train"]["kt4aug"]
-    train_aug_config["use_diff4dimkt"] = True
+    global_params["datasets_config"]["train"]["kt4aug"] = {"use_diff4dimkt": True}
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
             global_params["save_model_dir_name"].replace("@@DIMKT@@", "@@DIMKT-instance_cl@@"))
@@ -157,17 +156,19 @@ def dimkt_mutual_enhance4long_tail_config(local_params):
     mutual_enhance4long_tail_general_config(local_params, global_params, global_objects)
 
     # 需要在global_objects["mutual_enhance4long_tail"]["dataset_train"]里面添加上diff seq
-    num_question_difficulty = local_params["num_question_diff"]
-    num_concept_difficulty = local_params["num_concept_diff"]
     question_difficulty = global_objects["dimkt"]["question_difficulty"]
     concept_difficulty = global_objects["dimkt"]["concept_difficulty"]
     for item_data in global_objects["mutual_enhance4long_tail"]["dataset_train"]:
         item_data["question_diff_seq"] = []
         item_data["concept_diff_seq"] = []
         for q_id in item_data["question_seq"]:
-            item_data["question_diff_seq"].append(question_difficulty.get(q_id, num_question_difficulty))
+            item_data["question_diff_seq"].append(question_difficulty[q_id])
         for c_id in item_data["concept_seq"]:
-            item_data["concept_diff_seq"].append(concept_difficulty.get(c_id, num_concept_difficulty))
+            item_data["concept_diff_seq"].append(concept_difficulty[c_id])
+    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_question_diff"] = max(
+        question_difficulty.values()) + 1
+    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_concept_diff"] = max(
+        concept_difficulty.values()) + 1
 
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
@@ -184,14 +185,13 @@ def dimkt_output_enhance_config(local_params):
     dimkt_general_config(local_params, global_params, global_objects)
     output_enhance_general_config(local_params, global_params, global_objects)
 
-    global_params["datasets_config"]["train"]["kt_output_enhance"] = {}
-    train_aug_config = global_params["datasets_config"]["train"]["kt_output_enhance"]
-    train_aug_config["use_diff4dimkt"] = True
-    train_aug_config["diff4dimkt"] = {
-        "num_question_difficulty": local_params["num_question_diff"],
-        "num_concept_difficulty": local_params["num_concept_diff"]
-    }
-
+    global_params["datasets_config"]["train"]["kt_output_enhance"] = {"use_diff4dimkt": True}
+    question_difficulty = global_objects["dimkt"]["question_difficulty"]
+    concept_difficulty = global_objects["dimkt"]["concept_difficulty"]
+    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_question_diff"] = max(
+        question_difficulty.values()) + 1
+    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_concept_diff"] = max(
+        concept_difficulty.values()) + 1
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
             global_params["save_model_dir_name"].replace("@@DIMKT@@", "@@DIMKT-output_enhance@@"))

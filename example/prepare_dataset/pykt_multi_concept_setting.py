@@ -12,7 +12,7 @@ from lib.dataset.split_dataset import n_fold_split1
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_name", type=str, default="xes3g5m",
-                        choices=("assist2009", "assist2009-new", "ednet-kt1", "xes3g5m"))
+                        choices=("assist2009", "assist2009-full", "ednet-kt1", "xes3g5m"))
     args = parser.parse_args()
     params = vars(args)
 

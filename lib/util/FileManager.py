@@ -10,8 +10,8 @@ from ..data_processor.load_raw import load_csv
 
 class FileManager:
     dataset_raw_path_in_lab = {
-        "assist2009": "lab/dataset_raw/assist2009/skill_builder_data_corrected_collapsed.csv",
-        "assist2009-new": "lab/dataset_raw/assist2009-new/skill_builder_data_corrected_collapsed.csv",
+        "assist2009": "lab/dataset_raw/assist2009/skill_builder_data.csv",
+        "assist2009-full": "lab/dataset_raw/assist2009-full/assistments_2009_2010.csv",
         "assist2012": "lab/dataset_raw/assist2012/2012-2013-data-with-predictions-4-final.csv",
         "assist2015": "lab/dataset_raw/assist2015/2015_100_skill_builders_main_problems.csv",
         "assist2017": "lab/dataset_raw/assist2017/anonymized_full_release_competition_dataset.csv",
@@ -40,7 +40,7 @@ class FileManager:
 
     data_preprocessed_dir_in_lab = {
         "assist2009": "lab/dataset_preprocessed/assist2009",
-        "assist2009-new": "lab/dataset_preprocessed/assist2009-new",
+        "assist2009-full": "lab/dataset_preprocessed/assist2009-full",
         "assist2012": "lab/dataset_preprocessed/assist2012",
         "assist2015": "lab/dataset_preprocessed/assist2015",
         "assist2017": "lab/dataset_preprocessed/assist2017",
@@ -68,10 +68,6 @@ class FileManager:
         "bridge2algebra2008": "lab/dataset_preprocessed/bridge2algebra2008"
     }
 
-    builtin_datasets = ["assist2009", "assist2009-new", "assist2012", "assist2015", "assist2017", "statics2011",
-                        "junyi2015", "ednet-kt1", "edi2020", "edi2020-task1", "edi2020-task2", "edi2020-task34",
-                        "edi2022", "SLP-bio", "SLP-mat", "slepemapy", "xes3g5m", "algebra2005", "bridge2algebra2006"]
-
     setting_dir_in_lab = "lab/settings"
     models_dir_in_lab = "lab/saved_models"
     file_settings_name = "setting.json"
@@ -80,6 +76,11 @@ class FileManager:
         self.root_dir = root_dir
         if init_dirs:
             self.create_dirs()
+        dirs = os.listdir(os.path.join(self.get_root_dir(), "lab", "dataset_preprocessed"))
+        self.builtin_datasets = []
+        for d in dirs:
+            if os.path.isdir(os.path.join(self.get_root_dir(), "lab", "dataset_preprocessed", d)):
+                self.builtin_datasets.append(d)
 
     def create_dirs(self):
         assert os.path.exists(self.root_dir), f"{self.root_dir} not exist"
@@ -87,7 +88,7 @@ class FileManager:
             os.path.join(self.root_dir, "lab"),
             os.path.join(self.root_dir, "lab", "dataset_raw"),
             os.path.join(self.root_dir, "lab", "dataset_raw", "assist2009"),
-            os.path.join(self.root_dir, "lab", "dataset_raw", "assist2009-new"),
+            os.path.join(self.root_dir, "lab", "dataset_raw", "assist2009-full"),
             os.path.join(self.root_dir, "lab", "dataset_raw", "assist2012"),
             os.path.join(self.root_dir, "lab", "dataset_raw", "assist2015"),
             os.path.join(self.root_dir, "lab", "dataset_raw", "assist2017"),
@@ -104,7 +105,7 @@ class FileManager:
             os.path.join(self.root_dir, "lab", "dataset_raw", "kdd_cup2010"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "assist2009"),
-            os.path.join(self.root_dir, "lab", "dataset_preprocessed", "assist2009-new"),
+            os.path.join(self.root_dir, "lab", "dataset_preprocessed", "assist2009-full"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "assist2012"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "assist2015"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "assist2017"),
@@ -149,7 +150,7 @@ class FileManager:
 
     # ==================================================================================================================
     def get_preprocessed_dir(self, dataset_name):
-        assert dataset_name in FileManager.builtin_datasets, f"{dataset_name} is not in builtin datasets"
+        assert dataset_name in self.builtin_datasets, f"{dataset_name} is not in builtin datasets"
         return os.path.join(self.root_dir, FileManager.data_preprocessed_dir_in_lab[dataset_name])
 
     def save_q_table(self, Q_table, dataset_name, data_type):

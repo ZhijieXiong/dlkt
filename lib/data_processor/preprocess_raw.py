@@ -85,7 +85,7 @@ def preprocess_assist(dataset_name, df):
 
     if dataset_name in DATASET_INFO.datasets_multi_concept():
         result["multi_concept"] = qc_id_remap(dataset_name, df)
-    if dataset_name in ["assist2009", "assist2009-new"]:
+    if dataset_name in ["assist2009", "assist2009-full"]:
         df = multi_concept2single_concept4assist2009(df)
     result["single_concept"] = qc_id_remap(dataset_name, df)
 

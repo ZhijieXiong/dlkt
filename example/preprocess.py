@@ -9,7 +9,7 @@ from lib.util.data import *
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="algebra2005")
+    parser.add_argument("--dataset_name", type=str, default="bridge2algebra2006")
 
     args = parser.parse_args()
     params = vars(args)

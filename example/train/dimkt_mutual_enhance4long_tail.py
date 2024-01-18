@@ -75,7 +75,7 @@ if __name__ == "__main__":
                         help="只用序列长度大于head_seq_len的序列来训练seq branch，必须大于10")
     parser.add_argument("--use_transfer4seq", type=str2bool, default=False, help="是否使用User branch")
     parser.add_argument("--beta4transfer_seq", type=float, help="论文公式4中的beta", default=1)
-    parser.add_argument("--gamma4transfer_question", type=float, help="论文公式8中的gamma", default=1)
+    parser.add_argument("--gamma4transfer_question", type=float, help="论文公式8中的gamma", default=0)
     parser.add_argument("--only_update_low_fre", type=str2bool, default=True)
     parser.add_argument("--two_branch4question_transfer", type=str2bool, default=True,
                         help="训练Item branch时是否区分做对和做错的context")
@@ -86,15 +86,15 @@ if __name__ == "__main__":
                         choices=("adam", "sgd"))
     parser.add_argument("--weight_decay_question_branch", type=float, default=0)
     parser.add_argument("--momentum_question_branch", type=float, default=0.9)
-    parser.add_argument("--learning_rate_question_branch", type=float, default=0.01)
+    parser.add_argument("--learning_rate_question_branch", type=float, default=0.0001)
     parser.add_argument("--enable_lr_schedule_question_branch", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type_question_branch", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step_question_branch", type=int, default=10)
     parser.add_argument("--lr_schedule_milestones_question_branch", type=str, default="[5]")
     parser.add_argument("--lr_schedule_gamma_question_branch", type=float, default=0.5)
-    parser.add_argument("--enable_clip_grad_question_branch", type=str2bool, default=False)
-    parser.add_argument("--grad_clipped_question_branch", type=float, default=10.0)
+    parser.add_argument("--enable_clip_grad_question_branch", type=str2bool, default=True)
+    parser.add_argument("--grad_clipped_question_branch", type=float, default=5.0)
     # 损失权重（只对one stage有效）
     parser.add_argument("--weight_seq_loss", type=float, help="lambda U", default=0.1)
     parser.add_argument("--weight_question_loss", type=float, help="lambda I", default=0.1)

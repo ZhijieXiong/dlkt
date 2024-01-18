@@ -196,10 +196,15 @@ class BaseModel4CL:
         use_emb_dropout4cl = instance_cl_params["use_emb_dropout4cl"]
         emb_dropout4cl = instance_cl_params["emb_dropout4cl"]
         data_aug_type4cl = instance_cl_params["data_aug_type4cl"]
+        data_type = self.params["datasets_config"]["data_type"]
         high_distinction_q = self.objects["data"]["high_distinction_q"]
         high_distinction_q = torch.LongTensor(high_distinction_q).to(self.params["device"])
-        high_distinction_c = self.objects["data"].get("high_distinction_c", None)
-        high_distinction_c = torch.LongTensor(high_distinction_c).to(self.params["device"])
+        # multi concept的没想好怎么处理
+        if data_type == "only_question":
+            high_distinction_c = None
+        else:
+            high_distinction_c = self.objects["data"].get("high_distinction_c", None)
+            high_distinction_c = torch.LongTensor(high_distinction_c).to(self.params["device"])
 
         if data_aug_type4cl == "original_data_aug":
             batch_aug0 = {

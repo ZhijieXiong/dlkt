@@ -1,11 +1,13 @@
 import argparse
 import json
+import os
+import numpy as np
 
 import config
 
 from lib.util.data import read_preprocessed_file
 from lib.util.statics import dataset_basic_statics
-from lib.util.parse import str2bool
+from lib.util.parse import str2bool, question2concept_from_Q
 
 
 def sort_dict(d):
@@ -81,12 +83,14 @@ if __name__ == "__main__":
 
     parser.add_argument("--target_file_path", type=str,
                         help="用于从数据中提取信息，如每道习题出现的频率（长尾问题），准确率（偏差问题）",
-                        default=r"F:\code\myProjects\dlkt\lab\settings\random_split_leave_multi_out_setting\assist2012_train_split_5.txt")
-    parser.add_argument("--data_type", type=str, default="single_concept",
-                        choices=("multi_concept", "single_concept", "only_question"))
+                        default=r"F:\code\myProjects\dlkt\lab\settings\our_setting\assist2009_train_fold_0.txt")
     # 数据集信息
-    parser.add_argument("--num_concept", type=int, default=265)
-    parser.add_argument("--num_question", type=int, default=53091)
+    parser.add_argument("--preprocessed_dir", type=str, default=r"F:\code\myProjects\dlkt\lab\dataset_preprocessed")
+    parser.add_argument("--dataset_name", type=str, default="assist2009")
+    parser.add_argument("--data_type", type=str, default="only_question",
+                        choices=("multi_concept", "single_concept", "only_question"))
+    parser.add_argument("--num_concept", type=int, default=123)
+    parser.add_argument("--num_question", type=int, default=17751)
     # 划分知识点和习题频率为低中高所用的参数，用于研究长尾问题
     parser.add_argument("--use_absolute4fre", type=str2bool, default=False)
     parser.add_argument("--concept_fre_low_middle", type=int, default=100)
@@ -112,8 +116,18 @@ if __name__ == "__main__":
     params = vars(args)
 
     data = read_preprocessed_file(params["target_file_path"])
+    # Q table，并解析Q table并得到相关数据
+    preprocessed_dir = params["preprocessed_dir"]
+    dataset_name = params["dataset_name"]
+    data_type = params["data_type"]
+    if data_type == "only_question":
+        Q_table_path = os.path.join(preprocessed_dir, dataset_name, "Q_table_multi_concept.npy")
+    else:
+        Q_table_path = os.path.join(preprocessed_dir, dataset_name, f"Q_table_{data_type}.npy")
+    Q_table = np.load(Q_table_path)
+    question2concept = question2concept_from_Q(Q_table)
     statics_info_file_path = params["target_file_path"].replace(".txt", f"_statics.json")
-    basic_statics = dataset_basic_statics(data, params["data_type"],
+    basic_statics = dataset_basic_statics(data, data_type, question2concept,
                                           num_question=params["num_question"],
                                           num_concept=params["num_concept"])
     if params["use_absolute4fre"]:

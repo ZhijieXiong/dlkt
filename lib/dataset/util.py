@@ -52,9 +52,8 @@ def parse_difficulty(data_uniformed, params, objects):
                 c_id = item_data["concept_seq"][i]
                 questions_frequency[q_id] += 1
                 concepts_frequency[c_id] += 1
-                if item_data["correct_seq"][i] == 1:
-                    questions_accuracy[q_id] += 1
-                    concepts_accuracy[c_id] += 1
+                questions_accuracy[q_id] += item_data["correct_seq"][i]
+                concepts_accuracy[c_id] += item_data["correct_seq"][i]
     elif data_type == "only_question":
         question2concept = objects["question2concept"]
         for item_data in data_uniformed:
@@ -64,10 +63,9 @@ def parse_difficulty(data_uniformed, params, objects):
                 c_ids = question2concept[q_id]
                 for c_id in c_ids:
                     concepts_frequency[c_id] += 1
-                if item_data["correct_seq"][i] == 1:
-                    questions_accuracy[q_id] += 1
-                    for c_id in c_ids:
-                        concepts_accuracy[c_id] += 1
+                questions_accuracy[q_id] += item_data["correct_seq"][i]
+                for c_id in c_ids:
+                    concepts_accuracy[c_id] += item_data["correct_seq"][i]
     else:
         raise NotImplementedError()
 

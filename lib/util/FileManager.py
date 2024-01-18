@@ -29,7 +29,13 @@ class FileManager:
         "slepemapy": "lab/dataset_raw/slepemapy/answers.csv",
         "statics2011": "lab/dataset_raw/statics2011/AllData_student_step_2011F.csv",
         "ednet-kt1": "lab/dataset_raw/ednet-kt1",
-        "xes3g5m": "lab/dataset_raw/xes3g5m"
+        "xes3g5m": "lab/dataset_raw/xes3g5m",
+        "aaai2023": "lab/dataset_raw/aaai2023",
+        "algebra2005": "lab/dataset_raw/kdd_cup2010",
+        "algebra2006": "lab/dataset_raw/kdd_cup2010",
+        "algebra2008": "lab/dataset_raw/kdd_cup2010",
+        "bridge2algebra2006": "lab/dataset_raw/kdd_cup2010",
+        "bridge2algebra2008": "lab/dataset_raw/kdd_cup2010"
     }
 
     data_preprocessed_dir_in_lab = {
@@ -53,12 +59,18 @@ class FileManager:
         "ednet-kt1": "lab/dataset_preprocessed/ednet-kt1",
         "junyi2015": "lab/dataset_preprocessed/junyi2015",
         "slepemapy": "lab/dataset_preprocessed/slepemapy",
-        "xes3g5m": "lab/dataset_preprocessed/xes3g5m"
+        "xes3g5m": "lab/dataset_preprocessed/xes3g5m",
+        "aaai2023": "lab/dataset_preprocessed/aaai2023",
+        "algebra2005": "lab/dataset_preprocessed/algebra2005",
+        "algebra2006": "lab/dataset_preprocessed/algebra2006",
+        "algebra2008": "lab/dataset_preprocessed/algebra2008",
+        "bridge2algebra2006": "lab/dataset_preprocessed/bridge2algebra2006",
+        "bridge2algebra2008": "lab/dataset_preprocessed/bridge2algebra2008"
     }
 
     builtin_datasets = ["assist2009", "assist2009-new", "assist2012", "assist2015", "assist2017", "statics2011",
                         "junyi2015", "ednet-kt1", "edi2020", "edi2020-task1", "edi2020-task2", "edi2020-task34",
-                        "edi2022", "SLP-bio", "SLP-mat", "slepemapy", "xes3g5m"]
+                        "edi2022", "SLP-bio", "SLP-mat", "slepemapy", "xes3g5m", "algebra2005", "bridge2algebra2006"]
 
     setting_dir_in_lab = "lab/settings"
     models_dir_in_lab = "lab/saved_models"
@@ -88,6 +100,8 @@ class FileManager:
             os.path.join(self.root_dir, "lab", "dataset_raw", "SLP"),
             os.path.join(self.root_dir, "lab", "dataset_raw", "slepemapy"),
             os.path.join(self.root_dir, "lab", "dataset_raw", "xes3g5m"),
+            os.path.join(self.root_dir, "lab", "dataset_raw", "aaai2023"),
+            os.path.join(self.root_dir, "lab", "dataset_raw", "kdd_cup2010"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "assist2009"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "assist2009-new"),
@@ -110,6 +124,12 @@ class FileManager:
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "SLP-phy"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "slepemapy"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "xes3g5m"),
+            os.path.join(self.root_dir, "lab", "dataset_preprocessed", "aaai2023"),
+            os.path.join(self.root_dir, "lab", "dataset_preprocessed", "algebra2005"),
+            os.path.join(self.root_dir, "lab", "dataset_preprocessed", "algebra2006"),
+            os.path.join(self.root_dir, "lab", "dataset_preprocessed", "algebra2008"),
+            os.path.join(self.root_dir, "lab", "dataset_preprocessed", "bridge2algebra2006"),
+            os.path.join(self.root_dir, "lab", "dataset_preprocessed", "bridge2algebra2008"),
             os.path.join(self.root_dir, "lab", "settings"),
             os.path.join(self.root_dir, "lab", "saved_models"),
         ]

@@ -120,22 +120,23 @@ class MutualEnhance4LongTailTrainer(KnowledgeTracingTrainer):
                 loss = self.question_branch.get_transfer_loss(batch_head_question, kt_model, None, epoch)
                 self.loss_record.add_loss("question transfer loss", loss.detach().cpu().item() * num_head_q, num_head_q)
 
+                loss.backward()
                 if que_branch_grad_clip_config["use_clip"]:
                     nn.utils.clip_grad_norm_(kt_model.parameters(), max_norm=que_branch_grad_clip_config["grad_clipped"])
-
                 que_branch_optimizer.step()
 
             if que_branch_scheduler_config["use_scheduler"]:
                 que_branch_scheduler.step()
 
-            kt_model.eval()
-            self.question_branch.eval()
-            with torch.no_grad():
-                # Knowledge transfer from item branch to user branch
-                for batch_tail_question in self.tail_question_data_loader:
-                    kt_model.update_tail_question(batch_tail_question, self.question_branch)
+        # 训练完以后再update tail emb，即只update一次
+        kt_model.eval()
+        self.question_branch.eval()
+        with torch.no_grad():
+            # Knowledge transfer from item branch to user branch
+            for batch_tail_question in self.tail_question_data_loader:
+                kt_model.update_tail_question(batch_tail_question, self.question_branch)
 
-            self.evaluate()
+        self.evaluate()
 
     def train_one_stage(self):
         train_strategy = self.params["train_strategy"]
@@ -189,8 +190,8 @@ class MutualEnhance4LongTailTrainer(KnowledgeTracingTrainer):
                 loss.backward()
                 if grad_clip_config["use_clip"]:
                     nn.utils.clip_grad_norm_(kt_model.parameters(), max_norm=grad_clip_config["grad_clipped"])
-
                 optimizer.step()
+
             if schedulers_config["use_scheduler"]:
                 scheduler.step()
 

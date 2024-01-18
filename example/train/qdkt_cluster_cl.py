@@ -16,15 +16,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="our_setting")
-    parser.add_argument("--dataset_name", type=str, default="assist2009")
-    parser.add_argument("--data_type", type=str, default="only_question",
+    parser.add_argument("--dataset_name", type=str, default="assist2012")
+    parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2012_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2012_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2012_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0.001)
+    parser.add_argument("--weight_decay", type=float, default=0.0001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
@@ -52,22 +52,22 @@ if __name__ == "__main__":
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=123)
-    parser.add_argument("--num_question", type=int, default=17751)
+    parser.add_argument("--num_concept", type=int, default=265)
+    parser.add_argument("--num_question", type=int, default=53091)
     parser.add_argument("--dim_concept", type=int, default=64)
     parser.add_argument("--dim_question", type=int, default=64)
-    parser.add_argument("--dim_correct", type=int, default=64)
+    parser.add_argument("--dim_correct", type=int, default=128)
     parser.add_argument("--dim_latent", type=int, default=128)
     parser.add_argument("--rnn_type", type=str, default="gru")
     parser.add_argument("--num_rnn_layer", type=int, default=1)
-    parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument("--dropout", type=float, default=0.3)
     parser.add_argument("--num_predict_layer", type=int, default=3)
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
     # cluster CL参数（对比学习）
-    parser.add_argument("--num_cluster", type=int, default=64)
+    parser.add_argument("--num_cluster", type=int, default=256)
     parser.add_argument("--temp", type=float, default=0.05)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.3)
     parser.add_argument("--cl_type", type=str, default="last_time",
                         choices=("last_time", "mean_pool"))
     # CL warm up
@@ -76,13 +76,13 @@ if __name__ == "__main__":
     # random aug和informative aug参数
     parser.add_argument("--aug_type", type=str, default="informative_aug",
                         choices=("random_aug", "informative_aug"))
-    parser.add_argument("--use_random_select_aug_len", type=str2bool, default=True)
+    parser.add_argument("--use_random_select_aug_len", type=str2bool, default=False)
     parser.add_argument("--mask_prob", type=float, default=0.1)
-    parser.add_argument("--insert_prob", type=float, default=0.2)
+    parser.add_argument("--insert_prob", type=float, default=0.1)
     parser.add_argument("--replace_prob", type=float, default=0.1)
     parser.add_argument("--crop_prob", type=float, default=0.1)
     parser.add_argument("--permute_prob", type=float, default=0.1)
-    parser.add_argument("--aug_order", type=str, default="['mask', 'crop', 'replace', 'insert']",
+    parser.add_argument("--aug_order", type=str, default="['mask', 'replace', 'insert']",
                         help="random aug: ['mask', 'crop', 'replace', 'permute']"
                              "info aug: ['mask', 'crop', 'replace', 'permute', 'insert']")
     # info aug离线相似度配置以及是否使用在线相似度

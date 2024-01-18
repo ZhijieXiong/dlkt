@@ -42,7 +42,7 @@ def mutual_enhance4long_tail_general_config(local_params, global_params, global_
 
     # 如果是两阶段的，单独配置Item branch的优化器，目前two stage只有Item branch
     if two_stage:
-        global_objects["logger"].info("")
+        global_objects["logger"].info("optimizer setting for item branch")
         config_optimizer(local_params, global_params, global_objects, "question_branch")
         use_transfer4seq = False
 

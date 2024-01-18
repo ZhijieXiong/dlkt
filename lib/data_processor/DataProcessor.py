@@ -49,24 +49,26 @@ class DataProcessor:
         assert os.path.exists(data_path), f"raw data ({data_path}) not exist"
 
         if dataset_name in ["assist2009", "assist2009-new"]:
-            self.process_assist2009()
+            self.load_process_assist2009()
         elif dataset_name == "assist2012":
-            self.process_assist2012()
+            self.load_process_assist2012()
         elif dataset_name == "assist2017":
-            self.process_assist2017()
+            self.load_process_assist2017()
         elif dataset_name == "edi2020-task34":
             self.load_process_edi2020_task34()
         elif dataset_name == "ednet-kt1":
             self.load_process_ednet_kt1()
         elif dataset_name == "xes3g5m":
             self.load_process_uniform_xes3g5m()
+        elif dataset_name in ["algebra2005", "algebra2006", "algebra2008", "bridge2algebra2006", "bridge2algebra2008"]:
+            self.load_process_kdd_cup2010()
         else:
             raise NotImplementedError()
 
         self.uniform_data()
         return self.data_uniformed
 
-    def process_assist2009(self):
+    def load_process_assist2009(self):
         data_path = self.params["preprocess_config"]["data_path"]
         dataset_name = "assist2009"
         useful_cols = CONSTANT.datasets_useful_cols()[dataset_name]
@@ -112,7 +114,7 @@ class DataProcessor:
         self.question_id_map["single_concept"] = result_preprocessed["single_concept"]["question_id_map"]
         self.concept_id_map["single_concept"] = result_preprocessed["single_concept"]["concept_id_map"]
 
-    def process_assist2012(self):
+    def load_process_assist2012(self):
         def time_str2timestamp(time_str):
             if len(time_str) != 19:
                 time_str = re.search(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", time_str).group()
@@ -158,7 +160,7 @@ class DataProcessor:
         self.question_id_map["single_concept"] = result_preprocessed["single_concept"]["question_id_map"]
         self.concept_id_map["single_concept"] = result_preprocessed["single_concept"]["concept_id_map"]
 
-    def process_assist2015(self):
+    def load_process_assist2015(self):
         data_path = self.params["preprocess_config"]["data_path"]
         dataset_name = "assist2015"
         useful_cols = CONSTANT.datasets_useful_cols()[dataset_name]
@@ -170,7 +172,7 @@ class DataProcessor:
         df["question_id"] = df["question_id"].map(int)
         # result_preprocessed = preprocess_raw.preprocess_assist(dataset_name, df)
 
-    def process_assist2017(self):
+    def load_process_assist2017(self):
         data_path = self.params["preprocess_config"]["data_path"]
         dataset_name = "assist2017"
         useful_cols = CONSTANT.datasets_useful_cols()[dataset_name]
@@ -602,6 +604,23 @@ class DataProcessor:
             sum(list(map(lambda x: x["seq_len"], self.data_uniformed["single_concept"]))))
         self.statics_preprocessed["single_concept"]["num_concept"] = len(concept_ids)
         self.statics_preprocessed["single_concept"]["num_question"] = len(question_ids)
+
+    def load_process_kdd_cup2010(self):
+        dir_table = {
+            "algebra2005": "algebra_2005_2006",
+            "algebra2006": "algebra_2006_2007",
+            "algebra2008": "algebra_2008_2009",
+            "bridge2algebra2006": "bridge_to_algebra_2006_2007",
+            "bridge2algebra2008": "bridge_to_algebra_2008_2009"
+        }
+        dataset_name = self.params["preprocess_config"]["dataset_name"]
+        data_path = self.params["preprocess_config"]["data_path"]
+        train_path = os.path.join(data_path, dir_table[dataset_name], f"{dir_table[dataset_name]}_train.txt")
+        test_path = os.path.join(data_path, dir_table[dataset_name], f"{dir_table[dataset_name]}_test.txt")
+        useful_cols = CONSTANT.datasets_useful_cols()[dataset_name]
+        rename_cols = CONSTANT.datasets_renamed()[dataset_name]
+        data_train = load_raw.load_csv(train_path)
+        data_test = load_raw.load_csv(test_path)
 
     def uniform_data(self):
         dataset_name = self.params["preprocess_config"]["dataset_name"]

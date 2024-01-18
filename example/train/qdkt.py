@@ -14,16 +14,16 @@ from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
-    parser.add_argument("--setting_name", type=str, default="random_split_leave_multi_out_setting")
-    parser.add_argument("--dataset_name", type=str, default="assist2012")
-    parser.add_argument("--data_type", type=str, default="single_concept",
+    parser.add_argument("--setting_name", type=str, default="our_setting")
+    parser.add_argument("--dataset_name", type=str, default="assist2009")
+    parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2012_train_split_5.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2012_valid_split_5.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2012_test_split_5.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0.0001)
+    parser.add_argument("--weight_decay", type=float, default=0.001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
     # 学习率
     parser.add_argument("--learning_rate", type=float, default=0.001)
-    parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
+    parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
@@ -51,16 +51,16 @@ if __name__ == "__main__":
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=265)
-    parser.add_argument("--num_question", type=int, default=53091)
+    parser.add_argument("--num_concept", type=int, default=123)
+    parser.add_argument("--num_question", type=int, default=17751)
     parser.add_argument("--dim_concept", type=int, default=64)
     parser.add_argument("--dim_question", type=int, default=64)
-    parser.add_argument("--dim_correct", type=int, default=128)
-    parser.add_argument("--dim_latent", type=int, default=128)
+    parser.add_argument("--dim_correct", type=int, default=64)
+    parser.add_argument("--dim_latent", type=int, default=64)
     parser.add_argument("--rnn_type", type=str, default="gru",
                         choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=1)
-    parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument("--dropout", type=float, default=0.3)
     parser.add_argument("--num_predict_layer", type=int, default=3)
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")

@@ -39,7 +39,7 @@ if __name__ == "__main__":
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
     # 学习率
     parser.add_argument("--learning_rate", type=float, default=0.001)
-    parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
+    parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
@@ -57,21 +57,21 @@ if __name__ == "__main__":
     parser.add_argument("--dim_concept", type=int, default=64)
     parser.add_argument("--dim_question", type=int, default=64)
     parser.add_argument("--dim_correct", type=int, default=64)
-    parser.add_argument("--dim_latent", type=int, default=128)
+    parser.add_argument("--dim_latent", type=int, default=64)
     parser.add_argument("--rnn_type", type=str, default="gru")
     parser.add_argument("--num_rnn_layer", type=int, default=1)
-    parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument("--dropout", type=float, default=0.3)
     parser.add_argument("--num_predict_layer", type=int, default=3)
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
     # 对比学习
     parser.add_argument("--cl_space", type=str, default="latent", choices=("latent", "output"))
-    parser.add_argument("--temp", type=float, default=0.05)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.001)
+    parser.add_argument("--temp", type=float, default=0.01)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
     # cl_space output：挑选高区分度习题的参数
-    parser.add_argument("--num2drop_question4dis", type=int, default=30)
-    parser.add_argument("--num2drop_concept4dis", type=int, default=500)
-    parser.add_argument("--min_seq_len4dis", type=int, default=20)
+    parser.add_argument("--num2drop_question4dis", type=int, default=15)
+    parser.add_argument("--num2drop_concept4dis", type=int, default=100)
+    parser.add_argument("--min_seq_len4dis", type=int, default=15)
     parser.add_argument("--dis_threshold", type=float, default=0.3)
     # warm up和early stop
     parser.add_argument("--use_warm_up4cl", type=str2bool, default=False)
@@ -97,18 +97,18 @@ if __name__ == "__main__":
                         choices=("original_data_aug", "model_aug", "hybrid"))
     # 是否使用负样本以及是否对负样本过滤
     parser.add_argument("--use_neg", type=str2bool, default=True)
-    parser.add_argument("--use_neg_filter", type=str2bool, default=True)
+    parser.add_argument("--use_neg_filter", type=str2bool, default=False)
     parser.add_argument("--neg_sim_threshold", type=float, default=0.8, help="cos sim, between (0, 1)")
     # random aug和informative aug参数
     parser.add_argument("--aug_type", type=str, default="informative_aug",
                         choices=("random_aug", "informative_aug"))
     parser.add_argument("--use_random_select_aug_len", type=str2bool, default=True)
-    parser.add_argument("--mask_prob", type=float, default=0.1)
-    parser.add_argument("--insert_prob", type=float, default=0.1)
+    parser.add_argument("--mask_prob", type=float, default=0.3)
+    parser.add_argument("--insert_prob", type=float, default=0.3)
     parser.add_argument("--replace_prob", type=float, default=0.1)
     parser.add_argument("--crop_prob", type=float, default=0.1)
     parser.add_argument("--permute_prob", type=float, default=0.1)
-    parser.add_argument("--aug_order", type=str, default="['mask', 'crop', 'replace', 'insert']",
+    parser.add_argument("--aug_order", type=str, default="['mask', 'insert', 'replace']",
                         help="random aug: ['mask', 'crop', 'replace', 'permute']"
                              "info aug: ['mask', 'crop', 'replace', 'permute', 'insert']")
     # info aug离线相似度配置以及是否使用在线相似度
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     parser.add_argument("--eta", type=float, default=5.0)
     parser.add_argument("--gamma", type=float, default=1.0)
     # 其它
-    parser.add_argument("--save_model", type=str2bool, default=False)
+    parser.add_argument("--save_model", type=str2bool, default=True)
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()

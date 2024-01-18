@@ -1,4 +1,5 @@
 from collections import Counter
+from copy import deepcopy
 
 from .data import dataset_agg_concept, dataset_delete_pad
 
@@ -51,15 +52,28 @@ def cal_acc_overall(data_uniformed):
     return acc_overall
 
 
-def dataset_basic_statics(data_uniformed, data_type, num_question=0, num_concept=0):
+def dataset_basic_statics(data_uniformed, data_type, question2concept, num_question=0, num_concept=0):
     data_uniformed = dataset_delete_pad(data_uniformed)
 
     if data_type == "only_question":
         acc_overall = cal_acc_overall(data_uniformed)
         question_fre = cal_frequency(data_uniformed, num_question, "question")
         question_acc = cal_accuracy(data_uniformed, num_question, "question")
-        concept_fre = -1
-        concept_acc = -1
+        # 统计知识点正确率
+        for item_data in data_uniformed:
+            item_data["concept_seq"] = []
+            item_data["correct_seq4concept"] = []
+            item_data["correct_seq_backup"] = deepcopy(item_data["correct_seq"])
+            for i in range(item_data["seq_len"]):
+                q_id = item_data["question_seq"][i]
+                correct = item_data["correct_seq"][i]
+                c_ids = question2concept[q_id]
+                item_data["concept_seq"] += c_ids
+                item_data["correct_seq4concept"] += [correct] * len(c_ids)
+            item_data["seq_len"] = len(item_data["concept_seq"])
+            item_data["correct_seq"] = item_data.pop("correct_seq4concept")
+        concept_fre = cal_frequency(data_uniformed, num_concept, "concept")
+        concept_acc = cal_accuracy(data_uniformed, num_concept, "concept")
     elif data_type == "multi_concept":
         data_only_question = dataset_agg_concept(data_uniformed)
         acc_overall = cal_acc_overall(data_only_question)

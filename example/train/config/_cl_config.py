@@ -185,11 +185,12 @@ def instance_cl_general_config(local_params, global_params, global_objects):
                 "num2drop4question": num2drop_question4dis,
                 "num2drop4concept": num2drop_concept4dis,
                 "min_seq_len": min_seq_len4dis,
-                "dis_threshold": dis_threshold
+                "dis_threshold": dis_threshold,
+                "data_type": global_params["datasets_config"]["data_type"]
             }
             high_distinction_c, high_distinction_q = get_high_dis_qc(dataset_train,
-                                                                     global_params["datasets_config"]["data_type"],
-                                                                     get_high_dis_qc_params)
+                                                                     get_high_dis_qc_params,
+                                                                     global_objects["data"])
             global_objects["data"]["high_distinction_q"] = high_distinction_q
             write_json(high_distinction_q, high_distinction_q_path)
         data_type = global_params["datasets_config"]["data_type"]

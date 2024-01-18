@@ -126,7 +126,7 @@ class DIMKT(nn.Module, BaseModel4CL):
         return embed
 
     def get_concept_emb_all(self):
-        return self.embed_concept.weight
+        return self.embed_concept.weight.detach().clone()
 
     def get_target_question_emb(self, target_question):
         return self.embed_question(target_question)
@@ -953,3 +953,6 @@ class DIMKT(nn.Module, BaseModel4CL):
         if use_LLM_emb4concept:
             for param in self.MLP4concept.parameters():
                 param.requires_grad = False
+
+    def get_question_emb_all(self):
+        return self.embed_question.weight.detach().clone()

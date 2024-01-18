@@ -248,7 +248,7 @@ class KTDataset4Aug(Dataset):
         replace_func = self.replace_aug[self.similarity_type]
         for i in replace_idx:
             q_id = sample["question_seq"][i]
-            if random.choice([0, 1]) == 0:
+            if random.choice([0, 0, 0, 1]) == 0:
                 # 只替换习题
                 similar_questions = replace_func(q_id)
                 sample["question_seq"][i] = random.choice(similar_questions)

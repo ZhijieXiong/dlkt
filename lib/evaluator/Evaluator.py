@@ -103,7 +103,6 @@ class Evaluator:
             for batch in data_loader:
                 correct_seq = batch["correct_seq"]
                 question_seq = batch["question_seq"]
-                concept_seq = batch["concept_seq"]
                 mask_bool_seq = torch.ne(batch["mask_seq"], 0)
 
                 predict_score_seq_len_minus1 = model.get_predict_score_seq_len_minus1(batch)
@@ -130,7 +129,7 @@ class Evaluator:
 
                 question_all.append(torch.masked_select(question_seq[:, 1:], mask_bool_seq[:, 1:]).detach().cpu().numpy())
                 if data_type != "only_question":
-                    concept_all.append(torch.masked_select(concept_seq[:, 1:], mask_bool_seq[:, 1:]).detach().cpu().numpy())
+                    concept_all.append(torch.masked_select(batch["concept_seq"][:, 1:], mask_bool_seq[:, 1:]).detach().cpu().numpy())
 
             predict_score_all = np.concatenate(predict_score_all, axis=0)
             ground_truth_all = np.concatenate(ground_truth_all, axis=0)

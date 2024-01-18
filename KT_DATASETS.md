@@ -49,15 +49,15 @@
 |    SLP-his     |     T     |            |   T    |               |   T    |
 |    SLP-mat     |     T     |            |   T    |               |   T    |
 
-## All
+## All Datasets
 
-[link](https://github.com/bigdata-ustc/EduData)
+[bigdata-ustc: EduData](https://github.com/bigdata-ustc/EduData)
 
 ## Assist Datasets
 
 assist2009: [download](https://sites.google.com/site/assistmentsdata/home/2009-2010-assistment-data/skill-builder-data-2009-2010)
 
-assist2009-full: [download]([Combined Dataset 2009-10](https://sites.google.com/site/assistmentsdata/home/2009-2010-assistment-data/combined-dataset-2009-10))
+assist2009-full: [download](https://sites.google.com/site/assistmentsdata/home/2009-2010-assistment-data/combined-dataset-2009-10)
 
 assist2012: [download](https://sites.google.com/site/assistmentsdata/home/2012-13-school-data-with)
 
@@ -65,7 +65,7 @@ assist2015: [download](https://sites.google.com/site/assistmentsdata/home/2015-a
 
 assist2017: [download](https://sites.google.com/view/assistmentsdatamining/dataset?authuser=0)
 
-## SLP Datasets
+## SLP
 
 [download](https://aic-fe.bnu.edu.cn/cgzs/kfsj/index.html)
 

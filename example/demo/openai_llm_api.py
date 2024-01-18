@@ -116,8 +116,10 @@ def ask_java_question():
 
 
 if __name__ == "__main__":
+    # translate chinese to english
     # translate_question(20)
 
+    # KT
     # question_seq = [3751, 3752, 3753, 3754, 1990, 3739, 3740, 3742, 3756]
     # correct_seq = [1, 1, 1, 0, 1, 1, 1, 1, 0]
     # assert len(question_seq) == len(correct_seq), "len of question_seq must be equal to len of correct_seq"
@@ -125,6 +127,7 @@ if __name__ == "__main__":
     # next_correct = 0
     # demo_kt(question_seq, correct_seq, next_q, use_question_content=False)
 
+    # check
     question_seq = [266, 268, 2203, 870, 2316, 2587, 2323, 2588, 5194]
     correct_seq = [0, 0, 0, 1, 0, 0, 0, 0, 0]
     check_question_seq(question_seq, correct_seq)

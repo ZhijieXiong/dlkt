@@ -15,7 +15,6 @@
   - 有些方法默认习题和知识点是一一对应的，如`AKT`、`DIMKT`，这些方法需要处理为`multi_concept`或者`single_concept`
   - 有些方法对于多知识点习题，是将其多个对应知识点的embedding取平均，然后和习题embedding一起送入encoder，如`IEKT`、`LPKT`、`AKT`（论文`table 6`汇报的结果），这些方法就需要处理为`only_question`数据格式
 
-
 ## 2、数据集信息
 
 - 单知识点数据集：`assist2012` `assist2017` `edi2020` `SLP` `slepemapy`
@@ -23,14 +22,16 @@
   - `edi2020`是层级知识点，且最低一级都是单知识点。只使用最细粒度的知识点，所以算单知识点数据集
   - 单知识点数据只会生成预处理数据：`data_single_concept.txt`
 
-- 多知识点数据集：`assist2009` `assist2009-new` `ednet-kt1` `xes3g5m`
+- 多知识点数据集：`assist2009` `assist2009-full` `ednet-kt1` `xes3g5m` `kdd cup2010`
 
-  - `assist2009-new`是`assist2009`的最新版本（从数据源网站可以获取）
+  - `kdd cup2010`是一系列数据集，包括`algebra[2005|2006|2008]`和`bridge2algebra[2006|2008]`
+
+  - `assist2009-full`是`assist2009`的完整版本，数据量更大
 
   - 对于多知识点数据集，会生成3种预处理数据：`data_multi_concept.txt`、`data_single_concept.txt`和`data_only_question.txt`
 
   - 注意：`xes3g5m`的知识点是层级的，但是最细粒度的知识点是多个的，所以当成多知识点数据集处理。`xes3g5m`的一个例子
-
+  
     ```
     习题1035
     在question metadata中对应的kc_routes为
@@ -64,7 +65,7 @@
 
   <div align=center><img src="./resources/lab_dir.png" /></div>
 
-- `ednet-kt1`因为原始数据文件太多，所以先使用`exampe/concat_ednet.py`将每5000名学生的记录合成一个文件，合成后的文件会放到`dataset_raw/ednet-kt1`下，其目录为：
+- `ednet-kt1`因为原始数据文件太多，所以先使用`exampe/concat_ednet.py`将每5000名学生的记录合成一个文件（通常情况下做`ednet-kt1`的实验也是随机选5000名学生的记录），合成后的文件会放到`dataset_raw/ednet-kt1`下，其目录为：
 
   <div align=center><img src="./resources/ednet-kt1_raw_dir.png" /></div>
 
@@ -171,3 +172,17 @@
 - DIMKT
 - AKT
 - LPKT
+
+# 二、训练模型
+
+## 1、基本介绍
+
+# 三、测试模型
+
+## 1、基本介绍
+
+# 四、其它
+
+## 1、自动生成脚本
+
+## 2、自动处理结果

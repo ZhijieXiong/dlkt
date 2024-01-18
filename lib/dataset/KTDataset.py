@@ -132,7 +132,7 @@ class KTDataset(Dataset):
             if data_type != "only_question":
                 item_data["concept_diff_seq"] = []
                 for c_id in item_data["concept_seq"]:
-                    item_data["concept_diff_seq"].append(question_difficulty[c_id])
+                    item_data["concept_diff_seq"].append(concept_difficulty[c_id])
 
     @staticmethod
     def dataset_multi_concept2question_pykt(dataset, Q_table, min_seq_len, max_seq_len, num_max_concept):

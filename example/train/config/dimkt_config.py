@@ -1,7 +1,5 @@
 import os.path
 
-import torch
-
 from ._config import *
 from ._cl_config import *
 from ._data_aug_config import *

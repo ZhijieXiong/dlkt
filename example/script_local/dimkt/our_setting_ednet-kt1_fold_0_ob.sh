@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 {
-  dataset_name="assist2009"
+  dataset_name="ednet-kt1"
   data_type="only_question"
   fold=0
 
@@ -11,7 +11,7 @@
   do
     for dim_emb in 64 128
     do
-      for num_min_question in 10 15
+      for num_min_question in 20 25 30
       do
         for num_min_concept in 30 50
         do
@@ -31,17 +31,17 @@
                 --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
                 --train_batch_size 64 --evaluate_batch_size 256 \
                 --enable_clip_grad False --grad_clipped 10.0 \
-                --num_min_question "${num_min_question}" --num_min_concept "${num_min_concept}" --num_concept 123 --num_question 17751 \
+                --num_min_question "${num_min_question}" --num_min_concept "${num_min_concept}" --num_concept 188 --num_question 11858 \
                 --dim_emb "${dim_emb}" --num_question_diff "${num_diff}" --num_concept_diff "${num_diff}" --dropout "${dropout}" \
                 --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
                 --transfer_head2zero False --head2tail_transfer_method "mean_pool" \
                 --save_model False --seed 0
 
-              rm F:/code/myProjects/dlkt/lab/settings/our_setting/assist2009_train_fold_0_dimkt_diff.json
+              rm F:/code/myProjects/dlkt/lab/settings/our_setting/ednet-kt1_train_fold_0_dimkt_diff.json
             done
           done
         done
       done
     done
   done
-} >> F:/code/myProjects/dlkt/example/result_local/dimkt_our_setting_assist2009_fold_0_ob.txt
+} >> F:/code/myProjects/dlkt/example/result_local/dimkt_our_setting_ednet-kt1_fold_0_ob.txt

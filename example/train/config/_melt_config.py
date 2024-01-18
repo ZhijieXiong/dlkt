@@ -1,7 +1,9 @@
-from ._config import *
+import os
 
 from lib.util.data import read_preprocessed_file
 from lib.dataset.util import parse_long_tail
+
+from .util import config_optimizer
 
 
 def mutual_enhance4long_tail_general_config(local_params, global_params, global_objects):

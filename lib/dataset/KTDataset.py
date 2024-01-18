@@ -124,15 +124,15 @@ class KTDataset(Dataset):
     def parse_difficulty(data_uniformed, data_type, qc_difficulty):
         # 目前只考虑single concept数据集
         question_difficulty, concept_difficulty = qc_difficulty
-        if data_type == "single_concept":
-            for item_data in data_uniformed:
-                item_data["question_diff_seq"] = []
+        for item_data in data_uniformed:
+            item_data["question_diff_seq"] = []
+            for q_id in item_data["question_seq"]:
+                item_data["question_diff_seq"].append(question_difficulty[q_id])
+
+            if data_type != "only_question":
                 item_data["concept_diff_seq"] = []
-                for q_id, c_id in zip(item_data["question_seq"], item_data["concept_seq"]):
-                    item_data["question_diff_seq"].append(question_difficulty[q_id])
-                    item_data["concept_diff_seq"].append(concept_difficulty[c_id])
-        else:
-            raise NotImplementedError()
+                for c_id in item_data["concept_seq"]:
+                    item_data["concept_diff_seq"].append(question_difficulty[c_id])
 
     @staticmethod
     def dataset_multi_concept2question_pykt(dataset, Q_table, min_seq_len, max_seq_len, num_max_concept):

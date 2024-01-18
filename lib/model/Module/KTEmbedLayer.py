@@ -81,7 +81,7 @@ class KTEmbedLayer(nn.Module):
 
     def get_emb_concatenated(self, seq_names2cat, emb_indices2cat):
         """
-        获取拼接后的emb
+        获取拼接后的emb，seq_names2cat是拼接的顺序，emb_indices2cat是id序列（bs * seq_len）
         :param seq_names2cat:
         :param emb_indices2cat:
         :return:
@@ -92,7 +92,12 @@ class KTEmbedLayer(nn.Module):
         return result
 
     def get_emb_question_with_concept_fused(self, question_seq, fusion_type="mean"):
-        # 对于多知识点数据集，获取拼接了知识点emb（以某种方式融合）的习题emb
+        """
+        多知识点embedding融合，如一道多知识点习题的知识点embedding取平均值作为该习题的embedding，再拼接上习题embedding
+        :param question_seq:
+        :param fusion_type:
+        :return:
+        """
         emb_question = self.get_emb("question", question_seq)
         emb_concept = self.get_emb("concept", self.objects["data"]["q2c_table"][question_seq])
         mask_concept = self.objects["data"]["q2c_mask_table"][question_seq]
@@ -107,7 +112,12 @@ class KTEmbedLayer(nn.Module):
         return self.objects["data"]["q2c_table"][question_seq], self.objects["data"]["q2c_mask_table"][question_seq]
 
     def get_concept_fused_emb(self, question_seq, fusion_type="mean"):
-        # 对于多知识点数据集，获取知识点emb（以某种方式融合）
+        """
+        多知识点embedding融合，如一道多知识点习题的知识点embedding取平均值作为该习题的embedding
+        :param question_seq:
+        :param fusion_type:
+        :return:
+        """
         concept_emb = self.get_emb("concept", self.objects["data"]["q2c_table"][question_seq])
         mask_concept = self.objects["data"]["q2c_mask_table"][question_seq]
         if fusion_type == "mean":
@@ -138,7 +148,7 @@ class KTEmbedLayer(nn.Module):
     @staticmethod
     def parse_Q_table(Q_table, device):
         """
-        用于多知识点embedding融合，如对于一道多知识点习题的知识点embedding取平均值作为该习题的embedding
+        生成多知识点embedding融合需要的数据
         :return:
         """
         question2concept_table = []
@@ -156,6 +166,15 @@ class KTEmbedLayer(nn.Module):
 
     @staticmethod
     def concept_fused_emb(embed_concept, q2c_table, q2c_mask_table, question_seq, fusion_type="mean"):
+        """
+        多知识点embedding融合，如一道多知识点习题的知识点embedding取平均值作为该习题的embedding
+        :param embed_concept:
+        :param q2c_table:
+        :param q2c_mask_table:
+        :param question_seq:
+        :param fusion_type:
+        :return:
+        """
         emb_concept = embed_concept(q2c_table[question_seq])
         mask_concept = q2c_mask_table[question_seq]
         if fusion_type == "mean":
@@ -164,3 +183,27 @@ class KTEmbedLayer(nn.Module):
         else:
             raise NotImplementedError()
         return emb_concept_fusion
+
+    @staticmethod
+    def other_fused_emb(embed, q2c_table, q2c_mask_table, question_seq, other_table, fusion_type="mean"):
+        """
+        其它（和concept关联，但是不能直接由concept id取出）embedding的融合，如diff embedding，可能由K个concept，但是diff embedding有k个，
+        K > k，因为多个知识点可能diff相同
+
+        :param embed:
+        :param q2c_table:
+        :param q2c_mask_table:
+        :param question_seq:
+        :param other_table: K * 1 tensor，其中K是concept的数量，里面元素是concept id和other id的对应关系，即other_table[k]是第k个concept对应的other id
+        :param fusion_type:
+        :return:
+        """
+        concept_seq = q2c_table[question_seq]
+        emb_other = embed(other_table[concept_seq])
+        mask_concept = q2c_mask_table[question_seq]
+        if fusion_type == "mean":
+            emb_other_fusion = (emb_other * mask_concept.unsqueeze(-1)).sum(-2)
+            emb_other_fusion = emb_other_fusion / mask_concept.sum(-1).unsqueeze(-1)
+        else:
+            raise NotImplementedError()
+        return emb_other_fusion

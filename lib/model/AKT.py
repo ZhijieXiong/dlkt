@@ -106,7 +106,7 @@ class AKT(nn.Module, BaseModel4CL):
         # c_ct
         concept_emb = self.get_concept_emb(batch)
         if separate_qa:
-            # todo: 有问题，如果是only question也要融合
+            # todo: 有问题，如果是only question也要融合interaction_emb
             concept_seq = batch["concept_seq"]
             interaction_seq = concept_seq + self.num_concept * correct_seq
             interaction_emb = self.embed_interaction(interaction_seq)

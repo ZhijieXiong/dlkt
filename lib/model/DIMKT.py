@@ -3,6 +3,7 @@ import torch.nn as nn
 
 from .BaseModel4CL import BaseModel4CL
 from .Module.MLP import MLP4LLM_emb
+from .Module.KTEmbedLayer import KTEmbedLayer
 from .util import *
 from .loss_util import binary_entropy
 from ..util.parse import concept2question_from_Q, question2concept_from_Q
@@ -54,13 +55,6 @@ class DIMKT(nn.Module, BaseModel4CL):
             self.question_head4zero = parse_question_zero_shot(self.objects["data"]["train_data_statics"],
                                                                self.question2concept_list,
                                                                self.concept2question_list)
-            # question_no_head_qs = []
-            # for z_q, head_qs in self.question_head4zero.items():
-            #     if len(head_qs) == 0:
-            #         question_no_head_qs.append(z_q)
-            #
-            # # 看一下有哪些习题是训练集中没出现过，并且相同知识点下的head习题也为0
-            # self.objects["data"]["question_no_head_qs"] = question_no_head_qs
 
     def get_embed_question(self):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]
@@ -125,6 +119,38 @@ class DIMKT(nn.Module, BaseModel4CL):
 
         return embed
 
+    def get_concept_emb(self, batch):
+        data_type = self.params["datasets_config"]["data_type"]
+        if data_type == "only_question":
+            concept_emb = KTEmbedLayer.concept_fused_emb(
+                self.embed_concept,
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                batch["question_seq"],
+                fusion_type="mean"
+            )
+        else:
+            concept_emb = self.embed_concept(batch["concept_seq"])
+
+        return concept_emb
+
+    def get_concept_diff_emb(self, batch):
+        data_type = self.params["datasets_config"]["data_type"]
+        if data_type == "only_question":
+            diff_fuse_table = self.objects["dimkt"]["diff_fuse_table"]
+            concept_diff_emb = KTEmbedLayer.other_fused_emb(
+                self.embed_concept_diff,
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                batch["question_seq"],
+                diff_fuse_table,
+                fusion_type="mean"
+            )
+        else:
+            concept_diff_emb = self.embed_concept_diff(batch["concept_diff_seq"])
+
+        return concept_diff_emb
+
     def get_concept_emb_all(self):
         return self.embed_concept.weight.detach().clone()
 
@@ -140,11 +166,11 @@ class DIMKT(nn.Module, BaseModel4CL):
         question_emb = self.embed_question(batch["question_seq"])
         if use_LLM_emb4question:
             question_emb = self.MLP4question(question_emb)
-        concept_emb = self.embed_concept(batch["concept_seq"])
+        concept_emb = self.get_concept_emb(batch)
         if use_LLM_emb4concept:
             concept_emb = self.MLP4concept(concept_emb)
         question_diff_emb = self.embed_question_diff(batch["question_diff_seq"])
-        concept_diff_emb = self.embed_concept_diff(batch["concept_diff_seq"])
+        concept_diff_emb = self.get_concept_diff_emb(batch)
         correct_emb = self.embed_correct(batch["correct_seq"])
 
         latent = torch.zeros(batch_size, seq_len, dim_emb).to(self.params["device"])
@@ -192,11 +218,11 @@ class DIMKT(nn.Module, BaseModel4CL):
         question_emb = self.embed_question(batch["question_seq"])
         if use_LLM_emb4question:
             question_emb = self.MLP4question(question_emb)
-        concept_emb = self.embed_concept(batch["concept_seq"])
+        concept_emb = self.get_concept_emb(batch)
         if use_LLM_emb4concept:
             concept_emb = self.MLP4concept(concept_emb)
         question_diff_emb = self.embed_question_diff(batch["question_diff_seq"])
-        concept_diff_emb = self.embed_concept_diff(batch["concept_diff_seq"])
+        concept_diff_emb = self.get_concept_diff_emb(batch)
         correct_emb = self.embed_correct(batch["correct_seq"])
         if use_emb_dropout:
             question_emb = torch.dropout(question_emb, dropout, self.training)
@@ -332,11 +358,11 @@ class DIMKT(nn.Module, BaseModel4CL):
         question_emb = self.embed_question(batch["question_seq"])
         if use_LLM_emb4question:
             question_emb = self.MLP4question(question_emb)
-        concept_emb = self.embed_concept(batch["concept_seq"])
+        concept_emb = self.get_concept_emb(batch)
         if use_LLM_emb4concept:
             concept_emb = self.MLP4concept(concept_emb)
         question_diff_emb = self.embed_question_diff(batch["question_diff_seq"])
-        concept_diff_emb = self.embed_concept_diff(batch["concept_diff_seq"])
+        concept_diff_emb = self.get_concept_diff_emb(batch)
         correct_emb = self.embed_correct(batch["correct_seq"])
 
         # 聚合的zero question emb只用于最后的预测层
@@ -403,11 +429,11 @@ class DIMKT(nn.Module, BaseModel4CL):
         question_emb = self.embed_question(batch["question_seq"])
         if use_LLM_emb4question:
             question_emb = self.MLP4question(question_emb)
-        concept_emb = self.embed_concept(batch["concept_seq"])
+        concept_emb = self.get_concept_emb(batch)
         if use_LLM_emb4concept:
             concept_emb = self.MLP4concept(concept_emb)
         question_diff_emb = self.embed_question_diff(batch["question_diff_seq"])
-        concept_diff_emb = self.embed_concept_diff(batch["concept_diff_seq"])
+        concept_diff_emb = self.get_concept_diff_emb(batch)
         correct_emb = self.embed_correct(batch["correct_seq"])
 
         latent = torch.zeros(batch_size, seq_len, dim_emb).to(self.params["device"])
@@ -492,15 +518,23 @@ class DIMKT(nn.Module, BaseModel4CL):
             question_emb_harder = self.MLP4question(question_emb_harder)
             question_emb4zero = self.MLP4question(question_emb4zero)
 
-        concept_emb = self.embed_concept(batch["concept_seq"])
+        concept_emb = self.get_concept_emb(batch)
         if enhance_method == 0 or enhance_method == 1:
-            concept_emb_easier = self.embed_concept(batch["concept_easier_seq"])
-            concept_emb_harder = self.embed_concept(batch["concept_harder_seq"])
+            batch_easier = {"question_seq": batch["question_easier_seq"]}
+            batch_harder = {"question_seq": batch["question_harder_seq"]}
+            if "concept_seq" in batch.keys():
+                batch_easier["concept_seq"] = batch["concept_easier_seq"]
+                batch_harder["concept_seq"] = batch["concept_harder_seq"]
+            concept_emb_easier = self.get_concept_emb(batch_easier)
+            concept_emb_harder = self.get_concept_emb(batch_harder)
         else:
             concept_emb_easier = None
             concept_emb_harder = None
         if enhance_method == 0 or enhance_method == 2:
-            concept_emb4zero = self.embed_concept(batch["concept_zero_shot_seq"])
+            batch4zero = {"question_seq": batch["question_zero_shot_seq"]}
+            if "concept_seq" in batch.keys():
+                batch4zero["concept_seq"] = batch["concept_zero_shot_seq"]
+            concept_emb4zero = self.get_concept_emb(batch4zero)
         else:
             concept_emb4zero = None
         if use_LLM_emb4concept:
@@ -523,13 +557,21 @@ class DIMKT(nn.Module, BaseModel4CL):
 
         concept_diff_emb = self.embed_concept_diff(batch["concept_diff_seq"])
         if enhance_method == 0 or enhance_method == 1:
-            concept_diff_emb_easier = self.embed_concept_diff(batch["concept_easier_diff_seq"])
-            concept_diff_emb_harder = self.embed_concept_diff(batch["concept_harder_diff_seq"])
+            batch_easier = {"question_seq": batch["question_easier_seq"]}
+            batch_harder = {"question_seq": batch["question_harder_seq"]}
+            if "concept_diff_seq" in batch.keys():
+                batch_easier["concept_diff_seq"] = batch["concept_easier_diff_seq"]
+                batch_harder["concept_diff_seq"] = batch["concept_harder_diff_seq"]
+            concept_diff_emb_easier = self.get_concept_emb(batch_easier)
+            concept_diff_emb_harder = self.get_concept_emb(batch_harder)
         else:
             concept_diff_emb_easier = None
             concept_diff_emb_harder = None
         if enhance_method == 0 or enhance_method == 2:
-            concept_diff_emb4zero = self.embed_concept_diff(batch["concept_zero_shot_diff_seq"])
+            batch4zero = {"question_seq": batch["question_zero_shot_seq"]}
+            if "concept_diff_seq" in batch.keys():
+                batch4zero["concept_diff_seq"] = batch["concept_zero_shot_diff_seq"]
+            concept_diff_emb4zero = self.get_concept_diff_emb(batch4zero)
         else:
             concept_diff_emb4zero = None
 
@@ -660,11 +702,31 @@ class DIMKT(nn.Module, BaseModel4CL):
 
     def forward_from_adv_data(self, dataset, batch):
         dim_emb = self.params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["dim_emb"]
+        data_type = self.params["datasets_config"]["data_type"]
         batch_size, seq_len = batch["question_seq"].shape[0], batch["question_seq"].shape[1]
+
         question_emb = dataset["embed_question"](batch["question_seq"])
-        concept_emb = dataset["embed_concept"](batch["concept_seq"])
         question_diff_emb = dataset["embed_question_diff"](batch["question_diff_seq"])
-        concept_diff_emb = dataset["embed_concept_diff"](batch["concept_diff_seq"])
+        if data_type == "only_question":
+            concept_emb = KTEmbedLayer.concept_fused_emb(
+                dataset["embed_concept"],
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                batch["question_seq"],
+                fusion_type="mean"
+            )
+            diff_fuse_table = self.objects["dimkt"]["diff_fuse_table"]
+            concept_diff_emb = KTEmbedLayer.other_fused_emb(
+                dataset["embed_concept_diff"],
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                batch["question_seq"],
+                diff_fuse_table,
+                fusion_type="mean"
+            )
+        else:
+            concept_emb = dataset["embed_concept"](batch["concept_seq"])
+            concept_diff_emb = dataset["embed_concept_diff"](batch["concept_diff_seq"])
         correct_emb = dataset["embed_correct"](batch["correct_seq"])
 
         latent = torch.zeros(batch_size, seq_len, dim_emb).to(self.params["device"])
@@ -706,12 +768,33 @@ class DIMKT(nn.Module, BaseModel4CL):
 
     def get_latent_from_adv_data(self, dataset, batch, use_emb_dropout=False, dropout=0.1):
         dim_emb = self.params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["dim_emb"]
+        data_type = self.params["datasets_config"]["data_type"]
         batch_size, seq_len = batch["question_seq"].shape[0], batch["question_seq"].shape[1]
+
         question_emb = dataset["embed_question"](batch["question_seq"])
-        concept_emb = dataset["embed_concept"](batch["concept_seq"])
         question_diff_emb = dataset["embed_question_diff"](batch["question_diff_seq"])
-        concept_diff_emb = dataset["embed_concept_diff"](batch["concept_diff_seq"])
+        if data_type == "only_question":
+            concept_emb = KTEmbedLayer.concept_fused_emb(
+                dataset["embed_concept"],
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                batch["question_seq"],
+                fusion_type="mean"
+            )
+            diff_fuse_table = self.objects["dimkt"]["diff_fuse_table"]
+            concept_diff_emb = KTEmbedLayer.other_fused_emb(
+                dataset["embed_concept_diff"],
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                batch["question_seq"],
+                diff_fuse_table,
+                fusion_type="mean"
+            )
+        else:
+            concept_emb = dataset["embed_concept"](batch["concept_seq"])
+            concept_diff_emb = dataset["embed_concept_diff"](batch["concept_diff_seq"])
         correct_emb = dataset["embed_correct"](batch["correct_seq"])
+
         if use_emb_dropout:
             question_emb = torch.dropout(question_emb, dropout, self.training)
             concept_emb = torch.dropout(concept_emb, dropout, self.training)

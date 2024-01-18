@@ -1,5 +1,7 @@
 import os.path
 
+import torch
+
 from ._config import *
 from ._cl_config import *
 from ._data_aug_config import *
@@ -62,6 +64,10 @@ def dimkt_general_config(local_params, global_params, global_objects):
     global_objects["dimkt"] = {}
     global_objects["dimkt"]["question_difficulty"] = question_difficulty
     global_objects["dimkt"]["concept_difficulty"] = concept_difficulty
+    diff_fuse_table = [0] * num_concept
+    for c_id, c_diff_id in concept_difficulty.items():
+        diff_fuse_table[c_id] = c_diff_id
+    global_objects["dimkt"]["diff_fuse_table"] = torch.LongTensor(diff_fuse_table).to(global_params["device"])
     global_params["datasets_config"]["train"]["type"] = "kt4dimkt"
     global_params["datasets_config"]["train"]["kt4dimkt"] = {}
     global_params["datasets_config"]["train"]["kt4dimkt"]["num_question_difficulty"] = num_question_diff

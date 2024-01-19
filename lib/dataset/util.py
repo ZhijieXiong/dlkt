@@ -86,13 +86,25 @@ def parse_difficulty(data_uniformed, params, objects):
     return questions_accuracy, concepts_accuracy
 
 
-def parse_long_tail(data_uniformed, data_type, head_question_threshold, head_seq_len, min_context_seq_len):
+def parse_long_tail(data_uniformed, params):
+    """
+
+    :param data_uniformed:
+    :param params:
+    :param objects:
+    :return:
+    """
+    data_type = params["data_type"]
+    head_question_threshold = params.get("head_question_threshold", 0.8)
+    head_seq_len = params.get("head_seq_len", 20)
+    min_context_seq_len = params.get("min_context_seq_len", 10)
+
     # question context，即每道习题对应的序列，格式为{q_id: [{seq_id, seq_len, correct}, ...], ...}
     question_context = defaultdict(list)
     questions_frequency = defaultdict(int)
     head_seqs = []
     tail_questions = []
-    if data_type == "single_concept":
+    if data_type in ["single_concept", "only_question"]:
         for seq_id, item_data in enumerate(data_uniformed):
             if item_data["seq_len"] > head_seq_len:
                 head_seqs.append(seq_id)
@@ -105,6 +117,7 @@ def parse_long_tail(data_uniformed, data_type, head_question_threshold, head_seq
                 q_context = {"seq_id": seq_id, "seq_len": i, "correct": correct}
                 question_context[q_id].append(q_context)
     else:
+        # multi concept做不了这个
         raise NotImplementedError()
 
     for q_id, fre in questions_frequency.items():

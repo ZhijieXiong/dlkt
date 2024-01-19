@@ -4,6 +4,7 @@ from .Module.PredictorLayer import PredictorLayer
 from .Module.MLP import MLP4LLM_emb
 from .loss_util import *
 from .util import *
+from ..util.data import context2batch
 
 
 class qDKT(nn.Module, BaseModel4CL):
@@ -53,6 +54,9 @@ class qDKT(nn.Module, BaseModel4CL):
     def get_concept_emb_all(self):
         return self.embed_layer.get_emb_all("concept")
 
+    def get_target_question_emb(self, target_question):
+        return self.embed_layer.get_emb("question", target_question)
+
     def get_qc_emb4single_concept(self, batch):
         use_LLM_emb4question = self.params["use_LLM_emb4question"]
         use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
@@ -76,6 +80,19 @@ class qDKT(nn.Module, BaseModel4CL):
     def get_qc_emb4only_question(self, batch):
         return self.embed_layer.get_emb_question_with_concept_fused(batch["question_seq"], fusion_type="mean")
 
+    def forward4question_evaluate(self, batch):
+        # 直接输出的是每个序列最后一个时刻的预测分数
+        predict_score = self.forward(batch)
+        # 只保留mask每行的最后一个1
+        mask4last = get_mask4last_or_penultimate(batch["mask_seq"][:, 1:], penultimate=False)
+
+        return predict_score[mask4last.bool()]
+
+    def get_predict_score_seq_len_minus1(self, batch):
+        return self.forward(batch)
+
+    # ------------------------------------------------------base--------------------------------------------------------
+
     def forward(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
         dim_correct = encoder_config["dim_correct"]
@@ -98,13 +115,25 @@ class qDKT(nn.Module, BaseModel4CL):
 
         return predict_score
 
-    def forward4question_evaluate(self, batch):
-        # 直接输出的是每个序列最后一个时刻的预测分数
+    def get_predict_score(self, batch):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         predict_score = self.forward(batch)
-        # 只保留mask每行的最后一个1
-        mask4last = get_mask4last_or_penultimate(batch["mask_seq"][:, 1:], penultimate=False)
+        predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
 
-        return predict_score[mask4last.bool()]
+        return predict_score
+
+    def get_predict_loss(self, batch, loss_record=None):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+
+        predict_score = self.get_predict_score(batch)
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+        predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+
+        if loss_record is not None:
+            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+
+        return predict_loss
 
     def get_latent(self, batch, use_emb_dropout=False, dropout=0.1):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
@@ -144,6 +173,31 @@ class qDKT(nn.Module, BaseModel4CL):
             latent_mean = torch.dropout(latent_mean, dropout, self.training)
 
         return latent_mean
+
+    def get_predict_score4target_question(self, latent, question_seq, concept_seq=None):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
+        dim_concept = encoder_config["dim_concept"]
+        dim_question = encoder_config["dim_question"]
+        dim_latent = encoder_config["dim_latent"]
+        data_type = self.params["datasets_config"]["data_type"]
+        num_latent = len(latent)
+        num_question = len(question_seq)
+
+        if data_type == "only_question":
+            qc_emb = self.get_qc_emb4only_question({"question_seq": question_seq})
+        else:
+            qc_emb = self.get_qc_emb4single_concept({
+                "question_seq": question_seq,
+                "concept_seq": concept_seq
+            })
+        predict_layer_input = torch.cat((
+            latent.repeat(1, num_question).view(num_latent, num_question, dim_latent),
+            qc_emb.view(1, num_question, dim_concept + dim_question).repeat(num_latent, 1, 1)
+        ), dim=-1)
+
+        return self.predict_layer(predict_layer_input).squeeze(dim=-1)
+
+    # -------------------------------transfer head item to zero shot item-----------------------------------------------
 
     def set_emb4zero(self):
         """
@@ -205,48 +259,7 @@ class qDKT(nn.Module, BaseModel4CL):
 
         return predict_score
 
-    def get_predict_score(self, batch):
-        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-        predict_score = self.forward(batch)
-        predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
-
-        return predict_score
-
-    def get_predict_score4target_question(self, latent, question_seq, concept_seq=None):
-        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
-        dim_concept = encoder_config["dim_concept"]
-        dim_question = encoder_config["dim_question"]
-        dim_latent = encoder_config["dim_latent"]
-        data_type = self.params["datasets_config"]["data_type"]
-        num_latent = len(latent)
-        num_question = len(question_seq)
-
-        if data_type == "only_question":
-            qc_emb = self.get_qc_emb4only_question({"question_seq": question_seq})
-        else:
-            qc_emb = self.get_qc_emb4single_concept({
-                "question_seq": question_seq,
-                "concept_seq": concept_seq
-            })
-        predict_layer_input = torch.cat((
-            latent.repeat(1, num_question).view(num_latent, num_question, dim_latent),
-            qc_emb.view(1, num_question, dim_concept + dim_question).repeat(num_latent, 1, 1)
-        ), dim=-1)
-
-        return self.predict_layer(predict_layer_input).squeeze(dim=-1)
-
-    def get_predict_loss(self, batch, loss_record=None):
-        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-
-        predict_score = self.get_predict_score(batch)
-        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
-        predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
-
-        if loss_record is not None:
-            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
-            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
-
-        return predict_loss
+    # --------------------------------------------output enhance--------------------------------------------------------
 
     def get_predict_enhance_loss(self, batch, loss_record=None):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
@@ -352,8 +365,7 @@ class qDKT(nn.Module, BaseModel4CL):
 
         return loss
 
-    def get_predict_score_seq_len_minus1(self, batch):
-        return self.forward(batch)
+    # --------------------------------------------------ME-ADA----------------------------------------------------------
 
     def forward_from_adv_data(self, dataset, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
@@ -452,3 +464,185 @@ class qDKT(nn.Module, BaseModel4CL):
             optimizer.step()
 
         return adv_predict_loss, adv_entropy, adv_mse_loss
+
+    # ----------------------------------------------------MELT----------------------------------------------------------
+
+    def get_predict_score4long_tail(self, batch, seq_branch):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
+        dim_correct = encoder_config["dim_correct"]
+        data_type = self.params["datasets_config"]["data_type"]
+        use_transfer4seq = self.params["other"]["mutual_enhance4long_tail"]["use_transfer4seq"]
+        beta = self.params["other"]["mutual_enhance4long_tail"]["beta4transfer_seq"]
+
+        correct_seq = batch["correct_seq"]
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        batch_size, seq_len = correct_seq.shape[0], correct_seq.shape[1]
+        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
+        if data_type == "only_question":
+            qc_emb = self.get_qc_emb4only_question(batch)
+        else:
+            qc_emb = self.get_qc_emb4single_concept(batch)
+        interaction_emb = torch.cat((qc_emb[:, :-1], correct_emb[:, :-1]), dim=2)
+
+        self.encoder_layer.flatten_parameters()
+        latent, _ = self.encoder_layer(interaction_emb)
+
+        if use_transfer4seq:
+            # t=10时刻以后的经过seq branch再送入predict layer
+            mask4select1 = torch.zeros(seq_len - 1).to(self.params["device"])
+            mask4select1[:, :10] = 1
+            mask4select1 = mask4select1.bool().repeat(batch_size, 1)
+            mask4select2 = torch.zeros(seq_len - 1).to(self.params["device"])
+            mask4select2[:, 10:] = 1
+            mask4select2 = mask4select2.bool().repeat(batch_size, 1)
+            latent_transferred = (beta * latent + seq_branch.get_latent_transferred(latent)) / (1 + beta)
+            latent = latent * mask4select1 + latent_transferred * mask4select2
+
+        predict_layer_input = torch.cat((latent, qc_emb[:, 1:]), dim=2)
+        predict_score = self.predict_layer(predict_layer_input).squeeze(dim=-1)
+        predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
+
+        return predict_score
+
+    def get_question_transferred_1_branch(self, batch_question, question_branch):
+        dataset_train = self.objects["mutual_enhance4long_tail"]["dataset_train"]
+        device = self.params["device"]
+        question_context = self.objects["mutual_enhance4long_tail"]["question_context"]
+
+        context_batch = []
+        idx_list = [0]
+        idx = 0
+        tail_question_list = []
+        for i, q_id in enumerate(batch_question[0].cpu().tolist()):
+            if not question_context.get(q_id, False):
+                continue
+
+            tail_question_list.append(q_id)
+            context_list = question_context[q_id]
+            context_batch += context_list
+            idx += len(context_list)
+            idx_list.append(idx)
+
+        if len(context_batch) == 0:
+            return
+
+        context_batch = context2batch(dataset_train, context_batch, device)
+        latent = self.get_latent_last(context_batch)
+
+        question_emb_transferred = []
+        for i in range(len(tail_question_list)):
+            mean_context = latent[idx_list[i]: idx_list[i + 1]]
+            mean_context = question_branch.get_question_emb_transferred(mean_context.mean(0), True)
+            question_emb_transferred.append(mean_context)
+
+        question_emb_transferred = torch.stack(question_emb_transferred)
+        return question_emb_transferred, tail_question_list
+
+    def get_question_transferred_2_branch(self, batch_question, question_branch):
+        dataset_train = self.objects["mutual_enhance4long_tail"]["dataset_train"]
+        device = self.params["device"]
+        question_context = self.objects["mutual_enhance4long_tail"]["question_context"]
+        dim_latent = self.params["other"]["mutual_enhance4long_tail"]["dim_latent"]
+        dim_question = self.params["other"]["mutual_enhance4long_tail"]["dim_question"]
+
+        right_context_batch = []
+        wrong_context_batch = []
+        right_idx_list = [0]
+        wrong_idx_list = [0]
+        idx4right = 0
+        idx4wrong = 0
+        tail_question_list = []
+        for i, q_id in enumerate(batch_question[0].cpu().tolist()):
+            if not question_context.get(q_id, False):
+                continue
+
+            tail_question_list.append(q_id)
+            right_context_list = []
+            wrong_context_list = []
+            for q_context in question_context[q_id]:
+                if q_context["correct"] == 1:
+                    right_context_list.append(q_context)
+                else:
+                    wrong_context_list.append(q_context)
+            right_context_batch += right_context_list
+            wrong_context_batch += wrong_context_list
+
+            l1 = len(right_context_list)
+            if l1 >= 1:
+                idx4right += l1
+                right_idx_list.append(idx4right)
+            else:
+                right_idx_list.append(right_idx_list[-1])
+
+            l2 = len(wrong_context_list)
+            if l2 >= 1:
+                idx4wrong += l2
+                wrong_idx_list.append(idx4wrong)
+            else:
+                wrong_idx_list.append(wrong_idx_list[-1])
+
+        if len(right_context_batch) == 0 and len(wrong_context_batch) == 0:
+            return
+
+        if len(right_context_batch) > 0:
+            right_context_batch = context2batch(dataset_train, right_context_batch, device)
+            latent_right = self.get_latent_last(right_context_batch)
+        else:
+            latent_right = torch.empty((0, dim_latent))
+
+        if len(wrong_context_batch) > 0:
+            wrong_context_batch = context2batch(dataset_train, wrong_context_batch, device)
+            latent_wrong = self.get_latent_last(wrong_context_batch)
+        else:
+            latent_wrong = torch.empty((0, dim_latent))
+
+        question_emb_transferred = []
+        for i in range(len(tail_question_list)):
+            mean_right_context = latent_right[right_idx_list[i]: right_idx_list[i + 1]]
+            mean_wrong_context = latent_wrong[wrong_idx_list[i]: wrong_idx_list[i + 1]]
+            num_right = len(mean_right_context)
+            num_wrong = len(mean_wrong_context)
+            coef_right = num_right / (num_right + num_wrong)
+            coef_wrong = num_wrong / (num_right + num_wrong)
+            if num_right == 0:
+                mean_right_context = torch.zeros(dim_question).float().to(self.params["device"])
+            else:
+                mean_right_context = question_branch.get_question_emb_transferred(mean_right_context.mean(0), True)
+            if num_wrong == 0:
+                mean_wrong_context = torch.zeros(dim_question).float().to(self.params["device"])
+            else:
+                mean_wrong_context = question_branch.get_question_emb_transferred(mean_wrong_context.mean(0), False)
+            question_emb_transferred.append(coef_right * mean_right_context + coef_wrong * mean_wrong_context)
+
+        question_emb_transferred = torch.stack(question_emb_transferred)
+        return question_emb_transferred, tail_question_list
+
+    def update_tail_question(self, batch_question, question_branch):
+        gamma = self.params["other"]["mutual_enhance4long_tail"]["gamma4transfer_question"]
+        two_branch4question_transfer = self.params["other"]["mutual_enhance4long_tail"]["two_branch4question_transfer"]
+
+        if two_branch4question_transfer:
+            question_emb_transferred, tail_question_list = \
+                self.get_question_transferred_2_branch(batch_question, question_branch)
+        else:
+            question_emb_transferred, tail_question_list = \
+                self.get_question_transferred_1_branch(batch_question, question_branch)
+
+        question_emb = self.get_target_question_emb(torch.tensor(tail_question_list).long().to(self.params["device"]))
+        # 这里官方代码实现和论文上写的不一样
+        self.embed_layer.embed_question.weight.data[tail_question_list] = \
+            (question_emb_transferred + gamma * question_emb) / (1 + gamma)
+
+    def freeze_emb(self):
+        use_LLM_emb4question = self.params["use_LLM_emb4question"]
+        use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
+
+        self.embed_question.weight.requires_grad = False
+        self.embed_concept.weight.requires_grad = False
+
+        if use_LLM_emb4question:
+            for param in self.MLP4question.parameters():
+                param.requires_grad = False
+        if use_LLM_emb4concept:
+            for param in self.MLP4concept.parameters():
+                param.requires_grad = False

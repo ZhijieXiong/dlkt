@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     # 基本配置
     parser.add_argument("--save_model_dir", type=str,
-                        default=r"F:\code\myProjects\dlkt\lab\saved_models\2024-01-17@13-44-43@@qDKT-instance_cl@@seed_0@@our_setting@@assist2009_train_fold_0")
+                        default=r"F:\code\myProjects\dlkt\lab\saved_models\2024-01-19@15-39-01@@qDKT-ME4long_tail@@seed_0@@our_setting@@assist2009_train_fold_0")
     parser.add_argument("--save_model_name", type=str, default="kt_model.pth")
     parser.add_argument("--setting_name", type=str, default="our_setting")
     parser.add_argument("--data_type", type=str, default="only_question",

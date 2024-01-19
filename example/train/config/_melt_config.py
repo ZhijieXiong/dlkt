@@ -25,7 +25,12 @@ def mutual_enhance4long_tail_general_config(local_params, global_params, global_
         global_objects["file_manager"].get_setting_dir(global_params["datasets_config"]["train"]["setting_name"]),
         global_params["datasets_config"]["train"]["file_name"]
     ))
-    parse_results = parse_long_tail(dataset_train, data_type, head_question_threshold, head_seq_len, min_context_seq_len)
+    parse_results = parse_long_tail(dataset_train, {
+        "data_type": data_type,
+        "head_question_threshold": head_question_threshold,
+        "head_seq_len": head_seq_len,
+        "min_context_seq_len": min_context_seq_len
+    })
     question_context, head_questions, tail_questions, head_seqs = parse_results
     if not only_update_low_fre:
         tail_questions = list(set(range(local_params["num_question"])) - set(head_questions))

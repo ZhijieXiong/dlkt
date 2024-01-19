@@ -770,7 +770,7 @@ class DataProcessor:
         id_keys = list(set(df.columns) - set(info_name_table.values()))
         dataset_seq_keys = CONSTANT.datasets_seq_keys()[dataset_name]
         seqs = []
-        for user_id in pd.unique(df["user_id"]):
+        for ui, user_id in enumerate(pd.unique(df["user_id"])):
             user_data = df[df["user_id"] == user_id]
             user_data = user_data.sort_values(by=order_key_table[dataset_name])
             if dataset_name == "ednet-kt1":
@@ -778,6 +778,10 @@ class DataProcessor:
             object_data = {info_name: [] for info_name in dataset_seq_keys}
             for k in id_keys:
                 object_data[k] = user_data.iloc[0][k]
+            if type(object_data["user_id"]) is not int:
+                object_data["user_id"] = ui
+            if "tmp_index" in object_data.keys():
+                del object_data["tmp_index"]
             for i, (_, row_data) in enumerate(user_data.iterrows()):
                 for info_name in dataset_seq_keys:
                     object_data[info_name].append(int(row_data[info_name_table[info_name]]))

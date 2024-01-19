@@ -9,7 +9,7 @@ from ..model.Model4LongTail import *
 
 class MutualEnhance4LongTailTrainer(KnowledgeTracingTrainer):
     def __init__(self, params, objects):
-        two_stage = params["other"]["mutual_enhance4long_tail"]
+        two_stage = params["other"]["mutual_enhance4long_tail"]["two_stage"]
         if not two_stage:
             self.seq_branch = LinearSeqBranch(params, objects).to(params["device"])
         self.question_branch = LinearQuestionBranch(params, objects).to(params["device"])
@@ -46,7 +46,7 @@ class MutualEnhance4LongTailTrainer(KnowledgeTracingTrainer):
         )
 
     def init_trainer(self):
-        two_stage = self.params["other"]["mutual_enhance4long_tail"]
+        two_stage = self.params["other"]["mutual_enhance4long_tail"]["two_stage"]
         if not two_stage:
             self.init_trainer4one_stage()
         else:
@@ -200,7 +200,7 @@ class MutualEnhance4LongTailTrainer(KnowledgeTracingTrainer):
                 break
 
     def evaluate_kt_dataset(self, model, data_loader):
-        two_stage = self.params["other"]["mutual_enhance4long_tail"]
+        two_stage = self.params["other"]["mutual_enhance4long_tail"]["two_stage"]
         seq_branch = None if two_stage else self.seq_branch
 
         model.eval()

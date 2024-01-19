@@ -1,6 +1,7 @@
 from ._config import *
 from ._cl_config import *
 from ._data_aug_config import *
+from ._melt_config import *
 
 from lib.template.params_template import PARAMS
 from lib.template.params_template_v2 import PARAMS as PARAMS2
@@ -159,6 +160,21 @@ def qdkt_output_enhance_config(local_params):
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
             global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-output_enhance@@"))
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects
+
+
+def qdkt_mutual_enhance4long_tail_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    qdkt_general_config(local_params, global_params, global_objects)
+    mutual_enhance4long_tail_general_config(local_params, global_params, global_objects)
+
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-ME4long_tail@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects

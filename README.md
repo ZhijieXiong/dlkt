@@ -4,7 +4,7 @@
 
 [Document]: DOC.md
 [Datasets]: KT_DATASETS.md
-[Models]: KT_MODELS.md
+[Models]: MODELS.md
 [中文版]: README_CN.md
 
 ## Introduction

@@ -80,7 +80,7 @@ if __name__ == "__main__":
     parser.add_argument("--gamma4transfer_question", type=float, help="论文公式8中的gamma", default=0.1)
     parser.add_argument("--only_update_low_fre", type=str2bool, default=True,
                         help="分为low fre（小于5次）、middle fre、high fre（由head_question_threshold决定）")
-    parser.add_argument("--two_branch4question_transfer", type=str2bool, default=True,
+    parser.add_argument("--two_branch4question_transfer", type=str2bool, default=False,
                         help="训练Item branch时是否区分做对和做错的context")
     # two stage: 先训练好KT model，再训练Item branch
     parser.add_argument("--save_model_dir", type=str,

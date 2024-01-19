@@ -10,6 +10,7 @@ example/result_server
 example/result_local
 back_up/
 .idea/
+paper/
 
 /example/demo/*.csv
 /example/keys.py

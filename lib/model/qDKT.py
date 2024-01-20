@@ -369,14 +369,20 @@ class qDKT(nn.Module, BaseModel4CL):
 
     def forward_from_adv_data(self, dataset, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
+        data_type = self.params["datasets_config"]["data_type"]
         dim_correct = encoder_config["dim_correct"]
-        correct_seq = batch["correct_seq"]
-        concept_seq = batch["concept_seq"]
-        question_seq = batch["question_seq"]
 
+        correct_seq = batch["correct_seq"]
+        question_seq = batch["question_seq"]
         batch_size = correct_seq.shape[0]
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
-        qc_emb = dataset["embed_layer"].get_emb_concatenated(("concept", "question"), (concept_seq, question_seq))
+        if data_type == "only_question":
+            question_emb = dataset["embed_layer"].get_emb("question", question_seq)
+            concept_emb = dataset["embed_layer"].get_concept_fused_emb(question_seq, fusion_type="mean")
+            qc_emb = torch.cat((concept_emb, question_emb), dim=-1)
+        else:
+            concept_seq = batch["concept_seq"]
+            qc_emb = dataset["embed_layer"].get_emb_concatenated(("concept", "question"), (concept_seq, question_seq))
         interaction_emb = torch.cat((qc_emb[:, :-1], correct_emb[:, :-1]), dim=2)
 
         self.encoder_layer.flatten_parameters()
@@ -389,14 +395,20 @@ class qDKT(nn.Module, BaseModel4CL):
 
     def get_latent_from_adv_data(self, dataset, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
+        data_type = self.params["datasets_config"]["data_type"]
         dim_correct = encoder_config["dim_correct"]
-        correct_seq = batch["correct_seq"]
-        concept_seq = batch["concept_seq"]
-        question_seq = batch["question_seq"]
 
+        correct_seq = batch["correct_seq"]
+        question_seq = batch["question_seq"]
         batch_size = correct_seq.shape[0]
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
-        qc_emb = dataset["embed_layer"].get_emb_concatenated(("concept", "question"), (concept_seq, question_seq))
+        if data_type == "only_question":
+            question_emb = dataset["embed_layer"].get_emb("question", question_seq)
+            concept_emb = dataset["embed_layer"].get_concept_fused_emb(question_seq, fusion_type="mean")
+            qc_emb = torch.cat((concept_emb, question_emb), dim=-1)
+        else:
+            concept_seq = batch["concept_seq"]
+            qc_emb = dataset["embed_layer"].get_emb_concatenated(("concept", "question"), (concept_seq, question_seq))
         interaction_emb = torch.cat((qc_emb, correct_emb), dim=2)
 
         self.encoder_layer.flatten_parameters()
@@ -430,8 +442,7 @@ class qDKT(nn.Module, BaseModel4CL):
         predict_score = self.get_predict_score_from_adv_data(dataset, batch)
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
         predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
-        rasch_loss = self.get_rasch_loss(batch)
-        loss = predict_loss + rasch_loss * self.params["loss_config"]["rasch_loss"]
+        loss = predict_loss
 
         return loss
 

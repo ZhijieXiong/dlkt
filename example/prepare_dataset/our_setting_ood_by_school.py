@@ -6,37 +6,36 @@ import config
 import split_util
 
 from lib.util.FileManager import FileManager
-from lib.dataset.KTDataset import KTDataset
 from lib.util.parse import parse_data_type
-from lib.util.data import read_preprocessed_file, load_json, dataset_multi_concept2only_question
+from lib.util.data import read_preprocessed_file
 from lib.dataset.split_seq import dataset_truncate2multi_seq
 from lib.util.data import write2file
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="assist2009", choices=("assist2009", ))
-    # setting config
-    parser.add_argument("--setting_name", type=str, default="pykt_setting_ood_by_school_multi_concept")
-    parser.add_argument("--min_school_seq", type=int, help="一所学校最少要有多少学生|序列", default=100)
+    parser.add_argument("--dataset_name", type=str, default="assist2012", choices=("assist2009", "assist2012"))
+    parser.add_argument("--min_school_seq", type=int, help="一所学校最少要有多少学生|序列", default=200)
     parser.add_argument("--min_mean_seq_len", type=int, default=20)
     parser.add_argument("--train_test_radio_upper_bound", type=float, default=8.5/1.5)
     parser.add_argument("--train_test_radio_lower_bound", type=float, default=7/3)
     parser.add_argument("--iid_radio", type=float, default=0.2)
-    parser.add_argument("--num_split", type=float, default=15)
-    parser.add_argument("--max_seq_len", type=int, default=200)
-    parser.add_argument("--min_seq_len", type=int, default=3)
-
+    parser.add_argument("--num_split", type=float, default=10, help="因为是随机划分，所以要设定划分多少组")
     args = parser.parse_args()
     params = vars(args)
-    params["data_type"] = "multi_concept"
+
+    params["setting_name"] = "our_setting_ood_by_school"
+    if params["dataset_name"] in ["assist2009"]:
+        params["data_type"] = "only_question"
+    else:
+        params["data_type"] = "single_concept"
+    params["max_seq_len"] = 200
+    params["min_seq_len"] = 10
     objects = {"file_manager": FileManager(config.FILE_MANAGER_ROOT)}
 
     params["lab_setting"] = {
         "name": params["setting_name"],
-        "description": "数据处理：多知识点习题扩展为多个单知识点习题"
-                       "序列处理：（1）序列长度小于200，则在后面补零；（2）序列长度大于200，则截断成多条序列；\n"
-                       "数据集划分：先基于学校随机划分训练集和测试集，再在训练集内基于序列随机划分训练集和验证集，总共划分num_split组；"
+        "description": "数据集划分：先基于学校随机划分训练集和测试集，再在训练集内基于序列随机划分训练集和验证集，总共划分num_split组；"
                        "数据集划分具体步骤：（1）将小学校（序列数量少的学校，由min_school_seq定义）合并为一个学校，保证合并后每个学校"
                        "                    序列数量大于等于min_school_seq"
                        "                （2）根据train_test_radio_upper_bound和train_test_radio_lower_bound并基于学校划分"
@@ -92,25 +91,12 @@ if __name__ == "__main__":
     print(result_spilt_test_schools)
 
     setting_dir = objects["file_manager"].get_setting_dir(params["setting_name"])
-    data_type = params["data_type"]
-    # 生成pykt提出的测试多知识点数据集方法所需要的文件
-    max_seq_len = params["max_seq_len"]
-    min_seq_len = params["min_seq_len"]
-    # Q_table
-    dataset_name = params["dataset_name"]
-    Q_table = objects["file_manager"].get_q_table(dataset_name, data_type)
-
-    # num_max_concept
-    preprocessed_dir = objects["file_manager"].get_preprocessed_dir(dataset_name)
-    statics_preprocessed_multi_concept = load_json(os.path.join(preprocessed_dir,
-                                                                "statics_preprocessed_multi_concept.json"))
-    num_max_concept = statics_preprocessed_multi_concept["num_max_concept"]
     for i, test_schools in enumerate(result_spilt_test_schools):
         data_train_iid, data_test_ood = split_util.split_data(data_uniformed, test_schools, merged_schools)
         dataset_train_iid = dataset_truncate2multi_seq(data_train_iid,
                                                        params["min_seq_len"],
                                                        params["max_seq_len"],
-                                                       single_concept=False)
+                                                       single_concept=True)
         num_train_iid = len(dataset_train_iid)
         num_test_iid = int(num_train_iid * params["iid_radio"])
         dataset_test_iid = dataset_train_iid[:num_test_iid]
@@ -118,7 +104,7 @@ if __name__ == "__main__":
         dataset_test_ood = dataset_truncate2multi_seq(data_test_ood,
                                                       params["min_seq_len"],
                                                       params["max_seq_len"],
-                                                      single_concept=False)
+                                                      single_concept=True)
 
         train_path = os.path.join(setting_dir, f"{params['dataset_name']}_train_split_{i}.txt")
         test_iid_path = os.path.join(setting_dir, f"{params['dataset_name']}_valid_iid_split_{i}.txt")
@@ -127,24 +113,3 @@ if __name__ == "__main__":
         write2file(dataset_train, train_path)
         write2file(dataset_test_iid, test_iid_path)
         write2file(dataset_test_ood, test_ood_path)
-
-        write2file(
-            KTDataset.dataset_multi_concept2question_pykt(dataset_test_iid, Q_table, min_seq_len, max_seq_len, num_max_concept),
-            test_iid_path.replace(".txt", "_question_base4multi_concept.txt")
-        )
-        write2file(
-            KTDataset.dataset_multi_concept2question_pykt(dataset_test_ood, Q_table, min_seq_len, max_seq_len, num_max_concept),
-            test_ood_path.replace(".txt", "_question_base4multi_concept.txt")
-        )
-        write2file(
-            dataset_multi_concept2only_question(dataset_train, max_seq_len=max_seq_len),
-            train_path.replace(".txt", "_only_question.txt")
-        )
-        write2file(
-            dataset_multi_concept2only_question(dataset_test_iid, max_seq_len=max_seq_len),
-            test_iid_path.replace(".txt", "_only_question.txt")
-        )
-        write2file(
-            dataset_multi_concept2only_question(dataset_test_ood, max_seq_len=max_seq_len),
-            test_ood_path.replace(".txt", "_only_question.txt")
-        )

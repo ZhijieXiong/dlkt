@@ -130,7 +130,7 @@ def qdkt_max_entropy_adv_aug_config(local_params):
     max_entropy_adv_aug_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-ME_adv_aug@@"))
+            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-ME-ADA@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects

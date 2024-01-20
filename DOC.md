@@ -1,3 +1,5 @@
+[TOC]
+
 # 一、数据
 
 ## 1、数据格式
@@ -177,12 +179,74 @@
 
 ## 1、基本介绍
 
+- `example/train`目录下的每一个文件都对应一个模型的训练代码，其中分为两类，原始KT模型和加载了其它方法的KT模型
+  - 像`dkt.py`、`akt.py`等就是原始KT模型
+  - 像`akt_instance_cl.py`、`qdkt_matual_enhance4long_tail.py`等就是加载了其它方法的KT模型，如`akt_instance_cl.py`表示使用了个体判别对比学习的`AKT`模型
+- 训练全过程包括以下步骤
+  - 配置全局参数和全局对象：配置代码在`example/train/config`下
+  - 加载和处理数据：使用`lib/dataset`下的对应`Dataset`类加载数据
+  - 训练模型：使用`lib/trainer`下的对应`Trainer`类训练模型
+
+## 2、通用参数
+
+- 数据集参数
+  - `setting_name` 即`lab/settings`下的文件夹名
+  - `dataset_name` 即`lab/dataset_preprocessed`下的文件夹名
+  - `data_type` 见`Section 1`
+  - `train_file_name` 训练集的文件名
+  - `valid_file_name` 验证集的文件名
+  - `test_file_name` 测试集的文件名
+- 优化器参数
+  - `optimizer_type` 优化器的类型，可选值为`"adam", "sgd"`
+  - `weight_decay` 权重衰退
+  - `momentum` SGD动量
+- 训练策略参数
+  - `train_strategy` 可选值为`"valid_test", "no_valid"`，前者表示使用验证集，后者表示没有验证集
+  - `num_epoch` 训练的epoch数
+  - `use_early_stop` 是否使用early stop策略，即在验证集上如果模型性能超过指定epoch数没有提升（判断的阈值是`0.001`），则停止训练
+  - `epoch_early_stop` early stop策略中判断停止训练的epoch数
+  - `use_last_average` 是否计算最后n个epoch模型的平均性能
+  - `epoch_last_average` `use_last_average`中的n
+- 评价指标参数
+  - `main_metric` 用于选择模型的指标，可选值为`"AUC", "ACC", "RMSE", "MAE"`
+  - `use_multi_metrics` 是否使用多个指标选择模型
+  - `multi_metrics` 使用多个指标选择模型的规则，如`"[('AUC', 1), ('ACC', 1)]"`表示使用`AUC`和`ACC`一起选择模型，并且权重分别为1，即`AUC * 1 + ACC * 1`为选择指标
+- 学习率参数
+  - `learning_rate` 学习率
+  - `enable_lr_schedule` 是否使用学习衰减
+  - `lr_schedule_type` 学习率衰减策略，可选值为`"StepLR", "MultiStepLR"`
+    - `StepLR` 相隔固定epoch数衰减一次学习率
+    - `MultiStepLR` 在指定epoch上衰减学习率
+  - `lr_schedule_step` 即`StepLR`的固定epoch数
+  - `lr_schedule_milestones` 即`MultiStepLR`的指定epoch，如`"[5, 10]"`表示在第5和第10个epoch衰减学习率
+  - `lr_schedule_gamma` 学习率衰减的幅度
+- batch size参数
+  - `train_batch_size` 训练batch size
+  - `evaluate_batch_size` 测试batch size
+- 梯度裁剪参数 
+  - `enable_clip_grad` 是否使用梯度裁剪
+  - `grad_clipped` 梯度裁剪的幅度
+- 其它
+  - `save_model` 是否保存模型，如果为`True`，模型会保存在`lab/save_models`下
+  - `seed` 随机数种子
+
+## 3、特殊参数
+
+### DKT
+
 # 三、测试模型
 
 ## 1、基本介绍
+
+## 2、基于习题的测试
+
+## 3、细粒度测试
 
 # 四、其它
 
 ## 1、自动生成脚本
 
 ## 2、自动处理结果
+
+# 五、加入自己的数据和模型
+

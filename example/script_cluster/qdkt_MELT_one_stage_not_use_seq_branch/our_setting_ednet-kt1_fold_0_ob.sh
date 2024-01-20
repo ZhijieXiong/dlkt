@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 {
-  dataset_name="assist2009"
+  dataset_name="ednet-kt1"
   data_type="only_question"
   fold=0
 
@@ -29,8 +29,8 @@
             --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
             --train_batch_size 64 --evaluate_batch_size 256 \
             --enable_clip_grad False --grad_clipped 10.0 \
-            --num_concept 123 --num_question 17751 \
-            --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.3 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
+            --num_concept 188 --num_question 11858 \
+            --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.2 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
             --two_stage False --max_seq_len 200 \
             --min_context_seq_len "${min_context_seq_len}" --head_question_threshold 0.8 --head_seq_len "${head_seq_len}" --use_transfer4seq False \
             --beta4transfer_seq 1 --gamma4transfer_question "${gamma4transfer_question}" --only_update_low_fre True --two_branch4question_transfer True \
@@ -53,8 +53,8 @@
             --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
             --train_batch_size 64 --evaluate_batch_size 256 \
             --enable_clip_grad False --grad_clipped 10.0 \
-            --num_concept 123 --num_question 17751 \
-            --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.3 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
+            --num_concept 188 --num_question 11858 \
+            --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.2 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
             --two_stage False --max_seq_len 200 \
             --min_context_seq_len "${min_context_seq_len}" --head_question_threshold 0.8 --head_seq_len "${head_seq_len}" --use_transfer4seq False \
             --beta4transfer_seq 1 --gamma4transfer_question "${gamma4transfer_question}" --only_update_low_fre True --two_branch4question_transfer False \
@@ -69,4 +69,4 @@
     done
   done
 
-} >> /ghome/xiongzj/code/dlkt/example/result_cluster/qdkt_MELT_one_stage_not_use_seq_branch_our_setting_assist2009_fold_0_ob.txt
+} >> /ghome/xiongzj/code/dlkt/example/result_cluster/qdkt_MELT_one_stage_not_use_seq_branch_our_setting_ednet-kt1_fold_0_ob.txt

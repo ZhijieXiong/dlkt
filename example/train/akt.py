@@ -33,7 +33,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_last_average", type=str2bool, default=False)
     parser.add_argument("--epoch_last_average", type=int, default=5)
     # 评价指标选择
-    parser.add_argument("--main_metric", type=str, default="AUC")
+    parser.add_argument("--main_metric", type=str, default="AUC", choices=("AUC", "ACC", "RMSE", "MAE"))
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
     # 学习率

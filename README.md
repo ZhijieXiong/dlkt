@@ -17,37 +17,37 @@
 
      ```python
      {
-       "LIB_PATH": "F:\\code\\myProjects\\dlkt",  # Change to the project path, which is the directory where `lib` is located
-       "FILE_MANAGER_ROOT": "F:\\code\\myProjects\\dlkt"  # Any path used to store data and models
+       "LIB_PATH": ".../dlkt-main",  # Change to the project root path
+       "FILE_MANAGER_ROOT": "any_dir"  # Any path used to store data and models
      }
      ```
 
-   - Run `set_up.py`
+   - Run `example/set_up.py`
 
      ```shell
-     python example/set_up.py
+     python set_up.py
      ```
 
-2. Place the original files of the dataset in the corresponding directory (Please refer to [Document](DOC.md) (Section 3) for details)
+2. Place the original files of the dataset in the corresponding directory (Please refer to [Document (Section 1.3)](DOC.md) for details)
 
-3. Data Preprocessing: Run ` example/reprocess.py`, for example
-
-   ```shell
-   python example/preprocess.py --dataset_name assist2009
-   ```
-
-4. Divide the dataset according to the specified experimental settings. For example, dividing the dataset according to the experimental setup of the AKT paper, i.e. 
+3. Data Preprocessing: Run ` example/preprocess.py`, for example
 
    ```shell
-   python example/prepare_dataset/akt_setting.py
+   python preprocess.py --dataset_name assist2009
    ```
 
-   - For details on dataset partitioning, please refer to [Document](DOC.md)
-
-5. Run the file under `example/train`, for example
+4. Divide the dataset according to the specified experimental settings: Run `example/prepare_dataset/akt_setting.py`. For example, dividing the dataset according to the experimental setup of the AKT paper, i.e. 
 
    ```shell
-   python example/train/dkt.py
+   python akt_setting.py
    ```
 
-   - Regarding the meaning of parameters, please refer to [Document](Doc.md)
+   - For details on dataset partitioning, please refer to [Document (Section 1.6)](DOC.md)
+
+5. Train model: Run the file under `example/train`. For example, train a DKT model
+
+   ```shell
+   python dkt.py
+   ```
+
+   - Regarding the meaning of parameters, please refer to [Document (Section 2)](Doc.md)

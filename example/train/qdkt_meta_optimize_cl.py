@@ -16,16 +16,16 @@ from lib.trainer.MetaOptimizeCLTrainer import MetaOptimizeCLTrainer
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
-    parser.add_argument("--setting_name", type=str, default="random_split_leave_multi_out_setting")
-    parser.add_argument("--dataset_name", type=str, default="assist2012")
-    parser.add_argument("--data_type", type=str, default="single_concept",
+    parser.add_argument("--setting_name", type=str, default="our_setting")
+    parser.add_argument("--dataset_name", type=str, default="assist2009")
+    parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2012_train_split_5.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2012_valid_split_5.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2012_test_split_5.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0.0001)
+    parser.add_argument("--weight_decay", type=float, default=0.001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
@@ -39,8 +39,8 @@ if __name__ == "__main__":
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
     # 学习率
-    parser.add_argument("--learning_rate", type=float, default=0.002)
-    parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
+    parser.add_argument("--learning_rate", type=float, default=0.001)
+    parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
@@ -57,12 +57,12 @@ if __name__ == "__main__":
     parser.add_argument("--num_question", type=int, default=17751)
     parser.add_argument("--dim_concept", type=int, default=64)
     parser.add_argument("--dim_question", type=int, default=64)
-    parser.add_argument("--dim_correct", type=int, default=128)
-    parser.add_argument("--dim_latent", type=int, default=128)
+    parser.add_argument("--dim_correct", type=int, default=64)
+    parser.add_argument("--dim_latent", type=int, default=64)
     parser.add_argument("--rnn_type", type=str, default="gru",
                         choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=1)
-    parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument("--dropout", type=float, default=0.3)
     parser.add_argument("--num_predict_layer", type=int, default=3)
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
@@ -70,34 +70,40 @@ if __name__ == "__main__":
     parser.add_argument("--extractor_layers", type=str, default="[128, 64, 32, 128]")
     parser.add_argument("--extractor_active_func", type=str, default="gelu",
                         choices=("relu", "gelu", "swish"))
-    # instance cl参数（对比学习）
-    parser.add_argument("--temp", type=float, default=0.01)
+    # meta cl参数（对比学习）
+    parser.add_argument("--temp", type=float, default=0.05)
     parser.add_argument("--weight_lambda", type=float, help="weight of original cl", default=0.1)
     parser.add_argument("--weight_beta", type=float, help="weight of meta cl", default=0.1)
     parser.add_argument("--use_regularization", type=str2bool, default=True)
-    parser.add_argument("--weight_gamma", type=float, default=0.01,
+    parser.add_argument("--weight_gamma", type=float, default=0.1,
                         help="weight of contrastive regularization, 论文代码实现里gamma直接设成0.1")
-    parser.add_argument("--use_online_sim", type=str2bool, default=True)
-    parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)
-    parser.add_argument("--epoch_warm_up4online_sim", type=float, default=4)
-    parser.add_argument("--cl_type", type=str, default="last_time",
+    parser.add_argument("--latent_type4cl", type=str, default="last_time",
                         choices=("last_time", "mean_pool"))
+    # original_data_aug：生成两个原始数据view；
+    # model_aug：不生成原始数据aug view，只是对原始样本使用dropout生成两个view；
+    # hybrid：混合使用，生成一个原始数据view
+    parser.add_argument("--data_aug_type4cl", type=str, default="original_data_aug",
+                        choices=("original_data_aug", "model_aug", "hybrid"))
+    parser.add_argument("--use_emb_dropout4cl", type=str2bool, default=True)
+    parser.add_argument("--emb_dropout4cl", type=float, default=0.1)
     # random aug和informative aug参数
     parser.add_argument("--aug_type", type=str, default="informative_aug",
                         choices=("random_aug", "informative_aug"))
     parser.add_argument("--use_random_select_aug_len", type=str2bool, default=True)
-    parser.add_argument("--mask_prob", type=float, default=0.1)
-    parser.add_argument("--insert_prob", type=float, default=0.2)
-    parser.add_argument("--replace_prob", type=float, default=0.3)
+    parser.add_argument("--mask_prob", type=float, default=0.3)
+    parser.add_argument("--insert_prob", type=float, default=0.3)
+    parser.add_argument("--replace_prob", type=float, default=0.1)
     parser.add_argument("--crop_prob", type=float, default=0.1)
     parser.add_argument("--permute_prob", type=float, default=0.1)
-    parser.add_argument("--use_hard_neg", type=str2bool, default=False)
-    parser.add_argument("--hard_neg_prob", type=float, default=1)
-    parser.add_argument("--aug_order", type=str, default="['crop', 'replace', 'insert']",
-                        help="CL4KT: ['mask', 'replace', 'permute', 'crop']"
-                             "info aug: ['mask', 'crop', 'replace', 'insert']")
-    parser.add_argument("--offline_sim_type", type=str, default="order",
-                        choices=("order", ))
+    parser.add_argument("--aug_order", type=str, default="['mask', 'insert', 'replace']",
+                        help="random aug: ['mask', 'crop', 'replace', 'permute']"
+                             "info aug: ['mask', 'crop', 'replace', 'permute', 'insert']")
+    # info aug离线相似度配置以及是否使用在线相似度
+    parser.add_argument("--offline_sim_type", type=str, default="RCD_graph",
+                        choices=("order", "RCD_graph"))
+    parser.add_argument("--use_online_sim", type=str2bool, default=True)
+    parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)
+    parser.add_argument("--epoch_warm_up4online_sim", type=float, default=4)
     # max entropy adv aug参数
     parser.add_argument("--use_adv_aug", type=str2bool, default=False)
     parser.add_argument("--epoch_interval_generate", type=int, default=1)

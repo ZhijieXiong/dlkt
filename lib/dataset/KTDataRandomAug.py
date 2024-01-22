@@ -20,21 +20,33 @@ class KTDataRandomAug:
         self.question_difficulty_in_concept = None
 
     def parse_data(self, data_uniformed):
-        id_keys, seq_keys = parse.get_keys_from_uniform(data_uniformed)
         self.get_question_difficulty(data_uniformed)
-        if "concept_seq" in seq_keys:
-            self.get_concept_difficulty(data_uniformed)
+        self.get_concept_difficulty(data_uniformed)
 
     def get_concept_difficulty(self, data_uniformed):
-        concept_seqs = [item_data["concept_seq"] for item_data in data_uniformed]
-        correct_seqs = [item_data["correct_seq"] for item_data in data_uniformed]
-        seq_lens = [item_data["seq_len"] for item_data in data_uniformed]
+        data_type = self.params["datasets_config"]["data_type"]
+
+        if data_type == "only_question":
+            concept_seqs = []
+            correct_seqs = []
+            for item_data in data_uniformed:
+                seq_len = item_data["seq_len"]
+                concept_seq = []
+                correct_seq = []
+                for q_id, c in zip(item_data["question_seq"][:seq_len], item_data["correct_seq"][:seq_len]):
+                    c_ids = self.objects["data"]["question2concept"][q_id]
+                    concept_seq += c_ids
+                    correct_seq += [c] * len(c_ids)
+                concept_seqs.append(concept_seq)
+                correct_seqs.append(correct_seq)
+        else:
+            concept_seqs = [item_data["concept_seq"][:item_data["seq_len"]] for item_data in data_uniformed]
+            correct_seqs = [item_data["correct_seq"][:item_data["seq_len"]] for item_data in data_uniformed]
+
         concept_correct = defaultdict(int)
         concept_count = defaultdict(int)
-        for i, (concept_seq, correct_seq) in enumerate(zip(concept_seqs, correct_seqs)):
-            for j, (c_id, correct) in enumerate(zip(concept_seq, correct_seq)):
-                if j >= seq_lens[i]:
-                    break
+        for concept_seq, correct_seq in zip(concept_seqs, correct_seqs):
+            for c_id, correct in zip(concept_seq, correct_seq):
                 concept_correct[c_id] += correct
                 concept_count[c_id] += 1
 
@@ -63,16 +75,33 @@ class KTDataRandomAug:
 
     def get_question_difficulty(self, data_uniformed):
         # 对每个知识点下的习题进行难度计算
-        question_seqs = [item_data["question_seq"] for item_data in data_uniformed]
-        concept_seqs = [item_data["concept_seq"] for item_data in data_uniformed]
-        correct_seqs = [item_data["correct_seq"] for item_data in data_uniformed]
-        seq_lens = [item_data["seq_len"] for item_data in data_uniformed]
+        data_type = self.params["datasets_config"]["data_type"]
+
+        if data_type == "only_question":
+            concept_seqs = []
+            correct_seqs = []
+            question_seqs = []
+            for item_data in data_uniformed:
+                seq_len = item_data["seq_len"]
+                concept_seq = []
+                correct_seq = []
+                question_seq = []
+                for q_id, c in zip(item_data["question_seq"][:seq_len], item_data["correct_seq"][:seq_len]):
+                    c_ids = self.objects["data"]["question2concept"][q_id]
+                    concept_seq += c_ids
+                    correct_seq += [c] * len(c_ids)
+                    question_seq += [q_id] * len(c_ids)
+                concept_seqs.append(concept_seq)
+                correct_seqs.append(correct_seq)
+                question_seqs.append(question_seq)
+        else:
+            concept_seqs = [item_data["concept_seq"][:item_data["seq_len"]] for item_data in data_uniformed]
+            correct_seqs = [item_data["correct_seq"][:item_data["seq_len"]] for item_data in data_uniformed]
+            question_seqs = [item_data["question_seq"][:item_data["seq_len"]] for item_data in data_uniformed]
 
         question_in_concept = defaultdict(dict)
-        for i, (question_seq, concept_seq, correct_seq) in enumerate(zip(question_seqs, concept_seqs, correct_seqs)):
-            for j, (q_id, c_id, correct) in enumerate(zip(question_seq, concept_seq, correct_seq)):
-                if j >= seq_lens[i]:
-                    break
+        for question_seq, concept_seq, correct_seq in zip(question_seqs, concept_seqs, correct_seqs):
+            for q_id, c_id, correct in zip(question_seq, concept_seq, correct_seq):
                 question_in_concept[c_id].setdefault(q_id, defaultdict(int))
                 question_in_concept[c_id][q_id]["correct"] += correct
                 question_in_concept[c_id][q_id]["count"] += 1
@@ -112,22 +141,41 @@ class KTDataRandomAug:
             self.harder_questions[c_id] = harder_questions
 
     def replace_seq(self, sample, replace_prob):
+        """
+        先进行知识点替换，再在替换后的知识点下随机选一道习题
+        :param sample:
+        :param replace_prob:
+        :return:
+        """
+        data_type = self.params["datasets_config"]["data_type"]
         sample = deepcopy(sample)
         seq_len = sample["seq_len"]
         replace_idx = random.sample(list(range(seq_len)), k=max(1, int(seq_len * replace_prob)))
         for i in replace_idx:
-            c_id = sample["concept_seq"][i]
+            if data_type == "only_question":
+                q_id = sample["question_seq"][i]
+                c_ids = self.objects["data"]["question2concept"][q_id]
+                c_id = random.choice(c_ids)
+            else:
+                c_id = sample["concept_seq"][i]
+
             correct = sample["correct_seq"][i]
             if correct == 0 and c_id in self.harder_concepts.keys():
                 # if the response is wrong, then replace a skill with the harder one
-                sample["concept_seq"][i] = self.harder_concepts[c_id]
+                similar_c = self.harder_concepts[c_id]
             elif correct == 1 and c_id in self.easier_concepts.keys():
                 # if the response is correct, then replace a skill with the easier one
-                sample["concept_seq"][i] = self.easier_concepts[c_id]
+                similar_c = self.easier_concepts[c_id]
+            else:
+                # easiest and most difficult, only replace question
+                similar_c = sample["concept_seq"][i]
+
+            if data_type != "only_question":
+                sample["concept_seq"][i] = similar_c
+
             if "question_seq" in sample.keys():
-                c_id_new = sample["concept_seq"][i]
-                sample["question_seq"][i] = (
-                    random.choice(parse.get_question_from_concept(c_id_new, self.objects["data"]["Q_table"])))
+                similar_q = random.choice(parse.get_question_from_concept(similar_c, self.objects["data"]["Q_table"]))
+                sample["question_seq"][i] = similar_q
 
         return sample
 

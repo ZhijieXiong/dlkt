@@ -57,8 +57,7 @@ class ClusterCLTrainer(KnowledgeTracingTrainer):
                 loss = 0.
 
                 if do_cluster_cl:
-                    cl_loss = model.get_cluster_cl_loss(batch, self.clus, cl_type, random_select_aug_len,
-                                                        use_adv_aug, self.dataset_adv_generated)
+                    cl_loss = model.get_cluster_cl_loss(batch, self.clus, self.params["other"]["cluster_cl"], self.dataset_adv_generated)
                     self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)
                     loss = loss + weight_cl_loss * cl_loss
 

@@ -252,7 +252,7 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
 
     # cluster CL参数
     temp = local_params["temp"]
-    cl_type = local_params["cl_type"]
+    latent_type4cl = local_params["latent_type4cl"]
     num_cluster = local_params["num_cluster"]
     # warm up
     use_warm_up4cl = local_params["use_warm_up4cl"]
@@ -272,7 +272,7 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
     cluster_cl_config["use_warm_up4online_sim"] = use_warm_up4online_sim
     cluster_cl_config["epoch_warm_up4online_sim"] = epoch_warm_up4online_sim
     cluster_cl_config["num_cluster"] = num_cluster
-    cluster_cl_config["cl_type"] = cl_type
+    cluster_cl_config["latent_type4cl"] = latent_type4cl
     cluster_cl_config["random_select_aug_len"] = random_select_aug_len
 
     # max entropy adv aug参数
@@ -327,28 +327,32 @@ def meta_optimize_cl_general_config(local_params, global_params, global_objects)
     # global_params["grad_clip_config"]["extractor0"] = deepcopy(global_params["grad_clip_config"]["kt_model"])
     # global_params["grad_clip_config"]["extractor1"] = deepcopy(global_params["grad_clip_config"]["kt_model"])
 
-    # 配置数据集参数
     aug_general_config(local_params, global_params, global_objects)
 
     # meta CL参数
     use_regularization = local_params["use_regularization"]
-    global_params["other"]["meta_cl"] = deepcopy(META_OPTIMIZE_CL_PARAMS)
-    global_params["other"]["meta_cl"]["use_regularization"] = use_regularization
-
-    # instance CL参数
     temp = local_params["temp"]
+    latent_type4cl = local_params["latent_type4cl"]
+    random_select_aug_len = local_params["use_random_select_aug_len"]
     use_online_sim = local_params["use_online_sim"]
     use_warm_up4online_sim = local_params["use_warm_up4online_sim"]
     epoch_warm_up4online_sim = local_params["epoch_warm_up4online_sim"]
-    cl_type = local_params["cl_type"]
+    data_aug_type4cl = local_params["data_aug_type4cl"]
+    use_emb_dropout4cl = local_params["use_emb_dropout4cl"]
+    emb_dropout4cl = local_params["emb_dropout4cl"]
 
-    global_params["other"]["instance_cl"] = deepcopy(INSTANCE_CL_PARAMS)
-    instance_cl_config = global_params["other"]["instance_cl"]
-    instance_cl_config["temp"] = temp
-    instance_cl_config["use_online_sim"] = use_online_sim
-    instance_cl_config["use_warm_up4online_sim"] = use_warm_up4online_sim
-    instance_cl_config["epoch_warm_up4online_sim"] = epoch_warm_up4online_sim
-    instance_cl_config["cl_type"] = cl_type
+    global_params["other"]["meta_cl"] = {}
+    meta_cl_config = global_params["other"]["meta_cl"]
+    meta_cl_config["use_regularization"] = use_regularization
+    meta_cl_config["temp"] = temp
+    meta_cl_config["latent_type4cl"] = latent_type4cl
+    meta_cl_config["random_select_aug_len"] = random_select_aug_len
+    meta_cl_config["use_online_sim"] = use_online_sim
+    meta_cl_config["use_warm_up4online_sim"] = use_warm_up4online_sim
+    meta_cl_config["epoch_warm_up4online_sim"] = epoch_warm_up4online_sim
+    meta_cl_config["data_aug_type4cl"] = data_aug_type4cl
+    meta_cl_config["use_emb_dropout4cl"] = use_emb_dropout4cl
+    meta_cl_config["emb_dropout4cl"] = emb_dropout4cl
 
     # max entropy adv aug参数
     use_adv_aug = local_params["use_adv_aug"]
@@ -359,16 +363,15 @@ def meta_optimize_cl_general_config(local_params, global_params, global_objects)
     eta = local_params["eta"]
     gamma = local_params["gamma"]
 
-    global_params["other"]["max_entropy_adv_aug"] = deepcopy(MAX_ENTROPY_ADV_AUG)
+    meta_cl_config["use_adv_aug"] = use_adv_aug
+    global_params["other"]["max_entropy_adv_aug"] = {}
     max_entropy_aug_config = global_params["other"]["max_entropy_adv_aug"]
-    instance_cl_config["use_adv_aug"] = use_adv_aug
-    if use_adv_aug:
-        max_entropy_aug_config["epoch_interval_generate"] = epoch_interval_generate
-        max_entropy_aug_config["loop_adv"] = loop_adv
-        max_entropy_aug_config["epoch_generate"] = epoch_generate
-        max_entropy_aug_config["adv_learning_rate"] = adv_learning_rate
-        max_entropy_aug_config["eta"] = eta
-        max_entropy_aug_config["gamma"] = gamma
+    max_entropy_aug_config["epoch_interval_generate"] = epoch_interval_generate
+    max_entropy_aug_config["loop_adv"] = loop_adv
+    max_entropy_aug_config["epoch_generate"] = epoch_generate
+    max_entropy_aug_config["adv_learning_rate"] = adv_learning_rate
+    max_entropy_aug_config["eta"] = eta
+    max_entropy_aug_config["gamma"] = gamma
 
     # 损失权重
     weight_lambda = local_params["weight_lambda"]

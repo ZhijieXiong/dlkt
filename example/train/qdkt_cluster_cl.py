@@ -68,7 +68,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_cluster", type=int, default=256)
     parser.add_argument("--temp", type=float, default=0.05)
     parser.add_argument("--weight_cl_loss", type=float, default=0.3)
-    parser.add_argument("--cl_type", type=str, default="last_time",
+    parser.add_argument("--latent_type4cl", type=str, default="last_time",
                         choices=("last_time", "mean_pool"))
     # CL warm up
     parser.add_argument("--use_warm_up4cl", type=str2bool, default=True)

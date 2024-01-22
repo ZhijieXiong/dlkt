@@ -99,7 +99,8 @@ class KTDataset4Aug(Dataset):
             raise NotImplementedError()
 
         # 如果是DIMKT，加上difficulty信息
-        if dataset_config_this["kt4aug"]["use_diff4dimkt"]:
+        use_diff4dimkt = dataset_config_this["kt4aug"].get("use_diff4dimkt", False)
+        if use_diff4dimkt:
             question_difficulty = self.objects["dimkt"]["question_difficulty"]
             concept_difficulty = self.objects["dimkt"]["concept_difficulty"]
             for data_aug in datas_aug:
@@ -416,14 +417,12 @@ class KTDataset4Aug(Dataset):
         else:
             dataset_original = self.objects["dataset_this"]
 
-        if dataset_config_this["kt4aug"]["use_diff4dimkt"]:
-            num_question_difficulty = dataset_config_this["kt4aug"]["diff4dimkt"]["num_question_difficulty"]
-            num_concept_difficulty = dataset_config_this["kt4aug"]["diff4dimkt"]["num_concept_difficulty"]
-            qc_num_difficulty = (num_question_difficulty, num_concept_difficulty)
+        use_diff4dimkt = dataset_config_this["kt4aug"].get("use_diff4dimkt", False)
+        if use_diff4dimkt:
             question_difficulty = self.objects["dimkt"]["question_difficulty"]
             concept_difficulty = self.objects["dimkt"]["concept_difficulty"]
             qc_difficulty = (question_difficulty, concept_difficulty)
-            KTDataset.parse_difficulty(dataset_original, data_type, qc_difficulty, qc_num_difficulty)
+            KTDataset.parse_difficulty(dataset_original, data_type, qc_difficulty)
 
         if data_type == "multi_concept":
             self.data_uniformed = data_agg_question(dataset_original)

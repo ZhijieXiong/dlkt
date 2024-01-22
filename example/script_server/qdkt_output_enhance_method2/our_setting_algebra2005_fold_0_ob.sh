@@ -5,7 +5,7 @@
   data_type="only_question"
   fold=0
 
-  weights_decay='0.001 0.0001 0.00001'
+  weights_decay='0.0001 0.00001 0'
   weights_enhance_loss2='0.0001 0.001 0.01 0.1 1 3'
   for weight_decay in ${weights_decay}
   do
@@ -31,4 +31,4 @@
         --save_model False --seed 0
     done
   done
-} >> /home/xiongzj/myProjects/KT/dlkt/example/results/qdkt_output_enhance_method2_our_setting_algebra2005_fold_0_ob2.txt
+} >> /home/xiongzj/myProjects/KT/dlkt/example/results/qdkt_output_enhance_method2_our_setting_algebra2005_fold_0_ob.txt

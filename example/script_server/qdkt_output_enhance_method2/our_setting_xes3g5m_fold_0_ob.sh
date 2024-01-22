@@ -5,14 +5,14 @@
   data_type="only_question"
   fold=0
 
-  weights_decay='0.001 0.0001 0.00001'
+  weights_decay='0.0001 0.00001 0'
   weights_enhance_loss2='0.0001 0.001 0.01 0.1 1 3'
   for weight_decay in ${weights_decay}
   do
     for weight_enhance_loss2 in ${weights_enhance_loss2}
     do
       echo -e "weight_decay: ${weight_decay}, weight_enhance_loss2: ${weight_enhance_loss2}"
-      CUDA_VISIBLE_DEVICES=1 python /home/xiongzj/myProjects/KT/dlkt/example/train/qdkt_output_enhance.py \
+      CUDA_VISIBLE_DEVICES=2 python /home/xiongzj/myProjects/KT/dlkt/example/train/qdkt_output_enhance.py \
         --setting_name "our_setting" --dataset_name "${dataset_name}" --data_type "${data_type}" \
         --train_file_name "${dataset_name}_train_fold_${fold}.txt" --valid_file_name "${dataset_name}_valid_fold_${fold}.txt" --test_file_name "${dataset_name}_test_fold_${fold}.txt" \
         --optimizer_type "adam" --weight_decay "${weight_decay}" --momentum 0.9 \
@@ -31,4 +31,4 @@
         --save_model False --seed 0
     done
   done
-} >> /home/xiongzj/myProjects/KT/dlkt/example/results/qdkt_output_enhance_method2_our_setting_xes3g5m_fold_0_ob2.txt
+} >> /home/xiongzj/myProjects/KT/dlkt/example/results/qdkt_output_enhance_method2_our_setting_xes3g5m_fold_0_ob.txt

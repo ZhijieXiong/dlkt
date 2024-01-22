@@ -5,7 +5,7 @@
   data_type="only_question"
   fold=0
 
-  weights_decay='0.0001 0.00001'
+  weights_decay='0.0001 0.00001 0'
   weights_cl='0.0001 0.001 0.01 0.1'
   for weight_decay in ${weights_decay}
   do

@@ -5,7 +5,7 @@
   data_type="single_concept"
   fold=0
 
-  weights_decay='0.0001 0.00001'
+  weights_decay='0.0001 0.00001 0'
   weights_cl='0.0001 0.001 0.01 0.1'
   for weight_decay in ${weights_decay}
   do
@@ -25,8 +25,8 @@
           --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
           --train_batch_size 64 --evaluate_batch_size 256 \
           --enable_clip_grad False --grad_clipped 10.0 \
-          --num_concept 123 --num_question 17751 \
-          --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.3 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
+          --num_concept 101 --num_question 2803 \
+          --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 128 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.3 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
           --use_warm_up4cl True --epoch_warm_up4cl 4 --cl_type "last_time" \
           --num_cluster "${num_cluster}" --temp 0.05 --weight_cl_loss "${weight_cl}" \
           --use_online_sim True --use_warm_up4online_sim True --epoch_warm_up4online_sim 4 \

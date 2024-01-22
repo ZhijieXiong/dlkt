@@ -19,7 +19,7 @@ if __name__ == "__main__":
     params["setting_name"] = "dimkt_setting"
     params["data_type"] = "single_concept"
     params["max_seq_len"] = 100
-    params["min_seq_len"] = 2
+    params["min_seq_len"] = 3
     params["n_fold"] = 5
     params["valid_radio"] = 0.2
 

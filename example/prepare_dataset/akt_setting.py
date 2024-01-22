@@ -20,12 +20,14 @@ if __name__ == "__main__":
     params["setting_name"] = "akt_setting"
     if params["dataset_name"] in ["assist2015", "statics2011"]:
         params["data_type"] = "only_question"
+    elif params["dataset_name"] == "assist2017":
+        params["data_type"] = "single_concept"
     else:
         params["data_type"] = "multi_concept"
     params["max_seq_len"] = 200
     params["min_seq_len"] = 3
     params["n_fold"] = 5
-    params["valid_radio"] = 0.2
+    params["valid_radio"] = 0.25
 
     objects = {"file_manager": FileManager(config.FILE_MANAGER_ROOT)}
     params["lab_setting"] = {

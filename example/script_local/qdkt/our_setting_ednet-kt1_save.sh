@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 {
-  dataset_name="assist2009"
+  dataset_name="ednet-kt1"
   data_type="only_question"
 
   for fold in 0 1 2 3 4
@@ -17,10 +17,10 @@
       --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type MultiStepLR --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
       --train_batch_size 64 --evaluate_batch_size 256 \
       --enable_clip_grad False --grad_clipped 10.0 \
-      --num_concept 123 --num_question 17751 \
-      --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type gru --num_rnn_layer 1 --dropout 0.3 --num_predict_layer 3 --dim_predict_mid 128 --activate_type relu \
+      --num_concept 188 --num_question 11858 \
+      --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type gru --num_rnn_layer 1 --dropout 0.2 --num_predict_layer 3 --dim_predict_mid 128 --activate_type relu \
       --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
       --transfer_head2zero False --head2tail_transfer_method "mean_pool" \
       --save_model True --seed 0
   done
-} >> F:/code/myProjects/dlkt/example/result_local/qdkt_our_setting_assist2009_save.txt
+} >> F:/code/myProjects/dlkt/example/result_local/qdkt_our_setting_ednet-kt1_save.txt

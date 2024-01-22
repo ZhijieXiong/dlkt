@@ -23,7 +23,7 @@ if __name__ == "__main__":
     parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0.001)
+    parser.add_argument("--weight_decay", type=float, default=0.0001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     parser.add_argument("--head2tail_transfer_method", type=str, default="mean_pool",
                         choices=("mean_pool", ))
     # 其它
-    parser.add_argument("--save_model", type=str2bool, default=True)
+    parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()

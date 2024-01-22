@@ -21,6 +21,6 @@
       --dim_concept 64 --dim_question 64 --dim_correct 128 --dim_latent 128 --rnn_type gru --num_rnn_layer 1 --dropout 0.3 --num_predict_layer 3 --dim_predict_mid 128 --activate_type relu \
       --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
       --transfer_head2zero False --head2tail_transfer_method "mean_pool" \
-      --save_model True --seed "${fold}"
+      --save_model True --seed 0
   done
 } >> F:/code/myProjects/dlkt/example/result_local/qdkt_our_setting_assist2012_save.txt

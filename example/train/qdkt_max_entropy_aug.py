@@ -37,8 +37,8 @@ if __name__ == "__main__":
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
     # 学习率
-    parser.add_argument("--learning_rate", type=float, default=0.002)
-    parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
+    parser.add_argument("--learning_rate", type=float, default=0.001)
+    parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     parser.add_argument("--eta", type=float, default=20.0)
     parser.add_argument("--gamma", type=float, default=10.0)
     # 其它
-    parser.add_argument("--save_model", type=str2bool, default=True)
+    parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()

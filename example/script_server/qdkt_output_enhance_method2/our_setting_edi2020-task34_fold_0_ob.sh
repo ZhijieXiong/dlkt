@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 {
-  dataset_name="assist2009"
-  data_type="only_question"
+  dataset_name="edi2020-task34"
+  data_type="single_concept"
   fold=0
 
-  weights_decay='0.01 0.001 0.0001'
+  weights_decay='0 0.0001 0.00001'
   weights_enhance_loss2='0.0001 0.001 0.01 0.1 1 3'
   for weight_decay in ${weights_decay}
   do
@@ -22,8 +22,8 @@
         --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
         --train_batch_size 64 --evaluate_batch_size 256 \
         --enable_clip_grad False --grad_clipped 10.0 \
-        --num_concept 123 --num_question 17751 \
-        --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.3 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
+        --num_concept 53 --num_question 948 \
+        --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 128 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.1 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
         --enhance_method 2 \
         --weight_enhance_loss1 1 --num_min_question4diff 100 --hard_acc 0.4 --easy_acc 0.8 \
         --weight_enhance_loss2 "${weight_enhance_loss2}" --enhance_method2_update_few_shot True --num_few_shot 5 \
@@ -31,4 +31,4 @@
         --save_model False --seed 0
     done
   done
-} >> /home/xiongzj/myProjects/KT/dlkt/example/results/qdkt_output_enhance_method2_our_setting_assist2009_fold_0_ob2.txt
+} >> /home/xiongzj/myProjects/KT/dlkt/example/results/qdkt_output_enhance_method2_our_setting_edi2020-task34_fold_0_ob2.txt

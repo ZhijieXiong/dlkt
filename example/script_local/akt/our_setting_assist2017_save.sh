@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 {
-  dataset_name="assist2009"
-  data_type="only_question"
+  dataset_name="assist2017"
+  data_type="single_concept"
 
   for fold in 0 1 2 3 4
   do
@@ -17,10 +17,10 @@
       --learning_rate 0.0001 --enable_lr_schedule False --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5, 10]" --lr_schedule_gamma 0.5 \
       --train_batch_size 24 --evaluate_batch_size 128 \
       --enable_clip_grad True --grad_clipped 10.0 \
-      --num_concept 123 --num_question 17751 \
+      --num_concept 101 --num_question 2803 \
       --dim_model 256 --key_query_same True --num_head 8 --num_block 2 --dim_ff 256 --dim_final_fc 512 --dropout 0.1 \
       --separate_qa False --seq_representation "encoder_output" --weight_rasch_loss 0.00001 \
       --save_model True --seed 0
   done
 
-} >> F:/code/myProjects/dlkt/example/result_local/akt_our_setting_assist2009_save.txt
+} >> F:/code/myProjects/dlkt/example/result_local/akt_our_setting_assist2017_save.txt

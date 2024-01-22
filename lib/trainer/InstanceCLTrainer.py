@@ -22,12 +22,14 @@ class InstanceCLTrainer(BaseTrainer4ME_ADA):
         self.print_data_statics()
 
         weight_cl_loss = self.params["loss_config"]["cl loss"]
-        instance_cl_config = self.params["other"]["instance_cl"]
-        latent_type4cl = instance_cl_config["latent_type4cl"]
+        instance_cl_params = self.params["other"]["instance_cl"]
+        use_adv_aug = instance_cl_params["use_adv_aug"]
+        latent_type4cl = instance_cl_params["latent_type4cl"]
 
         for epoch in range(1, num_epoch + 1):
             self.do_online_sim()
-            self.do_max_entropy_aug()
+            if use_adv_aug:
+                self.do_max_entropy_aug()
 
             train_loader.dataset.set_use_aug()
 
@@ -40,9 +42,9 @@ class InstanceCLTrainer(BaseTrainer4ME_ADA):
                 loss = 0.
 
                 if latent_type4cl in ["mean_pool", "last_time"]:
-                    cl_loss = model.get_instance_cl_loss(batch, instance_cl_config, self.dataset_adv_generated)
+                    cl_loss = model.get_instance_cl_loss(batch, instance_cl_params, self.dataset_adv_generated)
                 elif latent_type4cl == "all_time":
-                    cl_loss = model.get_instance_cl_loss_all_interaction(batch, instance_cl_config)
+                    cl_loss = model.get_instance_cl_loss_all_interaction(batch, instance_cl_params)
                 else:
                     raise NotImplementedError()
                 self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)

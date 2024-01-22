@@ -254,9 +254,7 @@ class KTDataset_cpu2device(Dataset):
         zero_shot_qs = deepcopy(concept_dict[c_id]["zero_shot"])
         if enhance_method2_update_few_shot:
             few_shot_qs = concept_dict[c_id]["few_shot"]
-            middle_fre_qs = concept_dict[c_id]["middle_fre"]
             zero_shot_qs += few_shot_qs
-            zero_shot_qs += middle_fre_qs
         if len(zero_shot_qs) == 0:
             return {
                 "q_zero_shot": 0,

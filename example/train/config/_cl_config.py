@@ -1,4 +1,3 @@
-import json
 import os
 from copy import deepcopy
 
@@ -106,16 +105,12 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     instance_cl_config["epoch_warm_up4online_sim"] = epoch_warm_up4online_sim
     instance_cl_config["latent_type4cl"] = latent_type4cl
     instance_cl_config["random_select_aug_len"] = random_select_aug_len
-
     instance_cl_config["use_emb_dropout4cl"] = use_emb_dropout4cl
     instance_cl_config["emb_dropout4cl"] = emb_dropout4cl
     instance_cl_config["data_aug_type4cl"] = data_aug_type4cl
-    weight_dynamic = instance_cl_config["weight_dynamic"][weight_dynamic_type]
     instance_cl_config["use_neg"] = use_neg
     instance_cl_config["use_neg_filter"] = use_neg_filter
     instance_cl_config["neg_sim_threshold"] = neg_sim_threshold
-    instance_cl_config["use_stop_cl_after"] = use_stop_cl_after
-    instance_cl_config["epoch_stop_cl"] = epoch_stop_cl
     instance_cl_config["cl_space"] = cl_space
 
     # max entropy adv aug参数
@@ -351,7 +346,7 @@ def meta_optimize_cl_general_config(local_params, global_params, global_objects)
 
     # 打印参数
     global_objects["logger"].info(
-        f"cluster cl\n"
+        f"meta cl\n"
         f"    temp: {temp}, use_regularization: {use_regularization}, weight of lambda: {weight_lambda}, "
         f"weight of beta: {weight_beta}, weight of gamma: {weight_gamma}\n"
         f"max_entropy_adv_aug\n"

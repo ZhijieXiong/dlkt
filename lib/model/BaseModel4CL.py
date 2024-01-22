@@ -259,6 +259,7 @@ class BaseModel4CL:
         return cl_loss
 
     def get_cluster_cl_loss(self, batch, clus, cluster_cl_params, dataset=None):
+        temp = cluster_cl_params["temp"]
         latent_type4cl = cluster_cl_params["latent_type4cl"]
         data_aug_type4cl = cluster_cl_params["data_aug_type4cl"]
         use_random_seq_len = cluster_cl_params["use_random_seq_len"]
@@ -305,7 +306,6 @@ class BaseModel4CL:
         intent_id1 = intent_id.contiguous().view(1, -1)
         mask4inf = (intent_id0 == intent_id1) & torch.ne(torch.eye(batch_size), 1).to(self.params["device"])
 
-        temp = self.params["other"]["cluster_cl"]["temp"]
         cos_sim_aug0 = torch.cosine_similarity(intent.unsqueeze(1), latent_aug0_pooled.unsqueeze(0), dim=-1) / temp
         cos_sim_aug1 = torch.cosine_similarity(intent.unsqueeze(1), latent_aug1_pooled.unsqueeze(0), dim=-1) / temp
         cos_sim_aug0[mask4inf] = -1 / temp
@@ -318,6 +318,7 @@ class BaseModel4CL:
         return (cl_loss0 + cl_loss1) / 2
 
     def get_meta_contrast_cl_loss(self, batch, meta_extractors, meta_cl_params, dataset=None):
+        temp = meta_cl_params["temp"]
         data_aug_type4cl = meta_cl_params["data_aug_type4cl"]
         latent_type4cl = meta_cl_params["latent_type4cl"]
         use_regularization = meta_cl_params["use_regularization"]
@@ -335,10 +336,10 @@ class BaseModel4CL:
             latent_aug1_pooled = self.get_latent_mean(batch_aug1)
         else:
             raise NotImplementedError()
+
         latent_aug0_extracted = extractor0(latent_aug0_pooled)
         latent_aug1_extracted = extractor1(latent_aug1_pooled)
 
-        temp = self.params["other"]["instance_cl"]["temp"]
         labels = torch.arange(batch_size).long().to(self.params["device"])
         # 随机增强的对比损失
         cos_sim_0 = torch.cosine_similarity(latent_aug0_pooled.unsqueeze(1), latent_aug1_pooled.unsqueeze(0),

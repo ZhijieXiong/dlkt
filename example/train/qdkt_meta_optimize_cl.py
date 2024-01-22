@@ -25,7 +25,7 @@ if __name__ == "__main__":
     parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0.001)
+    parser.add_argument("--weight_decay", type=float, default=0.0001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
@@ -67,7 +67,8 @@ if __name__ == "__main__":
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
     # extractor模型参数
-    parser.add_argument("--extractor_layers", type=str, default="[128, 64, 32, 128]")
+    parser.add_argument("--extractor_layers", type=str, default="[64, 64, 32, 64, 64]",
+                        help="必须是5层，且第一个和最后一个需要和latent的维度相同")
     parser.add_argument("--extractor_active_func", type=str, default="gelu",
                         choices=("relu", "gelu", "swish"))
     # meta cl参数（对比学习）
@@ -104,7 +105,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)
     parser.add_argument("--epoch_warm_up4online_sim", type=float, default=4)
-    # max entropy adv aug参数
+    # ME-ADA参数
     parser.add_argument("--use_adv_aug", type=str2bool, default=False)
     parser.add_argument("--epoch_interval_generate", type=int, default=1)
     parser.add_argument("--loop_adv", type=int, default=3)

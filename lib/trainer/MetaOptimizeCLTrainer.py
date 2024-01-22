@@ -46,9 +46,8 @@ class MetaOptimizeCLTrainer(BaseTrainer4ME_ADA):
         extractor0_scheduler = self.objects["schedulers"]["extractor0"]
         extractor1_scheduler = self.objects["schedulers"]["extractor1"]
 
-        latent_type4cl = self.params["other"]["meta_cl"]["latent_type4cl"]
+        meta_cl_params = self.params["other"]["meta_cl"]
         use_adv_aug = self.params["other"]["meta_cl"]["use_adv_aug"]
-        use_regularization = self.params["other"]["meta_cl"]["use_regularization"]
 
         self.print_data_statics()
 
@@ -58,7 +57,8 @@ class MetaOptimizeCLTrainer(BaseTrainer4ME_ADA):
 
         for epoch in range(1, num_epoch + 1):
             self.do_online_sim()
-            self.do_max_entropy_aug()
+            if use_adv_aug:
+                self.do_max_entropy_aug()
 
             kt_model.train()
             for batch_idx, batch in enumerate(train_loader):
@@ -74,12 +74,9 @@ class MetaOptimizeCLTrainer(BaseTrainer4ME_ADA):
                 predict_loss = kt_model.get_predict_loss(batch)
                 self.loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
                 loss = loss + predict_loss
-                if latent_type4cl in ["mean_pool", "last_time"] and not use_adv_aug:
-                    cl_loss1, cl_loss2, reg_loss = kt_model.get_meta_contrast_cl_loss(
-                        batch, meta_extractors, self.params["other"]["meta_cl"]
-                    )
-                else:
-                    raise NotImplementedError()
+                cl_loss1, cl_loss2, reg_loss = kt_model.get_meta_contrast_cl_loss(
+                    batch, meta_extractors, meta_cl_params, self.dataset_adv_generated
+                )
                 self.loss_record.add_loss("cl loss1 stage1",
                                           cl_loss1.detach().cpu().item() * num_seq, num_seq)
                 self.loss_record.add_loss("cl loss2 stage1",

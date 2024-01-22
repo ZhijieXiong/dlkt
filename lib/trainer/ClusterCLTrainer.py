@@ -24,13 +24,16 @@ class ClusterCLTrainer(BaseTrainer4ME_ADA):
 
         self.print_data_statics()
 
-        use_warm_up4cl = self.params["other"]["cluster_cl"]["use_warm_up4cl"]
-        epoch_warm_up4cl = self.params["other"]["cluster_cl"]["epoch_warm_up4cl"]
+        cluster_cl_params = self.params["other"]["cluster_cl"]
+        use_warm_up4cl = cluster_cl_params["use_warm_up4cl"]
+        epoch_warm_up4cl = cluster_cl_params["epoch_warm_up4cl"]
+        use_adv_aug = cluster_cl_params["use_adv_aug"]
         weight_cl_loss = self.params["loss_config"]["cl loss"]
 
         for epoch in range(1, num_epoch + 1):
             self.do_online_sim()
-            self.do_max_entropy_aug()
+            if use_adv_aug:
+                self.do_max_entropy_aug()
             self.do_cluster()
 
             do_cluster_cl = (not use_warm_up4cl) or (use_warm_up4cl and epoch > epoch_warm_up4cl)
@@ -48,7 +51,7 @@ class ClusterCLTrainer(BaseTrainer4ME_ADA):
                 loss = 0.
 
                 if do_cluster_cl:
-                    cl_loss = model.get_cluster_cl_loss(batch, self.clus, self.params["other"]["cluster_cl"], self.dataset_adv_generated)
+                    cl_loss = model.get_cluster_cl_loss(batch, self.clus, cluster_cl_params, self.dataset_adv_generated)
                     self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)
                     loss = loss + weight_cl_loss * cl_loss
 

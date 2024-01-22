@@ -73,19 +73,6 @@ if __name__ == "__main__":
     parser.add_argument("--num2drop_concept4dis", type=int, default=100)
     parser.add_argument("--min_seq_len4dis", type=int, default=15)
     parser.add_argument("--dis_threshold", type=float, default=0.3)
-    # warm up和early stop
-    parser.add_argument("--use_warm_up4cl", type=str2bool, default=False)
-    parser.add_argument("--epoch_warm_up4cl", type=float, default=2)
-    parser.add_argument("--use_stop_cl_after", type=str2bool, default=False)
-    parser.add_argument("--epoch_stop_cl", type=int, default=3)
-    # cl loss weight动态变化
-    parser.add_argument("--use_weight_dynamic", type=str2bool, default=False)
-    parser.add_argument("--weight_dynamic_type", type=str, default="multi_step",
-                        choices=("multi_step", "linear_increase"))
-    parser.add_argument("--multi_step_weight", type=str,
-                        default="[[1, 0.1], [3, 0.03], [5, 0.01], [10, 0.0001], [200, 0.000001]]")
-    parser.add_argument("--linear_increase_epoch", type=int, default=1)
-    parser.add_argument("--linear_increase_value", type=float, default=0.1)
     # cl使用的latent
     parser.add_argument("--latent_type4cl", type=str, default="all_time",
                         choices=("last_time", "all_time", "mean_pool"))

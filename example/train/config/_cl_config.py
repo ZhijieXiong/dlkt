@@ -2,9 +2,7 @@ import json
 import os
 from copy import deepcopy
 
-from lib.template.dataset_params_template import KT_RANDOM_AUG_PARAMS, KT_INFORMATIVE_AUG_PARAMS
 from lib.template.model.Extractor import MODEL_PARAMS as EXTRACTOR_PARAMS
-from lib.template.other_params_template import *
 from lib.util.parse import get_high_dis_qc
 from lib.util.data import read_preprocessed_file, load_json, write_json
 
@@ -33,7 +31,7 @@ def aug_general_config(local_params, global_params, global_objects):
     else:
         datasets_train_config["kt4aug"]["num_aug"] = 0
     if aug_type == "random_aug":
-        datasets_train_config["kt4aug"]["random_aug"] = deepcopy(KT_RANDOM_AUG_PARAMS)
+        datasets_train_config["kt4aug"]["random_aug"] = {}
         datasets_train_config["kt4aug"]["random_aug"]["aug_order"] = aug_order
         datasets_train_config["kt4aug"]["random_aug"]["mask_prob"] = mask_prob
         datasets_train_config["kt4aug"]["random_aug"]["crop_prob"] = crop_prob
@@ -43,7 +41,7 @@ def aug_general_config(local_params, global_params, global_objects):
         datasets_train_config["kt4aug"]["random_aug"]["hard_neg_prob"] = hard_neg_prob
         datasets_train_config["kt4aug"]["random_aug"]["random_select_aug_len"] = random_select_aug_len
     elif aug_type == "informative_aug":
-        datasets_train_config["kt4aug"]["informative_aug"] = deepcopy(KT_INFORMATIVE_AUG_PARAMS)
+        datasets_train_config["kt4aug"]["informative_aug"] = {}
         datasets_train_config["kt4aug"]["informative_aug"]["aug_order"] = aug_order
         datasets_train_config["kt4aug"]["informative_aug"]["mask_prob"] = mask_prob
         datasets_train_config["kt4aug"]["informative_aug"]["crop_prob"] = crop_prob
@@ -83,18 +81,6 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     cl_space = local_params["cl_space"]
     temp = local_params["temp"]
     latent_type4cl = local_params["latent_type4cl"]
-    # cl warm up
-    use_warm_up4cl = local_params["use_warm_up4cl"]
-    epoch_warm_up4cl = local_params["epoch_warm_up4cl"]
-    # stop cl config
-    use_stop_cl_after = local_params["use_stop_cl_after"]
-    epoch_stop_cl = local_params["epoch_stop_cl"]
-    # dynamic cl loss weight
-    use_weight_dynamic = local_params["use_weight_dynamic"]
-    weight_dynamic_type = local_params["weight_dynamic_type"]
-    multi_step_weight = eval(local_params["multi_step_weight"])
-    linear_increase_epoch = local_params["linear_increase_epoch"]
-    linear_increase_value = local_params["linear_increase_value"]
     # info aug online sim
     use_online_sim = local_params["use_online_sim"]
     use_warm_up4online_sim = local_params["use_warm_up4online_sim"]
@@ -112,29 +98,15 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     min_seq_len4dis = local_params.get("min_seq_len4dis", 30)
     dis_threshold = local_params.get("dis_threshold", 0.2)
 
-    global_params["other"] = {}
     global_params["other"]["instance_cl"] = {}
     instance_cl_config = global_params["other"]["instance_cl"]
-    instance_cl_config["epoch_warm_up4cl"] = epoch_warm_up4cl
-    instance_cl_config["use_warm_up4cl"] = use_warm_up4cl
     instance_cl_config["temp"] = temp
     instance_cl_config["use_online_sim"] = use_online_sim
     instance_cl_config["use_warm_up4online_sim"] = use_warm_up4online_sim
     instance_cl_config["epoch_warm_up4online_sim"] = epoch_warm_up4online_sim
     instance_cl_config["latent_type4cl"] = latent_type4cl
     instance_cl_config["random_select_aug_len"] = random_select_aug_len
-    instance_cl_config["use_weight_dynamic"] = use_weight_dynamic
-    instance_cl_config["weight_dynamic"] = {}
-    instance_cl_config["weight_dynamic"][weight_dynamic_type] = {}
-    instance_cl_config["weight_dynamic"]["type"] = weight_dynamic_type
-    if weight_dynamic_type == "multi_step":
-        instance_cl_config["weight_dynamic"]["multi_step"]["step_weight"] = multi_step_weight
-    elif weight_dynamic_type == "linear_increase":
-        instance_cl_config["weight_dynamic"]["linear_increase"] = {}
-        instance_cl_config["weight_dynamic"]["linear_increase"]["epoch"] = linear_increase_epoch
-        instance_cl_config["weight_dynamic"]["linear_increase"]["value"] = linear_increase_value
-    else:
-        raise NotImplementedError()
+
     instance_cl_config["use_emb_dropout4cl"] = use_emb_dropout4cl
     instance_cl_config["emb_dropout4cl"] = emb_dropout4cl
     instance_cl_config["data_aug_type4cl"] = data_aug_type4cl
@@ -215,9 +187,6 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     global_objects["logger"].info(
         f"instance cl\n"
         f"    cl space: {cl_space}, temp: {temp}, weight of cl loss: {weight_cl_loss}\n"
-        f"    use dynamic weight: {use_weight_dynamic}{f', dynamic weight type: {weight_dynamic_type}, {weight_dynamic_type}: {json.dumps(weight_dynamic)}' if use_weight_dynamic else ''}\n"
-        f"    use warm up for cl: {use_warm_up4cl}{f', num of warm up epoch for cl: {epoch_warm_up4cl}' if use_warm_up4cl else ''}, "
-        f"use stop cl after specified epoch: {use_stop_cl_after}{f', num of epoch to stop cl: {epoch_stop_cl}' if use_stop_cl_after else ''}\n"
         f"    data aug type: {data_aug_type4cl}, latent type: {latent_type4cl}, use emb dropout: {use_emb_dropout4cl}{f', emb dropout: {emb_dropout4cl}' if use_emb_dropout4cl else ''}\n"
         f"    use neg sample: {use_neg}, use neg sample filter: {use_neg_filter}{f', threshold of neg sample filter (similarity): {neg_sim_threshold}' if use_neg_filter else ''}\n"
         f"max_entropy_adv_aug\n"
@@ -245,24 +214,21 @@ def duo_cl_general_config(local_params, global_params):
 
 
 def cluster_cl_general_config(local_params, global_params, global_objects):
-    # 配置数据集参数
-    random_select_aug_len = local_params["use_random_select_aug_len"]
-
     aug_general_config(local_params, global_params, global_objects)
 
     # cluster CL参数
     temp = local_params["temp"]
     latent_type4cl = local_params["latent_type4cl"]
     num_cluster = local_params["num_cluster"]
-    # warm up
+    random_select_aug_len = local_params["use_random_select_aug_len"]
+    # warm up for cluster CL
     use_warm_up4cl = local_params["use_warm_up4cl"]
     epoch_warm_up4cl = local_params["epoch_warm_up4cl"]
-    # online sim 4 info aug
+    # online sim for online similarity
     use_online_sim = local_params["use_online_sim"]
     use_warm_up4online_sim = local_params["use_warm_up4online_sim"]
     epoch_warm_up4online_sim = local_params["epoch_warm_up4online_sim"]
 
-    global_params["other"] = {}
     global_params["other"]["cluster_cl"] = {}
     cluster_cl_config = global_params["other"]["cluster_cl"]
     cluster_cl_config["use_warm_up4cl"] = use_warm_up4cl
@@ -284,16 +250,15 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
     eta = local_params["eta"]
     gamma = local_params["gamma"]
 
-    global_params["other"]["max_entropy_adv_aug"] = deepcopy(MAX_ENTROPY_ADV_AUG)
-    max_entropy_aug_config = global_params["other"]["max_entropy_adv_aug"]
     cluster_cl_config["use_adv_aug"] = use_adv_aug
-    if use_adv_aug:
-        max_entropy_aug_config["epoch_interval_generate"] = epoch_interval_generate
-        max_entropy_aug_config["loop_adv"] = loop_adv
-        max_entropy_aug_config["epoch_generate"] = epoch_generate
-        max_entropy_aug_config["adv_learning_rate"] = adv_learning_rate
-        max_entropy_aug_config["eta"] = eta
-        max_entropy_aug_config["gamma"] = gamma
+    global_params["other"]["max_entropy_adv_aug"] = {}
+    max_entropy_aug_config = global_params["other"]["max_entropy_adv_aug"]
+    max_entropy_aug_config["epoch_interval_generate"] = epoch_interval_generate
+    max_entropy_aug_config["loop_adv"] = loop_adv
+    max_entropy_aug_config["epoch_generate"] = epoch_generate
+    max_entropy_aug_config["adv_learning_rate"] = adv_learning_rate
+    max_entropy_aug_config["eta"] = eta
+    max_entropy_aug_config["gamma"] = gamma
 
     # 损失权重
     weight_cl_loss = local_params["weight_cl_loss"]
@@ -334,9 +299,11 @@ def meta_optimize_cl_general_config(local_params, global_params, global_objects)
     temp = local_params["temp"]
     latent_type4cl = local_params["latent_type4cl"]
     random_select_aug_len = local_params["use_random_select_aug_len"]
+    # online sim for online similarity
     use_online_sim = local_params["use_online_sim"]
     use_warm_up4online_sim = local_params["use_warm_up4online_sim"]
     epoch_warm_up4online_sim = local_params["epoch_warm_up4online_sim"]
+    # model aug
     data_aug_type4cl = local_params["data_aug_type4cl"]
     use_emb_dropout4cl = local_params["use_emb_dropout4cl"]
     emb_dropout4cl = local_params["emb_dropout4cl"]
@@ -381,3 +348,13 @@ def meta_optimize_cl_general_config(local_params, global_params, global_objects)
     global_params["loss_config"]["cl loss1"] = weight_lambda
     global_params["loss_config"]["cl loss2"] = weight_beta
     global_params["loss_config"]["reg loss"] = weight_gamma
+
+    # 打印参数
+    global_objects["logger"].info(
+        f"cluster cl\n"
+        f"    temp: {temp}, use_regularization: {use_regularization}, weight of lambda: {weight_lambda}, "
+        f"weight of beta: {weight_beta}, weight of gamma: {weight_gamma}\n"
+        f"max_entropy_adv_aug\n"
+        f"    use max entropy adv aug: {use_adv_aug}, interval epoch of generation: {epoch_interval_generate}, generate loops: {loop_adv}, num of generation epoch: {epoch_generate}\n"
+        f"    adv lr: {adv_learning_rate}, eta: {eta}, gamma: {gamma}"
+    )

@@ -106,7 +106,8 @@
 
 ### after preprocessing (for multi concept datasets)
 
-- Please note: `intercations` and `concepts`
+- `Interaction` and `concept` have two values. The former is the value in `multi_concept` format, and the latter is the value in `single_concept` format.
+- `max c for q` means that one question in the dataset corresponds to at most several concepts.
 
 |      dataset       |    intercations    | sequences |  concepts   | questions | max c for q |
 | :----------------: | :----------------: | :-------: | :---------: | :-------: | :---------: |

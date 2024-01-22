@@ -230,10 +230,6 @@
   - `save_model` 是否保存模型，如果为`True`，模型会保存在`lab/save_models`下
   - `seed` 随机数种子
 
-## 3、特殊参数
-
-### DKT
-
 # 三、测试模型
 
 ## 1、基本介绍
@@ -241,6 +237,14 @@
 ## 2、基于习题的测试
 
 ## 3、细粒度测试
+
+- 细粒度测试包括
+  1. 基于序列长度评估
+  2. 基于习题和知识点频率评估
+  3. 基于习题和知识点正确率评估。按以下步骤进行评估
+- 按照以下步骤进行细粒度评估
+  1. 运行`example/prepare4fine_trained_evaluate.py`生成细粒度测试所需要的文件`[train_data_name]_statics.json`
+  2. 运行`example/evaluate.py`进行模型评估
 
 # 四、其它
 

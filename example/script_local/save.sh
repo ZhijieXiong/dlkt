@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 
-#bash F:/code/myProjects/dlkt/example/script_local/akt/our_setting_assist2012_save.sh
-#bash F:/code/myProjects/dlkt/example/script_local/akt/our_setting_xes3g5m_save.sh
-#bash F:/code/myProjects/dlkt/example/script_local/akt/our_setting_algebra2005_save.sh
-#bash F:/code/myProjects/dlkt/example/script_local/akt/our_setting_bridge2algebra2006_save.sh
+bash F:/code/myProjects/dlkt/example/script_local/qdkt_ME-ADA_change_weight_decay/our_setting_assist2009_save.sh
+bash F:/code/myProjects/dlkt/example/script_local/qdkt_ME-ADA_change_weight_decay/our_setting_assist2017_save.sh
+bash F:/code/myProjects/dlkt/example/script_local/qdkt_ME-ADA_change_weight_decay/our_setting_ood_by_school_assist2009_save.sh
+bash F:/code/myProjects/dlkt/example/script_local/dimkt/our_setting_assist2009_save.sh
+bash F:/code/myProjects/dlkt/example/script_local/dimkt/our_setting_assist2017_save.sh

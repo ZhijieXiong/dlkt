@@ -122,6 +122,9 @@ class KTDataset(Dataset):
 
     @staticmethod
     def parse_difficulty(data_uniformed, data_type, qc_difficulty):
+        if "question_diff_seq" in data_uniformed[0].keys():
+            # 如果是用的dimkt_setting处理的数据，习题和知识点难度已经预处理好了
+            return
         # 目前只考虑single concept数据集
         question_difficulty, concept_difficulty = qc_difficulty
         for item_data in data_uniformed:

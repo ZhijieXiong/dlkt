@@ -2,7 +2,6 @@ import os
 import json
 import torch
 import numpy as np
-import pandas as pd
 from copy import deepcopy
 from collections import defaultdict
 
@@ -177,7 +176,7 @@ def dataset_multi_concept2only_question(dataset_multi_concept, max_seq_len=200):
 
 def drop_qc(data_uniformed, num2drop=30):
     """
-    丢弃练习次数少于指定值的习题，如DIMKT丢弃练习次数少于30次的习题
+    丢弃练习次数少于指定值的习题，如DIMKT丢弃练习次数少于30次的习题和知识点
     :param data_uniformed:
     :param num2drop:
     :return:

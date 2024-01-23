@@ -4,8 +4,8 @@ import re
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--file_path", type=str, default=r"F:\code\myProjects\dlkt\example\result_cluster\dimkt_random_split_assist2012_5.txt")
-    parser.add_argument("--key_words", type=str, default="valid performance by best valid epoch")
+    parser.add_argument("--file_path", type=str, default=r"F:\code\myProjects\dlkt\example\result_local\qdkt_same_as_ME-ADA\save\our_setting_ednet-kt1_save.txt")
+    parser.add_argument("--key_words", type=str, default="test performance by best valid epoch")
     parser.add_argument("--n", help="隔几个做一次平均", type=int, default=5)
     args = parser.parse_args()
     params = vars(args)

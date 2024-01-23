@@ -67,6 +67,60 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
+def cal_diff(D, k, min_count2drop):
+    # 计算正确率，习题或者知识点
+    corrects = defaultdict(int)
+    counts = defaultdict(int)
+
+    for item_data in D:
+        for i in range(item_data["seq_len"]):
+            k_id = item_data[k][i]
+            correct = item_data["correct_seq"][i]
+            corrects[k_id] += correct
+            counts[k_id] += 1
+
+    # 丢弃练习次数少于min_count次的习题或者知识点
+    all_ids = list(counts.keys())
+    for k_id in all_ids:
+        if counts[k_id] < min_count2drop:
+            del counts[k_id]
+            del corrects[k_id]
+
+    return {k_id: corrects[k_id] / float(counts[k_id]) for k_id in corrects}
+
+
+def cal_accuracy4data(D):
+    # 计算每条序列的正确率
+    for item_data in D:
+        num_right = 0
+        num_wrong = 0
+        for i in range(item_data["seq_len"]):
+            num_right += item_data["correct_seq"][i]
+            num_wrong += (1 - item_data["correct_seq"][i])
+        accuracy = num_right / (num_right + num_wrong)
+        item_data["acc"] = accuracy
+
+
+def get_high_distinction(H, L, dis_threshold):
+    intersection_H_L = set(H.keys()).intersection(set(L.keys()))
+    res = []
+    for k_id in intersection_H_L:
+        if H[k_id] - L[k_id] >= dis_threshold:
+            res.append(k_id)
+    return res
+
+
+def get_high_low_accuracy_seqs(data_added_acc, min_seq_len):
+    acc_list = list(map(lambda x: x["acc"], data_added_acc))
+    acc_list = sorted(acc_list)
+    count_statics = len(acc_list)
+    high_acc = acc_list[int(count_statics * (1 - 0.27))]
+    low_acc = acc_list[int(count_statics * 0.27)]
+    H_acc = list(filter(lambda item: item["seq_len"] >= min_seq_len and item["acc"] >= high_acc, data_added_acc))
+    L_acc = list(filter(lambda item: item["seq_len"] >= min_seq_len and item["acc"] <= low_acc, data_added_acc))
+    return H_acc, L_acc
+
+
 def get_high_dis_qc(data_uniformed, params, objects):
     """
     获取高区分的的知识点和习题
@@ -83,58 +137,8 @@ def get_high_dis_qc(data_uniformed, params, objects):
     data_type = params["data_type"]
     question2concept = objects["question2concept"]
     concept2question = objects["concept2question"]
-
-    def cal_diff(D, k, min_count2drop):
-        # 计算正确率，习题或者知识点
-        corrects = defaultdict(int)
-        counts = defaultdict(int)
-
-        for item_data in D:
-            for i in range(item_data["seq_len"]):
-                k_id = item_data[k][i]
-                correct = item_data["correct_seq"][i]
-                corrects[k_id] += correct
-                counts[k_id] += 1
-
-        # 丢弃练习次数少于min_count次的习题或者知识点
-        all_ids = list(counts.keys())
-        for k_id in all_ids:
-            if counts[k_id] < min_count2drop:
-                del counts[k_id]
-                del corrects[k_id]
-
-        return {k_id: corrects[k_id] / float(counts[k_id]) for k_id in corrects}
-
-    def cal_accuracy4data(D):
-        # 计算每条序列的正确率
-        for item_data in D:
-            num_right = 0
-            num_wrong = 0
-            for i in range(item_data["seq_len"]):
-                num_right += item_data["correct_seq"][i]
-                num_wrong += (1 - item_data["correct_seq"][i])
-            accuracy = num_right / (num_right + num_wrong)
-            item_data["acc"] = accuracy
-
-    def get_high_distinction(H, L, dis_threshold):
-        intersection_H_L = set(H.keys()).intersection(set(L.keys()))
-        res = []
-        for k_id in intersection_H_L:
-            if H[k_id] - L[k_id] >= dis_threshold:
-                res.append(k_id)
-        return res
-
-    def get_high_low_accuracy_seqs(data_added_acc, min_seq_len):
-        acc_list = list(map(lambda x: x["acc"], data_added_acc))
-        acc_list = sorted(acc_list)
-        count_statics = len(acc_list)
-        high_acc = acc_list[int(count_statics * (1 - 0.27))]
-        low_acc = acc_list[int(count_statics * 0.27)]
-        H_acc = list(filter(lambda item: item["seq_len"] >= min_seq_len and item["acc"] >= high_acc, data_added_acc))
-        L_acc = list(filter(lambda item: item["seq_len"] >= min_seq_len and item["acc"] <= low_acc, data_added_acc))
-        return H_acc, L_acc
-
     dataset_concept = deepcopy(data_uniformed)
+
     # 统计知识点正确率
     if data_type == "only_question":
         for item_data in dataset_concept:

@@ -6,7 +6,7 @@ from lib.template.objects_template import OBJECTS
 from lib.util.basic import *
 
 
-def dkt_general_config(local_params, global_params):
+def dkt_general_config(local_params, global_params, global_objects):
     global_params["models_config"]["kt_model"] = deepcopy(DKT_MODEL_PARAMS)
     global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "DKT"
     data_type = global_params["datasets_config"]["data_type"]
@@ -61,6 +61,13 @@ def dkt_general_config(local_params, global_params):
         predict_layer_config["direct"]["dim_predict_in"] = dim_latent + dim_emb
         predict_layer_config["direct"]["dim_predict_out"] = 1
 
+    global_objects["logger"].info(
+        "model params\n"
+        f"    use concept: {use_concept}, num of concept: {num_concept}, num of question: {num_question}, \n"
+        f"    dim of emb: {dim_emb}, dim of latent: {dim_latent}, rnn type: {rnn_type}, num of rnn layer: {num_rnn_layer}\n"
+        f"    dropout: {dropout}, num of predict layer: {num_predict_layer}, dim of middle predict layer: {dim_predict_mid}, type of activate function: {activate_type}"
+    )
+
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]
@@ -74,7 +81,7 @@ def dkt_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
-    dkt_general_config(local_params, global_params)
+    dkt_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         save_params(global_params, global_objects)
 

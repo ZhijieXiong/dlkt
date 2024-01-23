@@ -10,6 +10,13 @@ def get_info_function(df, col_name):
 
 
 def process4DIMKT(data_uniformed, num_q_level=100, num_c_level=100):
+    """
+    准备DIMKT需要的数据，即知识点和习题的难度id
+    :param data_uniformed:
+    :param num_q_level:
+    :param num_c_level:
+    :return:
+    """
     data_uniformed = deepcopy(data_uniformed)
     id_keys, seq_keys = get_keys_from_uniform(data_uniformed)
     has_concept = "concept_seq" in seq_keys

@@ -91,7 +91,6 @@ def parse_long_tail(data_uniformed, params):
 
     :param data_uniformed:
     :param params:
-    :param objects:
     :return:
     """
     data_type = params["data_type"]
@@ -240,4 +239,3 @@ def parse4dataset_enhanced(data_uniformed, question2concept, concept2question, e
                 c_pair.append(0)
 
     return concept_dict, question_dict
-

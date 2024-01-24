@@ -39,7 +39,9 @@ def general_config(local_params, global_params, global_objects):
     global_params["save_model"] = local_params["save_model"]
     global_params["train_strategy"]["type"] = local_params["train_strategy"]
     global_params["datasets_config"]["data_type"] = local_params["data_type"]
-    global_params["device"] = "cuda" if torch.cuda.is_available() else "cpu"
+    global_params["device"] = "cuda" if (
+            torch.cuda.is_available() and not local_params.get("debug_mode", False)
+    ) else "cpu"
     global_params["seed"] = local_params["seed"]
 
     # 训练策略配置

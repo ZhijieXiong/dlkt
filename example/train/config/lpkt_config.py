@@ -1,5 +1,7 @@
 from ._config import *
 
+from lib.template.objects_template import OBJECTS
+from lib.template.params_template_v2 import PARAMS
 from lib.util.basic import *
 
 
@@ -29,6 +31,12 @@ def lpkt_general_config(local_params, global_params, global_objects):
     encoder_layer_config["dim_correct"] = dim_correct
     encoder_layer_config["dropout"] = dropout
 
+    # q matrix
+    global_objects["LPKT"] = {}
+    global_objects["LPKT"]["q_matrix"] = torch.from_numpy(
+        global_objects["data"]["Q_table"]
+    ).float().to(global_params["device"]) + 0.03
+
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]
@@ -39,8 +47,8 @@ def lpkt_general_config(local_params, global_params, global_objects):
 
 
 def lpkt_config(local_params):
-    global_params = {}
-    global_objects = {}
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
     lpkt_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:

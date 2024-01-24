@@ -24,6 +24,15 @@ def get_performance(item_list, item_pg_all):
         predict_score += p_list
         ground_truth += g_list
 
+    if len(ground_truth) == 0:
+        return {
+            "num_sample": 0,
+            "AUC": 0.,
+            "ACC": 0.,
+            "RMSE": 0.,
+            "MAE": 0.
+        }
+
     AUC = roc_auc_score(y_true=ground_truth, y_score=predict_score)
     predict_label = [1 if p >= 0.5 else 0 for p in predict_score]
     ACC = accuracy_score(y_true=ground_truth, y_pred=predict_label)
@@ -172,7 +181,7 @@ class Evaluator:
             all_question_dis[q_id].append((p, g))
 
         if model.objects["data"].get("question_no_head_qs", False):
-            # performance of zero shot questions of no head questions sharing one concept
+            # performance of zero shot questions of not-head questions sharing one concept
             performance4zero_q = get_performance(model.objects["data"].get("question_no_head_qs"), all_question_dis)
             self.objects["logger"].info(
                 f"\nzero shot questions of no head questions sharing one concept\n"

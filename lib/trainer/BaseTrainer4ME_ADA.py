@@ -48,7 +48,7 @@ class BaseTrainer4ME_ADA(KnowledgeTracingTrainer):
             torch.backends.cudnn.enabled = True
             self.num_epoch_adv_gen += 1
             t_end = get_now_time()
-            print(f"max entropy adversarial data augment: from {t_start} to {t_end}, {self.adv_loss.get_str()}")
+            self.objects["logger"].info(f"max entropy adversarial data augment: from {t_start} to {t_end}, {self.adv_loss.get_str()}")
             self.adv_loss.clear_loss()
             self.data_generated_remove_grad()
 

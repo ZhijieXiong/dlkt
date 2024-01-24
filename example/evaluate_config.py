@@ -58,12 +58,6 @@ def evaluate_general_config(local_params):
     else:
         global_objects["data"]["Q_table"] = file_manager.get_q_table(dataset_name, data_type)
 
-    # num_max_concept
-    # preprocessed_dir = file_manager.get_preprocessed_dir(local_params["dataset_name"])
-    # statics_preprocessed_multi_concept = load_json(os.path.join(preprocessed_dir,
-    #                                                             "statics_preprocessed_multi_concept.json"))
-    # global_params["num_max_concept"] = statics_preprocessed_multi_concept["num_max_concept"]
-
     # 是否将head的知识迁移到zero shot的知识
     global_params["transfer_head2zero"] = transfer_head2zero
     global_params["head2tail_transfer_method"] = head2tail_transfer_method

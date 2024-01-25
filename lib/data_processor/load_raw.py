@@ -4,9 +4,9 @@ import pandas as pd
 
 def load_csv(data_path, useful_cols=None, rename_dict=None):
     try:
-        df = pd.read_csv(data_path, usecols=useful_cols, encoding="utf-8", low_memory=False)
+        df = pd.read_csv(data_path, usecols=useful_cols, encoding="utf-8", low_memory=False, index_col=False)
     except UnicodeDecodeError:
-        df = pd.read_csv(data_path, usecols=useful_cols, encoding="ISO-8859-1", low_memory=False)
+        df = pd.read_csv(data_path, usecols=useful_cols, encoding="ISO-8859-1", low_memory=False, index_col=False)
     if rename_dict is not None:
         df.rename(columns=rename_dict, inplace=True)
     return df
@@ -28,18 +28,18 @@ def load_SLP(data_dir, dataset_name):
     term_path = os.path.join(data_dir, f"term-{subject}.csv")
     student_path = os.path.join(data_dir, "student.csv")
     family_path = os.path.join(data_dir, "family.csv")
-    school_path = os.path.join(data_dir, "school.csv")
+    # school_path = os.path.join(data_dir, "school.csv")
 
     useful_cols = ["student_id", "question_id", "concept", "score", "full_score", "time_access"]
     family_cols = ["student_id", "live_on_campus"]
     student_cols = ["student_id", "gender", "school_id"]
-    school_cols = ["school_id", "school_type"]
+    # school_cols = ["school_id", "school_type"]
 
     unit = load_csv(unit_path, useful_cols)
     term = load_csv(term_path, useful_cols)
     student = load_csv(student_path, student_cols)
     family = load_csv(family_path, family_cols)
-    school = load_csv(school_path, school_cols)
+    # school = load_csv(school_path, school_cols)
 
     # 原文件已经是排过序的，加上order方便后面利用
     unit["order"] = range(len(unit))
@@ -51,11 +51,11 @@ def load_SLP(data_dir, dataset_name):
 
     df = df.merge(family, how="left", on=["student_id"])
     df = df.merge(student, how="left", on=["student_id"])
-    df = df.merge(school, how="left", on=["school_id"])
+    # df = df.merge(school, how="left", on=["school_id"])
 
     # live_on_campus和school_type有nan
     return df[["student_id", "question_id", "concept", "score", "full_score", "time_access", "order",
-               "live_on_campus", "school_type", "gender"]]
+               "live_on_campus", "school_id", "gender"]]
 
 
 def load_ednet_kt1(data_dir, num_file=1):

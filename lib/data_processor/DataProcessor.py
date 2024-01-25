@@ -66,6 +66,8 @@ class DataProcessor:
             self.load_process_uniform_xes3g5m()
         elif dataset_name in ["algebra2005", "algebra2006", "algebra2008", "bridge2algebra2006", "bridge2algebra2008"]:
             self.load_process_kdd_cup2010()
+        elif dataset_name in ["SLP-bio", "SLP-chi", "SLP-eng", "SLP-geo", "SLP-his", "SLP-mat", "SLP-phy"]:
+            self.load_process_SLP()
         else:
             raise NotImplementedError()
 
@@ -748,6 +750,100 @@ class DataProcessor:
 
         self.process_raw_is_single_concept(df, df_multi_concept, c_id_is_num=False)
 
+    def load_process_SLP(self):
+        data_dir = self.params["preprocess_config"]["data_path"]
+        dataset_name = self.params["preprocess_config"]["dataset_name"]
+        self.data_raw = load_raw.load_SLP(data_dir, dataset_name)
+        self.data_raw.rename(columns=CONSTANT.datasets_renamed()["SLP"], inplace=True)
+        self.statics_raw = self.get_basic_info(self.data_raw)
+
+        # 去除question_id和concept_id为nan以及"n.a."的数据
+        df = deepcopy(self.data_raw)
+        df.dropna(subset=["question_id", "concept_id"], inplace=True)
+        df = df[(df["question_id"] != "n.a.") & (df["concept_id"] != "n.a.")]
+
+        # 将user_id、question_id、concept_id、school_type、live_on_campus、timestamp映射为数字
+        user_ids = list(pd.unique(df["user_id"]))
+        df["user_id"] = df["user_id"].map({u_id: i for i, u_id in enumerate(user_ids)})
+
+        question_ids = list(pd.unique(df["question_id"]))
+        concept_ids = list(pd.unique(df["concept_id"]))
+        question_id_map = {q_id: i for i, q_id in enumerate(question_ids)}
+        concept_id_map = {c_id: i for i, c_id in enumerate(concept_ids)}
+        df["question_id"] = df["question_id"].map(question_id_map)
+        df["concept_id"] = df["concept_id"].map(concept_id_map)
+        question_info = pd.DataFrame({
+            "question_id": question_id_map.keys(),
+            "question_mapped_id": question_id_map.values()
+        })
+        concept_info = pd.DataFrame({
+            "concept_id": concept_id_map.keys(),
+            "concept_mapped_id": concept_id_map.values()
+        })
+        self.question_id_map["single_concept"] = question_info
+        self.concept_id_map["single_concept"] = concept_info
+
+        def map_campus(item):
+            item_str = str(item)
+            if item_str == "Yes":
+                return 1
+            if item_str == "No":
+                return 2
+            return 0
+
+        df["live_on_campus"] = df["live_on_campus"].map(map_campus)
+
+        def map_gender(item):
+            item_str = str(item)
+            if item_str == "Male":
+                return 2
+            if item_str == "Female":
+                return 1
+            return 0
+
+        df["gender"] = df["gender"].map(map_gender)
+
+        def time_str2timestamp(time_str):
+            if "-" in time_str:
+                return int(time.mktime(time.strptime(time_str, "%Y-%m-%d %H:%M:%S")))
+            else:
+                return int(time.mktime(time.strptime(time_str, "%Y/%m/%d %H:%M")))
+
+        df["timestamp"] = df["timestamp"].map(time_str2timestamp)
+        df["order"] = df["order"].map(int)
+
+        # 将score和full_score转换为correct
+        df["score"] = df["score"].map(float)
+
+        def map_full_score(item):
+            item_str = str(item)
+            if item_str == "n.a.":
+                return 1.0
+            return float(item_str)
+
+        df["full_score"] = df["full_score"].map(map_full_score)
+        df["score_"] = df["score"] / df["full_score"]
+        df["correct"] = df["score_"] > 0.99
+        df["correct"] = df["correct"].map(int)
+        df.rename(columns={"live_on_campus": "campus"}, inplace=True)
+        self.data_preprocessed["single_concept"] = df[
+            ["user_id", "question_id", "concept_id", "correct", "gender", "campus", "school_id", "timestamp", "order"]
+        ]
+        self.statics_preprocessed["single_concept"] = (
+            DataProcessor.get_basic_info(self.data_preprocessed["single_concept"])
+        )
+
+        # Q table
+        df_new = pd.DataFrame({
+            "question_id": map(int, df["question_id"].tolist()),
+            "concept_id": map(int, df["concept_id"].tolist())
+        })
+        Q_table = np.zeros((len(question_ids), len(concept_ids)), dtype=int)
+        for question_id, group_info in df_new[["question_id", "concept_id"]].groupby("question_id"):
+            correspond_c = pd.unique(group_info["concept_id"]).tolist()
+            Q_table[[question_id] * len(correspond_c), correspond_c] = [1] * len(correspond_c)
+        self.Q_table["single_concept"] = Q_table
+
     def uniform_data(self):
         dataset_name = self.params["preprocess_config"]["dataset_name"]
         if dataset_name == "assist2009":
@@ -761,6 +857,8 @@ class DataProcessor:
             pass
         elif dataset_name in ["assist2009-full", "ednet-kt1", "algebra2005", "algebra2006", "algebra2008", "bridge2algebra2006", "bridge2algebra2008"]:
             self.uniform_raw_is_single_concept()
+        elif dataset_name in ["SLP-bio", "SLP-chi", "SLP-eng", "SLP-geo", "SLP-his", "SLP-mat", "SLP-phy"]:
+            self.uniform_SLP()
         else:
             raise NotImplementedError()
 
@@ -950,6 +1048,41 @@ class DataProcessor:
 
         seqs = DataProcessor.single2multi(data_only_question, self.Q_table["multi_concept"])
         self.data_uniformed["multi_concept"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
+
+    def uniform_SLP(self):
+        df = deepcopy(self.data_preprocessed["single_concept"])
+        # school_id按照学生数量重映射
+        df["school_id"] = df["school_id"].fillna(-1)
+        school_id_map, school_info = preprocess_raw.map_user_info(df, "school_id")
+        dataset_name = self.params["preprocess_config"]["dataset_name"]
+        data_processed_dir = self.objects["file_manager"].get_preprocessed_dir(dataset_name)
+        school_id_map_path = os.path.join(data_processed_dir, "school_id_map.csv")
+        school_info_path = os.path.join(data_processed_dir, "school_info.json")
+        school_id_map.to_csv(school_id_map_path, index=False)
+        data_util.write_json(school_info, school_info_path)
+
+        info_name_table = {
+            "question_seq": "question_id",
+            "concept_seq": "concept_id",
+            "correct_seq": "correct",
+        }
+
+        # single_concept
+        id_keys = list(set(df.columns) - set(info_name_table.values()))
+        dataset_seq_keys = CONSTANT.datasets_seq_keys()["SLP"]
+        seqs = []
+        for user_id in pd.unique(df["user_id"]):
+            user_data = df[df["user_id"] == user_id]
+            user_data = user_data.sort_values(by=["timestamp", "order"])
+            object_data = {info_name: [] for info_name in dataset_seq_keys}
+            for k in id_keys:
+                object_data[k] = user_data.iloc[0][k]
+            for i, (_, row_data) in enumerate(user_data.iterrows()):
+                for info_name in dataset_seq_keys:
+                    object_data[info_name].append(row_data[info_name_table[info_name]])
+            object_data["seq_len"] = len(object_data["correct_seq"])
+            seqs.append(object_data)
+        self.data_uniformed["single_concept"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
 
     def get_all_id_maps(self):
         result = {}

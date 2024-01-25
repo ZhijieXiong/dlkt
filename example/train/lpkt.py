@@ -18,9 +18,9 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_name", type=str, default="assist2017")
     parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2017_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2017_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2017_test_fold_0.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2017_train_fold_1.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2017_valid_fold_1.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2017_test_fold_1.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
     parser.add_argument("--weight_decay", type=float, default=0.000001)
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     parser.add_argument("--dim_correct", type=int, default=50)
     parser.add_argument("--dropout", type=float, default=0.2)
     # 其它
-    parser.add_argument("--save_model", type=str2bool, default=False)
+    parser.add_argument("--save_model", type=str2bool, default=True)
     parser.add_argument("--debug_mode", type=str2bool, default=False, help="if True, device=cpu")
     parser.add_argument("--seed", type=int, default=0)
 

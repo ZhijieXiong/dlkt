@@ -223,6 +223,10 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
     use_online_sim = local_params["use_online_sim"]
     use_warm_up4online_sim = local_params["use_warm_up4online_sim"]
     epoch_warm_up4online_sim = local_params["epoch_warm_up4online_sim"]
+    # model aug
+    data_aug_type4cl = local_params["data_aug_type4cl"]
+    use_emb_dropout4cl = local_params["use_emb_dropout4cl"]
+    emb_dropout4cl = local_params["emb_dropout4cl"]
 
     global_params["other"]["cluster_cl"] = {}
     cluster_cl_config = global_params["other"]["cluster_cl"]
@@ -235,6 +239,9 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
     cluster_cl_config["num_cluster"] = num_cluster
     cluster_cl_config["latent_type4cl"] = latent_type4cl
     cluster_cl_config["random_select_aug_len"] = random_select_aug_len
+    cluster_cl_config["data_aug_type4cl"] = data_aug_type4cl
+    cluster_cl_config["use_emb_dropout4cl"] = use_emb_dropout4cl
+    cluster_cl_config["emb_dropout4cl"] = emb_dropout4cl
 
     # max entropy adv aug参数
     use_adv_aug = local_params["use_adv_aug"]

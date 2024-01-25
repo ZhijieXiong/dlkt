@@ -262,10 +262,10 @@ class BaseModel4CL:
         temp = cluster_cl_params["temp"]
         latent_type4cl = cluster_cl_params["latent_type4cl"]
         data_aug_type4cl = cluster_cl_params["data_aug_type4cl"]
-        use_random_seq_len = cluster_cl_params["use_random_seq_len"]
+        random_select_aug_len = cluster_cl_params["random_select_aug_len"]
         use_adv_aug = cluster_cl_params["use_adv_aug"]
 
-        if use_random_seq_len:
+        if random_select_aug_len:
             batch_ori = {
                 "question_seq": batch["question_seq_random_len"],
                 "correct_seq": batch["correct_seq_random_len"],

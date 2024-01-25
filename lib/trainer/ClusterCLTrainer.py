@@ -75,7 +75,7 @@ class ClusterCLTrainer(BaseTrainer4ME_ADA):
         current_epoch = self.train_record.get_current_epoch()
         after_warm_up = current_epoch >= epoch_warm_up4cl
         model = self.objects["models"]["kt_model"]
-        cl_type = self.params["other"]["cluster_cl"]["cl_type"]
+        latent_type4cl = self.params["other"]["cluster_cl"]["latent_type4cl"]
         train_loader = self.objects["data_loaders"]["train_loader"]
         random_select_aug_len = self.params["other"]["cluster_cl"]["random_select_aug_len"]
 
@@ -90,7 +90,7 @@ class ClusterCLTrainer(BaseTrainer4ME_ADA):
                         batch_size = mask_bool_seq.shape[0]
                         seq_len = mask_bool_seq.shape[1]
                         latent = model.get_latent(batch).detach()
-                        if cl_type == "mean_pool":
+                        if latent_type4cl == "mean_pool":
                             with torch.no_grad():
                                 mask4mean_pool = torch.ones_like(mask_bool_seq).to(self.params["device"])
                                 mask4mean_pool = torch.cumsum(mask4mean_pool, dim=-1)
@@ -99,9 +99,9 @@ class ClusterCLTrainer(BaseTrainer4ME_ADA):
                         mask4select[5::5] = 1
                         mask4select = mask4select.bool().repeat(batch_size, 1) & mask_bool_seq
                         latent = latent[:, 3:][mask4select[:, 3:]]
-                    elif cl_type == "last_time":
+                    elif latent_type4cl == "last_time":
                         latent = model.get_latent_last(batch).detach().cpu()
-                    elif cl_type == "mean_pool":
+                    elif latent_type4cl == "mean_pool":
                         latent = model.get_latent_mean(batch).detach().cpu()
                     else:
                         raise NotImplementedError()

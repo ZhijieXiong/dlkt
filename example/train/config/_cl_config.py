@@ -88,7 +88,6 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     use_emb_dropout4cl = local_params["use_emb_dropout4cl"]
     emb_dropout4cl = local_params["emb_dropout4cl"]
     # neg sample config
-    use_neg = local_params["use_neg"]
     use_neg_filter = local_params["use_neg_filter"]
     neg_sim_threshold = local_params["neg_sim_threshold"]
     # output space CL
@@ -108,7 +107,6 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     instance_cl_config["use_emb_dropout4cl"] = use_emb_dropout4cl
     instance_cl_config["emb_dropout4cl"] = emb_dropout4cl
     instance_cl_config["data_aug_type4cl"] = data_aug_type4cl
-    instance_cl_config["use_neg"] = use_neg
     instance_cl_config["use_neg_filter"] = use_neg_filter
     instance_cl_config["neg_sim_threshold"] = neg_sim_threshold
     instance_cl_config["cl_space"] = cl_space
@@ -183,7 +181,7 @@ def instance_cl_general_config(local_params, global_params, global_objects):
         f"instance cl\n"
         f"    cl space: {cl_space}, temp: {temp}, weight of cl loss: {weight_cl_loss}\n"
         f"    data aug type: {data_aug_type4cl}, latent type: {latent_type4cl}, use emb dropout: {use_emb_dropout4cl}{f', emb dropout: {emb_dropout4cl}' if use_emb_dropout4cl else ''}\n"
-        f"    use neg sample: {use_neg}, use neg sample filter: {use_neg_filter}{f', threshold of neg sample filter (similarity): {neg_sim_threshold}' if use_neg_filter else ''}\n"
+        f"    use neg sample filter: {use_neg_filter}{f', threshold of neg sample filter (similarity): {neg_sim_threshold}' if use_neg_filter else ''}\n"
         f"max_entropy_adv_aug\n"
         f"    use max entropy adv aug: {use_adv_aug}, interval epoch of generation: {epoch_interval_generate}, generate loops: {loop_adv}, num of generation epoch: {epoch_generate}\n"
         f"    adv lr: {adv_learning_rate}, eta: {eta}, gamma: {gamma}"

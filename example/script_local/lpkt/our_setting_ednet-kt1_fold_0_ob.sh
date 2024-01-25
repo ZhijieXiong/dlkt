@@ -6,7 +6,7 @@
   fold=0
 
 
-  weight_decays='0.001 0.0001 0.00001 0.000001'
+  weight_decays='0.00001 0.000001 0'
   dropouts='0.2 0.3 0.4 0.5'
   for weight_decay in ${weight_decays}
   do

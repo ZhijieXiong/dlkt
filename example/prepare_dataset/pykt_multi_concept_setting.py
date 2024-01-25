@@ -12,11 +12,12 @@ from lib.dataset.split_dataset import n_fold_split1
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_name", type=str, default="xes3g5m",
-                        choices=("assist2009", "assist2009-full", "ednet-kt1", "xes3g5m"))
+                        choices=("assist2009", "algebra2005", "bridge2algebra2006", "xes3g5m"))
     args = parser.parse_args()
     params = vars(args)
 
     params["setting_name"] = "pykt_multi_concept_setting"
+    # 对多知识点习题，将其展开为多个记录，测试的时候再聚合回去
     params["data_type"] = "multi_concept"
     params["max_seq_len"] = 200
     params["min_seq_len"] = 3

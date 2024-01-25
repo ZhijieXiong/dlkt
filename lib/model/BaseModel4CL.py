@@ -74,7 +74,6 @@ class BaseModel4CL:
         use_emb_dropout4cl = instance_cl_params["use_emb_dropout4cl"]
         emb_dropout4cl = instance_cl_params["emb_dropout4cl"]
         data_aug_type4cl = instance_cl_params["data_aug_type4cl"]
-        use_neg = instance_cl_params["use_neg"]
         use_neg_filter = instance_cl_params["use_neg_filter"]
         neg_sim_threshold = instance_cl_params["neg_sim_threshold"]
 
@@ -100,12 +99,6 @@ class BaseModel4CL:
             raise NotImplementedError()
 
         temp = self.params["other"]["instance_cl"]["temp"]
-
-        if not use_neg:
-            cos_sim_aug = torch.cosine_similarity(latent_aug0_pooled, latent_aug1_pooled, dim=-1) / temp
-            cl_loss = -cos_sim_aug.mean()
-            return cl_loss
-
         cos_sim_aug = torch.cosine_similarity(latent_aug0_pooled.unsqueeze(1), latent_aug1_pooled.unsqueeze(0),
                                               dim=-1) / temp
 

@@ -73,14 +73,14 @@ if __name__ == "__main__":
     # cl使用的latent
     parser.add_argument("--latent_type4cl", type=str, default="all_time",
                         choices=("last_time", "all_time", "mean_pool"))
-    # model aug参数
-    parser.add_argument("--use_emb_dropout4cl", type=str2bool, default=True)
-    parser.add_argument("--emb_dropout4cl", type=float, default=0.1)
-    # original_data_aug：生成两个原始数据view； model_aug：不生成原始数据aug view，只是对原始样本使用dropout生成两个view； hybrid：混合使用，生成一个原始数据view
+    # original_data_aug：生成两个原始数据view；
+    # model_aug：不生成原始数据aug view，只是对原始样本使用dropout生成两个view；
+    # hybrid：混合使用，生成一个原始数据view
     parser.add_argument("--data_aug_type4cl", type=str, default="original_data_aug",
                         choices=("original_data_aug", "model_aug", "hybrid"))
-    # 是否使用负样本以及是否对负样本过滤
-    parser.add_argument("--use_neg", type=str2bool, default=True)
+    parser.add_argument("--use_emb_dropout4cl", type=str2bool, default=True)
+    parser.add_argument("--emb_dropout4cl", type=float, default=0.1)
+    # 是否对负样本过滤
     parser.add_argument("--use_neg_filter", type=str2bool, default=False)
     parser.add_argument("--neg_sim_threshold", type=float, default=0.8, help="cos sim, between (0, 1)")
     # random aug和informative aug参数

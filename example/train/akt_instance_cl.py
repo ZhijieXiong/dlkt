@@ -78,14 +78,14 @@ if __name__ == "__main__":
     # cl使用的latent
     parser.add_argument("--latent_type4cl", type=str, default="all_time",
                         choices=("last_time", "all_time", "mean_pool"))
-    # model aug参数
-    parser.add_argument("--use_emb_dropout4cl", type=str2bool, default=True)
-    parser.add_argument("--emb_dropout4cl", type=float, default=0.1)
-    # original_data_aug：生成两个原始数据view； model_aug：不生成原始数据aug view，只是对原始样本使用dropout生成两个view； hybrid：混合使用，生成一个原始数据view
+    # original_data_aug：生成两个原始数据view；
+    # model_aug：不生成原始数据aug view，只是对原始样本使用dropout生成两个view；
+    # hybrid：混合使用，生成一个原始数据view
     parser.add_argument("--data_aug_type4cl", type=str, default="original_data_aug",
                         choices=("original_data_aug", "model_aug", "hybrid"))
-    # 是否使用负样本以及是否对负样本过滤
-    parser.add_argument("--use_neg", type=str2bool, default=True)
+    parser.add_argument("--use_emb_dropout4cl", type=str2bool, default=True)
+    parser.add_argument("--emb_dropout4cl", type=float, default=0.1)
+    # 是否对负样本过滤
     parser.add_argument("--use_neg_filter", type=str2bool, default=False)
     parser.add_argument("--neg_sim_threshold", type=float, default=0.8, help="cos sim, between (0, 1)")
     # random aug和informative aug参数
@@ -152,23 +152,3 @@ if __name__ == "__main__":
     global_objects["models"]["kt_model"] = model
     trainer = InstanceCLTrainer(global_params, global_objects)
     trainer.train()
-
-    # temp: 0.01, weight: 1
-    # AUC: 0.84979  , ACC: 0.8113   , RMSE: 0.36151  , MAE: 0.25312
-    # AUC: 0.76935  , ACC: 0.71266  , RMSE: 0.44024  , MAE: 0.34171
-    # AUC: 0.7748   , ACC: 0.71433  , RMSE: 0.43383  , MAE: 0.34987
-
-    # temp: 0.01, weight: 0.1
-    # AUC: 0.85513  , ACC: 0.81417  , RMSE: 0.35929  , MAE: 0.24236
-    # AUC: 0.7679   , ACC: 0.71221  , RMSE: 0.44401  , MAE: 0.33493
-    # AUC: 0.77576  , ACC: 0.71696  , RMSE: 0.43316  , MAE: 0.34646
-
-    # temp: 0.01, weight: 0.5
-    # AUC: 0.85255  , ACC: 0.81372  , RMSE: 0.36023  , MAE: 0.24305
-    # AUC: 0.76886  , ACC: 0.71273  , RMSE: 0.44304  , MAE: 0.33496
-    # AUC: 0.77644  , ACC: 0.71594  , RMSE: 0.434    , MAE: 0.34602
-
-    # temp: 0.01, weight: 0.3
-    # AUC: 0.85367  , ACC: 0.81352  , RMSE: 0.36012  , MAE: 0.24672
-    # AUC: 0.76844  , ACC: 0.71194  , RMSE: 0.44306  , MAE: 0.33746
-    # AUC: 0.77617  , ACC: 0.71654  , RMSE: 0.43517  , MAE: 0.34273

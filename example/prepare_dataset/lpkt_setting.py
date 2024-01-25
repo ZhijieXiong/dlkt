@@ -11,7 +11,7 @@ from lib.dataset.split_dataset import n_fold_split2
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    # ednet-kt1是选择第一个知识点当作习题知识点，这个并没有实现
+    # ednet-kt1是选择第一个知识点当作习题知识点，这个并没有实现，所以做不了这个数据集的复现
     parser.add_argument("--dataset_name", type=str, default="assist2012", choices=("assist2012", "assist2017"))
     args = parser.parse_args()
     params = vars(args)

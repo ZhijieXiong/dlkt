@@ -13,7 +13,6 @@
 |     assist2017     |      T      |     T      |    T    |     T     |    T     |      |
 |     ednet-kt1      |      T      |     T      |    T    |     T     |    T     |      |
 |   edi2020-task1    |      T      |     T      |    T    |     T     |          |  T   |
-|   edi2020-task2    |      T      |     T      |    T    |     T     |          |  T   |
 |   edi2020-task34   |      T      |     T      |    T    |     T     |          |  T   |
 |      edi2022       |             |            |         |           |          |      |
 |    algebra2005     |      T      |     T      |    T    |     T     |          |      |
@@ -41,7 +40,6 @@
 |   assist2012   |     T     |            |        |               |        |
 |   assist2017   |     T     |            |        |               |        |
 | edi2020-task1  |           |            |   T    |       T       |        |
-| edi2020-task2  |           |            |   T    |       T       |        |
 | edi2020-task34 |           |            |   T    |       T       |        |
 |   slepemapy    |           |     T      |        |               |        |
 |    SLP-bio     |     T     |            |   T    |               |   T    |
@@ -63,8 +61,7 @@
 |     assist2015     |              |           |          |           |
 |     assist2017     |    942816    |   1709    |   102    |   3162    |
 |     ednet-kt1      |      --      |    --     |    --    |    --     |
-|   edi2020-task1    |              |           |          |           |
-|   edi2020-task2    |              |           |          |           |
+|   edi2020-task1    |   19834813   |  118971   |   282    |   27613   |
 |   edi2020-task34   |      --      |    --     |    --    |    --     |
 |      edi2022       |              |           |          |           |
 |    algebra2005     |    809694    |    574    |   436    |  210710   |
@@ -76,13 +73,12 @@
 |      xes3g5m       |      --      |    --     |    --    |    --     |
 |    statics2011     |              |           |          |           |
 |     slepemapy      |              |           |          |           |
-|      SLP-bio       |              |           |          |           |
-|      SLP-chi       |              |           |          |           |
-|      SLP-eng       |              |           |          |           |
+|      SLP-bio       |    291943    |   1941    |    24    |   1061    |
+|      SLP-chi       |    80938     |    624    |    32    |    658    |
+|      SLP-eng       |    86531     |    366    |    28    |   1089    |
 |      SLP-geo       |              |           |          |           |
 |      SLP-his       |              |           |          |           |
-|      SLP-mat       |              |           |          |           |
-|      SLP-mat       |              |           |          |           |
+|      SLP-mat       |    248674    |   1499    |    45    |   1133    |
 
 ### after preprocessing (for single concept datasets or only question datasets)
 
@@ -91,18 +87,16 @@
 |   assist2012   |   2711813    |   29018   |   265    |   53091   |
 |   assist2015   |              |           |          |           |
 |   assist2017   |    864713    |   1709    |   101    |   2803    |
-| edi2020-task1  |              |           |          |           |
-| edi2020-task2  |              |           |          |           |
+| edi2020-task1  |   19834813   |  118971   |   282    |   27613   |
 | edi2020-task34 |   1382727    |   4918    |    53    |    948    |
 |  statics2011   |              |           |          |           |
 |   slepemapy    |              |           |          |           |
-|    SLP-bio     |              |           |          |           |
-|    SLP-chi     |              |           |          |           |
-|    SLP-eng     |              |           |          |           |
+|    SLP-bio     |    291800    |   1941    |    23    |   1058    |
+|    SLP-chi     |    80888     |    623    |    31    |    637    |
+|    SLP-eng     |    86530     |    366    |    28    |   1089    |
 |    SLP-geo     |              |           |          |           |
 |    SLP-his     |              |           |          |           |
-|    SLP-mat     |              |           |          |           |
-|    SLP-mat     |              |           |          |           |
+|    SLP-mat     |    242722    |   1499    |    44    |   1127    |
 
 ### after preprocessing (for multi concept datasets)
 

@@ -39,4 +39,4 @@
     done
   done
 
-} >> /ghome/xiongzj/code/dlkt/example/result_cluster/qdkt_cluster_cl_random_aug_random_seq_len_our_setting_ednet-kt1_fold_0_ob.txt
+} >> /ghome/xiongzj/code/dlkt/example/result_cluster/qdkt_cluster_cl_info_aug_random_seq_len_our_setting_ednet-kt1_fold_0_ob.txt

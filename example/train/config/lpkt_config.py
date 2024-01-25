@@ -37,6 +37,12 @@ def lpkt_general_config(local_params, global_params, global_objects):
         global_objects["data"]["Q_table"]
     ).float().to(global_params["device"]) + 0.03
 
+    global_objects["logger"].info(
+        "model params\n"
+        f"    num of concept: {num_concept}, num of question: {num_question}, dim of e: {dim_e}, dim of k: {dim_k}, "
+        f"dim of correct emb: {dim_correct}, dropout: {dropout}"
+    )
+
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]

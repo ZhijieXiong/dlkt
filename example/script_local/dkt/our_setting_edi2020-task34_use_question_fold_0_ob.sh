@@ -27,7 +27,7 @@
             --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type MultiStepLR --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
             --train_batch_size 64 --evaluate_batch_size 128 \
             --enable_clip_grad False --grad_clipped 10.0 \
-            --use_concept True --num_concept 53 --num_question 948 \
+            --use_concept False --num_concept 53 --num_question 948 \
             --dim_emb "${dim_emb}" --dim_latent "${dim_emb}" --rnn_type "gru" --num_rnn_layer 1 --dropout "${dropout}" --num_predict_layer "${num_predict_layer}" --dim_predict_mid 256 --activate_type "sigmoid" \
             --save_model False --seed 0
         done

@@ -38,6 +38,9 @@ if __name__ == "__main__":
     parse_data_type(params["dataset_name"], params["data_type"])
     data_uniformed_path = objects["file_manager"].get_preprocessed_path(params["dataset_name"], params["data_type"])
     data_uniformed = read_preprocessed_file(data_uniformed_path)
+    if params["dataset_name"] == "edi2020-task1":
+        # 只使用该比赛的训练集
+        data_uniformed = list(filter(lambda x: x["dataset_type"] == 0, data_uniformed))
     data_uniformed = drop_qc(data_uniformed, num2drop=30)
     data_uniformed = process4DIMKT(data_uniformed, num_q_level=100, num_c_level=100)
     dataset_truncated = dataset_truncate2multi_seq(data_uniformed,

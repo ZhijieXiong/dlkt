@@ -56,6 +56,8 @@ class DataProcessor:
             self.load_process_assist2012()
         elif dataset_name == "assist2017":
             self.load_process_assist2017()
+        elif dataset_name == "edi2020-task1":
+            self.load_process_edi2020_task1()
         elif dataset_name == "edi2020-task34":
             self.load_process_edi2020_task34()
         elif dataset_name == "ednet-kt1":
@@ -228,6 +230,157 @@ class DataProcessor:
         self.question_id_map["single_concept"] = result_preprocessed["single_concept"]["question_id_map"]
         self.question_id_map["single_concept"]["question_id"] = self.question_id_map["single_concept"]["question_id"].map(qc_pairs_reverse)
         self.concept_id_map["single_concept"] = result_preprocessed["single_concept"]["concept_id_map"]
+
+    def load_process_edi2020_task1(self):
+        data_dir = self.params["preprocess_config"]["data_path"]
+        data_train_path = os.path.join(data_dir, "train_data", "train_task_1_2.csv")
+        task1_test_public_path = os.path.join(data_dir, "test_data", "test_public_answers_task_1.csv")
+        task1_test_private_path = os.path.join(data_dir, "test_data", "test_private_answers_task_1.csv")
+        metadata_answer_path = os.path.join(data_dir, "metadata", "answer_metadata_task_1_2.csv")
+        metadata_question_path = os.path.join(data_dir, "metadata", "question_metadata_task_1_2.csv")
+        metadata_student_path = os.path.join(data_dir, "metadata", "student_metadata_task_1_2.csv")
+
+        metadata_answer_cols = ["AnswerId", "DateAnswered"]
+        df_cols = ["QuestionId", "AnswerId", "UserId", "IsCorrect"]
+        df_rename_map = {
+            "QuestionId": "question_id",
+            "AnswerId": "answer_id",
+            "UserId": "user_id",
+            "IsCorrect": "correct"
+        }
+        meta_question_rename_map = {
+            "QuestionId": "question_id",
+            "SubjectId": "concept_ids"
+        }
+        meta_student_raname_map = {
+            "UserId": "user_id",
+            "Gender": "gender",
+            "DateOfBirth": "birth",
+            "PremiumPupil": "premium_pupil"
+        }
+        meta_answer_rename_map = {
+            "AnswerId": "answer_id",
+            "DateAnswered": "timestamp"
+        }
+
+        # df_train、df_test_public、df_test_private均无NaN
+        # metadata_student在DateOfBirth和PremiumPupil列有NaN
+        # metadata_question无NaN
+        # metadata_answer在AnswerId、Confidence和SchemeOfWorkId列有NaN
+        df_train = load_raw.load_csv(data_train_path, df_cols, df_rename_map)
+        df_task1_test_public = load_raw.load_csv(task1_test_public_path, df_cols, df_rename_map)
+        df_task1_test_private = load_raw.load_csv(task1_test_private_path, df_cols, df_rename_map)
+        metadata_answer = load_raw.load_csv(metadata_answer_path, metadata_answer_cols, meta_answer_rename_map)
+        metadata_question = load_raw.load_csv(metadata_question_path, rename_dict=meta_question_rename_map)
+        metadata_student = load_raw.load_csv(metadata_student_path, rename_dict=meta_student_raname_map)
+
+        # 0,1,2分别表示train、test pub、test pri
+        df_train.insert(loc=len(df_train.columns), column='dataset_type', value=0)
+        df_task1_test_public.insert(loc=len(df_task1_test_public.columns), column='dataset_type', value=1)
+        df_task1_test_private.insert(loc=len(df_task1_test_private.columns), column='dataset_type', value=2)
+        self.data_raw = pd.concat((
+            df_train,
+            df_task1_test_public,
+            df_task1_test_private
+        ), axis=0)
+        self.statics_raw = DataProcessor.get_basic_info(self.data_raw)
+
+        df = deepcopy(self.data_raw)
+        metadata_answer.dropna(subset=["answer_id"], inplace=True)
+        metadata_answer["answer_id"] = metadata_answer["answer_id"].map(int)
+        metadata_student["premium_pupil"] = metadata_student["premium_pupil"].fillna(2)
+        metadata_student["premium_pupil"] = metadata_student["premium_pupil"].map(int)
+
+        def time_str2year(time_str):
+            if str(time_str) == "nan":
+                # 后面用time_year - birth，如果为0或者为负数，说明至少其中一项为NaN
+                return 3000
+            return int(time_str[:4])
+
+        def time_str2timestamp(time_str):
+            # if len(time_str) != 19:
+            #     time_str = re.search(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", time_str).group()
+            return int(time.mktime(time.strptime(time_str[:19], "%Y-%m-%d %H:%M:%S")))
+
+        def map_gender(item):
+            if item not in [1, 2]:
+                return 0
+            return item
+
+        time_year = metadata_answer["timestamp"].map(time_str2year)
+        time_year.name = "time_year"
+        metadata_answer["timestamp"] = metadata_answer["timestamp"].map(time_str2timestamp)
+        metadata_answer = pd.concat((metadata_answer, time_year), axis=1)
+        metadata_student["birth"] = metadata_student["birth"].map(time_str2year)
+        df = df.merge(metadata_student, how="left")
+        df["gender"] = df["gender"].map(map_gender)
+
+        # 丢弃没有时间戳的数据
+        metadata_answer = metadata_answer[~metadata_answer.duplicated(subset=["answer_id"])]
+        df = df.merge(metadata_answer, how="left")
+        df.dropna(subset=["timestamp"], inplace=True)
+
+        # 连接metadata_question
+        df = df.merge(metadata_question, how="left")
+        df.dropna(subset=["concept_ids"], inplace=True)
+
+        # 习题id重映射
+        question_ids = list(pd.unique(df["question_id"]))
+        question_ids.sort()
+        question_id_map = {q_id: i for i, q_id in enumerate(question_ids)}
+        df["question_id"] = df["question_id"].map(question_id_map)
+        question_info = pd.DataFrame({
+            "question_id": question_ids,
+            "question_mapped_id": range(len(question_ids))
+        })
+
+        # 计算年龄：time_year - birth
+        age = df["time_year"] - df["birth"]
+        age.name = "age"
+        age[(age <= 6) | (age > 40)] = 0
+        age[(age > 20) & (age <= 40)] = 21
+        df = pd.concat([df, age], axis=1)
+
+        # 知识点id重映射，metadata_question中Subject_Id是层级知识点，取最后一个（最细粒度的）知识点作为习题知识点，所以是单知识点数据集
+        concept_ids = set()
+        question_concept_map = {}
+        for i in range(len(metadata_question)):
+            q_id = metadata_question.iloc[i]["question_id"]
+            c_ids_str = metadata_question.iloc[i]["concept_ids"]
+            c_ids = eval(c_ids_str)
+            question_concept_map[question_id_map[q_id]] = [c_ids[-1]]
+            concept_ids.add(c_ids[-1])
+        concept_ids = list(concept_ids)
+        concept_ids.sort()
+        concept_info = pd.DataFrame({
+            "concept_id": concept_ids,
+            "concept_mapped_id": range(len(concept_ids))
+        })
+        self.question_id_map["single_concept"] = question_info
+        self.concept_id_map["single_concept"] = concept_info
+
+        # 习题到知识点的映射
+        concept_id_map = {c_id: i for i, c_id in enumerate(concept_ids)}
+        for q_id in question_concept_map.keys():
+            question_concept_map[q_id] = list(map(lambda c_id: concept_id_map[c_id], question_concept_map[q_id]))
+        df_question_concept = pd.DataFrame({
+            "question_id": question_concept_map.keys(),
+            "concept_id": map(lambda c_ids_: c_ids_[0], question_concept_map.values())
+        })
+        df = df.merge(df_question_concept, how="left", on=["question_id"])
+        df.dropna(subset=["question_id", "concept_id"], inplace=True)
+        self.data_preprocessed["single_concept"] = df[
+            ["user_id", "question_id", "concept_id", "correct", "age", "timestamp", "gender", "premium_pupil", "dataset_type"]
+        ]
+        self.statics_preprocessed["single_concept"] = (
+            DataProcessor.get_basic_info(self.data_preprocessed["single_concept"])
+        )
+
+        Q_table = np.zeros((len(question_ids), len(concept_ids)), dtype=int)
+        for q_id in question_concept_map.keys():
+            correspond_c = question_concept_map[q_id]
+            Q_table[[q_id] * len(correspond_c), correspond_c] = [1] * len(correspond_c)
+        self.Q_table["single_concept"] = Q_table
 
     def load_process_edi2020_task34(self):
         data_dir = self.params["preprocess_config"]["data_path"]

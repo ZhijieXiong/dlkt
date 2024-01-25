@@ -111,7 +111,6 @@ def datasets_seq_keys(datasets_merged=None):
         "assist2015": ["question_seq", "correct_seq"],
         "assist2017": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],
         "edi2020-task1": ["question_seq", "concept_seq", "correct_seq", "time_seq", "age_seq"],
-        "edi2020-task2": ["question_seq", "concept_seq", "correct_seq", "time_seq"],
         "edi2020-task34": ["question_seq", "concept_seq", "correct_seq", "time_seq", "age_seq"],
         "SLP-bio": ["question_seq", "concept_seq", "correct_seq"],
         "SLP-mat": ["question_seq", "concept_seq", "correct_seq"],

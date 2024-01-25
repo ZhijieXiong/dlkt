@@ -127,7 +127,7 @@
 
 [bigdata-ustc: EduData](https://github.com/bigdata-ustc/EduData)
 
-## Assist Datasets
+## Assist
 
 assist2009: [download](https://sites.google.com/site/assistmentsdata/home/2009-2010-assistment-data/skill-builder-data-2009-2010)
 

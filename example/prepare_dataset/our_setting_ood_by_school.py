@@ -14,8 +14,8 @@ from lib.util.data import write2file
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="SLP-mat", choices=("assist2009", "assist2012", "SLP-mat"))
-    parser.add_argument("--min_school_seq", type=int, help="一所学校最少要有多少学生|序列", default=50)
+    parser.add_argument("--dataset_name", type=str, default="SLP-bio", choices=("assist2009", "assist2012", "SLP-mat", "SLP-bio"))
+    parser.add_argument("--min_school_seq", type=int, help="一所学校最少要有多少学生|序列", default=70)
     parser.add_argument("--min_mean_seq_len", type=int, default=20)
     parser.add_argument("--train_test_radio_upper_bound", type=float, default=8.5/1.5)
     parser.add_argument("--train_test_radio_lower_bound", type=float, default=7/3)

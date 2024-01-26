@@ -53,6 +53,8 @@
 
 ### original
 
+- `concepts` of `SLP-his` and `SLP-geo` in original statics is not true, becase there are some `Resource` records (not interaction with question) which are viewed as `concept_id` in the original data
+
 |    dataset name    | intercations | sequences | concepts | questions |
 | :----------------: | :----------: | :-------: | :------: | :-------: |
 |     assist2009     |    401756    |   4217    |   123    |   26688   |
@@ -76,9 +78,10 @@
 |      SLP-bio       |    291943    |   1941    |    24    |   1061    |
 |      SLP-chi       |    80938     |    624    |    32    |    658    |
 |      SLP-eng       |    86531     |    366    |    28    |   1089    |
-|      SLP-geo       |              |           |          |           |
-|      SLP-his       |              |           |          |           |
+|      SLP-geo       |    151932    |   1135    |    --    |   1021    |
+|      SLP-his       |    317813    |   1610    |    --    |   1317    |
 |      SLP-mat       |    248674    |   1499    |    45    |   1133    |
+|      SLP-phy       |    107289    |    664    |    54    |   1915    |
 
 ### after preprocessing (for single concept datasets or only question datasets)
 
@@ -94,9 +97,10 @@
 |    SLP-bio     |    291800    |   1941    |    23    |   1058    |
 |    SLP-chi     |    80888     |    623    |    31    |    637    |
 |    SLP-eng     |    86530     |    366    |    28    |   1089    |
-|    SLP-geo     |              |           |          |           |
-|    SLP-his     |              |           |          |           |
+|    SLP-geo     |    149780    |   1135    |    47    |   1011    |
+|    SLP-his     |    296711    |   1610    |    22    |   1251    |
 |    SLP-mat     |    242722    |   1499    |    44    |   1127    |
+|    SLP-phy     |    107288    |    664    |    54    |   1915    |
 
 ### after preprocessing (for multi concept datasets)
 

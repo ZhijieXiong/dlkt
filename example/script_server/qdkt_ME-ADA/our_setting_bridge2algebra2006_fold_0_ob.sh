@@ -10,8 +10,8 @@
   etas='5 20'
   gammas='5 20'
   dropouts='0.2 0.3 0.4'
-  adv_learning_rates='0.1 1 10 20'
-  weights_decay='0.01 0.001 0.0001'
+  adv_learning_rates='0.01 0.1 1 5'
+  weights_decay='0.0001 0.00001 0.000001'
   for weight_adv_pred_loss in ${weights_adv_pred_loss}
   do
     for eta in ${etas}
@@ -38,7 +38,7 @@
                 --num_concept 493 --num_question 129263 \
                 --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout "${dropout}" --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
                 --use_warm_up False --epoch_warm_up 4 \
-                --epoch_interval_generate 1 --epoch_generate 200 --weight_adv_pred_loss "${weight_adv_pred_loss}" --loop_adv 2 --adv_learning_rate "${adv_learning_rate}" --eta "${eta}" --gamma "${gamma}" \
+                --epoch_interval_generate 1 --epoch_generate 200 --weight_adv_pred_loss "${weight_adv_pred_loss}" --loop_adv 3 --adv_learning_rate "${adv_learning_rate}" --eta "${eta}" --gamma "${gamma}" \
                 --save_model False --seed 0
             done
           done
@@ -46,4 +46,4 @@
       done
     done
   done
-} >> /home/xiongzj/myProjects/KT/dlkt/example/results/qdkt_ME-ADA_our_setting_bridge2algebra2006_fold_0_ob4.txt
+} >> /home/xiongzj/myProjects/KT/dlkt/example/results/qdkt_ME-ADA_our_setting_bridge2algebra2006_fold_0_ob5.txt

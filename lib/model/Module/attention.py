@@ -145,3 +145,58 @@ def attention_SimpleKT(q, k, v, dim_head, mask, dropout, zero_pad, device="cpu")
     scores = dropout(scores)
     output = torch.matmul(scores, v)
     return output
+
+
+def attention_DTransformer(q, k, v, mask, gamma=None, max_out=False):
+    """
+        :param q: query
+        :param k: key
+        :param v: value
+        :param mask:
+        :param gamma: gamma_{t,t'} of AKT
+        :param max_out: use or not use MaxOut of DTransformer
+        :return:
+    """
+    dim_head = k.size(-1)
+    # attention score with scaled dot production
+    scores = torch.matmul(q, k.transpose(-2, -1)) / torch.tensor(dim_head).float().sqrt().to(gamma.device)
+    batch_size, num_head, seq_len, _ = scores.size()
+
+    # temporal effect, i.e., time with exponential decay
+    if gamma is not None:
+        x1 = torch.arange(seq_len).float().expand(seq_len, -1).to(gamma.device)
+        x2 = x1.transpose(0, 1).contiguous()
+
+        with torch.no_grad():
+            scores_ = scores.masked_fill(mask == 0, -1e32)
+            scores_ = F.softmax(scores_, dim=-1)
+
+            distance_cumulative = torch.cumsum(scores_, dim=-1)
+            distance_total = torch.sum(scores_, dim=-1, keepdim=True)
+            position_effect = torch.abs(x1 - x2)[None, None, :, :]
+            # AKT论文中计算gamma_{t,t'}的公式
+            dist_scores = torch.clamp(
+                (distance_total - distance_cumulative) * position_effect, min=0.0
+            )
+            dist_scores = dist_scores.sqrt().detach()
+
+        gamma = -1.0 * gamma.abs().unsqueeze(0)
+        total_effect = torch.clamp((dist_scores * gamma).exp(), min=1e-5, max=1e5)
+        # AKT论文中公式(1)
+        scores *= total_effect
+
+    # normalize attention score
+    scores.masked_fill_(mask == 0, -1e32)
+    scores = F.softmax(scores, dim=-1)
+    # set to hard zero to avoid leakage
+    scores = scores.masked_fill(mask == 0, 0)
+
+    # max-out scores (batch_size, num_head, seq_len, seq_len)
+    if max_out:
+        # 关注
+        scale = torch.clamp(1.0 / scores.max(dim=-1, keepdim=True)[0], max=5.0)
+        scores *= scale
+
+    # calculate output
+    output = torch.matmul(scores, v)
+    return output, scores

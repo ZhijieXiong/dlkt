@@ -61,6 +61,10 @@ class KnowledgeTracingTrainer:
         for epoch in range(1, num_epoch + 1):
             model.train()
             for batch in train_loader:
+                if model.model_name == "DTransformer":
+                    batch["concept_seq"] = batch["concept_seq"].masked_fill(torch.eq(batch["mask_seq"], 0), -1)
+                    batch["question_seq"] = batch["question_seq"].masked_fill(torch.eq(batch["mask_seq"], 0), -1)
+                    batch["correct_seq"] = batch["correct_seq"].masked_fill(torch.eq(batch["mask_seq"], 0), -1)
                 optimizer.zero_grad()
                 predict_loss = model.get_predict_loss(batch, self.loss_record)
                 predict_loss.backward()

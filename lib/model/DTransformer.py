@@ -22,7 +22,6 @@ class DTransformer(nn.Module):
         num_question = encoder_config["num_question"]
         dim_model = encoder_config["dim_model"]
         dim_final_fc = encoder_config["dim_final_fc"]
-        num_head = encoder_config["num_head"]
         num_knowledge_prototype = encoder_config["num_knowledge_prototype"]
         dropout = encoder_config["dropout"]
         proj = encoder_config["proj"]
@@ -136,11 +135,56 @@ class DTransformer(nn.Module):
 
         return latent
 
+    def get_predict_score(self, batch):
+        concept_seq = batch["concept_seq"]
+        correct_seq = batch["correct_seq"]
+        question_seq = batch["question_seq"]
+
+        # concept_emb是融合了习题难度的concept，所以实际上可以看做question的embedding
+        seqs_length = (correct_seq >= 0).sum(dim=1)
+        concept_emb, interaction_emb, question_difficulty = self.embed_input({
+            "concept_seq": concept_seq, "correct_seq": correct_seq, "question_seq": question_seq
+        })
+        z, q_scores, k_scores = self(concept_emb, interaction_emb, seqs_length)
+
+        n = 1
+        query = concept_emb[:, n - 1:, :]
+        # predict T+N，即论文中公式(19)的z_{q_t}
+        latent = self.readout(z[:, : query.size(1), :], query)
+
+        predict_score = torch.sigmoid(self.out(torch.cat([query, latent], dim=-1)).squeeze(-1))
+
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        predict_score = torch.masked_select(predict_score[:, 1:], mask_bool_seq[:, 1:])
+
+        return predict_score
+
+    def get_predict_loss(self, batch, loss_record):
+        predict_loss = self.get_predict_loss_(batch, loss_record)
+        if loss_record is not None:
+            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+
+        correct_seq = batch["correct_seq"]
+        seqs_length = (correct_seq >= 0).sum(dim=1)
+        min_len = seqs_length.min().item()
+        if min_len < DTransformer.MIN_SEQ_LEN:
+            # skip CL for batches that are too short
+            loss_record.add_loss("cl loss", 0, 1)
+            loss = predict_loss
+        else:
+            cl_loss = self.get_cl_loss(batch)
+            loss_record.add_loss("cl loss", cl_loss.detach().cpu().item(), 1)
+            weight_cl_loss = self.params["loss_config"]["cl loss"]
+            loss = predict_loss + cl_loss * weight_cl_loss
+
+        return loss
+
     def get_z(self, batch):
         correct_seq = batch["correct_seq"]
         seqs_length = (correct_seq >= 0).sum(dim=1)
         concept_emb, interaction_emb, question_difficulty = self.embed_input(batch)
-        z, _, _ = self(concept_emb, interaction_emb, seqs_length)
+        z, _, _ = self.forward(concept_emb, interaction_emb, seqs_length)
 
         return z
 
@@ -190,7 +234,10 @@ class DTransformer(nn.Module):
         # 论文公式(19)
         return torch.matmul(alpha, value).view(batch_size, seq_len, -1)
 
-    def predict(self, concept_seq, correct_seq, question_seq=None, n=1):
+    def predict(self, concept_seq, correct_seq, question_seq, n=1):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DTransformer"]
+        use_question = encoder_config["use_question"]
+
         # concept_emb是融合了习题难度的concept，所以实际上可以看做question的embedding
         seqs_length = (correct_seq >= 0).sum(dim=1)
         concept_emb, interaction_emb, question_difficulty = self.embed_input({
@@ -202,12 +249,14 @@ class DTransformer(nn.Module):
         # predict T+N，即论文中公式(19)的z_{q_t}
         latent = self.readout(z[:, : query.size(1), :], query)
 
-        y = self.out(torch.cat([query, latent], dim=-1)).squeeze(-1)
+        predict_score = self.out(torch.cat([query, latent], dim=-1)).squeeze(-1)
 
-        if question_seq is not None:
-            return y, z, concept_emb, (question_difficulty ** 2).mean() * 1e-3, (q_scores, k_scores)
+        if use_question:
+            reg_loss = (question_difficulty ** 2).mean()
         else:
-            return y, z, concept_emb, 0.0, (q_scores, k_scores)
+            reg_loss = 0.0
+
+        return predict_score, z, concept_emb, reg_loss, (q_scores, k_scores)
 
     def get_predict_loss_(self, batch, loss_record):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DTransformer"]
@@ -218,16 +267,19 @@ class DTransformer(nn.Module):
         question_seq = batch["question_seq"]
 
         # reg_loss实际上就是question difficulty embedding的二范数，和AKT一样，作为loss的一部分
-        logits, z, q_emb, reg_loss, _ = self.predict(concept_seq, correct_seq, question_seq)
+        predict_logits, z, concept_emb, reg_loss, _ = self.predict(concept_seq, correct_seq, question_seq)
         loss_record.add_loss("reg loss", reg_loss.detach().cpu().item(), 1)
-        masked_labels = correct_seq[correct_seq >= 0].float()
-        masked_logits = logits[correct_seq >= 0]
+        weight_reg_loss = self.params["loss_config"]["reg loss"]
+        reg_loss = reg_loss * weight_reg_loss
 
-        predict_loss = F.binary_cross_entropy_with_logits(masked_logits, masked_labels, reduction="mean")
+        ground_truth = correct_seq[correct_seq >= 0].float()
+        predict_logits = predict_logits[correct_seq >= 0]
+        # binary_cross_entropy_with_logits = Sigmoid + BCE loss，因此predict_logits是任意数
+        predict_loss = F.binary_cross_entropy_with_logits(predict_logits, ground_truth, reduction="mean")
 
         for i in range(1, window):
             label = correct_seq[:, i:]
-            query = q_emb[:, i:, :]
+            query = concept_emb[:, i:, :]
             h = self.readout(z[:, : query.size(1), :], query)
             y = self.out(torch.cat([query, h], dim=-1)).squeeze(-1)
 
@@ -240,10 +292,10 @@ class DTransformer(nn.Module):
         return predict_loss + reg_loss
 
     def get_cl_loss(self, batch):
-        use_hard_neg = self.params["other"]["DTransformer"]["use_hard_neg"]
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DTransformer"]
         dropout = encoder_config["dropout"]
         use_question = encoder_config["use_question"]
+        use_hard_neg = encoder_config["use_hard_neg"]
 
         concept_seq = batch["concept_seq"]
         correct_seq = batch["correct_seq"]
@@ -302,27 +354,6 @@ class DTransformer(nn.Module):
 
         return cl_loss
 
-    def get_predict_loss(self, batch, loss_record):
-        predict_loss = self.get_predict_loss_(batch, loss_record)
-        if loss_record is not None:
-            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
-            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
-
-        correct_seq = batch["correct_seq"]
-        seqs_length = (correct_seq >= 0).sum(dim=1)
-        min_len = seqs_length.min().item()
-        if min_len < DTransformer.MIN_SEQ_LEN:
-            # skip CL for batches that are too short
-            loss_record.add_loss("cl loss", 0, 1)
-            loss = predict_loss
-        else:
-            cl_loss = self.get_cl_loss(batch)
-            loss_record.add_loss("cl loss", cl_loss.detach().cpu().item(), 1)
-            weight_cl_loss = self.params["loss_config"]["cl loss"]
-            loss = predict_loss + cl_loss * weight_cl_loss
-
-        return loss
-
     def sim(self, z1, z2):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DTransformer"]
         temp = encoder_config["temp"]
@@ -335,28 +366,6 @@ class DTransformer(nn.Module):
             z2 = self.proj(z2)
 
         return F.cosine_similarity(z1.mean(-2), z2.mean(-2), dim=-1) / temp
-
-    # def tracing(self, q, s, pid=None):
-    #     # add fake q, s, pid to generate the last tracing result
-    #     pad = torch.tensor([0]).to(self.knowledge_params.device)
-    #     q = torch.cat([q, pad], dim=0).unsqueeze(0)
-    #     s = torch.cat([s, pad], dim=0).unsqueeze(0)
-    #     if pid is not None:
-    #         pid = torch.cat([pid, pad], dim=0).unsqueeze(0)
-    #
-    #     with torch.no_grad():
-    #         # q_emb: (bs, seq_len, d_model)
-    #         # z: (bs, seq_len, n_know * d_model)
-    #         # know_params: (n_know, d_model)->(n_know, 1, d_model)
-    #         q_emb, s_emb, seqs_length, _ = self.embed_input(q, s, pid)
-    #         z, _, _ = self(q_emb, s_emb, seqs_length)
-    #         query = self.knowledge_params.unsqueeze(1).expand(-1, z.size(1), -1).contiguous()
-    #         z = z.expand(self.num_knowledge_prototype, -1, -1).contiguous()
-    #         h = self.readout(z, query)
-    #         y = self.out(torch.cat([query, h], dim=-1)).squeeze(-1)
-    #         y = torch.sigmoid(y)
-    #
-    #     return y
 
 
 class DTransformerLayer(nn.Module):

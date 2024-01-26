@@ -89,7 +89,6 @@ def n_fold_split1(dataset_uniformed, params, objects):
     dataset_name = params["dataset_name"]
     setting_dir = objects["file_manager"].get_setting_dir(params["lab_setting"]["name"])
 
-    # dataset_uniformed = deepcopy(dataset_uniformed)
     datasets_train, datasets_valid, dataset_test = split1(dataset_uniformed, n_fold, test_radio, valid_radio)
     if n_fold == 1:
         pass

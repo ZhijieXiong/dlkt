@@ -9,7 +9,7 @@ from lib.util.data import *
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="SLP-phy",
+    parser.add_argument("--dataset_name", type=str, default="SLP-geo",
                         choices=("assist2009", "assist2009-full", "assist2012", "assist2015", "assist2017",
                                  "algebra2005", "algebra2006", "algebra2008",
                                  "bridge2algebra2006", "bridge2algebra2008",

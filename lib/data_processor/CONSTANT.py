@@ -112,7 +112,7 @@ def datasets_seq_keys(datasets_merged=None):
         "assist2017": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],
         "edi2020-task1": ["question_seq", "concept_seq", "correct_seq", "time_seq", "age_seq"],
         "edi2020-task34": ["question_seq", "concept_seq", "correct_seq", "time_seq", "age_seq"],
-        "SLP": ["question_seq", "concept_seq", "correct_seq"],
+        "SLP": ["question_seq", "concept_seq", "correct_seq", "interaction_type_seq"],
         "slepemapy": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],
         "statics2011": ["question_seq", "correct_seq", "time_seq"],
         "ednet-kt1": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],

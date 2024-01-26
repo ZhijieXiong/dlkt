@@ -759,7 +759,7 @@ class DataProcessor:
 
         # 去除question_id和concept_id为nan以及"n.a."的数据
         df = deepcopy(self.data_raw)
-        df.dropna(subset=["question_id", "concept_id"], inplace=True)
+        df.dropna(subset=["question_id", "concept_id", "score", "full_score", "timestamp"], inplace=True)
         df = df[(df["question_id"] != "n.a.") & (df["concept_id"] != "n.a.")]
 
         # 将user_id、question_id、concept_id、school_type、live_on_campus、timestamp映射为数字
@@ -823,11 +823,12 @@ class DataProcessor:
 
         df["full_score"] = df["full_score"].map(map_full_score)
         df["score_"] = df["score"] / df["full_score"]
-        df["correct"] = df["score_"] > 0.99
+        df["correct"] = df["score_"] > 0.5
         df["correct"] = df["correct"].map(int)
         df.rename(columns={"live_on_campus": "campus"}, inplace=True)
         self.data_preprocessed["single_concept"] = df[
-            ["user_id", "question_id", "concept_id", "correct", "gender", "campus", "school_id", "timestamp", "order"]
+            ["user_id", "question_id", "concept_id", "correct", "gender",
+             "campus", "school_id", "timestamp", "order", "interaction_type"]
         ]
         self.statics_preprocessed["single_concept"] = (
             DataProcessor.get_basic_info(self.data_preprocessed["single_concept"])
@@ -1065,6 +1066,7 @@ class DataProcessor:
             "question_seq": "question_id",
             "concept_seq": "concept_id",
             "correct_seq": "correct",
+            "interaction_type_seq": "interaction_type"
         }
 
         # single_concept

@@ -47,7 +47,12 @@ def load_SLP(data_dir, dataset_name):
     # 将总评数据加入
     student_ids = pd.unique(unit["student_id"])
     student_df = pd.DataFrame({"student_id": student_ids})
-    df = pd.concat([unit, student_df.merge(term, how="left", on=["student_id"])], axis=0)
+
+    # unit为0，term为1
+    unit.insert(loc=len(unit.columns), column='interaction_type', value=0)
+    term = student_df.merge(term, how="left", on=["student_id"])
+    term.insert(loc=len(term.columns), column='interaction_type', value=1)
+    df = pd.concat([unit, term], axis=0)
 
     df = df.merge(family, how="left", on=["student_id"])
     df = df.merge(student, how="left", on=["student_id"])
@@ -55,7 +60,7 @@ def load_SLP(data_dir, dataset_name):
 
     # live_on_campus和school_type有nan
     return df[["student_id", "question_id", "concept", "score", "full_score", "time_access", "order",
-               "live_on_campus", "school_id", "gender"]]
+               "live_on_campus", "school_id", "gender", "interaction_type"]]
 
 
 def load_ednet_kt1(data_dir, num_file=1):

@@ -72,7 +72,7 @@
   do
     for dim_emb in 64 128
     do
-      for num_min_question in 20 25 30
+      for num_min_question in 20 30
       do
         for num_min_concept in 30 50
         do

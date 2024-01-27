@@ -7,9 +7,24 @@
 [Models]: MODELS.md
 [中文版]: README_CN.md
 
-## Introduction
+# Introduction
 
-## Quick-Start
+
+
+# Referrence
+
+## Projects
+
+1. https://github.com/pykt-team/pykt-toolkit
+2. https://github.com/bigdata-ustc/EduKTM
+3. https://github.com/bigdata-ustc/EduData
+4. 
+
+## Papers
+
+
+
+# Quick-Start
 
 1. Initialize project
 
@@ -51,3 +66,14 @@
    ```
 
    - Regarding the meaning of parameters, please refer to [Document (Section 2)](Doc.md)
+
+## Contributing
+
+Please let us know if you encounter a bug or have any suggestions by [filing an issue](https://github.com/ZhijieXiong/dlkt/issuesWe) welcome all contributions from bug fixes to new features and extensions.
+
+We expect all contributions discussed in the issue tracker and going through PRs.
+
+# Contributors
+
+- https://github.com/ZhijieXiong
+- https://github.com/kingofpop625

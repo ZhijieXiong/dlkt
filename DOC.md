@@ -19,9 +19,9 @@
 
 ## 2、数据集信息
 
-- 单知识点数据集：`assist2012` `assist2017` `edi2020` `SLP` `slepemapy`
+- 单知识点数据集：`assist2012` `assist2017` `edi2020` `SLP` `slepemapy` `statics2011`
 
-  - `edi2020`是层级知识点，且最低一级都是单知识点。只使用最细粒度的知识点，所以算单知识点数据集
+  - `edi2020`和`statics2011`是层级知识点，且最低一级都是单知识点。只使用最细粒度的知识点，所以算单知识点数据集
   - 单知识点数据只会生成预处理数据：`data_single_concept.txt`
 
 - 多知识点数据集：`assist2009` `assist2009-full` `ednet-kt1` `xes3g5m` `kdd cup2010`
@@ -56,7 +56,7 @@
     ]
     ```
   
-- 无知识点/习题数据集：`assist2015` `statics2011`
+- 无知识点/习题数据集：`assist2015`
 
   - 无知识点/习题数据只会生成预处理数据：`data_only_question.txt`
 

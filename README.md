@@ -7,9 +7,34 @@
 [Models]: MODELS.md
 [中文版]: README_CN.md
 
-## Introduction
+# Introduction
 
-## Quick-Start
+
+
+# Referrence
+
+## Projects
+
+[papers](MODELS.md)
+
+[datasets](KT_DATASETS.md)
+
+1. https://github.com/pykt-team/pykt-toolkit
+2. https://github.com/bigdata-ustc/EduKTM
+3. https://github.com/bigdata-ustc/EduData
+4. https://github.com/arghosh/AKT
+5. https://github.com/xiaopengguo/ATKT
+6. https://github.com/shshen-closer/DIMKT
+7. https://github.com/UpstageAI/cl4kt
+8. https://github.com/yxonic/DTransformer
+9. https://github.com/garyzhao/ME-ADA
+10. https://github.com/RuihongQiu/DuoRec
+11. https://github.com/salesforce/ICLRec
+12. https://github.com/YChen1993/CoSeRec
+13. https://github.com/rlqja1107/MELT
+14. https://github.com/QinHsiu/MCLRec
+
+# Quick-Start
 
 1. Initialize project
 
@@ -51,3 +76,16 @@
    ```
 
    - Regarding the meaning of parameters, please refer to [Document (Section 2)](Doc.md)
+
+# Contributing
+
+Please let us know if you encounter a bug or have any suggestions by [filing an issue](https://github.com/ZhijieXiong/dlkt/issuesWe) 
+
+We welcome all contributions from bug fixes to new features and extensions.
+
+We expect all contributions discussed in the issue tracker and going through PRs.
+
+# Contributors
+
+- https://github.com/ZhijieXiong
+- https://github.com/kingofpop625

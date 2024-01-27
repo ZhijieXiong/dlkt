@@ -83,7 +83,7 @@ def datasets_renamed(datasets_merged=None):
             "response_time": "use_time",
             "type": "question_type",
             "ip_country": "country_id",
-            "locations_asked": "concept_id"
+            "context_name": "concept_id"
         }
     }
     algebra2005 = {

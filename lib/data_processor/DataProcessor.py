@@ -949,36 +949,95 @@ class DataProcessor:
                 time_str = re.search(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", time_str).group()
             return int(time.mktime(time.strptime(time_str[:19], "%Y-%m-%d %H:%M:%S")))
 
-        def process_concept(c_id_str):
-            c_ids = eval(c_id_str)
-            c_ids = list(map(lambda x: x.strip(), c_ids))
-            c_id = "@@".join(c_ids)
+        def process_concept(context_name):
+            c_id = context_name.strip("'").strip("\"").strip()
             return c_id
+
+        def process_question(one_row):
+            q_type = one_row["question_type"].strip("'").strip("\"").strip()
+            c_name = one_row["concept_id"].strip("'").strip("\"").strip()
+            item_asked = one_row["item_asked"]
+            q_id = f"{q_type}@@{c_name}@@{item_asked}"
+
+            return q_id
 
         # 这个数据集来自一个医学习题网站（分辨人体器官组织，选择题），里面有两种习题：(t2d) find the given term on the image; (d2t) pick the name for the highlighted term
         # 用得上的字段: item_asked、item_answered（empty if the user answered "I don't know"）分别表示问的术语和回答的术语，context_name：name of the image (context)
         # item_asked、context_name和type组成一道question的要素
-        # 该习题库是层级的知识点systems_asked -> locations_asked -> item_asked，选择locations_asked作为知识点
-        # CL4KT这篇文章选择的是locations_asked（有uknown值）
-        # locations_asked是多知识点，即一个item可能属于多个location
-        df = deepcopy(self.data_raw[self.data_raw["concept_id"] != "uknown"])
-        df.dropna(subset=["user_id", "concept_id", "timestamp", "item_asked", "use_time"], inplace=True)
+        # 该习题库是层级的知识点systems_asked -> locations_asked (9个location，以这个作为知识点，太笼统) -> item_asked
+
+        # 本框架下选择context_name作为知识点
+        # 下面代码是选择context_name作为知识点处理方法，单知识点数据集
+        df = deepcopy(self.data_raw)
+        df.dropna(subset=["user_id", "timestamp", "question_type", "concept_id", "item_asked", "use_time"],
+                  inplace=True)
         df["concept_id"] = df["concept_id"].apply(process_concept)
-        df["question_id"] = df.apply(lambda x: f"{x['question_type']}--{x['context_name']}--{x['item_asked']}", axis=1)
+        df["question_id"] = df.apply(process_question, axis=1)
         df["timestamp"] = df["timestamp"].map(time_str2timestamp)
         df["use_time"] = df["use_time"].map(lambda t: min(max(1, int(t) // 1000), 60 * 60))
         df["correct"] = df["item_asked"] == df["item_answered"]
         df["correct"] = df["correct"].map(int)
-        df = deepcopy(df[["user_id", "question_id", "correct", "timestamp", "use_time", "country_id", "concept_id"]])
-        df_multi_concept = deepcopy(df)
 
-        self.process_raw_is_single_concept(df, df_multi_concept, c_id_is_num=False)
+        question_ids = pd.unique(df["question_id"])
+        question_id_map = {q_id: i for i, q_id in enumerate(question_ids)}
+        df["question_id"] = df["question_id"].map(question_id_map)
+        self.question_id_map["single_concept"] = pd.DataFrame({
+            "question_id": question_id_map.keys(),
+            "question_mapped_id": question_id_map.values()
+        })
+
+        concept_ids = pd.unique(df["concept_id"])
+        concept_id_map = {c_id: i for i, c_id in enumerate(concept_ids)}
+        df["concept_id"] = df["concept_id"].map(concept_id_map)
+        self.concept_id_map["single_concept"] = pd.DataFrame({
+            "concept_id": concept_id_map.keys(),
+            "concept_mapped_id": concept_id_map.values()
+        })
+
+        self.data_preprocessed["single_concept"] = df[
+            ["user_id", "question_id", "correct", "timestamp", "use_time", "country_id", "concept_id"]
+        ]
+        self.statics_preprocessed["single_concept"] = DataProcessor.get_basic_info(
+            self.data_preprocessed["single_concept"])
+
+        # Q table
+        df_new = pd.DataFrame({
+            "question_id": map(int, df["question_id"].tolist()),
+            "concept_id": map(int, df["concept_id"].tolist())
+        })
+        Q_table = np.zeros((len(question_ids), len(concept_ids)), dtype=int)
+        for question_id, group_info in df_new[["question_id", "concept_id"]].groupby("question_id"):
+            correspond_c = pd.unique(group_info["concept_id"]).tolist()
+            Q_table[[question_id] * len(correspond_c), correspond_c] = [1] * len(correspond_c)
+        self.Q_table["single_concept"] = Q_table
+
+        # 下面代码是选择locations_asked作为知识点处理方法，多知识点数据集
+        # 需要修改CONSTANT中slepemapy的 rename["context_name"] = "concept_id" 为 rename["locations_asked"] = "concept_id"
+        # CL4KT这篇文章选择的是locations_asked（有uknown值）
+        # def process_concept(c_id_str):
+        #     c_ids = eval(c_id_str)
+        #     c_ids = list(map(lambda x: x.strip(), c_ids))
+        #     c_id = "@@".join(c_ids)
+        #     return c_id
+        #
+        # df = deepcopy(self.data_raw[self.data_raw["concept_id"] != "uknown"])
+        # df.dropna(subset=["user_id", "concept_id", "timestamp", "item_asked", "use_time"], inplace=True)
+        # df["concept_id"] = df["concept_id"].apply(process_concept)
+        # df["question_id"] = df.apply(process_question, axis=1)
+        # df["timestamp"] = df["timestamp"].map(time_str2timestamp)
+        # df["use_time"] = df["use_time"].map(lambda t: min(max(1, int(t) // 1000), 60 * 60))
+        # df["correct"] = df["item_asked"] == df["item_answered"]
+        # df["correct"] = df["correct"].map(int)
+        # df = deepcopy(df[["user_id", "question_id", "correct", "timestamp", "use_time", "country_id", "concept_id"]])
+        # df_multi_concept = deepcopy(df)
+        #
+        # self.process_raw_is_single_concept(df, df_multi_concept, c_id_is_num=False)
 
     def uniform_data(self):
         dataset_name = self.params["preprocess_config"]["dataset_name"]
         if dataset_name == "assist2009":
             self.uniform_assist2009()
-        elif dataset_name in ["assist2012", "assist2017"]:
+        elif dataset_name in ["assist2012", "assist2017", "slepemapy"]:
             self.uniform_assist2012()
         elif dataset_name == "assist2015":
             self.uniform_assist2015()
@@ -1063,16 +1122,27 @@ class DataProcessor:
 
     def uniform_assist2012(self):
         df = deepcopy(self.data_preprocessed["single_concept"])
-        # school_id按照学生数量重映射
-        df["school_id"] = df["school_id"].fillna(-1)
-        df["school_id"] = df["school_id"].map(int)
-        school_id_map, school_info = preprocess_raw.map_user_info(df, "school_id")
         dataset_name = self.params["preprocess_config"]["dataset_name"]
-        data_processed_dir = self.objects["file_manager"].get_preprocessed_dir(dataset_name)
-        school_id_map_path = os.path.join(data_processed_dir, "school_id_map.csv")
-        school_info_path = os.path.join(data_processed_dir, "school_info.json")
-        school_id_map.to_csv(school_id_map_path, index=False)
-        data_util.write_json(school_info, school_info_path)
+
+        if dataset_name in ["assist2012", "assist2017"]:
+            # school_id按照学生数量重映射
+            df["school_id"] = df["school_id"].fillna(-1)
+            df["school_id"] = df["school_id"].map(int)
+            school_id_map, school_info = preprocess_raw.map_user_info(df, "school_id")
+            data_processed_dir = self.objects["file_manager"].get_preprocessed_dir(dataset_name)
+            school_id_map_path = os.path.join(data_processed_dir, "school_id_map.csv")
+            school_info_path = os.path.join(data_processed_dir, "school_info.json")
+            school_id_map.to_csv(school_id_map_path, index=False)
+            data_util.write_json(school_info, school_info_path)
+        if dataset_name in ["slepemapy"]:
+            df["country_id"] = df["country_id"].fillna(-1)
+            country_id_map, country_info = preprocess_raw.map_user_info(df, "country_id")
+
+            data_processed_dir = self.objects["file_manager"].get_preprocessed_dir(dataset_name)
+            country_id_map_path = os.path.join(data_processed_dir, "country_id_map.csv")
+            country_info_path = os.path.join(data_processed_dir, "country_info.json")
+            country_id_map.to_csv(country_id_map_path, index=False)
+            data_util.write_json(country_info, country_info_path)
 
         info_name_table = {
             "question_seq": "question_id",

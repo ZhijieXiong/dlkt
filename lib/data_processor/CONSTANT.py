@@ -9,7 +9,7 @@ def datasets_useful_cols(datasets_merged=None):
         "assist2017": ["studentId", "MiddleSchoolId", "problemId", "skill", "timeTaken", "startTime", "correct"],
         "slepemapy": ["user", "item_asked", "item_answered", "context_name", "type", "time", "response_time",
                       "ip_country"],
-        "statics2011": ["Anon Student Id", "Problem Name", "Step Name", "First Attempt", "First Transaction Time"]
+        "statics2011": ["Anon Student Id", "Problem Hierarchy", "Problem Name", "Step Name", "First Attempt", "First Transaction Time"]
     }
     algebra2005 = ["Anon Student Id", "Problem Name", "Step Name", "First Transaction Time", "Correct First Attempt"]
     result["algebra2005"] = deepcopy(algebra2005)
@@ -69,8 +69,9 @@ def datasets_renamed(datasets_merged=None):
         },
         "statics2011": {
             "Anon Student Id": "user_id",
+            "Problem Hierarchy": "concept_id",
             "First Transaction Time": "timestamp",
-            "First Attempt": "answer"
+            "First Attempt": "correct"
         },
         "ednet-kt1": {
             "tags": "concept_id",
@@ -114,7 +115,7 @@ def datasets_seq_keys(datasets_merged=None):
         "edi2020-task34": ["question_seq", "concept_seq", "correct_seq", "time_seq", "age_seq"],
         "SLP": ["question_seq", "concept_seq", "correct_seq", "interaction_type_seq"],
         "slepemapy": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],
-        "statics2011": ["question_seq", "correct_seq", "time_seq"],
+        "statics2011": ["question_seq", "concept_seq", "correct_seq", "time_seq"],
         "ednet-kt1": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],
         "algebra2005": ["question_seq", "concept_seq", "correct_seq", "time_seq"]
     }

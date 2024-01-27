@@ -180,3 +180,85 @@ test performance by best valid epoch is main metric: 0.83195  , AUC: 0.83195  , 
 ----------------------------------------------------------------------------------------------------
 train performance by best train epoch is main metric: 0.8731   , AUC: 0.8731   , ACC: 0.82679  , RMSE: 0.34752  , MAE: 0.24576  ,
 test performance by best test epoch is main metric: 0.83195  , AUC: 0.83195  , ACC: 0.78915  , RMSE: 0.38018  , MAE: 0.28785  ,
+
+
+
+
+
+SLP-phy:
+weight_decay: 0.001, dim_correct: 128, dim_latent: 64, dropout: 0.3
+basic setting
+    device: cuda, seed: 0
+train policy
+    type: valid_test, valid_test: {"use_early_stop": true, "epoch_early_stop": 10}, train batch size: 64, num of epoch: 200
+    use sample weight: False
+embedding init
+    use LLM emb to init question emb: False, use LLM emb to init concept emb: False
+    transfer head to zero for question in train data: False
+evaluate metric
+    main metric: AUC, use multi metrics: False
+optimizer setting
+    model optimized: kt_model, optimizer type: adam, adam config: {"lr": 0.001, "weight_decay": 0.001}, use lr schedule: False, use clip for grad: False
+dataset
+    setting: our_setting_ood_by_school, dataset: SLP-phy, data type: single_concept, train: SLP-phy_train_split_0.txt, valid: SLP-phy_valid_iid_split_0.txt, test: SLP-phy_test_ood_split_0.txt
+
+WARNING: statics of train dataset is not exist. This file is required for some cases, e.g., fine grain evaluation such as long tail problem and some model using transfer_head2zero. If it is necessary, please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset
+
+model params
+    num of concept: 54, num of question: 1915, dim of question emb: 64, dim of concept emb: 64, dim of correct emb: 128, dim of latent: 64
+    rnn type: gru, num of rnn layer: 1, dropout: 0.3, num of predict layer: 3, dim of middle predict layer: 128, type of activate function: relu
+
+train, seq: 529, sample: 73081, accuracy: 0.6082
+valid, seq: 132, sample: 17398, accuracy: 0.5792
+test, seq: 121, sample: 15997, accuracy: 0.6667
+2024-01-26 13:11:44 epoch 1   , valid performance is main metric: 0.73657  , AUC: 0.73657  , ACC: 0.57788  , RMSE: 0.48114  , MAE: 0.46597  , train loss is predict loss: 0.664389    , test performance is main metric: 0.62831  , AUC: 0.62831  , ACC: 0.66656  , RMSE: 0.46719  , MAE: 0.45157  , current best epoch is 1
+2024-01-26 13:11:44 epoch 2   , valid performance is main metric: 0.75675  , AUC: 0.75675  , ACC: 0.66008  , RMSE: 0.45852  , MAE: 0.43489  , train loss is predict loss: 0.633551    , test performance is main metric: 0.6559   , AUC: 0.6559   , ACC: 0.68019  , RMSE: 0.45729  , MAE: 0.43149  , current best epoch is 2
+2024-01-26 13:11:45 epoch 3   , valid performance is main metric: 0.78183  , AUC: 0.78183  , ACC: 0.7129   , RMSE: 0.43406  , MAE: 0.39039  , train loss is predict loss: 0.590604    , test performance is main metric: 0.67402  , AUC: 0.67402  , ACC: 0.665    , RMSE: 0.45976  , MAE: 0.41575  , current best epoch is 3
+2024-01-26 13:11:45 epoch 4   , valid performance is main metric: 0.80667  , AUC: 0.80667  , ACC: 0.73037  , RMSE: 0.4218   , MAE: 0.35918  , train loss is predict loss: 0.560035    , test performance is main metric: 0.68453  , AUC: 0.68453  , ACC: 0.68632  , RMSE: 0.45283  , MAE: 0.38784  , current best epoch is 4
+2024-01-26 13:11:45 epoch 5   , valid performance is main metric: 0.81593  , AUC: 0.81593  , ACC: 0.73859  , RMSE: 0.41606  , MAE: 0.35262  , train loss is predict loss: 0.53924     , test performance is main metric: 0.69336  , AUC: 0.69336  , ACC: 0.69032  , RMSE: 0.4507   , MAE: 0.38776  , current best epoch is 5
+2024-01-26 13:11:46 epoch 6   , valid performance is main metric: 0.8242   , AUC: 0.8242   , ACC: 0.74647  , RMSE: 0.41113  , MAE: 0.34058  , train loss is predict loss: 0.52733     , test performance is main metric: 0.699    , AUC: 0.699    , ACC: 0.69426  , RMSE: 0.44908  , MAE: 0.37839  , current best epoch is 6
+2024-01-26 13:11:46 epoch 7   , valid performance is main metric: 0.82778  , AUC: 0.82778  , ACC: 0.75175  , RMSE: 0.40884  , MAE: 0.33694  , train loss is predict loss: 0.519437    , test performance is main metric: 0.69993  , AUC: 0.69993  , ACC: 0.69082  , RMSE: 0.44941  , MAE: 0.37946  , current best epoch is 7
+2024-01-26 13:11:46 epoch 8   , valid performance is main metric: 0.8296   , AUC: 0.8296   , ACC: 0.75003  , RMSE: 0.40774  , MAE: 0.3403   , train loss is predict loss: 0.514904    , test performance is main metric: 0.70036  , AUC: 0.70036  , ACC: 0.68913  , RMSE: 0.4493   , MAE: 0.3872   , current best epoch is 8
+2024-01-26 13:11:46 epoch 9   , valid performance is main metric: 0.83265  , AUC: 0.83265  , ACC: 0.75468  , RMSE: 0.40642  , MAE: 0.32639  , train loss is predict loss: 0.508787    , test performance is main metric: 0.70317  , AUC: 0.70317  , ACC: 0.69451  , RMSE: 0.44873  , MAE: 0.37174  , current best epoch is 9
+2024-01-26 13:11:47 epoch 10  , valid performance is main metric: 0.83382  , AUC: 0.83382  , ACC: 0.75468  , RMSE: 0.40637  , MAE: 0.33069  , train loss is predict loss: 0.506476    , test performance is main metric: 0.70574  , AUC: 0.70574  , ACC: 0.69757  , RMSE: 0.44632  , MAE: 0.37453  , current best epoch is 10
+2024-01-26 13:11:47 epoch 11  , valid performance is main metric: 0.83311  , AUC: 0.83311  , ACC: 0.75509  , RMSE: 0.40551  , MAE: 0.3292   , train loss is predict loss: 0.504209    , test performance is main metric: 0.70814  , AUC: 0.70814  , ACC: 0.68919  , RMSE: 0.44903  , MAE: 0.37928  , current best epoch is 10
+2024-01-26 13:11:47 epoch 12  , valid performance is main metric: 0.83487  , AUC: 0.83487  , ACC: 0.75865  , RMSE: 0.40469  , MAE: 0.32587  , train loss is predict loss: 0.502727    , test performance is main metric: 0.7102   , AUC: 0.7102   , ACC: 0.69869  , RMSE: 0.44635  , MAE: 0.37049  , current best epoch is 12
+2024-01-26 13:11:47 epoch 13  , valid performance is main metric: 0.83503  , AUC: 0.83503  , ACC: 0.75589  , RMSE: 0.40436  , MAE: 0.32467  , train loss is predict loss: 0.500926    , test performance is main metric: 0.71033  , AUC: 0.71033  , ACC: 0.69607  , RMSE: 0.44719  , MAE: 0.37144  , current best epoch is 12
+2024-01-26 13:11:48 epoch 14  , valid performance is main metric: 0.83475  , AUC: 0.83475  , ACC: 0.75359  , RMSE: 0.40652  , MAE: 0.32518  , train loss is predict loss: 0.499377    , test performance is main metric: 0.70885  , AUC: 0.70885  , ACC: 0.70251  , RMSE: 0.44549  , MAE: 0.36947  , current best epoch is 12
+2024-01-26 13:11:48 epoch 15  , valid performance is main metric: 0.83571  , AUC: 0.83571  , ACC: 0.75808  , RMSE: 0.40445  , MAE: 0.32397  , train loss is predict loss: 0.498007    , test performance is main metric: 0.70965  , AUC: 0.70965  , ACC: 0.69794  , RMSE: 0.44634  , MAE: 0.37031  , current best epoch is 12
+2024-01-26 13:11:48 epoch 16  , valid performance is main metric: 0.83603  , AUC: 0.83603  , ACC: 0.75825  , RMSE: 0.40419  , MAE: 0.32313  , train loss is predict loss: 0.49656     , test performance is main metric: 0.71169  , AUC: 0.71169  , ACC: 0.70101  , RMSE: 0.44591  , MAE: 0.36865  , current best epoch is 16
+2024-01-26 13:11:48 epoch 17  , valid performance is main metric: 0.83583  , AUC: 0.83583  , ACC: 0.75428  , RMSE: 0.40783  , MAE: 0.31944  , train loss is predict loss: 0.495961    , test performance is main metric: 0.71139  , AUC: 0.71139  , ACC: 0.70507  , RMSE: 0.44641  , MAE: 0.36019  , current best epoch is 16
+2024-01-26 13:11:49 epoch 18  , valid performance is main metric: 0.83605  , AUC: 0.83605  , ACC: 0.75744  , RMSE: 0.40447  , MAE: 0.32163  , train loss is predict loss: 0.496073    , test performance is main metric: 0.71478  , AUC: 0.71478  , ACC: 0.70326  , RMSE: 0.44506  , MAE: 0.36627  , current best epoch is 16
+2024-01-26 13:11:49 epoch 19  , valid performance is main metric: 0.83595  , AUC: 0.83595  , ACC: 0.75785  , RMSE: 0.40365  , MAE: 0.32834  , train loss is predict loss: 0.493361    , test performance is main metric: 0.71606  , AUC: 0.71606  , ACC: 0.69419  , RMSE: 0.44628  , MAE: 0.37894  , current best epoch is 16
+2024-01-26 13:11:49 epoch 20  , valid performance is main metric: 0.83685  , AUC: 0.83685  , ACC: 0.76014  , RMSE: 0.40312  , MAE: 0.32403  , train loss is predict loss: 0.493261    , test performance is main metric: 0.71478  , AUC: 0.71478  , ACC: 0.69588  , RMSE: 0.44697  , MAE: 0.3748   , current best epoch is 16
+2024-01-26 13:11:50 epoch 21  , valid performance is main metric: 0.83673  , AUC: 0.83673  , ACC: 0.75819  , RMSE: 0.40356  , MAE: 0.3217   , train loss is predict loss: 0.492699    , test performance is main metric: 0.71715  , AUC: 0.71715  , ACC: 0.70344  , RMSE: 0.44402  , MAE: 0.3664   , current best epoch is 16
+2024-01-26 13:11:50 epoch 22  , valid performance is main metric: 0.83684  , AUC: 0.83684  , ACC: 0.75882  , RMSE: 0.40329  , MAE: 0.32011  , train loss is predict loss: 0.491827    , test performance is main metric: 0.71645  , AUC: 0.71645  , ACC: 0.70232  , RMSE: 0.44536  , MAE: 0.36394  , current best epoch is 16
+2024-01-26 13:11:50 epoch 23  , valid performance is main metric: 0.83622  , AUC: 0.83622  , ACC: 0.75854  , RMSE: 0.40398  , MAE: 0.31827  , train loss is predict loss: 0.491291    , test performance is main metric: 0.71792  , AUC: 0.71792  , ACC: 0.70176  , RMSE: 0.44563  , MAE: 0.36304  , current best epoch is 16
+2024-01-26 13:11:50 epoch 24  , valid performance is main metric: 0.83605  , AUC: 0.83605  , ACC: 0.7556   , RMSE: 0.40476  , MAE: 0.33053  , train loss is predict loss: 0.490307    , test performance is main metric: 0.71691  , AUC: 0.71691  , ACC: 0.68938  , RMSE: 0.44958  , MAE: 0.38528  , current best epoch is 16
+2024-01-26 13:11:51 epoch 25  , valid performance is main metric: 0.83556  , AUC: 0.83556  , ACC: 0.75514  , RMSE: 0.40396  , MAE: 0.3302   , train loss is predict loss: 0.491651    , test performance is main metric: 0.71663  , AUC: 0.71663  , ACC: 0.69888  , RMSE: 0.44529  , MAE: 0.37875  , current best epoch is 16
+2024-01-26 13:11:51 epoch 26  , valid performance is main metric: 0.83708  , AUC: 0.83708  , ACC: 0.75819  , RMSE: 0.40318  , MAE: 0.32353  , train loss is predict loss: 0.489936    , test performance is main metric: 0.71634  , AUC: 0.71634  , ACC: 0.70269  , RMSE: 0.44401  , MAE: 0.36832  , current best epoch is 26
+2024-01-26 13:11:51 epoch 27  , valid performance is main metric: 0.83751  , AUC: 0.83751  , ACC: 0.75946  , RMSE: 0.40268  , MAE: 0.32366  , train loss is predict loss: 0.488445    , test performance is main metric: 0.7174   , AUC: 0.7174   , ACC: 0.70238  , RMSE: 0.44419  , MAE: 0.36894  , current best epoch is 26
+2024-01-26 13:11:51 epoch 28  , valid performance is main metric: 0.83669  , AUC: 0.83669  , ACC: 0.7594   , RMSE: 0.40387  , MAE: 0.31859  , train loss is predict loss: 0.487922    , test performance is main metric: 0.71715  , AUC: 0.71715  , ACC: 0.70651  , RMSE: 0.44435  , MAE: 0.36045  , current best epoch is 26
+2024-01-26 13:11:52 epoch 29  , valid performance is main metric: 0.83672  , AUC: 0.83672  , ACC: 0.75463  , RMSE: 0.40568  , MAE: 0.31713  , train loss is predict loss: 0.487922    , test performance is main metric: 0.71702  , AUC: 0.71702  , ACC: 0.70807  , RMSE: 0.44438  , MAE: 0.35623  , current best epoch is 26
+2024-01-26 13:11:52 epoch 30  , valid performance is main metric: 0.83663  , AUC: 0.83663  , ACC: 0.75825  , RMSE: 0.40566  , MAE: 0.31306  , train loss is predict loss: 0.489717    , test performance is main metric: 0.71891  , AUC: 0.71891  , ACC: 0.7102   , RMSE: 0.44549  , MAE: 0.34967  , current best epoch is 26
+2024-01-26 13:11:52 epoch 31  , valid performance is main metric: 0.83785  , AUC: 0.83785  , ACC: 0.75859  , RMSE: 0.40373  , MAE: 0.31744  , train loss is predict loss: 0.488664    , test performance is main metric: 0.71765  , AUC: 0.71765  , ACC: 0.7097   , RMSE: 0.4442   , MAE: 0.35632  , current best epoch is 26
+2024-01-26 13:11:53 epoch 32  , valid performance is main metric: 0.83722  , AUC: 0.83722  , ACC: 0.75744  , RMSE: 0.40359  , MAE: 0.31916  , train loss is predict loss: 0.487337    , test performance is main metric: 0.71931  , AUC: 0.71931  , ACC: 0.70801  , RMSE: 0.44307  , MAE: 0.35891  , current best epoch is 26
+2024-01-26 13:11:53 epoch 33  , valid performance is main metric: 0.83676  , AUC: 0.83676  , ACC: 0.75882  , RMSE: 0.40314  , MAE: 0.32892  , train loss is predict loss: 0.485033    , test performance is main metric: 0.7178   , AUC: 0.7178   , ACC: 0.70369  , RMSE: 0.4427   , MAE: 0.37235  , current best epoch is 26
+2024-01-26 13:11:53 epoch 34  , valid performance is main metric: 0.83816  , AUC: 0.83816  , ACC: 0.75969  , RMSE: 0.40225  , MAE: 0.3252   , train loss is predict loss: 0.487375    , test performance is main metric: 0.71943  , AUC: 0.71943  , ACC: 0.70319  , RMSE: 0.4431   , MAE: 0.36892  , current best epoch is 34
+2024-01-26 13:11:53 epoch 35  , valid performance is main metric: 0.83772  , AUC: 0.83772  , ACC: 0.75871  , RMSE: 0.40315  , MAE: 0.31998  , train loss is predict loss: 0.485544    , test performance is main metric: 0.7195   , AUC: 0.7195   , ACC: 0.71038  , RMSE: 0.44257  , MAE: 0.35731  , current best epoch is 34
+2024-01-26 13:11:54 epoch 36  , valid performance is main metric: 0.83724  , AUC: 0.83724  , ACC: 0.75865  , RMSE: 0.40351  , MAE: 0.31715  , train loss is predict loss: 0.484468    , test performance is main metric: 0.72007  , AUC: 0.72007  , ACC: 0.70801  , RMSE: 0.44337  , MAE: 0.35792  , current best epoch is 34
+2024-01-26 13:11:54 epoch 37  , valid performance is main metric: 0.83694  , AUC: 0.83694  , ACC: 0.759    , RMSE: 0.40315  , MAE: 0.32052  , train loss is predict loss: 0.484365    , test performance is main metric: 0.72168  , AUC: 0.72168  , ACC: 0.70613  , RMSE: 0.44319  , MAE: 0.36176  , current best epoch is 34
+2024-01-26 13:11:54 epoch 38  , valid performance is main metric: 0.83851  , AUC: 0.83851  , ACC: 0.76049  , RMSE: 0.40247  , MAE: 0.31852  , train loss is predict loss: 0.48436     , test performance is main metric: 0.71977  , AUC: 0.71977  , ACC: 0.70895  , RMSE: 0.44327  , MAE: 0.35667  , current best epoch is 34
+2024-01-26 13:11:54 epoch 39  , valid performance is main metric: 0.83758  , AUC: 0.83758  , ACC: 0.75923  , RMSE: 0.40301  , MAE: 0.31596  , train loss is predict loss: 0.484428    , test performance is main metric: 0.72174  , AUC: 0.72174  , ACC: 0.70845  , RMSE: 0.4436   , MAE: 0.35705  , current best epoch is 34
+2024-01-26 13:11:55 epoch 40  , valid performance is main metric: 0.83702  , AUC: 0.83702  , ACC: 0.75802  , RMSE: 0.40425  , MAE: 0.31372  , train loss is predict loss: 0.483935    , test performance is main metric: 0.72047  , AUC: 0.72047  , ACC: 0.71157  , RMSE: 0.4447   , MAE: 0.35046  , current best epoch is 34
+2024-01-26 13:11:55 epoch 41  , valid performance is main metric: 0.83829  , AUC: 0.83829  , ACC: 0.75963  , RMSE: 0.40403  , MAE: 0.31595  , train loss is predict loss: 0.483856    , test performance is main metric: 0.7213   , AUC: 0.7213   , ACC: 0.70995  , RMSE: 0.44347  , MAE: 0.35228  , current best epoch is 34
+2024-01-26 13:11:55 epoch 42  , valid performance is main metric: 0.83832  , AUC: 0.83832  , ACC: 0.76135  , RMSE: 0.4022   , MAE: 0.31828  , train loss is predict loss: 0.482309    , test performance is main metric: 0.72217  , AUC: 0.72217  , ACC: 0.70469  , RMSE: 0.44446  , MAE: 0.36047  , current best epoch is 34
+2024-01-26 13:11:56 epoch 43  , valid performance is main metric: 0.83791  , AUC: 0.83791  , ACC: 0.75779  , RMSE: 0.40391  , MAE: 0.31251  , train loss is predict loss: 0.482752    , test performance is main metric: 0.71886  , AUC: 0.71886  , ACC: 0.70951  , RMSE: 0.44559  , MAE: 0.34979  , current best epoch is 34
+2024-01-26 13:11:56 epoch 44  , valid performance is main metric: 0.83774  , AUC: 0.83774  , ACC: 0.75917  , RMSE: 0.40274  , MAE: 0.31665  , train loss is predict loss: 0.483376    , test performance is main metric: 0.72249  , AUC: 0.72249  , ACC: 0.70901  , RMSE: 0.44393  , MAE: 0.35562  , current best epoch is 34
+best valid epoch: 34  , best test epoch: 37
+train performance by best valid epoch is main metric: 0.84167  , AUC: 0.84167  , ACC: 0.76729  , RMSE: 0.39664  , MAE: 0.3247   ,
+valid performance by best valid epoch is main metric: 0.83816  , AUC: 0.83816  , ACC: 0.75969  , RMSE: 0.40225  , MAE: 0.3252   ,
+test performance by best valid epoch is main metric: 0.71943  , AUC: 0.71943  , ACC: 0.70319  , RMSE: 0.4431   , MAE: 0.36892  ,
+----------------------------------------------------------------------------------------------------
+train performance by best train epoch is main metric: 0.84273  , AUC: 0.84273  , ACC: 0.76608  , RMSE: 0.39671  , MAE: 0.31333  ,
+test performance by best test epoch is main metric: 0.72168  , AUC: 0.72168  , ACC: 0.70613  , RMSE: 0.44319  , MAE: 0.36176  ,

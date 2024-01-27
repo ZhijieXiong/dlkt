@@ -1,6 +1,7 @@
 import os
 import re
 import time
+import datetime
 import pandas as pd
 import numpy as np
 
@@ -54,6 +55,8 @@ class DataProcessor:
             self.load_process_assist2009_full()
         elif dataset_name == "assist2012":
             self.load_process_assist2012()
+        elif dataset_name == "assist2015":
+            self.load_process_assist2015()
         elif dataset_name == "assist2017":
             self.load_process_assist2017()
         elif dataset_name == "edi2020-task1":
@@ -68,6 +71,8 @@ class DataProcessor:
             self.load_process_kdd_cup2010()
         elif dataset_name in ["SLP-bio", "SLP-chi", "SLP-eng", "SLP-geo", "SLP-his", "SLP-mat", "SLP-phy"]:
             self.load_process_SLP()
+        elif dataset_name == "statics2011":
+            self.load_process_statics2011()
         else:
             raise NotImplementedError()
 
@@ -184,14 +189,25 @@ class DataProcessor:
     def load_process_assist2015(self):
         data_path = self.params["preprocess_config"]["data_path"]
         dataset_name = "assist2015"
-        useful_cols = CONSTANT.datasets_useful_cols()[dataset_name]
         rename_cols = CONSTANT.datasets_renamed()[dataset_name]
-        self.data_raw = load_raw.load_csv(data_path, useful_cols, rename_cols)
+        self.data_raw = load_raw.load_csv(data_path, rename_dict=rename_cols)
         self.statics_raw = self.get_basic_info(self.data_raw)
 
         df = deepcopy(self.data_raw)
+        # 常规处理，先丢弃correct不为0或1的数据（可能为小数）
+        df = df[(df["correct"] == 0) | (df["correct"] == 1)]
+        df["correct"] = df["correct"].map(int)
         df["question_id"] = df["question_id"].map(int)
-        # result_preprocessed = preprocess_raw.preprocess_assist(dataset_name, df)
+        question_ids = pd.unique(df["question_id"])
+        df["question_id"] = df["question_id"].map({c_id: i for i, c_id in enumerate(question_ids)})
+        self.data_preprocessed["only_question"] = df
+        self.statics_preprocessed["only_question"] = DataProcessor.get_basic_info(df)
+
+        question_info = pd.DataFrame({
+            "question_id": question_ids,
+            "question_mapped_id": range(len(question_ids))
+        })
+        self.question_id_map["only_question"] = question_info
 
     def load_process_assist2017(self):
         data_path = self.params["preprocess_config"]["data_path"]
@@ -845,13 +861,86 @@ class DataProcessor:
             Q_table[[question_id] * len(correspond_c), correspond_c] = [1] * len(correspond_c)
         self.Q_table["single_concept"] = Q_table
 
+    def load_process_statics2011(self):
+        data_path = self.params["preprocess_config"]["data_path"]
+        dataset_name = "statics2011"
+        useful_cols = CONSTANT.datasets_useful_cols()[dataset_name]
+        rename_cols = CONSTANT.datasets_renamed()[dataset_name]
+        self.data_raw = load_raw.load_csv(data_path, useful_cols, rename_cols)
+        self.statics_raw = self.get_basic_info(self.data_raw)
+
+        df = deepcopy(self.data_raw)
+
+        def replace_text(text):
+            text = text.replace("_", "####").replace(",", "@@@@")
+            return text
+
+        def time_str2timestamp(time_str):
+            datetime_obj = datetime.datetime.strptime(time_str, "%Y/%m/%d %H:%M")
+            timestamp = int(datetime_obj.timestamp() / 60)
+            return timestamp
+
+        def process_concept_id(c_id_str):
+            # 格式为[ccc, xxx, cid]的层级知识点，取最细粒度的作为concept
+            c_ids = c_id_str.split(",")
+            c_id = c_ids[-1]
+            c_id = c_id.strip()
+            return c_id
+
+        df.dropna(subset=['Problem Name', 'Step Name', 'timestamp', 'correct'], inplace=True)
+        df["concept_id"] = df["concept_id"].apply(process_concept_id)
+        df["timestamp"] = df["timestamp"].apply(time_str2timestamp)
+        df = df[df["correct"] != "hint"]
+        df.loc[df["correct"] == "correct", "correct"] = 1
+        df.loc[df["correct"] == "incorrect", "correct"] = 0
+
+        df['Problem Name'] = df['Problem Name'].apply(replace_text)
+        df['Step Name'] = df['Step Name'].apply(replace_text)
+        df["question_id"] = df.apply(lambda x: "{}----{}".format(x["Problem Name"], x["Step Name"]), axis=1)
+        df["question_id"] = df["question_id"].map(str)
+        question_ids = pd.unique(df["question_id"])
+        question_id_map = {q_id: i for i, q_id in enumerate(question_ids)}
+        df["question_id"] = df["question_id"].map(question_id_map)
+        self.question_id_map["single_concept"] = pd.DataFrame({
+            "question_id": question_id_map.keys(),
+            "question_mapped_id": question_id_map.values()
+        })
+
+        concept_ids = pd.unique(df["concept_id"])
+        concept_id_map = {c_id: i for i, c_id in enumerate(concept_ids)}
+        df["concept_id"] = df["concept_id"].map(concept_id_map)
+        self.concept_id_map["single_concept"] = pd.DataFrame({
+            "concept_id": concept_id_map.keys(),
+            "concept_mapped_id": concept_id_map.values()
+        })
+
+        df["user_id"] = df["user_id"].map(str)
+        user_ids = pd.unique(df["user_id"])
+        df["user_id"] = df["user_id"].map({u_id: i for i, u_id in enumerate(user_ids)})
+
+        self.data_preprocessed["single_concept"] = df[["user_id", "timestamp", "concept_id", "correct", "question_id"]]
+        self.statics_preprocessed["single_concept"] = DataProcessor.get_basic_info(self.data_preprocessed["single_concept"])
+
+        # Q table
+        df_new = pd.DataFrame({
+            "question_id": map(int, df["question_id"].tolist()),
+            "concept_id": map(int, df["concept_id"].tolist())
+        })
+        Q_table = np.zeros((len(question_ids), len(concept_ids)), dtype=int)
+        for question_id, group_info in df_new[["question_id", "concept_id"]].groupby("question_id"):
+            correspond_c = pd.unique(group_info["concept_id"]).tolist()
+            Q_table[[question_id] * len(correspond_c), correspond_c] = [1] * len(correspond_c)
+        self.Q_table["single_concept"] = Q_table
+
     def uniform_data(self):
         dataset_name = self.params["preprocess_config"]["dataset_name"]
         if dataset_name == "assist2009":
             self.uniform_assist2009()
         elif dataset_name in ["assist2012", "assist2017"]:
             self.uniform_assist2012()
-        elif dataset_name in ["edi2020-task1", "edi2020-task2", "edi2020-task34"]:
+        elif dataset_name == "assist2015":
+            self.uniform_assist2015()
+        elif dataset_name in ["edi2020-task1", "edi2020-task34"]:
             self.uniform_edi2020()
         elif dataset_name == "xes3g5m":
             # 直接在load_process_uniform_xes3g5m里一起处理了
@@ -860,6 +949,8 @@ class DataProcessor:
             self.uniform_raw_is_single_concept()
         elif dataset_name in ["SLP-bio", "SLP-chi", "SLP-eng", "SLP-geo", "SLP-his", "SLP-mat", "SLP-phy"]:
             self.uniform_SLP()
+        elif dataset_name == "statics2011":
+            self.uniform_statics2011()
         else:
             raise NotImplementedError()
 
@@ -966,7 +1057,26 @@ class DataProcessor:
         self.data_uniformed["single_concept"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
 
     def uniform_assist2015(self):
-        pass
+        df = deepcopy(self.data_preprocessed["only_question"])
+        info_name_table = {
+            "question_seq": "question_id",
+            "correct_seq": "correct"
+        }
+        id_keys = list(set(df.columns) - set(info_name_table.values()))
+        dataset_seq_keys = CONSTANT.datasets_seq_keys()["assist2015"]
+        seqs = []
+        for user_id in pd.unique(df["user_id"]):
+            user_data = df[df["user_id"] == user_id]
+            user_data = user_data.sort_values(by=["log_id"])
+            object_data = {info_name: [] for info_name in dataset_seq_keys}
+            for k in id_keys:
+                object_data[k] = user_data.iloc[0][k]
+            for i, (_, row_data) in enumerate(user_data.iterrows()):
+                for info_name in dataset_seq_keys:
+                    object_data[info_name].append(row_data[info_name_table[info_name]])
+            object_data["seq_len"] = len(object_data["correct_seq"])
+            seqs.append(object_data)
+        self.data_uniformed["only_question"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
 
     def uniform_edi2020(self):
         df = deepcopy(self.data_preprocessed["single_concept"])
@@ -994,61 +1104,6 @@ class DataProcessor:
             seqs.append(object_data)
 
         self.data_uniformed["single_concept"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
-
-    def uniform_raw_is_single_concept(self):
-        dataset_name = self.params["preprocess_config"]["dataset_name"]
-        df = deepcopy(self.data_preprocessed["single_concept"])
-        info_name_table = {
-            "question_seq": "question_id",
-            "concept_seq": "concept_id",
-            "correct_seq": "correct",
-            "time_seq": "timestamp"
-        }
-        order_key_table = {
-            "ednet-kt1": ["timestamp"],
-            "assist2009-full": ["order_id"],
-            "algebra2005": ["timestamp"],
-            "algebra2006": ["timestamp"],
-            "algebra2008": ["timestamp"],
-            "bridge2algebra2006": ["timestamp"],
-            "bridge2algebra2008": ["timestamp"],
-        }
-        if dataset_name == "ednet-kt1":
-            info_name_table["use_time_seq"] = "use_time"
-        if dataset_name in ["algebra2005", "algebra2006", "algebra2008", "bridge2algebra2006", "bridge2algebra2008"]:
-            df["tmp_index"] = range(df.shape[0])
-            order_key_table[dataset_name].append("tmp_index")
-
-        id_keys = list(set(df.columns) - set(info_name_table.values()))
-        dataset_seq_keys = CONSTANT.datasets_seq_keys()[dataset_name]
-        seqs = []
-        for ui, user_id in enumerate(pd.unique(df["user_id"])):
-            user_data = df[df["user_id"] == user_id]
-            user_data = user_data.sort_values(by=order_key_table[dataset_name])
-            if dataset_name == "ednet-kt1":
-                user_data["timestamp"] = user_data["timestamp"].map(lambda x: int(x / 1000))
-            object_data = {info_name: [] for info_name in dataset_seq_keys}
-            for k in id_keys:
-                object_data[k] = user_data.iloc[0][k]
-            if type(object_data["user_id"]) is not int:
-                object_data["user_id"] = ui
-            if "tmp_index" in object_data.keys():
-                del object_data["tmp_index"]
-            for i, (_, row_data) in enumerate(user_data.iterrows()):
-                for info_name in dataset_seq_keys:
-                    object_data[info_name].append(int(row_data[info_name_table[info_name]]))
-            object_data["seq_len"] = len(object_data["correct_seq"])
-            seqs.append(object_data)
-
-        self.data_uniformed["single_concept"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
-
-        data_only_question = deepcopy(seqs)
-        for item_data in data_only_question:
-            del item_data["concept_seq"]
-        self.data_uniformed["only_question"] = list(filter(lambda item: 2 <= item["seq_len"], data_only_question))
-
-        seqs = DataProcessor.single2multi(data_only_question, self.Q_table["multi_concept"])
-        self.data_uniformed["multi_concept"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
 
     def uniform_SLP(self):
         df = deepcopy(self.data_preprocessed["single_concept"])
@@ -1086,17 +1141,30 @@ class DataProcessor:
             seqs.append(object_data)
         self.data_uniformed["single_concept"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
 
-    def get_all_id_maps(self):
-        result = {}
-        for data_type, id_map in self.question_id_map.items():
-            result.setdefault(data_type, {})
-            result[data_type]["question_id_map"] = id_map
+    def uniform_statics2011(self):
+        df = deepcopy(self.data_preprocessed["single_concept"])
+        info_name_table = {
+            "question_seq": "question_id",
+            "concept_seq": "concept_id",
+            "correct_seq": "correct",
+            "time_seq": "timestamp"
+        }
 
-        for data_type, id_map in self.concept_id_map.items():
-            result.setdefault(data_type, {})
-            result[data_type]["concept_id_map"] = id_map
-
-        return result
+        id_keys = list(set(df.columns) - set(info_name_table.values()))
+        dataset_seq_keys = CONSTANT.datasets_seq_keys()["statics2011"]
+        seqs = []
+        for user_id in pd.unique(df["user_id"]):
+            user_data = df[df["user_id"] == user_id]
+            user_data = user_data.sort_values(by=["timestamp"])
+            object_data = {info_name: [] for info_name in dataset_seq_keys}
+            for k in id_keys:
+                object_data[k] = user_data.iloc[0][k]
+            for i, (_, row_data) in enumerate(user_data.iterrows()):
+                for info_name in dataset_seq_keys:
+                    object_data[info_name].append(row_data[info_name_table[info_name]])
+            object_data["seq_len"] = len(object_data["correct_seq"])
+            seqs.append(object_data)
+        self.data_uniformed["single_concept"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
 
     def process_raw_is_single_concept(self, df_single_concept, df_multi_concept, c_id_is_num=True):
         """
@@ -1232,6 +1300,73 @@ class DataProcessor:
             Q_table[[question_id] * len(correspond_c), correspond_c] = [1] * len(correspond_c)
         self.Q_table["multi_concept"] = Q_table
         self.statics_preprocessed["multi_concept"]["num_max_concept"] = (int(max(Q_table.sum(axis=1))))
+
+    def uniform_raw_is_single_concept(self):
+        dataset_name = self.params["preprocess_config"]["dataset_name"]
+        df = deepcopy(self.data_preprocessed["single_concept"])
+        info_name_table = {
+            "question_seq": "question_id",
+            "concept_seq": "concept_id",
+            "correct_seq": "correct",
+            "time_seq": "timestamp"
+        }
+        order_key_table = {
+            "ednet-kt1": ["timestamp"],
+            "assist2009-full": ["order_id"],
+            "algebra2005": ["timestamp"],
+            "algebra2006": ["timestamp"],
+            "algebra2008": ["timestamp"],
+            "bridge2algebra2006": ["timestamp"],
+            "bridge2algebra2008": ["timestamp"],
+        }
+        if dataset_name == "ednet-kt1":
+            info_name_table["use_time_seq"] = "use_time"
+        if dataset_name in ["algebra2005", "algebra2006", "algebra2008", "bridge2algebra2006", "bridge2algebra2008"]:
+            df["tmp_index"] = range(df.shape[0])
+            order_key_table[dataset_name].append("tmp_index")
+
+        id_keys = list(set(df.columns) - set(info_name_table.values()))
+        dataset_seq_keys = CONSTANT.datasets_seq_keys()[dataset_name]
+        seqs = []
+        for ui, user_id in enumerate(pd.unique(df["user_id"])):
+            user_data = df[df["user_id"] == user_id]
+            user_data = user_data.sort_values(by=order_key_table[dataset_name])
+            if dataset_name == "ednet-kt1":
+                user_data["timestamp"] = user_data["timestamp"].map(lambda x: int(x / 1000))
+            object_data = {info_name: [] for info_name in dataset_seq_keys}
+            for k in id_keys:
+                object_data[k] = user_data.iloc[0][k]
+            if type(object_data["user_id"]) is not int:
+                object_data["user_id"] = ui
+            if "tmp_index" in object_data.keys():
+                del object_data["tmp_index"]
+            for i, (_, row_data) in enumerate(user_data.iterrows()):
+                for info_name in dataset_seq_keys:
+                    object_data[info_name].append(int(row_data[info_name_table[info_name]]))
+            object_data["seq_len"] = len(object_data["correct_seq"])
+            seqs.append(object_data)
+
+        self.data_uniformed["single_concept"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
+
+        data_only_question = deepcopy(seqs)
+        for item_data in data_only_question:
+            del item_data["concept_seq"]
+        self.data_uniformed["only_question"] = list(filter(lambda item: 2 <= item["seq_len"], data_only_question))
+
+        seqs = DataProcessor.single2multi(data_only_question, self.Q_table["multi_concept"])
+        self.data_uniformed["multi_concept"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
+
+    def get_all_id_maps(self):
+        result = {}
+        for data_type, id_map in self.question_id_map.items():
+            result.setdefault(data_type, {})
+            result[data_type]["question_id_map"] = id_map
+
+        for data_type, id_map in self.concept_id_map.items():
+            result.setdefault(data_type, {})
+            result[data_type]["concept_id_map"] = id_map
+
+        return result
 
     @staticmethod
     def get_basic_info(df):

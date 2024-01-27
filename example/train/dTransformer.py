@@ -46,7 +46,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     # batch size
     parser.add_argument("--train_batch_size", type=int, default=4)
-    parser.add_argument("--evaluate_batch_size", type=int, default=8)
+    parser.add_argument("--evaluate_batch_size", type=int, default=4)
     # 梯度裁剪
     parser.add_argument("--enable_clip_grad", type=str2bool, default=True)
     parser.add_argument("--grad_clipped", type=float, default=1.0)

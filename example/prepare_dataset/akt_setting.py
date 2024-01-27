@@ -18,9 +18,9 @@ if __name__ == "__main__":
     params = vars(args)
 
     params["setting_name"] = "akt_setting"
-    if params["dataset_name"] in ["assist2015", "statics2011"]:
+    if params["dataset_name"] == "assist2015":
         params["data_type"] = "only_question"
-    elif params["dataset_name"] == "assist2017":
+    elif params["dataset_name"] in ["assist2017", "statics2011"]:
         params["data_type"] = "single_concept"
     else:
         params["data_type"] = "multi_concept"

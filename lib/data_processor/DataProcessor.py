@@ -73,6 +73,8 @@ class DataProcessor:
             self.load_process_SLP()
         elif dataset_name == "statics2011":
             self.load_process_statics2011()
+        elif dataset_name == "slepemapy":
+            self.load_process_slepemapy()
         else:
             raise NotImplementedError()
 
@@ -934,6 +936,44 @@ class DataProcessor:
             Q_table[[question_id] * len(correspond_c), correspond_c] = [1] * len(correspond_c)
         self.Q_table["single_concept"] = Q_table
 
+    def load_process_slepemapy(self):
+        data_path = self.params["preprocess_config"]["data_path"]
+        dataset_name = "slepemapy"
+        useful_cols = CONSTANT.datasets_useful_cols()[dataset_name]
+        rename_cols = CONSTANT.datasets_renamed()[dataset_name]
+        self.data_raw = load_raw.load_csv(data_path, useful_cols, rename_cols)
+        self.statics_raw = self.get_basic_info(self.data_raw)
+
+        def time_str2timestamp(time_str):
+            if len(time_str) != 19:
+                time_str = re.search(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", time_str).group()
+            return int(time.mktime(time.strptime(time_str[:19], "%Y-%m-%d %H:%M:%S")))
+
+        def process_concept(c_id_str):
+            c_ids = eval(c_id_str)
+            c_ids = list(map(lambda x: x.strip(), c_ids))
+            c_id = "@@".join(c_ids)
+            return c_id
+
+        # 这个数据集来自一个医学习题网站（分辨人体器官组织，选择题），里面有两种习题：(t2d) find the given term on the image; (d2t) pick the name for the highlighted term
+        # 用得上的字段: item_asked、item_answered（empty if the user answered "I don't know"）分别表示问的术语和回答的术语，context_name：name of the image (context)
+        # item_asked、context_name和type组成一道question的要素
+        # 该习题库是层级的知识点systems_asked -> locations_asked -> item_asked，选择locations_asked作为知识点
+        # CL4KT这篇文章选择的是locations_asked（有uknown值）
+        # locations_asked是多知识点，即一个item可能属于多个location
+        df = deepcopy(self.data_raw[self.data_raw["concept_id"] != "uknown"])
+        df.dropna(subset=["user_id", "concept_id", "timestamp", "item_asked", "use_time"], inplace=True)
+        df["concept_id"] = df["concept_id"].apply(process_concept)
+        df["question_id"] = df.apply(lambda x: f"{x['question_type']}--{x['context_name']}--{x['item_asked']}", axis=1)
+        df["timestamp"] = df["timestamp"].map(time_str2timestamp)
+        df["use_time"] = df["use_time"].map(lambda t: min(max(1, int(t) // 1000), 60 * 60))
+        df["correct"] = df["item_asked"] == df["item_answered"]
+        df["correct"] = df["correct"].map(int)
+        df = deepcopy(df[["user_id", "question_id", "correct", "timestamp", "use_time", "country_id", "concept_id"]])
+        df_multi_concept = deepcopy(df)
+
+        self.process_raw_is_single_concept(df, df_multi_concept, c_id_is_num=False)
+
     def uniform_data(self):
         dataset_name = self.params["preprocess_config"]["dataset_name"]
         if dataset_name == "assist2009":
@@ -947,7 +987,8 @@ class DataProcessor:
         elif dataset_name == "xes3g5m":
             # 直接在load_process_uniform_xes3g5m里一起处理了
             pass
-        elif dataset_name in ["assist2009-full", "ednet-kt1", "algebra2005", "algebra2006", "algebra2008", "bridge2algebra2006", "bridge2algebra2008"]:
+        elif dataset_name in ["assist2009-full", "ednet-kt1", "algebra2005", "algebra2006", "algebra2008",
+                              "bridge2algebra2006", "bridge2algebra2008", "slepemapy"]:
             self.uniform_raw_is_single_concept()
         elif dataset_name in ["SLP-bio", "SLP-chi", "SLP-eng", "SLP-geo", "SLP-his", "SLP-mat", "SLP-phy"]:
             self.uniform_SLP()
@@ -1172,8 +1213,8 @@ class DataProcessor:
         """
         处理像ednet-kt1、assist2009-full和kdd-cup这种数据，其每条记录是一道习题\n
         这类数据统一先提取single concept 和 multi concept的Q table，然后生成single concept数据，再根据single concept和Q table生成only question和multi concept\n
-        这类数据由分为两类，一类是concept id为数字（ednet-kt1、assist2009-full、algebra2008、bridge2algebra2008）；
-        另一类是concept id非数值（algebra2005、algebra2006、bridge2algebra2006）
+        这类数据由分为两类，一类是concept id为数字（ednet-kt1、assist2009-full）；
+        另一类是concept id非数值（algebra2005、algebra2006、bridge2algebra2006、algebra2008、bridge2algebra2008）
 
         :param df_single_concept:
         :param df_multi_concept:
@@ -1211,7 +1252,6 @@ class DataProcessor:
         self.statics_preprocessed["single_concept"]["num_concept"] = len(concept_ids)
         self.Q_table["single_concept"] = Q_table
 
-        # multi_concept
         # df_multi_concept只是用来统计信息，知识点映射并不使用它，因为准备在uniform是直接用single2multi和q table转换为multi concept
         if c_id_is_num:
             self.process_c_id_num(df_multi_concept, df_new)
@@ -1221,6 +1261,7 @@ class DataProcessor:
     def process_c_id_num(self, df_multi_concept, df_new):
         # 扩展为多知识点数据，即一条记录为一个知识点，而不是一道习题，类似skill_builder_data_corrected_collapsed.csv这种格式
         dataset_name = self.params["preprocess_config"]["dataset_name"]
+        # 多知识点之间的连接符，如ednet-kt1中"1_2"表示这道习题是知识点1和2
         split_table = {
             "ednet-kt1": "_",
             "assist2009-full": ";",
@@ -1261,12 +1302,14 @@ class DataProcessor:
     def process_c_id_not_num(self, df_multi_concept, df_new):
         # 扩展为多知识点数据，即一条记录为一个知识点，而不是一道习题，类似skill_builder_data_corrected_collapsed.csv这种格式
         dataset_name = self.params["preprocess_config"]["dataset_name"]
+        # 多知识点之间的连接符
         split_table = {
             "algebra2005": "~~",
             "algebra2006": "~~",
             "algebra2008": "~~",
             "bridge2algebra2006": "~~",
-            "bridge2algebra2008": "~~"
+            "bridge2algebra2008": "~~",
+            "slepemapy": "@@"
         }
         df_multi_concept["concept_id"] = df_multi_concept["concept_id"].str.split(split_table[dataset_name])
         df_multi_concept = df_multi_concept.explode("concept_id").reset_index(drop=True)
@@ -1320,8 +1363,9 @@ class DataProcessor:
             "algebra2008": ["timestamp"],
             "bridge2algebra2006": ["timestamp"],
             "bridge2algebra2008": ["timestamp"],
+            "slepemapy": ["timestamp"]
         }
-        if dataset_name == "ednet-kt1":
+        if dataset_name in ["ednet-kt1", "slepemapy"]:
             info_name_table["use_time_seq"] = "use_time"
         if dataset_name in ["algebra2005", "algebra2006", "algebra2008", "bridge2algebra2006", "bridge2algebra2008"]:
             df["tmp_index"] = range(df.shape[0])

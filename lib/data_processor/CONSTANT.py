@@ -8,7 +8,7 @@ def datasets_useful_cols(datasets_merged=None):
         "assist2012": ["problem_id", "user_id", "end_time", "correct", "skill_id", "overlap_time", "school_id", "skill"],
         "assist2017": ["studentId", "MiddleSchoolId", "problemId", "skill", "timeTaken", "startTime", "correct"],
         "slepemapy": ["user", "item_asked", "item_answered", "context_name", "type", "time", "response_time",
-                      "ip_country"],
+                      "ip_country", "locations_asked"],
         "statics2011": ["Anon Student Id", "Problem Hierarchy", "Problem Name", "Step Name", "First Attempt", "First Transaction Time"]
     }
     algebra2005 = ["Anon Student Id", "Problem Name", "Step Name", "First Transaction Time", "Correct First Attempt"]
@@ -76,6 +76,14 @@ def datasets_renamed(datasets_merged=None):
         "ednet-kt1": {
             "tags": "concept_id",
             "elapsed_time": "use_time"
+        },
+        "slepemapy": {
+            "user": "user_id",
+            "time": "timestamp",
+            "response_time": "use_time",
+            "type": "question_type",
+            "ip_country": "country_id",
+            "locations_asked": "concept_id"
         }
     }
     algebra2005 = {

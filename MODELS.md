@@ -99,7 +99,7 @@ Abstract: Knowledge tracing (KT) is a crucial technique to predict stu- dents’
 
 model: `[kt_model]_max_entropy_aug.py`
 
-[*Long Zhao, Ting Liu, Xi Peng, Dimitris Metaxas*. **Maximum-Entropy Adversarial Data Augmentation for Improved Generalization and Robustness**. Advances in Neural Information Processing Systems 33 (NeurIPS 2020)](https://proceedings.neurips.cc/paper_files/paper/2020)
+[*Long Zhao, Ting Liu, Xi Peng, Dimitris Metaxas*. **Maximum-Entropy Adversarial Data Augmentation for Improved Generalization and Robustness**. Advances in Neural Information Processing Systems 33 (NeurIPS 2020)](https://proceedings.neurips.cc/paper_files/paper/2020/hash/a5bfc9e07964f8dddeb95fc584cd965d-Abstract.html)
 
 Abstract: Adversarial data augmentation has shown promise for training robust deep neural networks against unforeseen data shifts or corruptions. However, it is difficult to define heuristics to generate effective fictitious target distributions containing "hard" adversarial perturbations that are largely different from the source distribution. In this paper, we propose a novel and effective regularization term for adversarial data augmentation. We theoretically derive it from the information bottleneck principle, which results in a maximum-entropy formulation. Intuitively, this regularization term encourages perturbing the underlying source distribution to enlarge predictive uncertainty of the current model, so that the generated "hard" adversarial perturbations can improve the model robustness during training. Experimental results on three standard benchmarks demonstrate that our method consistently outperforms the existing state of the art by a statistically significant margin.
 

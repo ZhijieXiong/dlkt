@@ -748,6 +748,8 @@ class DataProcessor:
         useful_cols = CONSTANT.datasets_useful_cols()[dataset_name]
         rename_cols = CONSTANT.datasets_renamed()[dataset_name]
         data = load_raw.load_table(train_path, useful_cols, rename_cols)
+
+        # 处理习题的方式是照搬pykt-toolkit的，感觉有些问题，这种处理方式最后的习题数量太多了
         data["Problem Name"] = data["Problem Name"].apply(lambda x: x.strip().replace("_", "####").replace(",", "@@@@"))
         data["Step Name"] = data["Step Name"].apply(lambda x: x.strip().replace("_", "####").replace(",", "@@@@"))
         data["question_id"] = data.apply(lambda x: f"{x['Problem Name']}----{x['Step Name']}", axis=1)

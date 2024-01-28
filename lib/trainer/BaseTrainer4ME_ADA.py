@@ -136,7 +136,7 @@ class BaseTrainer4ME_ADA(KnowledgeTracingTrainer):
                 self.dataset_adv_generated["embed_correct"].weight
             ], lr=adv_learning_rate)
         elif model_name == "LPKT":
-            encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
+            encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT"]
             num_question = encoder_config["num_question"]
             dim_k = encoder_config["dim_k"]
 

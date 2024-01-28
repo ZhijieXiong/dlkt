@@ -7,7 +7,7 @@
   split=0
 
 
-  dropouts='0.1 0.2 0.3 0.4 0.5'
+  dropouts='0.1 0.2 0.3 0.4'
   weight_decays='0.001 0.0001 0'
   for weight_decay in ${weight_decays}
   do

@@ -2,12 +2,12 @@
 
 {
   setting_name="our_setting_ood_by_school"
-  dataset_name="SLP-his"
+  dataset_name="SLP-phy"
   data_type="single_concept"
-  split=0
+  split=2
 
 
-  dropouts='0.1 0.2 0.3 0.4 0.5'
+  dropouts='0.1 0.2 0.3 0.4'
   weight_decays='0.001 0.0001 0'
   for weight_decay in ${weight_decays}
   do
@@ -28,7 +28,7 @@
               --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type MultiStepLR --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
               --train_batch_size 64 --evaluate_batch_size 256 \
               --enable_clip_grad False --grad_clipped 10.0 \
-              --num_concept 22 --num_question 1251 \
+              --num_concept 54 --num_question 1915 \
               --dim_concept 64 --dim_question 64 --dim_correct "${dim_correct}" --dim_latent "${dim_latent}" --rnn_type gru --num_rnn_layer 1 --dropout "${dropout}" --num_predict_layer 3 --dim_predict_mid 128 --activate_type relu \
               --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
               --transfer_head2zero False --head2tail_transfer_method "mean_pool" \
@@ -37,4 +37,4 @@
       done
     done
   done
-} >> F:/code/myProjects/dlkt/example/result_local/qdkt_our_setting_ood_by_school_SLP-his_split_0_ob.txt
+} >> F:/code/myProjects/dlkt/example/result_local/qdkt_our_setting_ood_by_school_SLP-phy_split_2_ob.txt

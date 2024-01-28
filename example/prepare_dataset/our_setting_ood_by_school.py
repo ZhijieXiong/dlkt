@@ -31,7 +31,7 @@ if __name__ == "__main__":
     else:
         params["data_type"] = "single_concept"
     params["max_seq_len"] = 200
-    params["min_seq_len"] = 10
+    params["min_seq_len"] = 5
     objects = {"file_manager": FileManager(config.FILE_MANAGER_ROOT)}
 
     params["lab_setting"] = {

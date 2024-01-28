@@ -34,7 +34,10 @@ class BaseTrainer4ME_ADA(KnowledgeTracingTrainer):
             model.eval()
             # RNN就需要加上torch.backends.cudnn.enabled = False，才能在eval模式下通过网络还能保留梯度，否则报错：RuntimeError: cudnn RNN backward can only be called in training mode
             # 不使用RNN就可以不加
-            torch.backends.cudnn.enabled = False
+            use_rnn = model.model_name in ["qdkt"]
+            if use_rnn:
+                torch.backends.cudnn.enabled = False
+
             optimizer = self.init_data_generated(adv_learning_rate)
             for batch_idx, batch in enumerate(train_loader):
                 num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
@@ -45,7 +48,8 @@ class BaseTrainer4ME_ADA(KnowledgeTracingTrainer):
                 self.adv_loss.add_loss("gen entropy loss", adv_entropy * num_sample, num_sample)
                 self.adv_loss.add_loss("gen mse loss", adv_mse_loss * num_sample, num_sample)
 
-            torch.backends.cudnn.enabled = True
+            if use_rnn:
+                torch.backends.cudnn.enabled = True
             self.num_epoch_adv_gen += 1
             t_end = get_now_time()
             self.objects["logger"].info(f"max entropy adversarial data augment: from {t_start} to {t_end}, {self.adv_loss.get_str()}")
@@ -62,13 +66,12 @@ class BaseTrainer4ME_ADA(KnowledgeTracingTrainer):
                 KTEmbedLayer(self.params, self.objects).to(self.params["device"]))
             optimizer = optim.SGD(self.dataset_adv_generated["embed_layer"].parameters(), lr=adv_learning_rate)
         elif model_name == "AKT":
-            encoder_layer_type = self.params["models_config"]["kt_model"]["encoder_layer"]["type"]
-            encoder_layer_config = self.params["models_config"]["kt_model"]["encoder_layer"][encoder_layer_type]
-            num_concept = encoder_layer_config["num_concept"]
-            num_question = encoder_layer_config["num_question"]
             encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
+            num_concept = encoder_config["num_concept"]
+            num_question = encoder_config["num_question"]
             dim_emb = encoder_config["dim_model"]
             separate_qa = encoder_config["separate_qa"]
+
             self.dataset_adv_generated["embed_question_difficulty"] = (
                 nn.Embedding(num_question, 1,
                              _weight=model.embed_question_difficulty.weight.detach().clone())
@@ -132,6 +135,25 @@ class BaseTrainer4ME_ADA(KnowledgeTracingTrainer):
                 self.dataset_adv_generated["embed_concept_diff"].weight,
                 self.dataset_adv_generated["embed_correct"].weight
             ], lr=adv_learning_rate)
+        elif model_name == "LPKT":
+            encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
+            num_question = encoder_config["num_question"]
+            dim_k = encoder_config["dim_k"]
+
+            self.dataset_adv_generated["e_embed"] = (
+                nn.Embedding(num_question + 1, dim_k, _weight=model.e_embed.weight.detach().clone())
+            )
+            self.dataset_adv_generated["at_embed"] = (
+                nn.Embedding(3600 + 1, dim_k, _weight=model.at_embed.weight.detach().clone())
+            )
+            self.dataset_adv_generated["it_embed"] = (
+                nn.Embedding(43200 + 1, dim_k, _weight=model.it_embed.weight.detach().clone())
+            )
+            optimizer = optim.SGD(params=[
+                self.dataset_adv_generated["e_embed"].weight,
+                self.dataset_adv_generated["at_embed"].weight,
+                self.dataset_adv_generated["it_embed"].weight
+            ], lr=adv_learning_rate)
         else:
             raise NotImplementedError()
 
@@ -156,5 +178,9 @@ class BaseTrainer4ME_ADA(KnowledgeTracingTrainer):
             self.dataset_adv_generated["embed_question_diff"].weight.requires_grad_(False),
             self.dataset_adv_generated["embed_concept_diff"].weight.requires_grad_(False),
             self.dataset_adv_generated["embed_correct"].weight.requires_grad_(False)
+        elif model_name == "LPKT":
+            self.dataset_adv_generated["e_embed"].weight.requires_grad_(False),
+            self.dataset_adv_generated["at_embed"].weight.requires_grad_(False),
+            self.dataset_adv_generated["it_embed"].weight.requires_grad_(False)
         else:
             raise NotImplementedError()

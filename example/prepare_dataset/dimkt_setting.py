@@ -27,7 +27,6 @@ if __name__ == "__main__":
 
     params["lab_setting"] = {
         "name": params["setting_name"],
-        "data_type": params["data_type"],
         "max_seq_len": params["max_seq_len"],
         "min_seq_len": params["min_seq_len"],
         "n_fold": params["n_fold"],

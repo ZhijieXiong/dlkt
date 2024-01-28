@@ -44,7 +44,6 @@ if __name__ == "__main__":
                        "                    测试集不会出现学校序列平均长度很低（低于min_mean_seq_len），这种学校的数据不会出现在测试集"
                        "                （3）基于iid_radio和序列随机划分训练集为训练集和验证集"
                        "                （4）上述步骤循环进行，直到划分num_split组结果",
-        "data_type": "single_concept",
         "min_school_seq": params["min_school_seq"],
         "train_test_radio_upper_bound": params["train_test_radio_upper_bound"],
         "train_test_radio_lower_bound": params["train_test_radio_lower_bound"],

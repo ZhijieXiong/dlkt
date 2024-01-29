@@ -22,7 +22,7 @@
           --use_early_stop True --epoch_early_stop 10 \
           --use_last_average False --epoch_last_average 5 \
           --main_metric "AUC" --use_multi_metrics False \
-          --learning_rate 0.002 --enable_lr_schedule True --lr_schedule_type "StepLR" --lr_schedule_step 5 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
+          --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type "StepLR" --lr_schedule_step 5 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
           --train_batch_size 64 --evaluate_batch_size 256 \
           --enable_clip_grad False --grad_clipped 10.0 \
           --num_min_question "${num_min_question}" --num_min_concept 30 --num_concept 265 --num_question 53091 \

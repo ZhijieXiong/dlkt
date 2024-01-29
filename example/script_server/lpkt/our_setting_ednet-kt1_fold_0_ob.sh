@@ -7,7 +7,7 @@
 
 
   weight_decays='0.00001 0.000001 0'
-  dropouts='0.2 0.3 0.4 0.5'
+  dropouts='0.1 0.2 0.3 0.4'
   for weight_decay in ${weight_decays}
   do
     for dim_emb in 64 128
@@ -15,7 +15,7 @@
         for dropout in ${dropouts}
         do
           echo -e "weight_decay: ${weight_decay}, dim_emb: ${dim_emb}, dropout: ${dropout}"
-          python F:/code/myProjects/dlkt/example/train/lpkt.py \
+          CUDA_VISIBLE_DEVICES=1 python /home/xiongzj/myProjects/KT/dlkt/example/train/lpkt.py \
             --setting_name "our_setting" --dataset_name "${dataset_name}" --data_type "${data_type}" \
             --train_file_name "${dataset_name}_train_fold_${fold}.txt" --valid_file_name "${dataset_name}_valid_fold_${fold}.txt" --test_file_name "${dataset_name}_test_fold_${fold}.txt" \
             --optimizer_type "adam" --weight_decay "${weight_decay}" --momentum 0.9 \
@@ -31,4 +31,4 @@
       done
     done
   done
-} >> F:/code/myProjects/dlkt/example/result_local/lpkt_our_setting_ednet-kt1_fold_0_ob.txt
+} >> /home/xiongzj/myProjects/KT/dlkt/example/results/lpkt_our_setting_ednet-kt1_fold_0_ob.txt

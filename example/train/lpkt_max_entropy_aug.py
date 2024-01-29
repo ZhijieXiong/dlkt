@@ -23,7 +23,7 @@ if __name__ == "__main__":
     parser.add_argument("--test_file_name", type=str, default="assist2017_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0.0001)
+    parser.add_argument("--weight_decay", type=float, default=0.000001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
@@ -37,15 +37,15 @@ if __name__ == "__main__":
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
     # 学习率
-    parser.add_argument("--learning_rate", type=float, default=0.001)
+    parser.add_argument("--learning_rate", type=float, default=0.002)
     parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
-    parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
+    parser.add_argument("--lr_schedule_type", type=str, default="StepLR",
                         choices=("StepLR", "MultiStepLR"))
-    parser.add_argument("--lr_schedule_step", type=int, default=10)
+    parser.add_argument("--lr_schedule_step", type=int, default=15)
     parser.add_argument("--lr_schedule_milestones", type=str, default="[5]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     # batch size
-    parser.add_argument("--train_batch_size", type=int, default=8)
+    parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     # 梯度裁剪
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
@@ -65,10 +65,10 @@ if __name__ == "__main__":
     parser.add_argument("--weight_adv_pred_loss", type=float, default=1)
     parser.add_argument("--loop_adv", type=int, default=3)
     parser.add_argument("--adv_learning_rate", type=float, default=10.0)
-    parser.add_argument("--eta", type=float, default=20.0)
+    parser.add_argument("--eta", type=float, default=10.0)
     parser.add_argument("--gamma", type=float, default=10.0)
     # 其它
-    parser.add_argument("--save_model", type=str2bool, default=False)
+    parser.add_argument("--save_model", type=str2bool, default=True)
     parser.add_argument("--debug_mode", type=str2bool, default=False, help="if True, device=cpu")
     parser.add_argument("--seed", type=int, default=0)
 

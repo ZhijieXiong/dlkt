@@ -6,12 +6,12 @@
   fold=0
 
 
-  weights_adv_pred_loss='1'
-  etas='5 20'
-  gammas='5 20'
-  dropouts='0.1 0.2 0.3'
-  adv_learning_rates='30 10 1 0.1'
-  weights_decay='0.000001 0.0000001 0.00000001 0'
+  weights_adv_pred_loss='0.8 1 1.2 1.5'
+  etas='5 10 20'
+  gammas='5 10 20'
+  dropouts='0.2'
+  adv_learning_rates='50 30 10'
+  weights_decay='0 0.0000001'
   for weight_adv_pred_loss in ${weights_adv_pred_loss}
   do
     for eta in ${etas}
@@ -24,7 +24,7 @@
           do
             for weight_decay in ${weights_decay}
             do
-              echo -e "weight decay: ${weight_decay}, adv_learning_rate: ${adv_learning_rate}, dropout: ${dropout}, weight_adv_pred_loss: ${weight_adv_pred_loss}, eta: ${eta}, gamma: ${gamma}"
+              echo -e "lr: 0.001 no lr decay, weight decay: ${weight_decay}, adv_learning_rate: ${adv_learning_rate}, dropout: ${dropout}, weight_adv_pred_loss: ${weight_adv_pred_loss}, eta: ${eta}, gamma: ${gamma}"
               CUDA_VISIBLE_DEVICES=1 python /home/xiongzj/myProjects/KT/dlkt/example/train/qdkt_max_entropy_aug.py \
                 --setting_name "our_setting" --dataset_name "${dataset_name}" --data_type "${data_type}" \
                 --train_file_name "${dataset_name}_train_fold_${fold}.txt" --valid_file_name "${dataset_name}_valid_fold_${fold}.txt" --test_file_name "${dataset_name}_test_fold_${fold}.txt" \
@@ -46,4 +46,4 @@
       done
     done
   done
-} >> /home/xiongzj/myProjects/KT/dlkt/example/results/qdkt_ME-ADA_our_setting_ednet-kt1_fold_0_ob5.txt
+} >> /home/xiongzj/myProjects/KT/dlkt/example/results/qdkt_ME-ADA_our_setting_ednet-kt1_fold_0_ob6.txt

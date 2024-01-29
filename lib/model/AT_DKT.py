@@ -9,7 +9,7 @@ def ut_mask(seq_len):
     """
     Upper Triangular Mask
     """
-    return torch.triu(torch.ones(seq_len,seq_len),diagonal=1).to(dtype=torch.bool)
+    return torch.triu(torch.ones(seq_len, seq_len), diagonal=1).to(dtype=torch.bool)
 
 
 class AT_DKT(nn.Module):
@@ -146,8 +146,8 @@ class AT_DKT(nn.Module):
             concept_seq[:, :-1][mask_bool_seq[:, :-1]]
         )
         IK_predict_loss = nn.functional.mse_loss(
-            IK_predict_score[:, IK_start+1:][mask_bool_seq[:, IK_start+1:]],
-            batch["history_acc_seq"][:, IK_start+1:][mask_bool_seq[:, IK_start+1:]]
+            IK_predict_score[:, IK_start + 1:][mask_bool_seq[:, IK_start + 1:]],
+            batch["history_acc_seq"][:, IK_start + 1:][mask_bool_seq[:, IK_start + 1:]]
         )
 
         if loss_record is not None:

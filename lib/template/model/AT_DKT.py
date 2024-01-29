@@ -7,7 +7,7 @@ MODEL_PARAMS = {
         "use_LLM_emb": False
     },
     "encoder_layer": {
-        "qDKT": {
+        "AT_DKT": {
             "dim_concept": 64,
             "dim_question": 64,
             "dim_correct": 64,

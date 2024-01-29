@@ -13,6 +13,8 @@ def ut_mask(seq_len):
 
 
 class AT_DKT(nn.Module):
+    model_name = "AT_DKT"
+
     def __init__(self, params, objects):
         super(AT_DKT, self).__init__()
         self.params = params

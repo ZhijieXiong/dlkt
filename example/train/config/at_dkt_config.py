@@ -2,11 +2,14 @@ from ._config import *
 
 from lib.template.params_template import PARAMS
 from lib.template.objects_template import OBJECTS
-
+from lib.template.model.AT_DKT import MODEL_PARAMS
 from lib.util.basic import *
 
 
 def at_dkt_general_config(local_params, global_params):
+    global_params["models_config"]["kt_model"] = deepcopy(MODEL_PARAMS)
+    global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "AT_DKT"
+
     # 配置模型参数
     num_concept = local_params["num_concept"]
     num_question = local_params["num_question"]

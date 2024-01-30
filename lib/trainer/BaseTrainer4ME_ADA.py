@@ -34,7 +34,7 @@ class BaseTrainer4ME_ADA(KnowledgeTracingTrainer):
             model.eval()
             # RNN就需要加上torch.backends.cudnn.enabled = False，才能在eval模式下通过网络还能保留梯度，否则报错：RuntimeError: cudnn RNN backward can only be called in training mode
             # 不使用RNN就可以不加
-            use_rnn = model.model_name in ["qdkt"]
+            use_rnn = model.model_name in ["qDKT"]
             if use_rnn:
                 torch.backends.cudnn.enabled = False
 

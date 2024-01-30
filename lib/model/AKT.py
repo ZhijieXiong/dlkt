@@ -578,6 +578,8 @@ class AKT(nn.Module, BaseModel4CL):
             self.zero_grad()
             optimizer.zero_grad()
             (-loss).backward()
+            # 防止梯度爆炸
+            nn.utils.clip_grad_norm_(optimizer.param_groups[0]["params"], max_norm=10)
             optimizer.step()
 
         return adv_predict_loss, adv_entropy, adv_mse_loss

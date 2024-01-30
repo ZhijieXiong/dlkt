@@ -170,7 +170,7 @@ def general_config(local_params, global_params, global_objects):
     )
     if not os.path.exists(statics_info_file_path):
         global_objects["logger"].warning(
-            "\nWARNING: statics of train dataset is not exist. This file is required for some cases, e.g., "
+            f"\nWARNING: statics of train dataset (`{statics_info_file_path}`) is not exist. This file is required for some cases, e.g., "
             "fine grain evaluation such as long tail problem and some model using transfer_head2zero. "
             "If it is necessary, please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset\n"
         )

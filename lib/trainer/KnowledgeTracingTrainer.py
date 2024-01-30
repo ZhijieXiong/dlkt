@@ -154,7 +154,7 @@ class KnowledgeTracingTrainer:
         self.objects["logger"].info(f"test, seq: {test_statics[0]}, sample: {test_statics[1]}, accuracy: {test_statics[2]:<.4}")
 
     def evaluate_kt_dataset(self, model, data_loader):
-        transfer_head2zero = self.params["transfer_head2zero"]
+        transfer_head2zero = self.params.get("transfer_head2zero", False)
         model.eval()
         with torch.no_grad():
             predict_score_all = []

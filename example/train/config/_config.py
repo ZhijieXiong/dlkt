@@ -121,17 +121,6 @@ def general_config(local_params, global_params, global_objects):
     global_params["use_LLM_emb4concept"] = use_LLM_emb4concept
     global_params["train_LLM_emb"] = train_LLM_emb
 
-    # 是否将head的知识迁移到zero shot的知识
-    transfer_head2zero = local_params.get("transfer_head2zero", False)
-    head2tail_transfer_method = local_params.get("head2tail_transfer_method", "mean_pool")
-
-    global_params["transfer_head2zero"] = {
-        "use_transfer_head2zero": transfer_head2zero,
-        "head2tail_transfer_method": head2tail_transfer_method
-    }
-    global_params["transfer_head2zero"] = transfer_head2zero
-    global_params["head2tail_transfer_method"] = head2tail_transfer_method
-
     global_objects["logger"].info(
         "basic setting\n"
         f"    device: {global_params['device']}, seed: {global_params['seed']}\n"
@@ -142,7 +131,6 @@ def general_config(local_params, global_params, global_objects):
         f"embedding init\n"
         f"    use LLM emb to init question emb: {use_LLM_emb4question}, use LLM emb to init concept emb: {use_LLM_emb4concept}"
         f"{f', train LLM emb: {train_LLM_emb}' if (use_LLM_emb4question or use_LLM_emb4concept) else ''}\n"
-        f"    transfer head to zero for question in train data: {transfer_head2zero}{f', transfer method: {head2tail_transfer_method}' if transfer_head2zero else ''}\n"
         "evaluate metric\n"
         f"    main metric: {main_metric}, use multi metrics: {use_multi_metrics}{f', multi metrics: {mutil_metrics}' if use_multi_metrics else ''}"
     )
@@ -181,17 +169,11 @@ def general_config(local_params, global_params, global_objects):
         datasets_config["train"]["file_name"].replace(".txt", f"_statics.json")
     )
     if not os.path.exists(statics_info_file_path):
-        if transfer_head2zero:
-            global_objects["logger"].error(
-                "\nERROR: statics of train dataset is not exist! If you want use transfer_head2zero, this file is necessary. "
-                "Please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset\n"
-            )
-        else:
-            global_objects["logger"].warning(
-                "\nWARNING: statics of train dataset is not exist. This file is required for some cases, e.g., "
-                "fine grain evaluation such as long tail problem and some model using transfer_head2zero. "
-                "If it is necessary, please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset\n"
-            )
+        global_objects["logger"].warning(
+            "\nWARNING: statics of train dataset is not exist. This file is required for some cases, e.g., "
+            "fine grain evaluation such as long tail problem and some model using transfer_head2zero. "
+            "If it is necessary, please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset\n"
+        )
     else:
         with open(statics_info_file_path, "r") as file:
             global_objects["data"]["train_data_statics"] = json.load(file)

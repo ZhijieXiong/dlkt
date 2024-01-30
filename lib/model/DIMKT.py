@@ -46,6 +46,7 @@ class DIMKT(nn.Module, BaseModel4CL):
         self.dropout_layer = nn.Dropout(dropout)
 
         # 解析q table
+        self.question_head4zero = None
         self.embed_question4zero = None
         self.embed_question_diff4zero = None
         if self.objects["data"].get("train_data_statics", False):

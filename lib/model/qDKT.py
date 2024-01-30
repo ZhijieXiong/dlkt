@@ -32,13 +32,6 @@ class qDKT(nn.Module, BaseModel4CL):
 
         self.predict_layer = PredictorLayer(self.params, self.objects)
 
-        # 解析q table
-        if params["transfer_head2zero"]:
-            self.question_head4zero = parse_question_zero_shot(self.objects["data"]["train_data_statics"],
-                                                               self.objects["data"]["question2concept"],
-                                                               self.objects["data"]["concept2question"])
-            self.embed_question4zero = None
-
         use_LLM_emb4question = self.params["use_LLM_emb4question"]
         use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
         embed_config = self.params["models_config"]["kt_model"]["kt_embed_layer"]
@@ -50,6 +43,14 @@ class qDKT(nn.Module, BaseModel4CL):
             dim_LLM_emb = self.embed_layer.embed_concept.weight.shape[1]
             dim_concept = embed_config["question"][1]
             self.MLP4concept = MLP4LLM_emb(dim_LLM_emb, dim_concept, 0.1)
+
+        # 解析q table
+        self.embed_question4zero = None
+        self.question_head4zero = None
+        if self.objects["data"].get("train_data_statics", False):
+            self.question_head4zero = parse_question_zero_shot(self.objects["data"]["train_data_statics"],
+                                                               self.objects["data"]["question2concept"],
+                                                               self.objects["data"]["concept2question"])
 
     def get_concept_emb_all(self):
         return self.embed_layer.get_emb_all("concept")

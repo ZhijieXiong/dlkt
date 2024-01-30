@@ -120,12 +120,9 @@ if __name__ == "__main__":
     parser.add_argument("--use_LLM_emb4question", type=str2bool, default=False)
     parser.add_argument("--use_LLM_emb4concept", type=str2bool, default=False)
     parser.add_argument("--train_LLM_emb", type=str2bool, default=False)
-    # 是否将head question的知识迁移到zero shot question
-    parser.add_argument("--transfer_head2zero", type=str2bool, default=False)
-    parser.add_argument("--head2tail_transfer_method", type=str, default="mean_pool",
-                        choices=("mean_pool", "gaussian_fit"))
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
+    parser.add_argument("--debug_mode", type=str2bool, default=False, help="if True, device=cpu")
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()

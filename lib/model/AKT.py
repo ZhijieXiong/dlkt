@@ -57,13 +57,14 @@ class AKT(nn.Module, BaseModel4CL):
                 torch.nn.init.constant_(p, 0.)
 
         # 解析q table
-        if params["transfer_head2zero"]:
+        self.question_head4zero = None
+        self.embed_question_difficulty4zero = None
+        self.embed_question4zero = None
+        self.embed_interaction4zero = None
+        if self.objects["data"].get("train_data_statics", False):
             self.question_head4zero = parse_question_zero_shot(self.objects["data"]["train_data_statics"],
                                                                self.objects["data"]["question2concept"],
                                                                self.objects["data"]["concept2question"])
-            self.embed_question_difficulty4zero = None
-            self.embed_question4zero = None
-            self.embed_interaction4zero = None
 
     def get_concept_emb_all(self):
         return self.embed_concept.weight

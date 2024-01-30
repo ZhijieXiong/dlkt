@@ -70,6 +70,7 @@ if __name__ == "__main__":
     parser.add_argument("--gamma", type=float, default=10.0)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=True)
+    parser.add_argument("--debug_mode", type=str2bool, default=False, help="if True, device=cpu")
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()

@@ -75,13 +75,7 @@ class DKVMN(nn.Module):
         # Read Process
         f = torch.tanh(
             self.f_layer(
-                torch.cat(
-                    [
-                        (w.unsqueeze(-1) * Mv[:, :-1]).sum(-2),
-                        k
-                    ],
-                    dim=-1
-                )
+                torch.cat([(w.unsqueeze(-1) * Mv[:, :-1]).sum(-2), k], dim=-1)
             )
         )
 

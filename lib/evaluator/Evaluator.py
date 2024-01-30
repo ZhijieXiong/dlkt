@@ -91,7 +91,7 @@ class Evaluator:
         self.objects = objects
 
     def evaluate(self):
-        transfer_head2zero = self.params["transfer_head2zero"]
+        use_transfer = self.params["transfer_head2zero"]["use_transfer"]
         fine_grain_config = self.params["evaluate"]["fine_grain"]
         max_seq_len = fine_grain_config["max_seq_len"]
         seq_len_absolute = fine_grain_config["seq_len_absolute"]
@@ -107,7 +107,7 @@ class Evaluator:
             question_all = []
             concept_all = []
             result_all_batch = []
-            if transfer_head2zero and hasattr(model, "set_emb4zero"):
+            if use_transfer and hasattr(model, "set_emb4zero"):
                 model.set_emb4zero()
             for batch in data_loader:
                 correct_seq = batch["correct_seq"]
@@ -128,7 +128,7 @@ class Evaluator:
                     all_score_dis[i] += score_dis[i]
                     all_label_dis[i] += label_dis[i]
 
-                if transfer_head2zero and hasattr(model, "get_predict_score4question_zero"):
+                if use_transfer and hasattr(model, "get_predict_score4question_zero"):
                     predict_score = model.get_predict_score4question_zero(batch).detach().cpu().numpy()
                 else:
                     predict_score = model.get_predict_score(batch).detach().cpu().numpy()

@@ -205,7 +205,7 @@ class qDKT(nn.Module, BaseModel4CL):
         transfer head to tail use gaussian distribution
         :return:
         """
-        head2tail_transfer_method = self.params["head2tail_transfer_method"]
+        head2tail_transfer_method = self.params["transfer_head2zero"]["transfer_method"]
         indices = []
         tail_qs_emb = []
         for z_q, head_qs in self.question_head4zero.items():

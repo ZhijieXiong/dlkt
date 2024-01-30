@@ -55,9 +55,6 @@ if __name__ == "__main__":
 
     global_params, global_objects = evaluate_general_config(params)
     if params["base_type"] == "question" and params["data_type"] == "multi_concept":
-        datasets_config = global_params["datasets_config"]
-        datasets_config["test"]["file_name"] = (
-            datasets_config["test"]["file_name"].replace(".txt", "_question_base4multi_concept.txt"))
         dataset_test = KTDataset_cpu2device(global_params, global_objects)
     else:
         if params["is_dimkt"]:
@@ -77,12 +74,10 @@ if __name__ == "__main__":
             global_params["datasets_config"]["test"]["kt4dimkt"]["num_concept_difficulty"] = params["num_concept_diff"]
         dataset_test = KTDataset(global_params, global_objects)
     dataloader_test = DataLoader(dataset_test, batch_size=params["evaluate_batch_size"], shuffle=False)
-
     save_model_path = os.path.join(params["save_model_dir"], params["save_model_name"])
     model = torch.load(save_model_path).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
     global_objects["data_loaders"]["test_loader"] = dataloader_test
-
     evaluator = Evaluator(global_params, global_objects)
     if params["base_type"] == "question":
         evaluator.evaluate_base_question4multi_concept()

@@ -59,7 +59,8 @@ def evaluate_general_config(local_params):
         global_objects["data"]["Q_table"] = file_manager.get_q_table(dataset_name, data_type)
 
     # 是否将head的知识迁移到zero shot的知识
-    global_params["transfer_head2zero"] = transfer_head2zero
-    global_params["head2tail_transfer_method"] = head2tail_transfer_method
+    global_params["transfer_head2zero"] = {}
+    global_params["transfer_head2zero"]["use_transfer"] = transfer_head2zero
+    global_params["transfer_head2zero"]["transfer_method"] = head2tail_transfer_method
 
     return global_params, global_objects

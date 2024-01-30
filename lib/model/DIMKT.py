@@ -310,7 +310,7 @@ class DIMKT(nn.Module, BaseModel4CL):
         transfer knowledge of head question to tail question
         :return:
         """
-        head2tail_transfer_method = self.params["head2tail_transfer_method"]
+        head2tail_transfer_method = self.params["transfer_head2zero"]["transfer_method"]
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]
         num_question = encoder_config["num_question"]
         num_question_diff = encoder_config["num_question_diff"]

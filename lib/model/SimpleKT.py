@@ -7,7 +7,6 @@ from .BaseModel4CL import BaseModel4CL
 from .Module.EncoderLayer import EncoderLayer
 from .Module.MLP import MLP4LLM_emb
 from .util import get_mask4last_or_penultimate, parse_question_zero_shot
-from ..util.parse import concept2question_from_Q, question2concept_from_Q
 
 
 class SimpleKT(nn.Module, BaseModel4CL):
@@ -67,14 +66,14 @@ class SimpleKT(nn.Module, BaseModel4CL):
         )
 
         # 解析q table
-        self.question2concept_list = question2concept_from_Q(objects["data"]["Q_table"])
-        self.concept2question_list = concept2question_from_Q(objects["data"]["Q_table"])
-        self.question_head4zero = parse_question_zero_shot(self.objects["data"]["train_data_statics"],
-                                                           self.question2concept_list,
-                                                           self.concept2question_list)
+        self.question_head4zero = None
         self.embed_question_difficulty4zero = None
         self.embed_question4zero = None
         self.embed_interaction4zero = None
+        if self.objects["data"].get("train_data_statics", False):
+            self.question_head4zero = parse_question_zero_shot(self.objects["data"]["train_data_statics"],
+                                                               self.objects["data"]["question2concept"],
+                                                               self.objects["data"]["concept2question"])
 
     def get_embed_question_diff(self):
         difficulty_scalar = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["difficulty_scalar"]
@@ -268,7 +267,7 @@ class SimpleKT(nn.Module, BaseModel4CL):
         :return:
         """
         # difficulty_scalar = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["difficulty_scalar"]
-        head2tail_transfer_method = self.params["head2tail_transfer_method"]
+        head2tail_transfer_method = self.params["transfer_head2zero"]["transfer_method"]
         data_type = self.params["datasets_config"]["data_type"]
         indices = []
         tail_qs_emb = []

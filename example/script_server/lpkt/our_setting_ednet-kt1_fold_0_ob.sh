@@ -15,7 +15,7 @@
         for dropout in ${dropouts}
         do
           echo -e "weight_decay: ${weight_decay}, dim_emb: ${dim_emb}, dropout: ${dropout}"
-          CUDA_VISIBLE_DEVICES=1 python /home/xiongzj/myProjects/KT/dlkt/example/train/lpkt.py \
+          CUDA_VISIBLE_DEVICES=2 python /home/xiongzj/myProjects/KT/dlkt/example/train/lpkt.py \
             --setting_name "our_setting" --dataset_name "${dataset_name}" --data_type "${data_type}" \
             --train_file_name "${dataset_name}_train_fold_${fold}.txt" --valid_file_name "${dataset_name}_valid_fold_${fold}.txt" --test_file_name "${dataset_name}_test_fold_${fold}.txt" \
             --optimizer_type "adam" --weight_decay "${weight_decay}" --momentum 0.9 \

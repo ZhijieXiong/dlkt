@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#{
+{
   dataset_name="assist2009"
   data_type="only_question"
   fold=0
@@ -9,7 +9,7 @@
   etas='5 10 20'
   gammas='5 10 20'
   dropouts='0.1'
-  adv_learning_rates='1 5 10 30'
+  adv_learning_rates='0.1 1 5 10'
   for weight_adv_pred_loss in ${weights_adv_pred_loss}
   do
     for eta in ${etas}
@@ -42,4 +42,4 @@
       done
     done
   done
-#} >> F:/code/myProjects/dlkt/example/result_local/akt_ME-ADA_our_setting_assist2009_fold_0_ob.txt
+} >> F:/code/myProjects/dlkt/example/result_local/akt_ME-ADA_our_setting_assist2009_fold_0_ob.txt

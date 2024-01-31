@@ -20,7 +20,6 @@
       --num_concept 53 --num_question 948 \
       --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 128 --rnn_type gru --num_rnn_layer 1 --dropout 0.1 --num_predict_layer 3 --dim_predict_mid 128 --activate_type relu \
       --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
-      --transfer_head2zero False --head2tail_transfer_method "mean_pool" \
       --save_model True --seed 0
   done
 } >> F:/code/myProjects/dlkt/example/result_local/qdkt_our_setting_edi2020-task34_save.txt

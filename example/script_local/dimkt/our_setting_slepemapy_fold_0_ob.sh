@@ -28,7 +28,6 @@
           --num_min_question "${num_min_question}" --num_min_concept 30 --num_concept 246 --num_question 5730 \
           --dim_emb 128 --num_question_diff 100 --num_concept_diff 100 --dropout "${dropout}" \
           --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
-          --transfer_head2zero False --head2tail_transfer_method "mean_pool" \
           --save_model False --seed 0
 
         rm F:/code/myProjects/dlkt/lab/settings/our_setting/slepemapy_train_fold_0_dimkt_diff.json

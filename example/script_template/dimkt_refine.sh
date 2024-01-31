@@ -12,5 +12,4 @@ python F:/code/myProjects/dlkt/example/train/dimkt.py \
   --num_min_question 25 --num_min_concept 30 --num_concept 265 --num_question 53091 \
   --dim_emb 128 --num_question_diff 100 --num_concept_diff 100 --dropout 0.2 \
   --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
-  --transfer_head2zero False --head2tail_transfer_method "mean_pool" \
   --save_model True --seed 0

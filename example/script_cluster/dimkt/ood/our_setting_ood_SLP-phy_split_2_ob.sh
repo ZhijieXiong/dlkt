@@ -2,9 +2,9 @@
 
 {
   setting_name="our_setting_ood_by_school"
-  dataset_name="SLP-his"
+  dataset_name="SLP-phy"
   data_type="single_concept"
-  split=6
+  split=2
 
 
   dims_emb=(64 128)
@@ -34,16 +34,16 @@
               --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type "StepLR" --lr_schedule_step 5 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
               --train_batch_size 64 --evaluate_batch_size 256 \
               --enable_clip_grad False --grad_clipped 10.0 \
-              --num_concept 22 --num_question 1251 \
+              --num_concept 54 --num_question 1915 \
               --dim_emb "${dim_emb}" --dropout "${dropout}" \
               --num_min_question "${num_min_question}" --num_min_concept 30 --num_question_diff "${num_diff}" --num_concept_diff "${num_diff}" \
               --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
               --save_model False --debug_mode False --seed 0
 
-            rm /ghome/xiongzj/code/dlkt/lab/settings/our_setting_ood_by_school/SLP-his_train_split_6_dimkt_diff.json
+            rm /ghome/xiongzj/code/dlkt/lab/settings/our_setting_ood_by_school/SLP-phy_train_split_2_dimkt_diff.json
           done
         done
       done
     done
   done
-} >> /ghome/xiongzj/code/dlkt/example/result_cluster/dimkt_our_setting_ood_SLP-his_split_6_ob.txt
+} >> /ghome/xiongzj/code/dlkt/example/result_cluster/dimkt_our_setting_ood_SLP-phy_split_2_ob.txt

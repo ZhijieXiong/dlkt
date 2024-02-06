@@ -496,8 +496,7 @@ class KTDataset4Aug(Dataset):
         :return:
         """
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
-        data_type = self.params["datasets_config"]["data_type"]
-        data_srs = data_kt2srs(self.data_uniformed, data_type)
+        data_srs = data_kt2srs(self.data_uniformed)
         self.data_srs = data_srs
         setting_name = dataset_config_this["setting_name"]
         file_name = dataset_config_this["file_name"]

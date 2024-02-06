@@ -1,13 +1,20 @@
 from collections import defaultdict
 
 from ..util.parse import get_keys_from_uniform
-from ..util.data import data_agg_question
 
 
-def data_kt2srs(data_uniformed, data_type):
-    if data_type == "multi_concept":
-        data_uniformed = data_agg_question(data_uniformed)
-
+def data_kt2srs(data_uniformed):
+    table4srs = {
+        "concept_seq": "target_concept",
+        "question_seq": "target_question",
+        "correct_seq": "target_correct",
+        "time_seq": "target_time",
+        "interval_time_seq": "target_interval_time",
+        "use_time_seq": "target_use_time",
+        "question_diff_seq": "target_question_diff",
+        "concept_diff_seq": "target_concept_diff",
+        "age_seq": "target_age"
+    }
     id_keys, seq_keys = get_keys_from_uniform(data_uniformed)
     data_transformed = []
     for i, item_data in enumerate(data_uniformed):
@@ -17,16 +24,7 @@ def data_kt2srs(data_uniformed, data_type):
                 "target_seq_len": j
             }
             for k in seq_keys:
-                if k == "concept_seq":
-                    item_data_new["target_concept"] = item_data[k][j]
-                if k == "question_seq":
-                    item_data_new["target_question"] = item_data[k][j]
-                if k == "correct_seq":
-                    item_data_new["target_correct"] = item_data[k][j]
-                if k == "time_seq":
-                    item_data_new["target_time"] = item_data[k][j]
-                if k == "use_time_seq":
-                    item_data_new["target_use_time"] = item_data[k][j]
+                item_data_new[table4srs[k]] = item_data[k][j]
             data_transformed.append(item_data_new)
     return data_transformed
 

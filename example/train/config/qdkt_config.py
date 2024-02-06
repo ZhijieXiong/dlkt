@@ -2,6 +2,7 @@ from ._config import *
 from ._cl_config import *
 from ._data_aug_config import *
 from ._melt_config import *
+from ._dro_config import *
 
 from lib.template.params_template import PARAMS
 from lib.template.params_template_v2 import PARAMS as PARAMS2
@@ -178,3 +179,11 @@ def qdkt_mutual_enhance4long_tail_config(local_params):
         save_params(global_params, global_objects)
 
     return global_params, global_objects
+
+
+def qdkt_dro_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    qdkt_general_config(local_params, global_params, global_objects)
+    dro_general_config(local_params, global_params, global_objects)

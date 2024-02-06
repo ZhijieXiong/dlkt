@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-{
+#{
   setting_name="our_setting_ood_by_school"
   dataset_name="assist2009"
   data_type="only_question"
@@ -50,4 +50,5 @@
       done
     done
   done
-} >> /ghome/xiongzj/code/dlkt/example/result_cluster/qdkt_cluster_cl_random_aug_random_seq_len_our_setting_ood_assist2009_split_7_ob.txt
+#} >> /ghome/xiongzj/code/dlkt/example/result_cluster/qdkt_cluster_cl_random_aug_random_seq_len_our_setting_ood_assist2009_split_7_ob.txt
+

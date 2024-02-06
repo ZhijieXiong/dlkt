@@ -2,13 +2,14 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from config.qdkt_config import qdkt_config
+from config.qdkt_config import qdkt_dro_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
+from lib.dataset.SRSDataset4KT import SRSDataset4KT
 from lib.model.qDKT import qDKT
-from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
+from lib.trainer.DroTrainer import DroTrainer
 
 
 if __name__ == "__main__":
@@ -76,7 +77,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = qdkt_config(params)
+    global_params, global_objects = qdkt_dro_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)
@@ -88,7 +89,7 @@ if __name__ == "__main__":
 
     train_params = deepcopy(global_params)
     train_params["datasets_config"]["dataset_this"] = "train"
-    dataset_train = KTDataset(train_params, global_objects)
+    dataset_train = SRSDataset4KT(train_params, global_objects)
     dataloader_train = DataLoader(dataset_train, batch_size=params["train_batch_size"], shuffle=True)
 
     test_params = deepcopy(global_params)
@@ -102,5 +103,5 @@ if __name__ == "__main__":
 
     model = qDKT(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
-    trainer = KnowledgeTracingTrainer(global_params, global_objects)
+    trainer = DroTrainer(global_params, global_objects)
     trainer.train()

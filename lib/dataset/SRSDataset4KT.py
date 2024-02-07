@@ -1,3 +1,4 @@
+import torch
 from torch.utils.data import Dataset
 
 from ..util.data import *
@@ -15,8 +16,31 @@ class SRSDataset4KT(Dataset):
 
         self.load_dataset()
 
-    def __getitem__(self, item):
-        pass
+    def __getitem__(self, idx):
+        dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]["srs"]
+        max_seq_len = dataset_config_this["max_seq_len"]
+
+        item_meta = self.dataset[idx]
+        seq_id = item_meta["target_seq_id"]
+        seq_len = item_meta["target_seq_len"]
+        item_data = self.data_uniformed[seq_id]
+        result = {
+            "seq_id": torch.tensor(seq_id).long().to(self.params["device"]),
+            "seq_len": torch.tensor(seq_len).long().to(self.params["device"]),
+        }
+
+        for k in item_data.keys():
+            if k in ["question_seq", "concept_seq", "correct_seq", "use_time_seq", "interval_time_seq"]:
+                result[k] = torch.tensor(
+                    item_data[k][:seq_len] + [0] * (max_seq_len - seq_len)
+                ).long().to(self.params["device"])
+
+        for k in item_meta.keys():
+            if k in ["target_concept", "target_question", "target_correct", "target_time", "target_interval_time",
+                     "target_use_time", "target_question_diff", "target_concept_diff"]:
+                result[k] = torch.tensor(item_meta[k]).long().to(self.params["device"])
+
+        return result
 
     def __len__(self):
         return len(self.dataset)
@@ -47,17 +71,17 @@ class SRSDataset4KT(Dataset):
         else:
             self.data_uniformed = deepcopy(dataset_original)
 
-        id_keys, seq_keys = get_keys_from_uniform(dataset_original)
+        id_keys, seq_keys = get_keys_from_uniform(self.data_uniformed)
         all_keys = set(id_keys).union(seq_keys)
         id_keys = list(set(id_keys) - unuseful_keys)
         seq_keys = list(set(seq_keys) - unuseful_keys - {"age_seq"})
         unuseful_keys = all_keys - set(id_keys).union(set(seq_keys))
-        for item_data in dataset_original:
+        for item_data in self.data_uniformed:
             for k in unuseful_keys:
                 del item_data[k]
 
         if "time_seq" in seq_keys:
-            for item_data in dataset_original:
+            for item_data in self.data_uniformed:
                 interval_time_seq = [0]
                 for time_i in range(1, len(item_data["time_seq"])):
                     interval_time = (item_data["time_seq"][time_i] - item_data["time_seq"][time_i - 1]) // 60
@@ -66,3 +90,12 @@ class SRSDataset4KT(Dataset):
                 item_data["interval_time_seq"] = interval_time_seq
 
         self.dataset = data_kt2srs(self.data_uniformed)
+
+    def get_statics_kt_dataset(self):
+        num_seq = len(self.data_uniformed)
+        num_sample = len(self.dataset) + num_seq
+        num_right = 0
+        for item_data in self.data_uniformed:
+            num_right += sum(item_data["correct_seq"][:item_data["seq_len"]])
+
+        return num_seq, num_sample, num_right / num_sample

@@ -154,15 +154,20 @@ class KnowledgeTracingTrainer:
         self.objects["logger"].info(f"test, seq: {test_statics[0]}, sample: {test_statics[1]}, accuracy: {test_statics[2]:<.4}")
 
     def evaluate_kt_dataset(self, model, data_loader):
+        is_srs = type(data_loader.dataset).__name__ == "SRSDataset4KT"
         model.eval()
         with torch.no_grad():
             predict_score_all = []
             ground_truth_all = []
             for batch in data_loader:
-                correct_seq = batch["correct_seq"]
-                mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-                predict_score = model.get_predict_score(batch).detach().cpu().numpy()
-                ground_truth = torch.masked_select(correct_seq[:, 1:], mask_bool_seq[:, 1:]).detach().cpu().numpy()
+                if is_srs:
+                    ground_truth = batch["target_correct"].detach().cpu().numpy()
+                    predict_score = model.get_predict_score_srs(batch).detach().cpu().numpy()
+                else:
+                    correct_seq = batch["correct_seq"]
+                    mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+                    predict_score = model.get_predict_score(batch).detach().cpu().numpy()
+                    ground_truth = torch.masked_select(correct_seq[:, 1:], mask_bool_seq[:, 1:]).detach().cpu().numpy()
                 predict_score_all.append(predict_score)
                 ground_truth_all.append(ground_truth)
             predict_score_all = np.concatenate(predict_score_all, axis=0)

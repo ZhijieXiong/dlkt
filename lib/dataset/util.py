@@ -5,6 +5,7 @@ from ..util.parse import get_keys_from_uniform
 
 def data_kt2srs(data_uniformed):
     table4srs = {
+        "mask_seq": "target_mask",
         "concept_seq": "target_concept",
         "question_seq": "target_question",
         "correct_seq": "target_correct",

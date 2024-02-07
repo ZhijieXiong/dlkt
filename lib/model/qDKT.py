@@ -1,3 +1,5 @@
+import torch
+
 from .BaseModel4CL import BaseModel4CL
 from .Module.KTEmbedLayer import KTEmbedLayer
 from .Module.PredictorLayer import PredictorLayer
@@ -197,6 +199,36 @@ class qDKT(nn.Module, BaseModel4CL):
         ), dim=-1)
 
         return self.predict_layer(predict_layer_input).squeeze(dim=-1)
+
+    # ------------------------------------------------SRS---------------------------------------------------------------
+    def get_predict_score_srs(self, batch):
+        data_type = self.params["datasets_config"]["data_type"]
+
+        batch_size = len(batch["seq_len"])
+        idx1 = torch.arange(batch_size).long().to(self.params["device"])
+        idx2 = batch["seq_len"] - 1
+        latent = self.get_latent(batch)[idx1, idx2]
+        if data_type == "only_question":
+            raise NotImplementedError()
+        else:
+            target_q_emb = self.embed_layer.get_emb("question", batch["target_question"])
+            target_c_emb = self.embed_layer.get_emb("concept", batch["target_concept"])
+            target_qc_emb = torch.cat((target_c_emb, target_q_emb), dim=1)
+        predict_layer_input = torch.cat((latent, target_qc_emb), dim=1)
+        predict_score = self.predict_layer(predict_layer_input).squeeze(dim=-1)
+
+        return predict_score
+
+    def get_predict_loss_srs(self, batch, loss_record=None):
+        ground_truth = batch["target_correct"]
+        predict_score = self.get_predict_score_srs(batch)
+        predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+
+        if loss_record is not None:
+            num_sample = len(batch["seq_len"])
+            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+
+        return predict_loss
 
     # -------------------------------transfer head item to zero shot item-----------------------------------------------
 

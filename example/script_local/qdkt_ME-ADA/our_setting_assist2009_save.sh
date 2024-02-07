@@ -18,9 +18,9 @@
       --train_batch_size 64 --evaluate_batch_size 256 \
       --enable_clip_grad False --grad_clipped 10.0 \
       --num_concept 123 --num_question 17751 \
-      --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.3 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
+      --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.4 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
       --use_warm_up False --epoch_warm_up 4 \
-      --epoch_interval_generate 1 --epoch_generate 200 --weight_adv_pred_loss 1.2 --loop_adv 3 --adv_learning_rate 5 --eta 10 --gamma 20 \
+      --epoch_interval_generate 1 --epoch_generate 200 --weight_adv_pred_loss 1.5 --loop_adv 3 --adv_learning_rate 10 --eta 5 --gamma 10 \
       --save_model True --seed 0
   done
 } >> F:/code/myProjects/dlkt/example/result_local/qdkt_ME-ADA_our_setting_assist2009_save.txt

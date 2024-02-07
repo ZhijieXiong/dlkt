@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 {
-  dataset_name="assist2017"
+  dataset_name="assist2012"
   data_type="single_concept"
 
   for fold in 0 1 2 3 4

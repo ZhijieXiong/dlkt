@@ -37,12 +37,12 @@
               --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 128 --rnn_type "gru" --num_rnn_layer 1 --dropout "${dropout}" \
               --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
               --num_cluster "${num_cluster}" --temp "${temp}" --weight_cl_loss "${weight_cl}" --latent_type4cl "last_time" \
-              --use_warm_up4cl True --epoch_warm_up4cl 4 \
+              --use_warm_up4cl True --epoch_warm_up4cl 2 \
               --use_emb_dropout4cl True --emb_dropout4cl 0.1 \
               --data_aug_type4cl "original_data_aug" --aug_type "random_aug" --use_random_select_aug_len True \
               --mask_prob 0.1 --insert_prob 0.1 --replace_prob 0.2 --crop_prob 0.1 --permute_prob 0.3 \
               --aug_order "['mask', 'crop', 'replace', 'permute']" --offline_sim_type "RCD_graph" \
-              --use_online_sim True --use_warm_up4online_sim True --epoch_warm_up4online_sim 4 \
+              --use_online_sim True --use_warm_up4online_sim True --epoch_warm_up4online_sim 2 \
               --use_adv_aug False --epoch_interval_generate 3 --loop_adv 3 --epoch_generate 200 --adv_learning_rate 30.0 --eta 20.0 --gamma 10.0 \
               --save_model False --debug_mode False --seed 0
           done

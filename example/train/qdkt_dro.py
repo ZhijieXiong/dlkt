@@ -15,13 +15,13 @@ from lib.trainer.DroTrainer import DroTrainer
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
-    parser.add_argument("--setting_name", type=str, default="our_setting")
-    parser.add_argument("--dataset_name", type=str, default="assist2017")
+    parser.add_argument("--setting_name", type=str, default="our_setting_ood_by_school")
+    parser.add_argument("--dataset_name", type=str, default="SLP-phy")
     parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2017_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2017_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2017_test_fold_0.txt")
+    parser.add_argument("--train_file_name", type=str, default="SLP-phy_train_split_2.txt")
+    parser.add_argument("--valid_file_name", type=str, default="SLP-phy_valid_iid_split_2.txt")
+    parser.add_argument("--test_file_name", type=str, default="SLP-phy_test_ood_split_2.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
     parser.add_argument("--weight_decay", type=float, default=0)
@@ -52,8 +52,8 @@ if __name__ == "__main__":
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=101)
-    parser.add_argument("--num_question", type=int, default=2803)
+    parser.add_argument("--num_concept", type=int, default=54)
+    parser.add_argument("--num_question", type=int, default=1915)
     parser.add_argument("--dim_concept", type=int, default=64)
     parser.add_argument("--dim_question", type=int, default=64)
     parser.add_argument("--dim_correct", type=int, default=64)

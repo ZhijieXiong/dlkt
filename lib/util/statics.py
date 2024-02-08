@@ -1,3 +1,4 @@
+import numpy as np
 from collections import Counter
 from copy import deepcopy
 
@@ -95,3 +96,47 @@ def dataset_basic_statics(data_uniformed, data_type, question2concept, num_quest
         "concept_fre": concept_fre,
         "concept_acc": concept_acc
     }
+
+
+def cal_propensity(data_uniformed, num_item, data_type, target_item="concept"):
+    """
+    计算数据集中question或者concept的频率（DROS使用的公式）
+
+    :param data_uniformed:
+    :param num_item: num_item is num_question if target_item=="concept", else num_concept
+    :param data_type:
+    :param target_item:
+    :return:
+    """
+    if target_item == "concept":
+        if data_type == "only_question":
+            pass
+        else:
+            item_seqs = list(map(
+                lambda item: item["concept_seq"][:item["seq_len"]],
+                data_uniformed
+            ))
+    else:
+        if data_type == "multi_concept":
+            pass
+        else:
+            item_seqs = list(map(
+                lambda item: item["question_seq"][:item["seq_len"]],
+                data_uniformed
+            ))
+
+    items = []
+    for item_seq in item_seqs:
+        items += item_seq
+    freq = Counter(items)
+    for i in range(num_item):
+        if i not in freq.keys():
+            freq[i] = 0
+    pop = [freq[i] for i in range(num_item)]
+    pop = np.array(pop)
+    ps = pop + 1
+    ps = ps / np.sum(ps)
+    ps = np.power(ps, 0.05)
+
+    return ps
+

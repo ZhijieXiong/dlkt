@@ -194,7 +194,7 @@ PARAMS = {
       "type": "kt",
       "setting_name": "pykt_setting",
       "file_name": "assist2009_train_fold_0.txt",
-      "unuseful_seq_keys": {"user_id"},
+      "unuseful_seq_keys": {"user_id", "interaction_type_seq"},
       "kt": {
         # 配置KTDataset需要的参数
         "base_type": "concept"
@@ -246,7 +246,7 @@ PARAMS = {
       "type": "kt",
       "setting_name": "pykt_setting",
       "file_name": "assist2009_valid_fold_0.txt",
-      "unuseful_seq_keys": {"user_id"},
+      "unuseful_seq_keys": {"user_id", "interaction_type_seq"},
       "kt": {
         "base_type": "concept"
       },
@@ -255,7 +255,7 @@ PARAMS = {
       "type": "kt",
       "setting_name": "pykt_setting",
       "file_name": "assist2009_test.txt",
-      "unuseful_seq_keys": {"user_id"},
+      "unuseful_seq_keys": {"user_id", "interaction_type_seq"},
       "kt": {
         "base_type": "concept"
       },

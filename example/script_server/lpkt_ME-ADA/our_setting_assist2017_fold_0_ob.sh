@@ -66,7 +66,7 @@
             for weight_decay in ${weights_decay}
             do
               echo -e "lr: 0.001, no lr decay, weight decay: ${weight_decay}, adv_learning_rate: ${adv_learning_rate}, dropout: ${dropout}, weight_adv_pred_loss: ${weight_adv_pred_loss}, eta: ${eta}, gamma: ${gamma}"
-              CUDA_VISIBLE_DEVICES=2 python /home/xiongzj/myProjects/KT/dlkt/example/train/lpkt_max_entropy_aug.py \
+              CUDA_VISIBLE_DEVICES=0 python /home/xiongzj/myProjects/KT/dlkt/example/train/lpkt_max_entropy_aug.py \
                 --setting_name "our_setting" --dataset_name "${dataset_name}" --data_type "${data_type}" \
                 --train_file_name "${dataset_name}_train_fold_${fold}.txt" --valid_file_name "${dataset_name}_valid_fold_${fold}.txt" --test_file_name "${dataset_name}_test_fold_${fold}.txt" \
                 --optimizer_type "adam" --weight_decay "${weight_decay}" --momentum 0.9 \

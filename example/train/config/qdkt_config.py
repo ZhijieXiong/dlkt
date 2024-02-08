@@ -9,6 +9,7 @@ from lib.template.params_template_v2 import PARAMS as PARAMS2
 from lib.template.model.qDKT import MODEL_PARAMS as qDKT_MODEL_PARAMS
 from lib.template.objects_template import OBJECTS
 from lib.util.basic import *
+from lib.util.statics import cal_propensity
 
 
 def qdkt_general_config(local_params, global_params, global_objects):
@@ -187,6 +188,15 @@ def qdkt_dro_config(local_params):
     general_config(local_params, global_params, global_objects)
     qdkt_general_config(local_params, global_params, global_objects)
     dro_general_config(local_params, global_params, global_objects)
+
+    data_type = global_params["datasets_config"]["data_type"]
+    dataset_train = read_preprocessed_file(os.path.join(
+        global_objects["file_manager"].get_setting_dir(global_params["datasets_config"]["train"]["setting_name"]),
+        global_params["datasets_config"]["train"]["file_name"]
+    ))
+    global_objects["dro"] = {
+        "propensity": cal_propensity(dataset_train, local_params["num_question"], data_type, "question")
+    }
 
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (

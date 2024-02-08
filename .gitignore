@@ -15,6 +15,7 @@ paper/
 /example/demo/*.csv
 /example/keys.py
 /example/demo/keys.py
+/example/settings.json
 /*.ipynb
 /note.md
 /git_usage.txt

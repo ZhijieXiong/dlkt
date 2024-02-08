@@ -9,3 +9,10 @@ def dro_general_config(local_params, global_params, global_objects):
     max_seq_len = local_params["max_seq_len"]
 
     datasets_train_config["srs"]["max_seq_len"] = max_seq_len
+
+    global_params["other"] = {"dro": {}}
+    dro_config = global_params["other"]["dro"]
+    dro_config["use_dro"] = use_dro
+    dro_config["beta"] = beta
+    dro_config["alpha"] = alpha
+

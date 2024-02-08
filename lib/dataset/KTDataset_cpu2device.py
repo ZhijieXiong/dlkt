@@ -15,7 +15,7 @@ WEIGHT_TABLE = {
     "middle_fre": (0, 0),
     "easy": (0, 1),
     "hard": (1, 0),
-    "middle": (0, 0),
+    "middle": (0.8, 0.8),
 }
 MASK_TABLE = {k: tuple(map(lambda x: 1 if x != 0 else 0, WEIGHT_TABLE[k])) for k, v in WEIGHT_TABLE.items()}
 

@@ -95,6 +95,16 @@ Abstract: Knowledge tracing (KT) is a crucial technique to predict stu- dents’
 
 # Other Methods
 
+## DROS
+
+model: `[kt_model]_dro.py`
+
+[*Zhengyi Yang, Xiangnan He, Jizhi Zhang, Jiancan Wu, Xin Xin, Jiawei Chen, and Xiang Wang*. **A Generic Learning Framework for Sequential Recommendation with Distribution Shifts**. In Proceedings of the 46th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR '23).](https://dl.acm.org/doi/abs/10.1145/3539618.3591624)
+
+Abstract: Leading sequential recommendation (SeqRec) models adopt em- pirical risk minimization (ERM) as the learning framework, which inherently assumes that the training data (historical interaction sequences) and the testing data (future interactions) are drawn from the same distribution. However, such i.i.d. assumption hardly holds in practice, due to the online serving and dynamic nature of recommender system. For example, with the streaming of new data, the item popularity distribution would change, and the user prefer- ence would evolve after consuming some items. Such distribution shifts could undermine the ERM framework, hurting the model’s generalization ability for future online serving.
+
+In this work, we aim to develop a generic learning framework to enhance the generalization of recommenders in the dynamic envi- ronment. Specifically, on top of ERM, we devise a Distributionally Robust Optimization mechanism for SeqRec (DROS). At its core is our carefully-designed distribution adaption paradigm, which considers the dynamics of data distribution and explores possible distribution shifts between training and testing. Through this way, we can endow the backbone recommenders with better general- ization ability. It is worth mentioning that DROS is an effective model-agnostic learning framework, which is applicable to general recommendation scenarios. Theoretical analyses show that DROS enables the backbone recommenders to achieve robust performance in future testing data. Empirical studies verify the effectiveness against dynamic distribution shifts of DROS. Codes are anony- mously open-sourced at https://github.com/YangZhengyi98/DROS.
+
 ## ME-ADA
 
 model: `[kt_model]_max_entropy_aug.py`

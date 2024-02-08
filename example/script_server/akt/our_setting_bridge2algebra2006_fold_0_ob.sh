@@ -22,8 +22,8 @@
             --train_strategy valid_test --num_epoch 200 \
             --use_early_stop True --epoch_early_stop 10 --use_last_average False --epoch_last_average 5 \
             --main_metric AUC --use_multi_metrics False \
-            --learning_rate 0.0001 --enable_lr_schedule False --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
-            --train_batch_size 24 --evaluate_batch_size 128 \
+            --learning_rate 0.0004 --enable_lr_schedule False --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5, 10]" --lr_schedule_gamma 0.5 \
+            --train_batch_size 64 --evaluate_batch_size 128 \
             --enable_clip_grad True --grad_clipped 10.0 \
             --num_concept 493 --num_question 129263 \
             --dim_model "${dim_model}" --key_query_same True --num_head "${num_head}" --num_block "${num_block}" --dim_ff "${dim_model}" --dim_final_fc 512 --dropout "${dropout}" \

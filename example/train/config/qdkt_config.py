@@ -195,7 +195,9 @@ def qdkt_dro_config(local_params):
         global_params["datasets_config"]["train"]["file_name"]
     ))
     global_objects["dro"] = {
-        "propensity": cal_propensity(dataset_train, local_params["num_question"], data_type, "question")
+        "propensity": torch.tensor(
+            cal_propensity(dataset_train, local_params["num_question"], data_type, "question")
+        ).to(global_params["device"])
     }
 
     if local_params["save_model"]:

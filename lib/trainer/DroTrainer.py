@@ -17,14 +17,20 @@ class DroTrainer(KnowledgeTracingTrainer):
         scheduler = self.objects["schedulers"]["kt_model"]
         model = self.objects["models"]["kt_model"]
 
+        dro_config = self.params["other"]["dro"]
+        use_dro = dro_config["use_dro"]
+
         self.print_data_statics()
 
         for epoch in range(1, num_epoch + 1):
             model.train()
             for batch in train_loader:
                 optimizer.zero_grad()
-                predict_loss = model.get_predict_loss_srs(batch, self.loss_record)
-                predict_loss.backward()
+                if not use_dro:
+                    loss = model.get_predict_loss_srs(batch, self.loss_record)
+                else:
+                    loss = model.get_dro_loss(batch, self.loss_record)
+                loss.backward()
                 if grad_clip_config["use_clip"]:
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
                 optimizer.step()

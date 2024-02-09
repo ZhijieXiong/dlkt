@@ -1,4 +1,4 @@
-import torch
+import numpy as np
 
 from .BaseModel4CL import BaseModel4CL
 from .Module.KTEmbedLayer import KTEmbedLayer
@@ -229,6 +229,88 @@ class qDKT(nn.Module, BaseModel4CL):
             loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
 
         return predict_loss
+
+    def get_predict_score4all_question_srs(self, batch):
+        data_type = self.params["datasets_config"]["data_type"]
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
+        dim_concept = encoder_config["dim_concept"]
+        dim_question = encoder_config["dim_question"]
+        dim_latent = encoder_config["dim_latent"]
+
+        batch_size = len(batch["seq_len"])
+        idx1 = torch.arange(batch_size).long().to(self.params["device"])
+        idx2 = batch["seq_len"] - 1
+        latent = self.get_latent(batch)[idx1, idx2]
+
+        if data_type == "only_question":
+            raise NotImplementedError()
+        elif data_type == "multi_concept":
+            raise NotImplementedError()
+        else:
+            Q_table = self.objects["data"]["Q_table"]
+            num_question = Q_table.shape[0]
+            question_all = torch.arange(num_question).long().to(self.params["device"])
+            question_all_emb = self.embed_layer.get_emb("question", question_all)
+            concept_all = torch.from_numpy(np.nonzero(Q_table)[1]).long().to(self.params["device"])
+            concept_all_emb = self.embed_layer.get_emb("concept", concept_all)
+
+            predict_layer_input = torch.cat((
+                latent.repeat(1, num_question).view(batch_size, num_question, dim_latent),
+                concept_all_emb.view(1, num_question, dim_concept).repeat(batch_size, 1, 1),
+                question_all_emb.view(1, num_question, dim_question).repeat(batch_size, 1, 1)
+            ), dim=-1)
+
+        predict_score = self.predict_layer(predict_layer_input)
+
+        return predict_score.squeeze(dim=-1)
+
+    def get_dro_loss(self, batch, loss_record=None):
+        loss = 0.
+        ground_truth = batch["target_correct"]
+        question_next = batch["target_question"]
+
+        predict_score = self.get_predict_score_srs(batch)
+        predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+        if loss_record is not None:
+            num_sample = len(batch["seq_len"])
+            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+        loss += predict_loss
+
+        model_output = self.get_predict_score4all_question_srs(batch)
+        propensity_score = self.objects["dro"]["propensity"]
+        beta0 = self.params["other"]["dro"]["beta"]
+        alpha = self.params["other"]["dro"]["alpha"]
+
+        # 做对和做错对应的index
+        correct_indices = torch.nonzero(ground_truth).view(-1)
+        incorrect_indices = torch.nonzero(ground_truth - 1).view(-1)
+        target_pos = torch.gather(question_next, 0, correct_indices)
+        target_neg = torch.gather(question_next, 0, incorrect_indices)
+        # nominal distribution下让样本接近0和1的损失
+        loss_mu2zero = torch.mul(model_output * model_output, propensity_score)
+        loss_mu2one = torch.mul((model_output - 1) * (model_output - 1), propensity_score)
+        # 让做对的知识点|习题靠近1，远离0
+        pos_scores_dro = loss_mu2zero[correct_indices, target_pos]
+        pos_loss_dro = loss_mu2one[correct_indices, target_pos]
+        inner_dro_pos = torch.exp((pos_loss_dro / beta0)) - torch.exp((pos_scores_dro / beta0))
+        # 让做错的知识点|习题靠近0，远离1
+        neg_scores_dro = loss_mu2one[incorrect_indices, target_neg]
+        neg_loss_dro = loss_mu2zero[incorrect_indices, target_neg]
+        inner_dro_neg = torch.exp((neg_loss_dro / beta0)) - torch.exp((neg_scores_dro / beta0))
+        # 每个时刻，如果做对，所有的知识点|习题都靠近0；如果做错，所有的知识点|习题都靠近1（最差的分布）
+        inner_dro_all_pos = torch.sum(
+            torch.exp((torch.mul(model_output * model_output, propensity_score) / beta0)), 1
+        )[correct_indices]
+        inner_dro_all_neg = torch.sum(
+            torch.exp((torch.mul((model_output - 1) * (model_output - 1), propensity_score) / beta0)), 1
+        )[incorrect_indices]
+        # 对应项相加（做对的和做错的）
+        inner_dro = torch.cat((inner_dro_all_pos + inner_dro_pos, inner_dro_all_neg + inner_dro_neg))
+        loss_DRO = torch.mean(torch.log(inner_dro + 1e-24))
+
+        loss += alpha * loss_DRO
+
+        return loss
 
     # -------------------------------transfer head item to zero shot item-----------------------------------------------
 

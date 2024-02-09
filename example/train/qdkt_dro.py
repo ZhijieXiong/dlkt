@@ -46,7 +46,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr_schedule_milestones", type=str, default="[5]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     # batch size
-    parser.add_argument("--train_batch_size", type=int, default=4096)
+    parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     # 梯度裁剪
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
@@ -57,18 +57,18 @@ if __name__ == "__main__":
     parser.add_argument("--dim_concept", type=int, default=64)
     parser.add_argument("--dim_question", type=int, default=64)
     parser.add_argument("--dim_correct", type=int, default=64)
-    parser.add_argument("--dim_latent", type=int, default=128)
+    parser.add_argument("--dim_latent", type=int, default=64)
     parser.add_argument("--rnn_type", type=str, default="gru",
                         choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=1)
-    parser.add_argument("--dropout", type=float, default=0.3)
+    parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--num_predict_layer", type=int, default=3)
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
     # DRO参数
     parser.add_argument("--use_dro", type=str2bool, default=True)
     parser.add_argument("--beta", type=float, default=5.0)
-    parser.add_argument("--alpha", type=float, default=0.5)
+    parser.add_argument("--alpha", type=float, default=0.1)
     parser.add_argument("--max_seq_len", type=int, default=200)
     # 是否使用LLM的emb初始化
     parser.add_argument("--use_LLM_emb4question", type=str2bool, default=False)

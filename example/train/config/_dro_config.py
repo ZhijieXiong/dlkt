@@ -15,4 +15,3 @@ def dro_general_config(local_params, global_params, global_objects):
     dro_config["use_dro"] = use_dro
     dro_config["beta"] = beta
     dro_config["alpha"] = alpha
-

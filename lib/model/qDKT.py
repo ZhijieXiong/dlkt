@@ -279,7 +279,7 @@ class qDKT(nn.Module, BaseModel4CL):
         model_output = self.get_predict_score4all_question_srs(batch)
         propensity_score = self.objects["dro"]["propensity"]
         beta0 = self.params["other"]["dro"]["beta"]
-        alpha = self.params["other"]["dro"]["alpha"]
+        alpha = self.params["loss_config"]["dro loss"]
 
         # 做对和做错对应的index
         correct_indices = torch.nonzero(ground_truth).view(-1)
@@ -307,6 +307,9 @@ class qDKT(nn.Module, BaseModel4CL):
         # 对应项相加（做对的和做错的）
         inner_dro = torch.cat((inner_dro_all_pos + inner_dro_pos, inner_dro_all_neg + inner_dro_neg))
         loss_DRO = torch.mean(torch.log(inner_dro + 1e-24))
+
+        if loss_record is not None:
+            loss_record.add_loss("dro loss", loss_DRO.detach().cpu().item(), 1)
 
         loss += alpha * loss_DRO
 

@@ -1,4 +1,7 @@
 import torch
+import numpy as np
+
+from torch.autograd import Variable
 
 
 def get_mask4last_or_penultimate(mask_seq, penultimate=False):
@@ -29,3 +32,13 @@ def parse_question_zero_shot(train_data_statics, question2concept_list, concept2
         question_head4zero[z_q] = qs
 
     return question_head4zero
+
+
+def l2_normalize_adv(d):
+    if isinstance(d, Variable):
+        d = d.data.cpu().numpy()
+    else:
+        d = d.cpu().numpy()
+    # "learning_rate": 0.01,"lr_schedule_step": 30,"lr_schedule_gamma": 0.5
+    d = d / (np.sqrt(np.sum(d ** 2, axis=(1, 2))).reshape((-1, 1, 1)) + 1e-16)
+    return torch.from_numpy(d)

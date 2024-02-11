@@ -14,4 +14,6 @@ def dro_general_config(local_params, global_params, global_objects):
     dro_config = global_params["other"]["dro"]
     dro_config["use_dro"] = use_dro
     dro_config["beta"] = beta
-    dro_config["alpha"] = alpha
+    global_params["loss_config"]["dro loss"] = alpha
+
+    global_objects["logger"].info(f"dro params\n    use dro: {use_dro}, beta: {beta}, alpha: {alpha}")

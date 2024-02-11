@@ -47,11 +47,18 @@ class ATKT(nn.Module):
         # 这一步导致数据泄露！！！计算softmax时没有屏蔽未来的数据
         # (bs, seq_len, 1) -> (bs, seq_len, 1)
         # alphas = nn.Softmax(dim=1)(att_w)
-        attn_output = att_w * lstm_output
+        # attn_output = att_w * lstm_output
+
+        # pykt修改后的代码
+        seq_len = lstm_output.shape[1]
+        attn_mask = torch.triu(torch.ones(seq_len, seq_len), diagonal=1).to(dtype=torch.bool).to(self.params["device"])
+        att_w = att_w.transpose(1, 2).expand(lstm_output.shape[0], lstm_output.shape[1], lstm_output.shape[1]).clone()
+        att_w = att_w.masked_fill_(attn_mask, float("-inf"))
+        alphas = torch.nn.functional.softmax(att_w, dim=-1)
+        attn_output = torch.bmm(alphas, lstm_output)
+
         attn_output_cum = torch.cumsum(attn_output, dim=1)
-
         attn_output_cum_1 = attn_output_cum - attn_output
-
         final_output = torch.cat((attn_output_cum_1, lstm_output), 2)
 
         return final_output

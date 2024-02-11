@@ -35,7 +35,7 @@ def atkt_general_config(local_params, global_params, global_objects):
         "model params\n"
         f"    num of concept: {num_concept}, dim of concept emb: {dim_concept}, dim of correct emb: {dim_correct}, "
         f"dim of latent: {dim_latent}, dim of attention: {dim_attention}, dropout: {dropout}\n"
-        f"epsilon: {epsilon}, beta: {beta}"
+        f"    epsilon: {epsilon}, beta: {beta}"
     )
 
     if local_params["save_model"]:

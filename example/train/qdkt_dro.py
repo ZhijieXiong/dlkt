@@ -16,12 +16,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="our_setting_ood_by_school")
-    parser.add_argument("--dataset_name", type=str, default="SLP-phy")
-    parser.add_argument("--data_type", type=str, default="single_concept",
+    parser.add_argument("--dataset_name", type=str, default="assist2009")
+    parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="SLP-phy_train_split_2.txt")
-    parser.add_argument("--valid_file_name", type=str, default="SLP-phy_valid_iid_split_2.txt")
-    parser.add_argument("--test_file_name", type=str, default="SLP-phy_test_ood_split_2.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2009_train_split_7.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_iid_split_7.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2009_test_ood_split_7.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
     parser.add_argument("--weight_decay", type=float, default=0.001)
@@ -46,27 +46,27 @@ if __name__ == "__main__":
     parser.add_argument("--lr_schedule_milestones", type=str, default="[5]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     # batch size
-    parser.add_argument("--train_batch_size", type=int, default=64)
+    parser.add_argument("--train_batch_size", type=int, default=2048)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     # 梯度裁剪
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=54)
-    parser.add_argument("--num_question", type=int, default=1915)
+    parser.add_argument("--num_concept", type=int, default=123)
+    parser.add_argument("--num_question", type=int, default=17751)
     parser.add_argument("--dim_concept", type=int, default=64)
     parser.add_argument("--dim_question", type=int, default=64)
-    parser.add_argument("--dim_correct", type=int, default=64)
+    parser.add_argument("--dim_correct", type=int, default=128)
     parser.add_argument("--dim_latent", type=int, default=64)
     parser.add_argument("--rnn_type", type=str, default="gru",
                         choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=1)
-    parser.add_argument("--dropout", type=float, default=0.2)
+    parser.add_argument("--dropout", type=float, default=0.4)
     parser.add_argument("--num_predict_layer", type=int, default=3)
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
     # DRO参数
-    parser.add_argument("--use_dro", type=str2bool, default=True)
+    parser.add_argument("--use_dro", type=str2bool, default=False)
     parser.add_argument("--beta", type=float, default=5.0)
     parser.add_argument("--alpha", type=float, default=0.001)
     parser.add_argument("--max_seq_len", type=int, default=200)

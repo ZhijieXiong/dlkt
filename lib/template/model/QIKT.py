@@ -2,9 +2,7 @@ MODEL_PARAMS = {
     "kt_embed_layer": {
         # 都是[num_emb, dim_emb]的格式
         "concept": [],
-        "question": [],
-        "correct": [],
-        "interaction": []
+        "question": []
     },
     "encoder_layer": {
         "QIKT": {

@@ -69,8 +69,10 @@ if __name__ == "__main__":
     parser.add_argument("--QT_transformer_num_head", type=int, default=4)
     parser.add_argument("--IK_start", type=int, default=120)
     # 损失权重
-    parser.add_argument("--weight_QT_loss", type=float, default=1)
-    parser.add_argument("--weight_IK_loss", type=float, default=0.5)
+    parser.add_argument("--weight_QT_loss", type=float, default=1,
+                        help="对应原代码l3")
+    parser.add_argument("--weight_IK_loss", type=float, default=0.5,
+                        help="对应原代码l2")
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False, help="if True, device=cpu")

@@ -209,7 +209,7 @@ class qDKT(nn.Module, BaseModel4CL):
         idx2 = batch["seq_len"] - 1
         latent = self.get_latent(batch)[idx1, idx2]
         if data_type == "only_question":
-            raise NotImplementedError()
+            target_qc_emb = self.embed_layer.get_emb_question_with_concept_fused(batch["target_question"], "mean")
         else:
             target_q_emb = self.embed_layer.get_emb("question", batch["target_question"])
             target_c_emb = self.embed_layer.get_emb("concept", batch["target_concept"])
@@ -242,14 +242,18 @@ class qDKT(nn.Module, BaseModel4CL):
         idx2 = batch["seq_len"] - 1
         latent = self.get_latent(batch)[idx1, idx2]
 
+        Q_table = self.objects["data"]["Q_table"]
+        num_question = Q_table.shape[0]
+        question_all = torch.arange(num_question).long().to(self.params["device"])
         if data_type == "only_question":
-            raise NotImplementedError()
+            all_qc_emb = self.embed_layer.get_emb_question_with_concept_fused(question_all, "mean")
+            predict_layer_input = torch.cat((
+                latent.repeat(1, num_question).view(batch_size, num_question, dim_latent),
+                all_qc_emb.view(1, num_question, dim_concept+dim_question).repeat(batch_size, 1, 1)
+            ), dim=-1)
         elif data_type == "multi_concept":
             raise NotImplementedError()
         else:
-            Q_table = self.objects["data"]["Q_table"]
-            num_question = Q_table.shape[0]
-            question_all = torch.arange(num_question).long().to(self.params["device"])
             question_all_emb = self.embed_layer.get_emb("question", question_all)
             concept_all = torch.from_numpy(np.nonzero(Q_table)[1]).long().to(self.params["device"])
             concept_all_emb = self.embed_layer.get_emb("concept", concept_all)
@@ -278,7 +282,7 @@ class qDKT(nn.Module, BaseModel4CL):
 
         model_output = self.get_predict_score4all_question_srs(batch)
         propensity_score = self.objects["dro"]["propensity"]
-        beta0 = self.params["other"]["dro"]["beta"]
+        beta = self.params["other"]["dro"]["beta"]
         alpha = self.params["loss_config"]["dro loss"]
 
         # 做对和做错对应的index
@@ -292,17 +296,17 @@ class qDKT(nn.Module, BaseModel4CL):
         # 让做对的知识点|习题靠近1，远离0
         pos_scores_dro = loss_mu2zero[correct_indices, target_pos]
         pos_loss_dro = loss_mu2one[correct_indices, target_pos]
-        inner_dro_pos = torch.exp((pos_loss_dro / beta0)) - torch.exp((pos_scores_dro / beta0))
+        inner_dro_pos = torch.exp((pos_loss_dro / beta)) - torch.exp((pos_scores_dro / beta))
         # 让做错的知识点|习题靠近0，远离1
         neg_scores_dro = loss_mu2one[incorrect_indices, target_neg]
         neg_loss_dro = loss_mu2zero[incorrect_indices, target_neg]
-        inner_dro_neg = torch.exp((neg_loss_dro / beta0)) - torch.exp((neg_scores_dro / beta0))
+        inner_dro_neg = torch.exp((neg_loss_dro / beta)) - torch.exp((neg_scores_dro / beta))
         # 每个时刻，如果做对，所有的知识点|习题都靠近0；如果做错，所有的知识点|习题都靠近1（最差的分布）
         inner_dro_all_pos = torch.sum(
-            torch.exp((torch.mul(model_output * model_output, propensity_score) / beta0)), 1
+            torch.exp((torch.mul(model_output * model_output, propensity_score) / beta)), 1
         )[correct_indices]
         inner_dro_all_neg = torch.sum(
-            torch.exp((torch.mul((model_output - 1) * (model_output - 1), propensity_score) / beta0)), 1
+            torch.exp((torch.mul((model_output - 1) * (model_output - 1), propensity_score) / beta)), 1
         )[incorrect_indices]
         # 对应项相加（做对的和做错的）
         inner_dro = torch.cat((inner_dro_all_pos + inner_dro_pos, inner_dro_all_neg + inner_dro_neg))

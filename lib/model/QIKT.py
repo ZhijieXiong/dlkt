@@ -35,10 +35,6 @@ class QIKT(nn.Module):
         self.objects = objects
 
         self.embed_layer = KTEmbedLayer(self.params, self.objects)
-        data_type = self.params["datasets_config"]["data_type"]
-        if data_type == "only_question":
-            self.embed_layer.parse_Q_table()
-
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["QIKT"]
         num_question = encoder_config["num_question"]
         num_concept = encoder_config["num_concept"]

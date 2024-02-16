@@ -21,7 +21,7 @@
           for adv_learning_rate in ${adv_learning_rates}
           do
             echo -e "lr: 0.0001, no lr decay, adv_learning_rate: ${adv_learning_rate}, dropout: ${dropout}, weight_adv_pred_loss: ${weight_adv_pred_loss}, eta: ${eta}, gamma: ${gamma}"
-            CUDA_VISIBLE_DEVICES=0 python /home/xiongzj/myProjects/KT/dlkt/example/train/akt_max_entropy_aug.py \
+            python F:/code/myProjects/dlkt/example/train/akt_max_entropy_aug.py \
               --setting_name "our_setting" --dataset_name "${dataset_name}" --data_type "${data_type}" \
               --train_file_name "${dataset_name}_train_fold_${fold}.txt" --valid_file_name "${dataset_name}_valid_fold_${fold}.txt" --test_file_name "${dataset_name}_test_fold_${fold}.txt" \
               --optimizer_type adam --weight_decay 0 --momentum 0.9 \
@@ -43,4 +43,4 @@
     done
   done
 
-#} >> /home/xiongzj/myProjects/KT/dlkt/example/results/akt_ME-ADA_our_setting_assist2012_fold_0_ob.txt
+#} >> F:/code/myProjects/dlkt/example/result_local/akt_ME-ADA_our_setting_assist2012_fold_0_ob.txt

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-{
-  dataset_name="assist2009"
-  data_type="only_question"
+#{
+  dataset_name="algebra2005"
+  data_type="single_concept"
   fold=0
 
   dropouts='0.4 0.5'
@@ -10,8 +10,8 @@
   lambdas_q_all='1'
   lambdas_c_next='1'
   lambdas_c_all='1'
-  qs_all_loss='1.5 2'
-  cs_all_loss='1.5 2'
+  qs_all_loss='0'
+  cs_all_loss='0.5 1'
   cs_next_loss='1 1.5 2'
   nums_mlp_layer=(1)
   for weight_decay in ${weight_decays}
@@ -43,7 +43,7 @@ echo -e "weight_decay: ${weight_decay}, lambda_q_all: ${lambda_q_all}, lambda_c_
                       --learning_rate 0.0001 --enable_lr_schedule False --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
                       --train_batch_size 32 --evaluate_batch_size 128 \
                       --enable_clip_grad False --grad_clipped 10.0 \
-                      --num_concept 123 --num_question 17751 \
+                      --num_concept 112 --num_question 173113 \
                       --dim_emb 64 --rnn_type "gru" --num_rnn_layer 1 --dropout "${dropout}" --num_mlp_layer "${num_mlp_layer}" \
                       --lambda_q_all "${lambda_q_all}" --lambda_c_next "${lambda_c_next}" --lambda_c_all "${lambda_c_all}" --use_irt True \
                       --weight_predict_q_all_loss "${q_all_loss}" --weight_predict_q_next_loss 1 \
@@ -58,4 +58,4 @@ echo -e "weight_decay: ${weight_decay}, lambda_q_all: ${lambda_q_all}, lambda_c_
       done
     done
   done
-} >> /ghome/xiongzj/code/dlkt/example/result_cluster/qikt_our_setting_assist2009_fold_0_ob.txt
+#} >> /ghome/xiongzj/code/dlkt/example/result_cluster/qikt_our_setting_algebra2005_fold_0_ob.txt

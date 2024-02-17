@@ -38,6 +38,8 @@
 
 1. Initialize project
 
+   - Create file `settings.json` in the `example` directory.
+
    - Modify the environment configuration file `example/settings.json`
 
      ```python

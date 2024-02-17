@@ -2,7 +2,7 @@
 
 {
   dataset_name="bridge2algebra2006"
-  data_type="single_concept"
+  data_type="only_question"
   fold=0
 
   dropouts='0.1 0.2'

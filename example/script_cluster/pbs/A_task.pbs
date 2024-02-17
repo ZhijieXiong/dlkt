@@ -15,7 +15,7 @@ cat $PBS_GPUFILE
 echo "CUDA_VISIBLE_DEVICES:"$CUDA_VISIBLE_DEVICES
 
 BASH_DIR="qdkt_dro"
-BASH_FILE="our_setting_ood_assist2009_split_7_ob.sh"
+BASH_FILE="our_setting_ood_SLP-his_split_6_ob.sh"
 
 echo "file: ${BASH_DIR}/${BASH_FILE}"
 startdocker -P /ghome/xiongzj -c "bash /ghome/xiongzj/code/dlkt/example/script_cluster/${BASH_DIR}/${BASH_FILE}" bit:5000/chenxh_py3.8_torch_1.8_cu11.1

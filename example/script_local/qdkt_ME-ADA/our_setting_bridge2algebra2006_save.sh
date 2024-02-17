@@ -2,7 +2,7 @@
 
 {
   dataset_name="bridge2algebra2006"
-  data_type="single_concept"
+  data_type="only_question"
 
   for fold in 0 1 2 3 4
   do

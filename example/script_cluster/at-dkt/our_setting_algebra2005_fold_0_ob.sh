@@ -2,7 +2,7 @@
 
 {
   dataset_name="algebra2005"
-  data_type="single_concept"
+  data_type="only_question"
   fold=0
 
   dropouts='0.1 0.2'

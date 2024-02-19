@@ -44,11 +44,11 @@
 #  done
 
 
-  weights_adv_pred_loss='0.8 1 1.2 1.5'
+  weights_adv_pred_loss='0.5 0.8 1 1.2'
   etas='20'
   gammas='20'
-  dropouts='0.1 0.2 0.3'
-  adv_learning_rates='10 20 30'
+  dropouts='0.1'
+  adv_learning_rates='1 5 10'
   for weight_adv_pred_loss in ${weights_adv_pred_loss}
   do
     for eta in ${etas}
@@ -81,4 +81,4 @@
       done
     done
   done
-} >> F:/code/myProjects/dlkt/example/result_local/akt_ME-ADA_our_setting_assist2009_fold_0_ob2.txt
+} >> F:/code/myProjects/dlkt/example/result_local/akt_ME-ADA_our_setting_assist2009_fold_0_ob3.txt

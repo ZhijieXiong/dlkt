@@ -4,9 +4,10 @@ from ..util.data import *
 from ..util.parse import *
 from .util import data_kt2srs
 from .KTDataset import KTDataset
+from .KTDataRandomAug import KTDataRandomAug
 
 
-class SRSDataset4KT(Dataset):
+class SRSDataset4KT_UseRandomAug(Dataset):
     def __init__(self, params, objects):
         self.params = params
         self.objects = objects
@@ -18,11 +19,39 @@ class SRSDataset4KT(Dataset):
     def __getitem__(self, idx):
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]["srs"]
         max_seq_len = dataset_config_this["max_seq_len"]
+        aug_order = dataset_config_this["aug_order"]
+        mask_prob = dataset_config_this["mask_prob"]
+        replace_prob = dataset_config_this["replace_prob"]
+        crop_prob = dataset_config_this["crop_prob"]
+        permute_prob = dataset_config_this["permute_prob"]
 
         item_meta = self.dataset[idx]
         seq_id = item_meta["target_seq_id"]
         seq_len = item_meta["target_seq_len"]
         item_data = self.data_uniformed[seq_id]
+        aug_result = []
+        for _ in range(2):
+            item_data_aug = deepcopy(item_data)
+            item_data_aug["seq_len"] = seq_len
+            for k, v in item_data_aug.items():
+                if type(v) == list:
+                    item_data_aug[k] = v[:seq_len]
+            if "age_seq" in item_data_aug.keys():
+                del item_data_aug["age_seq"]
+            for aug_type in aug_order:
+                if aug_type == "mask":
+                    item_data_aug = KTDataRandomAug.mask_seq(item_data_aug, mask_prob, 6)
+                elif aug_type == "replace":
+                    pass
+                elif aug_type == "permute":
+                    item_data_aug = KTDataRandomAug.permute_seq(item_data_aug, permute_prob, 6)
+                elif aug_type == "crop":
+                    item_data_aug = KTDataRandomAug.crop_seq(item_data_aug, crop_prob, 6)
+                else:
+                    raise NotImplementedError()
+            item_data_aug["seq_len"] = len(item_data_aug["mask_seq"])
+            aug_result.append(item_data_aug)
+
         result = {
             "seq_id": torch.tensor(seq_id).long().to(self.params["device"]),
             "seq_len": torch.tensor(seq_len).long().to(self.params["device"]),
@@ -38,6 +67,14 @@ class SRSDataset4KT(Dataset):
             if k in ["target_concept", "target_question", "target_correct", "target_time", "target_interval_time",
                      "target_use_time", "target_question_diff", "target_concept_diff"]:
                 result[k] = torch.tensor(item_meta[k]).long().to(self.params["device"])
+
+        for i, data_aug in enumerate(aug_result):
+            pad_len = max_seq_len - data_aug["seq_len"]
+            result[f"seq_len_aug_{i}"] = data_aug["seq_len"]
+            for k, v in data_aug.items():
+                if type(v) == list and k not in ["time_seq", "use_time_seq", "interval_time_seq", "age_seq", "mask_seq"]:
+                    # 数据增强不考虑时间、年龄
+                    result[f"{k}_aug_{i}"] = torch.tensor(v + [0] * pad_len).long().to(self.params["device"])
 
         return result
 
@@ -98,3 +135,6 @@ class SRSDataset4KT(Dataset):
             num_right += sum(item_data["correct_seq"][:item_data["seq_len"]])
 
         return num_seq, num_sample, num_right / num_sample
+
+    def random_replace_question(self, replace_prob):
+        pass

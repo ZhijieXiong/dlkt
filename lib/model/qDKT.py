@@ -319,6 +319,9 @@ class qDKT(nn.Module, BaseModel4CL):
 
         return loss
 
+    def get_cl_loss_srs(self, batch):
+        pass
+
     # -------------------------------transfer head item to zero shot item-----------------------------------------------
 
     def set_emb4zero(self):

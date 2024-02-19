@@ -206,3 +206,41 @@ def qdkt_dro_config(local_params):
         save_params(global_params, global_objects)
 
     return global_params, global_objects
+
+
+def qdkt_instance_cl_srs_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    qdkt_general_config(local_params, global_params, global_objects)
+
+    datasets_train_config = global_params["datasets_config"]["train"]
+    datasets_train_config["type"] = "srs"
+    datasets_train_config["srs"] = {}
+
+    max_seq_len = local_params["max_seq_len"]
+    aug_order = eval(local_params["aug_order"])
+    mask_prob = local_params["mask_prob"]
+    replace_prob = local_params["replace_prob"]
+    crop_prob = local_params["crop_prob"]
+    permute_prob = local_params["permute_prob"]
+    datasets_train_config["srs"]["max_seq_len"] = max_seq_len
+    datasets_train_config["srs"]["aug_order"] = aug_order
+    datasets_train_config["srs"]["mask_prob"] = mask_prob
+    datasets_train_config["srs"]["replace_prob"] = replace_prob
+    datasets_train_config["srs"]["crop_prob"] = crop_prob
+    datasets_train_config["srs"]["permute_prob"] = permute_prob
+
+    temp = local_params["temp"]
+    weight_cl_loss = local_params["weight_cl_loss"]
+    global_params["other"] = {"instance_cl": {}}
+    instance_cl_config = global_params["other"]["instance_cl"]
+    instance_cl_config["temp"] = temp
+    global_params["loss_config"]["cl loss"] = weight_cl_loss
+
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT_instance_cl_srs@@"))
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects

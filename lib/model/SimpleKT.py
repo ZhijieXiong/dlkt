@@ -183,14 +183,15 @@ class SimpleKT(nn.Module, BaseModel4CL):
     def base_emb(self, batch):
         separate_qa = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["separate_qa"]
         use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
-        concept_seq = batch["concept_seq"]
-        correct_seq = batch["correct_seq"]
 
+        correct_seq = batch["correct_seq"]
         # c_ct
         concept_emb = self.get_concept_emb(batch)
         if use_LLM_emb4concept:
             concept_emb = self.MLP4concept(concept_emb)
         if separate_qa:
+            # todo: 有问题，如果是only question也要融合interaction_emb
+            concept_seq = batch["concept_seq"]
             interaction_seqs = concept_seq + self.num_concept * correct_seq
             interaction_emb = self.embed_interaction(interaction_seqs)
         else:
@@ -234,7 +235,6 @@ class SimpleKT(nn.Module, BaseModel4CL):
     def get_latent(self, batch, use_emb_dropout=False, dropout=0.1):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]
         separate_qa = encoder_config["separate_qa"]
-        concept_seq = batch["concept_seq"]
         question_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
 
@@ -243,6 +243,7 @@ class SimpleKT(nn.Module, BaseModel4CL):
         if use_emb_dropout:
             concept_emb = torch.dropout(concept_emb, dropout, self.training)
         if separate_qa:
+            concept_seq = batch["concept_seq"]
             interaction_seqs = concept_seq + self.num_concept * correct_seq
             interaction_emb = self.embed_interaction(interaction_seqs)
         else:

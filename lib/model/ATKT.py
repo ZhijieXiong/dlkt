@@ -26,23 +26,22 @@ class ATKT(nn.Module):
         dim_correct = encoder_config["dim_correct"]
         dropout = encoder_config["dropout"]
 
-        self.rnn = nn.LSTM(dim_concept + dim_correct, dim_latent, batch_first=True)
-        self.dropout_layer = nn.Dropout(dropout)
-        self.fc = nn.Linear(dim_latent * 2, num_concept)
-        self.sig = nn.Sigmoid()
-
         if use_concept:
             self.embed_concept = nn.Embedding(num_concept, dim_concept)
+            self.fc = nn.Linear(dim_latent * 2, num_concept)
         else:
             self.embed_concept = nn.Embedding(num_question, dim_concept)
+            self.fc = nn.Linear(dim_latent * 2, num_question)
         self.embed_concept.weight.data[-1] = 0
-
         self.embed_correct = nn.Embedding(2, dim_correct)
         self.embed_correct.weight.data[-1] = 0
 
         self.dim_attention = dim_attention
         self.mlp = nn.Linear(dim_latent, dim_attention)
         self.similarity = nn.Linear(dim_attention, 1, bias=False)
+        self.rnn = nn.LSTM(dim_concept + dim_correct, dim_latent, batch_first=True)
+        self.dropout_layer = nn.Dropout(dropout)
+        self.sig = nn.Sigmoid()
 
     def attention_module(self, lstm_output):
         att_w = self.mlp(lstm_output)
@@ -144,7 +143,7 @@ class ATKT(nn.Module):
         loss += predict_loss
 
         epsilon = encoder_config["epsilon"]
-        beta = encoder_config["adv loss"]
+        beta = self.params["loss_config"]["adv loss"]
 
         interaction_grad = grad(predict_loss, interaction_emb, retain_graph=True)
         perturbation = torch.FloatTensor(epsilon * l2_normalize_adv(interaction_grad[0].data))

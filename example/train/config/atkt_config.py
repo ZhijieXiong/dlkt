@@ -37,7 +37,8 @@ def atkt_general_config(local_params, global_params, global_objects):
 
     global_objects["logger"].info(
         "model params\n"
-        f"    use_concept: {use_concept}, num of concept: {num_concept}, dim of concept emb: {dim_concept}, dim of correct emb: {dim_correct}, "
+        f"    use_concept: {use_concept}, num of concept: {num_concept}, num of question: {num_question}\n"
+        f"    dim of concept emb: {dim_concept}, dim of correct emb: {dim_correct}, "
         f"dim of latent: {dim_latent}, dim of attention: {dim_attention}\n    dropout: {dropout}, epsilon: {epsilon}, beta: {beta}"
     )
 

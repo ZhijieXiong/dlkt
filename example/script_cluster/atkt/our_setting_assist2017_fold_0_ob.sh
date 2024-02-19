@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 
 {
-  dataset_name="edi2020-task34"
+  dataset_name="assist2017"
   data_type="single_concept"
   fold=0
 
-  dropouts='0.2 0.3 0.4'
-  weight_decays='0 0.0001 0.00001'
+  dropouts='0.1 0.2 0.3'
+  weight_decays='0'
   dims_concept=(64)
   dims_correct=(64)
   dims_latent=(256)
   dims_attention=(64 256)
-  epsilons=(5 10)
-  betas='0.2 0.5 1'
+  epsilons=(1 2 5 10 15)
+  betas='0.2 0.5 1 2'
   for weight_decay in ${weight_decays}
   do
     for dim_attention in "${dims_attention[@]}"
@@ -40,7 +40,7 @@
                     --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
                     --train_batch_size 64 --evaluate_batch_size 256 \
                     --enable_clip_grad False --grad_clipped 10.0 \
-                    --use_concept True --num_concept 53 --num_question 948 \
+                    --use_concept True --num_concept 101 --num_question 2803 \
                     --dim_concept "${dim_concept}" --dim_correct "${dim_correct}" --dim_latent "${dim_latent}" \
                     --dim_attention "${dim_attention}" --dropout "${dropout}" --epsilon "${epsilon}" --beta "${beta}" \
                     --save_model False --debug_mode False --seed 0
@@ -52,4 +52,4 @@
       done
     done
   done
-} >> /ghome/xiongzj/code/dlkt/example/result_cluster/atkt_our_setting_edi2020-task34_fold_0_ob.txt
+} >> /ghome/xiongzj/code/dlkt/example/result_cluster/atkt_our_setting_assist2017_fold_0_ob.txt

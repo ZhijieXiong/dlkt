@@ -6,12 +6,12 @@
   fold=0
 
 
-  weights_adv_pred_loss='1'
+  weights_adv_pred_loss='0.8 1 1.2 1.5'
   etas='5 10 20'
   gammas='5 10 20'
-  dropouts='0.1'
-  adv_learning_rates='0.1 1 5 10'
-  weights_decay='0.001 0.0001 0.00001 0.000001'
+  dropouts='0.1 0.2 0.3'
+  adv_learning_rates='1'
+  weights_decay='0.00001'
   for weight_adv_pred_loss in ${weights_adv_pred_loss}
   do
     for eta in ${etas}
@@ -47,4 +47,4 @@
     done
   done
 
-} >> /home/xiongzj/myProjects/KT/dlkt/example/results/qdkt_ME-ADA_our_setting_statics2011_fold_0_ob1.txt
+} >> /home/xiongzj/myProjects/KT/dlkt/example/results/qdkt_ME-ADA_our_setting_statics2011_fold_0_ob2.txt

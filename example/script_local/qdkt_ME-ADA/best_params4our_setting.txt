@@ -180,6 +180,92 @@ test performance by best test epoch is main metric: 0.77265  , AUC: 0.77265  , A
 
 
 
+assist2012:
+weight decay: 0.00001, adv_learning_rate: 10, dropout: 0.3, weight_adv_pred_loss: 1.2, eta: 10, gamma: 10
+basic setting
+    device: cuda, seed: 0
+train policy
+    type: valid_test, valid_test: {"use_early_stop": true, "epoch_early_stop": 10}, train batch size: 64, num of epoch: 200
+    use sample weight: False
+embedding init
+    use LLM emb to init question emb: False, use LLM emb to init concept emb: False
+evaluate metric
+    main metric: AUC, use multi metrics: False
+optimizer setting
+    model optimized: kt_model, optimizer type: adam, adam config: {"lr": 0.001, "weight_decay": 1e-05}, use lr schedule: False, use clip for grad: False
+dataset
+    setting: our_setting, dataset: assist2012, data type: single_concept, train: assist2012_train_fold_0.txt, valid: assist2012_valid_fold_0.txt, test: assist2012_test_fold_0.txt
+
+WARNING: statics of train dataset (`/data/xiongzj/KT/lab/settings/our_setting/assist2012_train_fold_0_statics.json`) is not exist. This file is required for some cases, e.g., fine grain evaluation such as long tail problem and some model using transfer_head2zero. If it is necessary, please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset
+
+model params
+    num of concept: 265, num of question: 53091, dim of question emb: 64, dim of concept emb: 64, dim of correct emb: 128, dim of latent: 128
+    rnn type: gru, num of rnn layer: 1, dropout: 0.3, num of predict layer: 3, dim of middle predict layer: 128, type of activate function: relu
+max entropy adversarial data augment
+    adv lr: 10.0, eta: 10.0, gamma: 10.0, weight of predict loss in augmented data: 1.2
+    interval epoch of generate: 1, num of adv generation loop: 3, num epoch of generation: 200
+
+train, seq: 18202, sample: 1707155, accuracy: 0.6962
+valid, seq: 4550, sample: 421796, accuracy: 0.7002
+test, seq: 5688, sample: 523566, accuracy: 0.6913
+max entropy adversarial data augment: from 2024-02-13 17:54:44 to 2024-02-13 17:56:50, gen pred loss: 0.70787     , gen entropy loss: 0.692452    , gen mse loss: 1.77621e-09
+2024-02-13 17:57:11 epoch 1   , valid performance is main metric: 0.71172  , AUC: 0.71172  , ACC: 0.72915  , RMSE: 0.42878  , MAE: 0.37363  , train loss is predict loss: 0.56498     , adv predict loss: 0.564623    , test performance is main metric: 0.71534  , AUC: 0.71534  , ACC: 0.72593  , RMSE: 0.43045  , MAE: 0.37655  , current best epoch is 1
+max entropy adversarial data augment: from 2024-02-13 17:57:11 to 2024-02-13 17:59:10, gen pred loss: 0.662576    , gen entropy loss: 0.666705    , gen mse loss: 8.31421e-06
+2024-02-13 17:59:30 epoch 2   , valid performance is main metric: 0.71971  , AUC: 0.71971  , ACC: 0.73241  , RMSE: 0.42751  , MAE: 0.3797   , train loss is predict loss: 0.551131    , adv predict loss: 0.558744    , test performance is main metric: 0.72292  , AUC: 0.72292  , ACC: 0.72945  , RMSE: 0.42915  , MAE: 0.38229  , current best epoch is 2
+max entropy adversarial data augment: from 2024-02-13 17:59:30 to 2024-02-13 18:01:28, gen pred loss: 0.655103    , gen entropy loss: 0.66286     , gen mse loss: 8.76989e-06
+2024-02-13 18:01:48 epoch 3   , valid performance is main metric: 0.72384  , AUC: 0.72384  , ACC: 0.73442  , RMSE: 0.4255   , MAE: 0.37096  , train loss is predict loss: 0.547657    , adv predict loss: 0.558268    , test performance is main metric: 0.72732  , AUC: 0.72732  , ACC: 0.73151  , RMSE: 0.42713  , MAE: 0.37366  , current best epoch is 3
+max entropy adversarial data augment: from 2024-02-13 18:01:48 to 2024-02-13 18:03:50, gen pred loss: 0.649014    , gen entropy loss: 0.66131     , gen mse loss: 8.88232e-06
+2024-02-13 18:04:10 epoch 4   , valid performance is main metric: 0.72827  , AUC: 0.72827  , ACC: 0.73578  , RMSE: 0.42435  , MAE: 0.35099  , train loss is predict loss: 0.544031    , adv predict loss: 0.559197    , test performance is main metric: 0.73176  , AUC: 0.73176  , ACC: 0.73336  , RMSE: 0.426    , MAE: 0.35408  , current best epoch is 4
+max entropy adversarial data augment: from 2024-02-13 18:04:10 to 2024-02-13 18:06:13, gen pred loss: 0.647296    , gen entropy loss: 0.652771    , gen mse loss: 1.67227e-05
+2024-02-13 18:06:32 epoch 5   , valid performance is main metric: 0.73618  , AUC: 0.73618  , ACC: 0.73851  , RMSE: 0.42242  , MAE: 0.36991  , train loss is predict loss: 0.540519    , adv predict loss: 0.559921    , test performance is main metric: 0.73957  , AUC: 0.73957  , ACC: 0.73641  , RMSE: 0.42385  , MAE: 0.37226  , current best epoch is 5
+max entropy adversarial data augment: from 2024-02-13 18:06:32 to 2024-02-13 18:08:35, gen pred loss: 0.640418    , gen entropy loss: 0.655169    , gen mse loss: 1.44345e-05
+2024-02-13 18:08:56 epoch 6   , valid performance is main metric: 0.74692  , AUC: 0.74692  , ACC: 0.74431  , RMSE: 0.41765  , MAE: 0.35042  , train loss is predict loss: 0.533188    , adv predict loss: 0.560498    , test performance is main metric: 0.75042  , AUC: 0.75042  , ACC: 0.74175  , RMSE: 0.41904  , MAE: 0.35274  , current best epoch is 6
+max entropy adversarial data augment: from 2024-02-13 18:08:56 to 2024-02-13 18:10:56, gen pred loss: 0.651674    , gen entropy loss: 0.648331    , gen mse loss: 1.82585e-05
+2024-02-13 18:11:16 epoch 7   , valid performance is main metric: 0.75717  , AUC: 0.75717  , ACC: 0.74811  , RMSE: 0.41531  , MAE: 0.35958  , train loss is predict loss: 0.523688    , adv predict loss: 0.560274    , test performance is main metric: 0.76095  , AUC: 0.76095  , ACC: 0.74597  , RMSE: 0.41656  , MAE: 0.36156  , current best epoch is 7
+max entropy adversarial data augment: from 2024-02-13 18:11:16 to 2024-02-13 18:13:18, gen pred loss: 0.637407    , gen entropy loss: 0.651769    , gen mse loss: 1.98078e-05
+2024-02-13 18:13:41 epoch 8   , valid performance is main metric: 0.76804  , AUC: 0.76804  , ACC: 0.75513  , RMSE: 0.4101   , MAE: 0.34489  , train loss is predict loss: 0.51334     , adv predict loss: 0.560116    , test performance is main metric: 0.77135  , AUC: 0.77135  , ACC: 0.75207  , RMSE: 0.41146  , MAE: 0.34707  , current best epoch is 8
+max entropy adversarial data augment: from 2024-02-13 18:13:41 to 2024-02-13 18:15:42, gen pred loss: 0.640146    , gen entropy loss: 0.64696     , gen mse loss: 5.29428e-05
+2024-02-13 18:16:04 epoch 9   , valid performance is main metric: 0.77448  , AUC: 0.77448  , ACC: 0.75828  , RMSE: 0.40726  , MAE: 0.33469  , train loss is predict loss: 0.503349    , adv predict loss: 0.559843    , test performance is main metric: 0.77705  , AUC: 0.77705  , ACC: 0.75536  , RMSE: 0.40882  , MAE: 0.33729  , current best epoch is 9
+max entropy adversarial data augment: from 2024-02-13 18:16:04 to 2024-02-13 18:18:03, gen pred loss: 0.641577    , gen entropy loss: 0.650936    , gen mse loss: 0.000108089
+2024-02-13 18:18:24 epoch 10  , valid performance is main metric: 0.77947  , AUC: 0.77947  , ACC: 0.76174  , RMSE: 0.40503  , MAE: 0.3264   , train loss is predict loss: 0.494758    , adv predict loss: 0.560374    , test performance is main metric: 0.78163  , AUC: 0.78163  , ACC: 0.7591   , RMSE: 0.4068   , MAE: 0.32927  , current best epoch is 10
+max entropy adversarial data augment: from 2024-02-13 18:18:24 to 2024-02-13 18:20:27, gen pred loss: 0.648353    , gen entropy loss: 0.649728    , gen mse loss: 8.22977e-05
+2024-02-13 18:20:51 epoch 11  , valid performance is main metric: 0.78067  , AUC: 0.78067  , ACC: 0.76218  , RMSE: 0.4044   , MAE: 0.32953  , train loss is predict loss: 0.488146    , adv predict loss: 0.561131    , test performance is main metric: 0.78339  , AUC: 0.78339  , ACC: 0.75962  , RMSE: 0.40585  , MAE: 0.33173  , current best epoch is 11
+max entropy adversarial data augment: from 2024-02-13 18:20:51 to 2024-02-13 18:22:53, gen pred loss: 0.641014    , gen entropy loss: 0.654467    , gen mse loss: 9.02358e-05
+2024-02-13 18:23:14 epoch 12  , valid performance is main metric: 0.78183  , AUC: 0.78183  , ACC: 0.76029  , RMSE: 0.40497  , MAE: 0.32818  , train loss is predict loss: 0.483131    , adv predict loss: 0.560405    , test performance is main metric: 0.78407  , AUC: 0.78407  , ACC: 0.75784  , RMSE: 0.40643  , MAE: 0.33059  , current best epoch is 12
+max entropy adversarial data augment: from 2024-02-13 18:23:14 to 2024-02-13 18:25:15, gen pred loss: 0.63835     , gen entropy loss: 0.653977    , gen mse loss: 0.000104175
+2024-02-13 18:25:36 epoch 13  , valid performance is main metric: 0.78152  , AUC: 0.78152  , ACC: 0.75527  , RMSE: 0.4076   , MAE: 0.33567  , train loss is predict loss: 0.4787      , adv predict loss: 0.560692    , test performance is main metric: 0.78355  , AUC: 0.78355  , ACC: 0.75306  , RMSE: 0.40897  , MAE: 0.33782  , current best epoch is 12
+max entropy adversarial data augment: from 2024-02-13 18:25:36 to 2024-02-13 18:27:40, gen pred loss: 0.644511    , gen entropy loss: 0.658435    , gen mse loss: 7.43008e-05
+2024-02-13 18:28:01 epoch 14  , valid performance is main metric: 0.7855   , AUC: 0.7855   , ACC: 0.76424  , RMSE: 0.40267  , MAE: 0.3167   , train loss is predict loss: 0.473957    , adv predict loss: 0.559942    , test performance is main metric: 0.78792  , AUC: 0.78792  , ACC: 0.76221  , RMSE: 0.40426  , MAE: 0.31941  , current best epoch is 14
+max entropy adversarial data augment: from 2024-02-13 18:28:01 to 2024-02-13 18:30:03, gen pred loss: 0.640626    , gen entropy loss: 0.659504    , gen mse loss: 9.3228e-05
+2024-02-13 18:30:24 epoch 15  , valid performance is main metric: 0.78457  , AUC: 0.78457  , ACC: 0.76395  , RMSE: 0.4028   , MAE: 0.31962  , train loss is predict loss: 0.469049    , adv predict loss: 0.560754    , test performance is main metric: 0.78686  , AUC: 0.78686  , ACC: 0.76157  , RMSE: 0.40444  , MAE: 0.32223  , current best epoch is 14
+max entropy adversarial data augment: from 2024-02-13 18:30:24 to 2024-02-13 18:32:26, gen pred loss: 0.638956    , gen entropy loss: 0.654167    , gen mse loss: 4.20429e-05
+2024-02-13 18:32:46 epoch 16  , valid performance is main metric: 0.78158  , AUC: 0.78158  , ACC: 0.76067  , RMSE: 0.40563  , MAE: 0.31564  , train loss is predict loss: 0.463813    , adv predict loss: 0.560124    , test performance is main metric: 0.78347  , AUC: 0.78347  , ACC: 0.75774  , RMSE: 0.40726  , MAE: 0.31799  , current best epoch is 14
+max entropy adversarial data augment: from 2024-02-13 18:32:46 to 2024-02-13 18:34:49, gen pred loss: 0.643592    , gen entropy loss: 0.651608    , gen mse loss: 5.74818e-05
+2024-02-13 18:35:09 epoch 17  , valid performance is main metric: 0.78081  , AUC: 0.78081  , ACC: 0.76245  , RMSE: 0.40427  , MAE: 0.32716  , train loss is predict loss: 0.458492    , adv predict loss: 0.560942    , test performance is main metric: 0.78305  , AUC: 0.78305  , ACC: 0.75985  , RMSE: 0.4058   , MAE: 0.32941  , current best epoch is 14
+max entropy adversarial data augment: from 2024-02-13 18:35:09 to 2024-02-13 18:37:11, gen pred loss: 0.647119    , gen entropy loss: 0.659852    , gen mse loss: 3.04815e-05
+2024-02-13 18:37:32 epoch 18  , valid performance is main metric: 0.77912  , AUC: 0.77912  , ACC: 0.75988  , RMSE: 0.40628  , MAE: 0.31806  , train loss is predict loss: 0.452637    , adv predict loss: 0.560372    , test performance is main metric: 0.78158  , AUC: 0.78158  , ACC: 0.75758  , RMSE: 0.40759  , MAE: 0.31989  , current best epoch is 14
+max entropy adversarial data augment: from 2024-02-13 18:37:32 to 2024-02-13 18:39:34, gen pred loss: 0.644088    , gen entropy loss: 0.654275    , gen mse loss: 8.13014e-05
+2024-02-13 18:39:56 epoch 19  , valid performance is main metric: 0.77363  , AUC: 0.77363  , ACC: 0.75869  , RMSE: 0.40831  , MAE: 0.31455  , train loss is predict loss: 0.446505    , adv predict loss: 0.561049    , test performance is main metric: 0.77521  , AUC: 0.77521  , ACC: 0.75621  , RMSE: 0.4102   , MAE: 0.31692  , current best epoch is 14
+max entropy adversarial data augment: from 2024-02-13 18:39:56 to 2024-02-13 18:41:57, gen pred loss: 0.639753    , gen entropy loss: 0.658296    , gen mse loss: 8.82017e-05
+2024-02-13 18:42:18 epoch 20  , valid performance is main metric: 0.77246  , AUC: 0.77246  , ACC: 0.75681  , RMSE: 0.40995  , MAE: 0.31875  , train loss is predict loss: 0.440046    , adv predict loss: 0.560841    , test performance is main metric: 0.77435  , AUC: 0.77435  , ACC: 0.75461  , RMSE: 0.41158  , MAE: 0.32096  , current best epoch is 14
+max entropy adversarial data augment: from 2024-02-13 18:42:18 to 2024-02-13 18:44:20, gen pred loss: 0.637917    , gen entropy loss: 0.654919    , gen mse loss: 6.0029e-05
+2024-02-13 18:44:41 epoch 21  , valid performance is main metric: 0.76897  , AUC: 0.76897  , ACC: 0.75501  , RMSE: 0.41128  , MAE: 0.32238  , train loss is predict loss: 0.433401    , adv predict loss: 0.560941    , test performance is main metric: 0.77095  , AUC: 0.77095  , ACC: 0.75287  , RMSE: 0.41292  , MAE: 0.32447  , current best epoch is 14
+max entropy adversarial data augment: from 2024-02-13 18:44:41 to 2024-02-13 18:46:46, gen pred loss: 0.638316    , gen entropy loss: 0.656891    , gen mse loss: 7.77775e-05
+2024-02-13 18:47:07 epoch 22  , valid performance is main metric: 0.76481  , AUC: 0.76481  , ACC: 0.7562   , RMSE: 0.41204  , MAE: 0.31777  , train loss is predict loss: 0.427048    , adv predict loss: 0.560559    , test performance is main metric: 0.76668  , AUC: 0.76668  , ACC: 0.75342  , RMSE: 0.41401  , MAE: 0.32022  , current best epoch is 14
+max entropy adversarial data augment: from 2024-02-13 18:47:07 to 2024-02-13 18:49:11, gen pred loss: 0.642772    , gen entropy loss: 0.660047    , gen mse loss: 3.95959e-05
+2024-02-13 18:49:32 epoch 23  , valid performance is main metric: 0.7617   , AUC: 0.7617   , ACC: 0.75244  , RMSE: 0.41528  , MAE: 0.32281  , train loss is predict loss: 0.419849    , adv predict loss: 0.560373    , test performance is main metric: 0.7634   , AUC: 0.7634   , ACC: 0.74945  , RMSE: 0.41711  , MAE: 0.32512  , current best epoch is 14
+max entropy adversarial data augment: from 2024-02-13 18:49:32 to 2024-02-13 18:51:39, gen pred loss: 0.645657    , gen entropy loss: 0.656983    , gen mse loss: 0.000129898
+2024-02-13 18:52:00 epoch 24  , valid performance is main metric: 0.75515  , AUC: 0.75515  , ACC: 0.74871  , RMSE: 0.42078  , MAE: 0.31816  , train loss is predict loss: 0.41307     , adv predict loss: 0.560924    , test performance is main metric: 0.75674  , AUC: 0.75674  , ACC: 0.74609  , RMSE: 0.4226   , MAE: 0.3202   , current best epoch is 14
+best valid epoch: 14  , best test epoch: 14
+train performance by best valid epoch is main metric: 0.82921  , AUC: 0.82921  , ACC: 0.78549  , RMSE: 0.38452  , MAE: 0.30033  ,
+valid performance by best valid epoch is main metric: 0.7855   , AUC: 0.7855   , ACC: 0.76424  , RMSE: 0.40267  , MAE: 0.3167   ,
+test performance by best valid epoch is main metric: 0.78792  , AUC: 0.78792  , ACC: 0.76221  , RMSE: 0.40426  , MAE: 0.31941  ,
+----------------------------------------------------------------------------------------------------
+train performance by best train epoch is main metric: 0.88364  , AUC: 0.88364  , ACC: 0.82519  , RMSE: 0.34949  , MAE: 0.25557  ,
+test performance by best test epoch is main metric: 0.78792  , AUC: 0.78792  , ACC: 0.76221  , RMSE: 0.40426  , MAE: 0.31941  ,
+
+
+
 assist2017:
 lr: 0.001, no lr decay, weight decay: 0.0001, adv_learning_rate: 5, dropout: 0.3, weight_adv_pred_loss: 1.2, eta: 5, gamma: 5
 basic setting

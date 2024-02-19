@@ -42,6 +42,8 @@ def general_config(local_params, global_params, global_objects):
     global_params["device"] = "cuda" if (
             torch.cuda.is_available() and not local_params.get("debug_mode", False)
     ) else "cpu"
+    if local_params.get("debug_mode", False):
+        torch.autograd.set_detect_anomaly(True)
     global_params["seed"] = local_params["seed"]
 
     # 训练策略配置

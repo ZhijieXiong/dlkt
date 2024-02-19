@@ -5,6 +5,7 @@ from sklearn.mixture import GaussianMixture
 
 from .BaseModel4CL import BaseModel4CL
 from .Module.EncoderLayer import EncoderLayer
+from .Module.KTEmbedLayer import KTEmbedLayer
 from .Module.MLP import MLP4LLM_emb
 from .util import get_mask4last_or_penultimate, parse_question_zero_shot
 
@@ -27,7 +28,6 @@ class SimpleKT(nn.Module, BaseModel4CL):
         use_LLM_emb4question = self.params["use_LLM_emb4question"]
         use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
 
-        # 题目难度用一个标量表示
         self.embed_question_difficulty = self.get_embed_question_diff()
         self.embed_concept_variation = nn.Embedding(num_concept, dim_model)
         self.embed_concept = self.get_embed_concept()
@@ -150,6 +150,36 @@ class SimpleKT(nn.Module, BaseModel4CL):
     def get_concept_emb_all(self):
         return self.embed_concept.weight
 
+    def get_concept_emb(self, batch):
+        data_type = self.params["datasets_config"]["data_type"]
+        if data_type == "only_question":
+            concept_emb = KTEmbedLayer.concept_fused_emb(
+                self.embed_concept,
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                batch["question_seq"],
+                fusion_type="mean"
+            )
+        else:
+            concept_emb = self.embed_concept(batch["concept_seq"])
+
+        return concept_emb
+
+    def get_concept_variation_emb(self, batch):
+        data_type = self.params["datasets_config"]["data_type"]
+        if data_type == "only_question":
+            concept_emb = KTEmbedLayer.concept_fused_emb(
+                self.embed_concept_variation,
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                batch["question_seq"],
+                fusion_type="mean"
+            )
+        else:
+            concept_emb = self.embed_concept_variation(batch["concept_seq"])
+
+        return concept_emb
+
     def base_emb(self, batch):
         separate_qa = self.params["models_config"]["kt_model"]["encoder_layer"]["SimpleKT"]["separate_qa"]
         use_LLM_emb4concept = self.params["use_LLM_emb4concept"]
@@ -157,7 +187,7 @@ class SimpleKT(nn.Module, BaseModel4CL):
         correct_seq = batch["correct_seq"]
 
         # c_ct
-        concept_emb = self.embed_concept(concept_seq)
+        concept_emb = self.get_concept_emb(batch)
         if use_LLM_emb4concept:
             concept_emb = self.MLP4concept(concept_emb)
         if separate_qa:
@@ -171,14 +201,13 @@ class SimpleKT(nn.Module, BaseModel4CL):
 
     def forward(self, batch):
         use_LLM_emb4question = self.params["use_LLM_emb4question"]
-        concept_seq = batch["concept_seq"]
         question_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
 
         # c_{c_t}和e_(ct, rt)
         concept_emb, interaction_emb = self.base_emb(batch)
         # d_ct 总结了包含当前question（concept）的problems（questions）的变化
-        concept_variation_emb = self.embed_concept_variation(concept_seq)
+        concept_variation_emb = self.get_concept_variation_emb(batch)
         # mu_{q_t}
         question_difficulty_emb = self.embed_question_difficulty(question_seq)
         if use_LLM_emb4question:
@@ -210,7 +239,7 @@ class SimpleKT(nn.Module, BaseModel4CL):
         correct_seq = batch["correct_seq"]
 
         # c_{c_t}和e_(ct, rt)
-        concept_emb = self.embed_concept(concept_seq)
+        concept_emb = self.get_concept_emb(batch)
         if use_emb_dropout:
             concept_emb = torch.dropout(concept_emb, dropout, self.training)
         if separate_qa:
@@ -220,7 +249,7 @@ class SimpleKT(nn.Module, BaseModel4CL):
             # e_{(c_t, r_t)} = c_{c_t} + r_{r_t}
             interaction_emb = self.embed_interaction(correct_seq) + concept_emb
         # d_ct 总结了包含当前question（concept）的problems（questions）的变化
-        concept_variation_emb = self.embed_concept_variation(concept_seq)
+        concept_variation_emb = self.get_concept_variation_emb(batch)
         if use_emb_dropout:
             concept_variation_emb = torch.dropout(concept_variation_emb, dropout, self.training)
         # mu_{q_t}
@@ -313,16 +342,14 @@ class SimpleKT(nn.Module, BaseModel4CL):
 
     def get_predict_score4question_zero(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-
         use_LLM_emb4question = self.params["use_LLM_emb4question"]
-        concept_seq = batch["concept_seq"]
         question_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
 
         # c_{c_t}和e_(ct, rt)
         concept_emb, interaction_emb = self.base_emb(batch)
         # d_ct 总结了包含当前question（concept）的problems（questions）的变化
-        concept_variation_emb = self.embed_concept_variation(concept_seq)
+        concept_variation_emb = self.get_concept_variation_emb(batch)
         # mu_{q_t}
         question_difficulty_emb = self.embed_question_difficulty4zero(question_seq)
         if use_LLM_emb4question:

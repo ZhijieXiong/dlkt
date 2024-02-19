@@ -10,7 +10,9 @@ def atkt_general_config(local_params, global_params, global_objects):
     global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "ATKT"
 
     # 配置模型参数
+    use_concept = local_params["use_concept"]
     num_concept = local_params["num_concept"]
+    num_question = local_params["num_question"]
     dim_concept = local_params["dim_concept"]
     dim_correct = local_params["dim_correct"]
     dim_latent = local_params["dim_latent"]
@@ -21,7 +23,9 @@ def atkt_general_config(local_params, global_params, global_objects):
 
     # encoder layer
     encoder_config = global_params["models_config"]["kt_model"]["encoder_layer"]["ATKT"]
+    encoder_config["use_concept"] = use_concept
     encoder_config["num_concept"] = num_concept
+    encoder_config["num_question"] = num_question
     encoder_config["dim_concept"] = dim_concept
     encoder_config["dim_correct"] = dim_correct
     encoder_config["dim_latent"] = dim_latent
@@ -33,9 +37,8 @@ def atkt_general_config(local_params, global_params, global_objects):
 
     global_objects["logger"].info(
         "model params\n"
-        f"    num of concept: {num_concept}, dim of concept emb: {dim_concept}, dim of correct emb: {dim_correct}, "
-        f"dim of latent: {dim_latent}, dim of attention: {dim_attention}, dropout: {dropout}\n"
-        f"    epsilon: {epsilon}, beta: {beta}"
+        f"    use_concept: {use_concept}, num of concept: {num_concept}, dim of concept emb: {dim_concept}, dim of correct emb: {dim_correct}, "
+        f"dim of latent: {dim_latent}, dim of attention: {dim_attention}\n    dropout: {dropout}, epsilon: {epsilon}, beta: {beta}"
     )
 
     if local_params["save_model"]:

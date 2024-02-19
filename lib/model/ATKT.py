@@ -17,6 +17,8 @@ class ATKT(nn.Module):
 
         # embed layer
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["ATKT"]
+        use_concept = encoder_config["use_concept"]
+        num_question = encoder_config["num_question"]
         num_concept = encoder_config["num_concept"]
         dim_concept = encoder_config["dim_concept"]
         dim_latent = encoder_config["dim_latent"]
@@ -29,7 +31,10 @@ class ATKT(nn.Module):
         self.fc = nn.Linear(dim_latent * 2, num_concept)
         self.sig = nn.Sigmoid()
 
-        self.embed_concept = nn.Embedding(num_concept, dim_concept)
+        if use_concept:
+            self.embed_concept = nn.Embedding(num_concept, dim_concept)
+        else:
+            self.embed_concept = nn.Embedding(num_question, dim_concept)
         self.embed_concept.weight.data[-1] = 0
 
         self.embed_correct = nn.Embedding(2, dim_correct)
@@ -64,7 +69,11 @@ class ATKT(nn.Module):
         return final_output
 
     def get_interaction_emb(self, batch):
-        concept_seq = batch["concept_seq"]
+        use_concept = self.params["models_config"]["kt_model"]["encoder_layer"]["ATKT"]["use_concept"]
+        if use_concept:
+            concept_seq = batch["concept_seq"]
+        else:
+            concept_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
 
         concept_emb = self.embed_concept(concept_seq)
@@ -92,7 +101,11 @@ class ATKT(nn.Module):
 
     def get_predict_score(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["ATKT"]
-        num_concept = encoder_config["num_concept"]
+        use_concept = encoder_config["use_concept"]
+        if use_concept:
+            num_concept = encoder_config["num_concept"]
+        else:
+            num_concept = encoder_config["num_question"]
         predict_score = self.forward(batch)[:, :-1]
         concept_seq = batch["concept_seq"]
         mask_seq = torch.ne(batch["mask_seq"], 0)
@@ -102,9 +115,15 @@ class ATKT(nn.Module):
         return predict_score
 
     def get_predict_loss(self, batch, loss_record=None):
-        num_concept = self.params["models_config"]["kt_model"]["encoder_layer"]["ATKT"]["num_concept"]
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["ATKT"]
+        use_concept = encoder_config["use_concept"]
+        if use_concept:
+            num_concept = encoder_config["num_concept"]
+            concept_seq = batch["concept_seq"]
+        else:
+            num_concept = encoder_config["num_question"]
+            concept_seq = batch["question_seq"]
         correct_seq = batch["correct_seq"]
-        concept_seq = batch["concept_seq"]
         mask_seq = torch.ne(batch["mask_seq"], 0)
         ground_truth = torch.masked_select(correct_seq[:, 1:].long(), mask_seq[:, 1:])
         num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
@@ -124,13 +143,14 @@ class ATKT(nn.Module):
             loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
         loss += predict_loss
 
-        epsilon = self.params["models_config"]["kt_model"]["encoder_layer"]["ATKT"]["epsilon"]
-        beta = self.params["loss_config"]["adv loss"]
+        epsilon = encoder_config["epsilon"]
+        beta = encoder_config["adv loss"]
 
         interaction_grad = grad(predict_loss, interaction_emb, retain_graph=True)
         perturbation = torch.FloatTensor(epsilon * l2_normalize_adv(interaction_grad[0].data))
         perturbation = Variable(perturbation).to(self.params["device"])
-        interaction_emb += perturbation
+        interaction_emb = self.get_interaction_emb(batch) + perturbation
+
         adv_score = self.forward_from_emb(interaction_emb)[:, :-1]
         adv_score = (adv_score * one_hot_vector).sum(-1)
         adv_score = torch.masked_select(adv_score, mask_seq[:, 1:])

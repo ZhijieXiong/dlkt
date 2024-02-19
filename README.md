@@ -9,7 +9,18 @@
 
 # Introduction
 
+- The Comparison with `PYKT`
 
+|                                                              | DLKT  | PYKT  |
+| ------------------------------------------------------------ | ----- | ----- |
+| Arbitrary Experimental Settings (Data Processing, Dataset  Partitioning, ...) | True  | False |
+| Mainstream Knowledge Tracing Model (DKT, DKVMN, AKT, LPKT, ...) | True  | True  |
+| Knowledge Tracing Model  Training Based on Concepts          | True  | True  |
+| Knowledge Tracing Model Training Based on Questions          | True  | False |
+| Knowledge Tracing Model  Evaluating Based on Concepts        | True  | True  |
+| Knowledge Tracing Model  Evaluating Based on Questions       | True  | True  |
+| Fine-grained Metrics (Cold Start, Long Tail, ...)            | True  | False |
+| Wandb                                                        | False | True  |
 
 # Referrence
 
@@ -91,3 +102,4 @@ We expect all contributions discussed in the issue tracker and going through PRs
 
 - https://github.com/ZhijieXiong
 - https://github.com/kingofpop625
+- 

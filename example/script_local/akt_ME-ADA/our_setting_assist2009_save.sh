@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-{
+#{
   dataset_name="assist2009"
   data_type="only_question"
 
@@ -20,9 +20,9 @@
       --num_concept 123 --num_question 17751 \
       --dim_model 256 --key_query_same True --num_head 8 --num_block 2 --dim_ff 256 --dim_final_fc 512 --dropout 0.1 \
       --separate_qa False --seq_representation "encoder_output" --weight_rasch_loss 0.00001 \
-      --use_warm_up False --epoch_warm_up 4 \
+      --use_warm_up True --epoch_warm_up 1 \
       --epoch_interval_generate 1 --epoch_generate 200 --weight_adv_pred_loss 0.5 --loop_adv 3 --adv_learning_rate 1 --eta 20 --gamma 20 \
-      --save_model True --debug_mode False --seed 0
+      --save_model False --debug_mode False --seed 0
   done
 
-} >> F:/code/myProjects/dlkt/example/result_local/akt_ME-ADA_our_setting_assist2009_save.txt
+#} >> F:/code/myProjects/dlkt/example/result_local/akt_ME-ADA_our_setting_assist2009_save.txt

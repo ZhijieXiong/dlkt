@@ -8,7 +8,7 @@
   for fold in 0 1 2 3 4
   do
     echo -e "fold ${fold}"
-    python F:/code/myProjects/dlkt/example/train/lpkt_max_entropy_aug.py \
+    CUDA_VISIBLE_DEVICES=4 python /home/xiongzj/myProjects/KT/dlkt/example/train/lpkt_max_entropy_aug.py \
       --setting_name "our_setting" --dataset_name "${dataset_name}" --data_type "${data_type}" \
       --train_file_name "${dataset_name}_train_fold_${fold}.txt" --valid_file_name "${dataset_name}_valid_fold_${fold}.txt" --test_file_name "${dataset_name}_test_fold_${fold}.txt" \
       --optimizer_type "adam" --weight_decay 0.000001 --momentum 0.9 \
@@ -25,4 +25,4 @@
       --save_model True --debug_mode False --seed 0
   done
 
-} >> F:/code/myProjects/dlkt/example/result_local/lpkt_ME-ADA_our_setting_assist2017_save.txt
+} >> /home/xiongzj/myProjects/KT/dlkt/example/results/lpkt_ME-ADA_our_setting_assist2017_save.txt

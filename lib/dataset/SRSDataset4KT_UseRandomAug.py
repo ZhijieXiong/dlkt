@@ -58,7 +58,7 @@ class SRSDataset4KT_UseRandomAug(Dataset):
         }
 
         for k in item_data.keys():
-            if k in ["question_seq", "concept_seq", "correct_seq", "use_time_seq", "interval_time_seq"]:
+            if k in ["question_seq", "concept_seq", "correct_seq", "use_time_seq", "interval_time_seq", "mask_seq"]:
                 result[k] = torch.tensor(
                     item_data[k][:seq_len] + [0] * (max_seq_len - seq_len)
                 ).long().to(self.params["device"])
@@ -70,7 +70,7 @@ class SRSDataset4KT_UseRandomAug(Dataset):
 
         for i, data_aug in enumerate(aug_result):
             pad_len = max_seq_len - data_aug["seq_len"]
-            result[f"seq_len_aug_{i}"] = data_aug["seq_len"]
+            result[f"seq_len_aug_{i}"] = torch.tensor(data_aug["seq_len"]).long().to(self.params["device"])
             for k, v in data_aug.items():
                 if type(v) == list and k not in ["time_seq", "use_time_seq", "interval_time_seq", "age_seq", "mask_seq"]:
                     # 数据增强不考虑时间、年龄

@@ -320,7 +320,28 @@ class qDKT(nn.Module, BaseModel4CL):
         return loss
 
     def get_cl_loss_srs(self, batch):
-        pass
+        batch_aug0 = {
+            "question_seq": batch["question_seq_aug_0"],
+            "correct_seq": batch["correct_seq_aug_0"]
+        }
+        batch_aug1 = {
+            "question_seq": batch["question_seq_aug_1"],
+            "correct_seq": batch["correct_seq_aug_1"]
+        }
+        if "concept_seq" in batch.keys():
+            batch_aug0["concept_seq"] = batch["concept_seq_aug_0"]
+            batch_aug1["concept_seq"] = batch["concept_seq_aug_1"]
+
+        batch_size = batch["seq_len"].shape[0]
+        batch_idx = range(batch_size)
+        latent_aug0 = self.get_latent(batch_aug0)[batch_idx, batch["seq_len_aug_0"]]
+        latent_aug1 = self.get_latent(batch_aug1)[batch_idx, batch["seq_len_aug_1"]]
+        labels = torch.arange(batch_size).long().to(self.params["device"])
+        temp = self.params["other"]["instance_cl"]["temp"]
+        cos_sim = torch.cosine_similarity(latent_aug0.unsqueeze(1), latent_aug1.unsqueeze(0), dim=-1) / temp
+        cl_loss = nn.functional.cross_entropy(cos_sim, labels)
+
+        return cl_loss
 
     # -------------------------------transfer head item to zero shot item-----------------------------------------------
 

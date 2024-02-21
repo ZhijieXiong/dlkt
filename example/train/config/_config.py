@@ -40,7 +40,7 @@ def general_config(local_params, global_params, global_objects):
     global_params["train_strategy"]["type"] = local_params["train_strategy"]
     global_params["datasets_config"]["data_type"] = local_params["data_type"]
     global_params["device"] = "cuda" if (
-            torch.cuda.is_available() and not local_params.get("debug_mode", False)
+            torch.cuda.is_available() and not local_params.get("use_cpu", False)
     ) else "cpu"
     if local_params.get("debug_mode", False):
         torch.autograd.set_detect_anomaly(True)

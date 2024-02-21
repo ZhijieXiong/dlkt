@@ -26,7 +26,9 @@ class InstanceCLTrainerSRS(KnowledgeTracingTrainer):
                 optimizer.zero_grad()
                 loss = 0.
                 loss = loss + model.get_predict_loss_srs(batch, self.loss_record)
-                loss = loss + model.get_cl_loss_srs(batch, self.loss_record) * weight_cl_loss
+                cl_loss = model.get_cl_loss_srs(batch)
+                self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item(), 1)
+                loss = loss + cl_loss * weight_cl_loss
                 loss.backward()
                 if grad_clip_config["use_clip"]:
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])

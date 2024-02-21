@@ -83,23 +83,23 @@ if __name__ == "__main__":
 
     parser.add_argument("--target_file_path", type=str,
                         help="用于从数据中提取信息，如每道习题出现的频率（长尾问题），准确率（偏差问题）",
-                        default=r"F:\code\myProjects\dlkt\lab\settings\our_setting\algebra2005_train_fold_0.txt")
+                        default=r"F:\code\myProjects\dlkt\lab\settings\our_setting\statics2011_train_fold_0.txt")
     # 数据集信息
     parser.add_argument("--preprocessed_dir", type=str, default=r"F:\code\myProjects\dlkt\lab\dataset_preprocessed")
-    parser.add_argument("--dataset_name", type=str, default="algebra2005")
-    parser.add_argument("--data_type", type=str, default="only_question",
+    parser.add_argument("--dataset_name", type=str, default="statics2011")
+    parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--num_concept", type=int, default=112)
-    parser.add_argument("--num_question", type=int, default=173113)
+    parser.add_argument("--num_concept", type=int, default=27)
+    parser.add_argument("--num_question", type=int, default=1223)
     # 划分知识点和习题频率为低中高所用的参数，用于研究长尾问题
     parser.add_argument("--use_absolute4fre", type=str2bool, default=False)
     parser.add_argument("--concept_fre_low_middle", type=int, default=100)
     parser.add_argument("--concept_fre_middle_high", type=int, default=1000)
     parser.add_argument("--question_fre_low_middle", type=int, default=5)
     parser.add_argument("--question_fre_middle_high", type=int, default=20)
-    parser.add_argument("--question_fre_percent_lowest", type=float, default=0.95)
-    parser.add_argument("--question_fre_percent_highest", type=float, default=0.95)
-    parser.add_argument("--concept_fre_percent_lowest", type=float, default=0.5)
+    parser.add_argument("--question_fre_percent_lowest", type=float, default=0.1)
+    parser.add_argument("--question_fre_percent_highest", type=float, default=0.5)
+    parser.add_argument("--concept_fre_percent_lowest", type=float, default=0.3)
     parser.add_argument("--concept_fre_percent_highest", type=float, default=0.8)
     # 划分知识点和习题正确率为低中高所用的参数，用于研究偏差问题
     parser.add_argument("--use_absolute4acc", type=str2bool, default=True)

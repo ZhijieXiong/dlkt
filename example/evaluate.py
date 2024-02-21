@@ -18,19 +18,19 @@ if __name__ == "__main__":
 
     # 基本配置
     parser.add_argument("--save_model_dir", type=str,
-                        default=r"F:\code\myProjects\dlkt\lab\saved_models\2024-01-24@13-03-21@@qDKT-ME-ADA@@seed_0@@our_setting@@algebra2005_train_fold_0")
+                        default=r"F:\code\myProjects\dlkt\lab\saved_models\save\qDKT_ME-ADA\2024-02-21@10-38-57@@qDKT-ME-ADA@@seed_0@@our_setting@@statics2011_train_fold_0")
     parser.add_argument("--save_model_name", type=str, default="kt_model.pth")
     parser.add_argument("--setting_name", type=str, default="our_setting")
-    parser.add_argument("--dataset_name", type=str, default="algebra2005")
-    parser.add_argument("--data_type", type=str, default="only_question",
+    parser.add_argument("--dataset_name", type=str, default="statics2011")
+    parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--test_file_name", type=str, default="algebra2005_test_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="statics2011_test_fold_0.txt")
     parser.add_argument("--base_type", type=str, default="concept", choices=("concept", "question"))
     parser.add_argument("--evaluate_batch_size", type=int, default=512)
     # 细粒度配置（不适用于base_type为question的evaluate）
     # 长尾问题（注意不同训练集的长尾统计信息不一样）
     parser.add_argument("--statics_file_path", type=str,
-                        default=r"F:\code\myProjects\dlkt\lab\settings\our_setting\algebra2005_train_fold_0_statics.json")
+                        default=r"F:\code\myProjects\dlkt\lab\settings\our_setting\statics2011_train_fold_0_statics.json")
     # 冷启动问题
     parser.add_argument("--max_seq_len", type=int, default=200)
     parser.add_argument("--seq_len_absolute", type=str,

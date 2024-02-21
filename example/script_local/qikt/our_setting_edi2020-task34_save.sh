@@ -2,7 +2,7 @@
 
 {
   dataset_name="edi2020-task34"
-  data_type="only_question"
+  data_type="single_concept"
 
   for fold in 0 1 2 3 4
   do

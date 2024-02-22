@@ -51,7 +51,7 @@ if __name__ == "__main__":
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--use_concept", type=str2bool, default=True)
+    parser.add_argument("--use_concept", type=str2bool, default=False)
     parser.add_argument("--num_concept", type=int, default=27)
     parser.add_argument("--num_question", type=int, default=1223)
     parser.add_argument("--dim_concept", type=int, default=64)

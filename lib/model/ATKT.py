@@ -36,7 +36,6 @@ class ATKT(nn.Module):
         self.embed_correct = nn.Embedding(2, dim_correct)
         self.embed_correct.weight.data[-1] = 0
 
-        self.dim_attention = dim_attention
         self.mlp = nn.Linear(dim_latent, dim_attention)
         self.similarity = nn.Linear(dim_attention, 1, bias=False)
         self.rnn = nn.LSTM(dim_concept + dim_correct, dim_latent, batch_first=True)
@@ -103,10 +102,11 @@ class ATKT(nn.Module):
         use_concept = encoder_config["use_concept"]
         if use_concept:
             num_concept = encoder_config["num_concept"]
+            concept_seq = batch["concept_seq"]
         else:
             num_concept = encoder_config["num_question"]
+            concept_seq = batch["question_seq"]
         predict_score = self.forward(batch)[:, :-1]
-        concept_seq = batch["concept_seq"]
         mask_seq = torch.ne(batch["mask_seq"], 0)
         predict_score = (predict_score * one_hot(concept_seq[:, 1:].long(), num_concept)).sum(-1)
         predict_score = torch.masked_select(predict_score, mask_seq[:, 1:])

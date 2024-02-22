@@ -307,3 +307,58 @@ def batch_item_data2batch(batch_item_data, device):
         batch[k] = torch.tensor(batch[k]).long().to(device)
 
     return batch
+
+
+def kt_data2cd_data(data_uniformed):
+    data4cd = []
+    for item_data in data_uniformed:
+        user_data = {
+            "user_id": item_data["user_id"],
+            "num_interaction": item_data["seq_len"],
+            "all_interaction_data": []
+        }
+        for i in range(item_data["seq_len"]):
+            interaction_data = {
+                "question_id": item_data["question_seq"][i],
+                "correct": item_data["correct_seq"][i]
+            }
+            user_data["all_interaction_data"].append(interaction_data)
+        data4cd.append(user_data)
+
+    return data4cd
+
+
+def remap_user_id4CD_task(data_uniformed):
+    for i, item_data in enumerate(data_uniformed):
+        item_data["user_id"] = i
+
+
+def write_cd_task_dataset(data, data_path):
+    id_keys = data[0].keys()
+    with open(data_path, "w") as f:
+        first_line = ",".join(id_keys) + "\n"
+        f.write(first_line)
+        for interaction_data in data:
+            line_str = ""
+            for k in id_keys:
+                line_str += str(interaction_data[k]) + ","
+            f.write(line_str[:-1] + "\n")
+
+
+def read_cd_task_dataset(data_path):
+    assert os.path.exists(data_path), f"{data_path} not exist"
+    with open(data_path, "r") as f:
+        all_lines = f.readlines()
+        first_line = all_lines[0].strip()
+        id_keys_str = first_line.strip()
+        id_keys = id_keys_str.split(",")
+        all_lines = all_lines[1:]
+        data = []
+        for i, line_str in enumerate(all_lines):
+            interaction_data = {}
+            line_content = list(map(int, line_str.strip().split(",")))
+            for id_key, v in zip(id_keys, line_content):
+                interaction_data[id_key] = v
+            data.append(interaction_data)
+
+    return data

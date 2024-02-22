@@ -1,7 +1,7 @@
 import random
 import os
 
-from lib.util.data import write2file
+from lib.util.data import write2file, write_cd_task_dataset
 from lib.dataset.KTDataset import KTDataset
 from lib.util.data import load_json, dataset_multi_concept2only_question
 
@@ -54,7 +54,7 @@ def split2(dataset_uniformed, n_fold, valid_radio, seed=0):
     random.seed(seed)
     random.shuffle(dataset_uniformed)
     num_all = len(dataset_uniformed)
-    num_fold = num_all // n_fold
+    num_fold = (num_all // n_fold) + 1
 
     if n_fold <= 1:
         assert False, "num of fold must greater than 1, 5 is suggested"
@@ -68,6 +68,7 @@ def split2(dataset_uniformed, n_fold, valid_radio, seed=0):
         dataset_train_valid = []
         for fold in folds_train_valid:
             dataset_train_valid += dataset_folds[fold]
+        random.shuffle(dataset_train_valid)
         num_valid = int(len(dataset_train_valid) * valid_radio)
         result[1].append(dataset_train_valid[:num_valid])
         result[0].append(dataset_train_valid[num_valid:])
@@ -216,3 +217,74 @@ def n_fold_split2(dataset_uniformed, params, objects):
                 os.path.join(setting_dir,
                              names_test[fold].replace(".txt", "_only_question.txt"))
             )
+
+
+def n_fold_split4CD_task1(dataset_uniformed, params, objects):
+    """
+    先随机划分一部分做测试集，剩下的n折划分为训练集和验证集
+    :param dataset_uniformed:
+    :param params:
+    :param objects:
+    :return:
+    """
+    pass
+
+
+def n_fold_split4CD_task2(data4cd_task, params, objects, min_seq_len=10, seed=0):
+    """
+    先n折划分为训练集和测试集，再在训练集里随机划分一部分做验证集
+
+    :param data4cd_task:
+    :param params:
+    :param objects:
+    :param min_seq_len:
+    :param seed:
+    :return:
+    """
+    n_fold = params["lab_setting"]["n_fold"]
+    if n_fold <= 1:
+        assert False, "num of fold must greater than 1, 5 is suggested"
+    valid_radio = params["lab_setting"]["valid_radio"]
+    dataset_name = params["dataset_name"]
+    setting_dir = objects["file_manager"].get_setting_dir(params["lab_setting"]["name"])
+
+    random.seed(seed)
+    train_datasets, valid_datasets, test_datasets = [], [], []
+    for _ in range(n_fold):
+        train_datasets.append([])
+        valid_datasets.append([])
+        test_datasets.append([])
+    for user_data in data4cd_task:
+        if user_data["num_interaction"] < min_seq_len:
+            continue
+        user_id = user_data["user_id"]
+        all_interaction_data = user_data["all_interaction_data"]
+        for interaction_data in all_interaction_data:
+            interaction_data["user_id"] = user_id
+        random.shuffle(all_interaction_data)
+
+        num_fold = (user_data["num_interaction"] // n_fold) + 1
+        dataset_folds = [
+            all_interaction_data[num_fold * j: num_fold * (j + 1)]
+            for j in range(n_fold)
+        ]
+        for i in range(n_fold):
+            fold_test = i
+            test_datasets[i] += dataset_folds[fold_test]
+            folds_train_valid = set(range(n_fold)) - {fold_test}
+            dataset_train_valid = []
+            for fold in folds_train_valid:
+                dataset_train_valid += dataset_folds[fold]
+            random.shuffle(dataset_train_valid)
+            num_valid = int(len(dataset_train_valid) * valid_radio)
+            valid_datasets[i] += dataset_train_valid[:num_valid]
+            train_datasets[i] += dataset_train_valid[num_valid:]
+
+    names_train = [f"{dataset_name}_train_fold_{fold}.txt" for fold in range(n_fold)]
+    names_valid = [f"{dataset_name}_valid_fold_{fold}.txt" for fold in range(n_fold)]
+    names_test = [f"{dataset_name}_test_fold_{fold}.txt" for fold in range(n_fold)]
+    for fold in range(n_fold):
+        write_cd_task_dataset(train_datasets[fold], os.path.join(setting_dir, names_train[fold]))
+        write_cd_task_dataset(valid_datasets[fold], os.path.join(setting_dir, names_valid[fold]))
+        write_cd_task_dataset(test_datasets[fold], os.path.join(setting_dir, names_test[fold]))
+

@@ -38,7 +38,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
     # 学习率
-    parser.add_argument("--learning_rate", type=float, default=0.001)
+    parser.add_argument("--learning_rate", type=float, default=0.0001)
     parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr_schedule_milestones", type=str, default="[5]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     # batch size
-    parser.add_argument("--train_batch_size", type=int, default=1024)
+    parser.add_argument("--train_batch_size", type=int, default=256)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     # 梯度裁剪
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
@@ -67,13 +67,13 @@ if __name__ == "__main__":
     parser.add_argument("--max_seq_len", type=int, default=200)
     # 对比学习
     parser.add_argument("--temp", type=float, default=0.05)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.001)
     # random aug参数
-    parser.add_argument("--mask_prob", type=float, default=0.1)
+    parser.add_argument("--mask_prob", type=float, default=0.05)
     parser.add_argument("--replace_prob", type=float, default=0.2)
     parser.add_argument("--crop_prob", type=float, default=0.1)
     parser.add_argument("--permute_prob", type=float, default=0.2)
-    parser.add_argument("--aug_order", type=str, default="['mask', 'crop', 'permute']")
+    parser.add_argument("--aug_order", type=str, default="['mask', 'crop', 'permute', 'replace']")
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--use_cpu", type=str2bool, default=False, help="if True, device=cpu")

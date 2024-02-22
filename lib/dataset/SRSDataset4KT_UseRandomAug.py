@@ -1,3 +1,4 @@
+import random
 from torch.utils.data import Dataset
 
 from ..util.data import *
@@ -42,7 +43,7 @@ class SRSDataset4KT_UseRandomAug(Dataset):
                 if aug_type == "mask":
                     item_data_aug = KTDataRandomAug.mask_seq(item_data_aug, mask_prob, 6)
                 elif aug_type == "replace":
-                    pass
+                    item_data_aug = self.random_replace_question(item_data_aug, replace_prob)
                 elif aug_type == "permute":
                     item_data_aug = KTDataRandomAug.permute_seq(item_data_aug, permute_prob, 6)
                 elif aug_type == "crop":
@@ -136,5 +137,18 @@ class SRSDataset4KT_UseRandomAug(Dataset):
 
         return num_seq, num_sample, num_right / num_sample
 
-    def random_replace_question(self, replace_prob):
-        pass
+    def random_replace_question(self, sample, replace_prob):
+        sample = deepcopy(sample)
+        seq_len = sample["seq_len"]
+        replace_idx = random.sample([i for i in range(seq_len)], k=max(1, int(seq_len * replace_prob)))
+        for i in replace_idx:
+            q_id = sample["question_seq"][i]
+            c_ids = self.objects["data"]["question2concept"][q_id]
+            c_id = random.choice(c_ids)
+            num_qs = len(self.objects["data"]["concept2question"][c_id])
+            num_seg = num_qs // 100
+            index_selected = int(random.random() * num_seg) + int(random.random() * 100)
+            index_selected = min(index_selected, num_qs - 1)
+            sample["question_seq"][i] = self.objects["data"]["concept2question"][c_id][index_selected]
+
+        return sample

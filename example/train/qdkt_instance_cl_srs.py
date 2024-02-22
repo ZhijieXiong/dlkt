@@ -66,8 +66,8 @@ if __name__ == "__main__":
     parser.add_argument("--activate_type", type=str, default="relu")
     parser.add_argument("--max_seq_len", type=int, default=200)
     # 对比学习
-    parser.add_argument("--temp", type=float, default=0.05)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.001)
+    parser.add_argument("--temp", type=float, default=0.1)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
     # random aug参数
     parser.add_argument("--mask_prob", type=float, default=0.05)
     parser.add_argument("--replace_prob", type=float, default=0.2)

@@ -21,8 +21,12 @@ class MaxEntropyAdvAugTrainer(BaseTrainer4ME_ADA):
         self.print_data_statics()
 
         weight_adv_pred_loss = self.params["loss_config"]["adv predict loss"]
+        max_entropy_adv_aug_config = self.params["other"]["max_entropy_adv_aug"]
+        use_warm_up = max_entropy_adv_aug_config["use_warm_up"]
+        epoch_warm_up = max_entropy_adv_aug_config["epoch_warm_up"]
         for epoch in range(1, num_epoch + 1):
             self.do_max_entropy_aug()
+            after_warm_up = epoch > epoch_warm_up
 
             model.train()
             for batch_idx, batch in enumerate(train_loader):
@@ -36,15 +40,16 @@ class MaxEntropyAdvAugTrainer(BaseTrainer4ME_ADA):
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
                 optimizer.step()
 
-                optimizer.zero_grad()
-                adv_aug_predict_loss = model.get_predict_loss_from_adv_data(self.dataset_adv_generated, batch)
-                self.loss_record.add_loss("adv predict loss",
-                                          adv_aug_predict_loss.detach().cpu().item() * num_sample, num_sample)
-                adv_aug_predict_loss = weight_adv_pred_loss * adv_aug_predict_loss
-                adv_aug_predict_loss.backward()
-                if grad_clip_config["use_clip"]:
-                    nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
-                optimizer.step()
+                if not use_warm_up or after_warm_up:
+                    optimizer.zero_grad()
+                    adv_aug_predict_loss = model.get_predict_loss_from_adv_data(self.dataset_adv_generated, batch)
+                    self.loss_record.add_loss("adv predict loss",
+                                              adv_aug_predict_loss.detach().cpu().item() * num_sample, num_sample)
+                    adv_aug_predict_loss = weight_adv_pred_loss * adv_aug_predict_loss
+                    adv_aug_predict_loss.backward()
+                    if grad_clip_config["use_clip"]:
+                        nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
+                    optimizer.step()
 
             if schedulers_config["use_scheduler"]:
                 scheduler.step()

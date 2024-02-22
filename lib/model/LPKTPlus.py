@@ -21,7 +21,7 @@ class LPKTPlus(nn.Module):
         # 3600 sec: 1 hour, 43200 min: 1 month
         self.embed_answer_time = nn.Embedding(3600 + 1, dim_k)
         torch.nn.init.xavier_uniform_(self.embed_answer_time.weight)
-        self.embed_interval_time = nn.Embedding(43200 + 1, dim_k)
+        self.embed_interval_time = nn.Embedding(10 + 1, dim_k)
         torch.nn.init.xavier_uniform_(self.embed_interval_time.weight)
         self.embed_question = nn.Embedding(num_question + 1, dim_k)
         torch.nn.init.xavier_uniform_(self.embed_question.weight)
@@ -76,10 +76,8 @@ class LPKTPlus(nn.Module):
             if h_tilde_pre is None:
                 h_tilde_pre = q_e.bmm(h_pre).view(batch_size, dim_k)
             learning = all_learning[:, t]
-            learning_gain = self.linear_2(torch.cat((learning_pre, it, learning, h_tilde_pre), 1))
-            learning_gain = self.tanh(learning_gain)
-            gamma_l = self.linear_3(torch.cat((learning_pre, it, learning, h_tilde_pre), 1))
-            gamma_l = self.sig(gamma_l)
+            learning_gain = self.tanh(self.linear_2(torch.cat((learning_pre, it, learning, h_tilde_pre), 1)))
+            gamma_l = self.sig(self.linear_3(torch.cat((learning_pre, it, learning, h_tilde_pre), 1)))
             LG = gamma_l * ((learning_gain + 1) / 2)
             LG_tilde = self.dropout(q_e.transpose(1, 2).bmm(LG.view(batch_size, 1, -1)))
 

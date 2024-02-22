@@ -6,6 +6,8 @@ from lib.util.data import read_preprocessed_file
 
 def max_entropy_adv_aug_general_config(local_params, global_params, global_objects):
     # adv aug相关参数
+    use_warm_up4cl = local_params["use_warm_up"]
+    epoch_warm_up4cl = local_params["epoch_warm_up"]
     epoch_interval_generate = local_params["epoch_interval_generate"]
     loop_adv = local_params["loop_adv"]
     epoch_generate = local_params["epoch_generate"]
@@ -16,6 +18,8 @@ def max_entropy_adv_aug_general_config(local_params, global_params, global_objec
 
     global_params["other"]["max_entropy_adv_aug"] = {}
     max_entropy_adv_aug_config = global_params["other"]["max_entropy_adv_aug"]
+    max_entropy_adv_aug_config["use_warm_up"] = use_warm_up4cl
+    max_entropy_adv_aug_config["epoch_warm_up"] = epoch_warm_up4cl
     max_entropy_adv_aug_config["epoch_interval_generate"] = epoch_interval_generate
     max_entropy_adv_aug_config["loop_adv"] = loop_adv
     max_entropy_adv_aug_config["epoch_generate"] = epoch_generate

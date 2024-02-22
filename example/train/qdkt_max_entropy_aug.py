@@ -64,8 +64,8 @@ if __name__ == "__main__":
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
     # max entropy adv aug参数
-    parser.add_argument("--use_warm_up", type=str2bool, default=False)
-    parser.add_argument("--epoch_warm_up", type=int, default=4)
+    parser.add_argument("--use_warm_up", type=str2bool, default=True)
+    parser.add_argument("--epoch_warm_up", type=int, default=1)
     parser.add_argument("--epoch_interval_generate", type=int, default=1)
     parser.add_argument("--epoch_generate", type=int, default=200)
     parser.add_argument("--weight_adv_pred_loss", type=float, default=1)

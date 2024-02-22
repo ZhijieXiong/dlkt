@@ -18,6 +18,8 @@ class BaseTrainer4ME_ADA(KnowledgeTracingTrainer):
     def do_max_entropy_aug(self):
         max_entropy_adv_aug_config = self.params["other"]["max_entropy_adv_aug"]
         current_epoch = self.train_record.get_current_epoch()
+        use_warm_up = max_entropy_adv_aug_config["use_warm_up"]
+        epoch_warm_up = max_entropy_adv_aug_config["epoch_warm_up"]
         epoch_interval_generate = max_entropy_adv_aug_config["epoch_interval_generate"]
         loop_adv = max_entropy_adv_aug_config["loop_adv"]
         epoch_generate = max_entropy_adv_aug_config["epoch_generate"]
@@ -25,7 +27,15 @@ class BaseTrainer4ME_ADA(KnowledgeTracingTrainer):
         eta = max_entropy_adv_aug_config["eta"]
         gamma = max_entropy_adv_aug_config["gamma"]
 
-        do_generate = (current_epoch % epoch_interval_generate == 0) and (self.num_epoch_adv_gen < epoch_generate)
+        after_warm_up = current_epoch >= epoch_warm_up
+        if use_warm_up:
+            do_generate = after_warm_up and (
+                    (current_epoch - epoch_warm_up) % epoch_interval_generate == 0
+            ) and (
+                    self.num_epoch_adv_gen < epoch_generate
+            )
+        else:
+            do_generate = (current_epoch % epoch_interval_generate == 0) and (self.num_epoch_adv_gen < epoch_generate)
         model = self.objects["models"]["kt_model"]
         train_loader = self.objects["data_loaders"]["train_loader"]
 

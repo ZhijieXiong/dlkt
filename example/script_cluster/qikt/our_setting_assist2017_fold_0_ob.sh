@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 
 {
-  dataset_name="bridge2algebra2006"
-  data_type="only_question"
+  dataset_name="assist2017"
+  data_type="single_concept"
   fold=0
 
-  dropouts='0.4 0.5'
+  dropouts='0.3 0.5'
   weight_decays='0 0.0001 0.00001'
   lambdas_q_all='1'
   lambdas_c_next='1'
   lambdas_c_all='1'
-  qs_all_loss='0 1 1.5 2'
-  cs_all_loss='2'
-  cs_next_loss='2'
-  nums_mlp_layer=(1)
+  qs_all_loss='0 0.5 1 1.5 2'
+  cs_all_loss='0.5'
+  cs_next_loss='1 2'
+  nums_mlp_layer=(1 2)
   for weight_decay in ${weight_decays}
   do
     for lambda_q_all in ${lambdas_q_all}
@@ -41,9 +41,9 @@ echo -e "weight_decay: ${weight_decay}, lambda_q_all: ${lambda_q_all}, lambda_c_
                       --use_early_stop True --epoch_early_stop 10 --use_last_average False --epoch_last_average 5 \
                       --main_metric "AUC" --use_multi_metrics False \
                       --learning_rate 0.0001 --enable_lr_schedule False --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
-                      --train_batch_size 32 --evaluate_batch_size 128 \
+                      --train_batch_size 64 --evaluate_batch_size 128 \
                       --enable_clip_grad False --grad_clipped 10.0 \
-                      --num_concept 493 --num_question 129263 \
+                      --num_concept 101 --num_question 2803 \
                       --dim_emb 64 --rnn_type "gru" --num_rnn_layer 1 --dropout "${dropout}" --num_mlp_layer "${num_mlp_layer}" \
                       --lambda_q_all "${lambda_q_all}" --lambda_c_next "${lambda_c_next}" --lambda_c_all "${lambda_c_all}" --use_irt True \
                       --weight_predict_q_all_loss "${q_all_loss}" --weight_predict_q_next_loss 1 \
@@ -58,4 +58,4 @@ echo -e "weight_decay: ${weight_decay}, lambda_q_all: ${lambda_q_all}, lambda_c_
       done
     done
   done
-} >> /ghome/xiongzj/code/dlkt/example/result_cluster/qikt_our_setting_bridge2algebra2006_fold_0_ob.txt
+} >> /ghome/xiongzj/code/dlkt/example/result_cluster/qikt_our_setting_assist2017_fold_0_ob.txt

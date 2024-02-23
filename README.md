@@ -21,6 +21,8 @@
 | Knowledge Tracing Model  Evaluating Based on Questions       | True  | True  |
 | Fine-grained Metrics (Cold Start, Long Tail, ...)            | True  | False |
 | Knowledge Tracing Model Training Similar to Sequential Recommendation System | True  | False |
+| Cognitive Diagnosis Task                                     | True  | False |
+|                                                              |       |       |
 | Wandb                                                        | False | True  |
 
 # Referrence

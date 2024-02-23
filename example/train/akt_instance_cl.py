@@ -118,8 +118,9 @@ if __name__ == "__main__":
     parser.add_argument("--eta", type=float, default=5.0)
     parser.add_argument("--gamma", type=float, default=1.0)
     # 其它
-    parser.add_argument("--save_model", type=str2bool, default=True)
-    parser.add_argument("--debug_mode", type=str2bool, default=False, help="if True, device=cpu")
+    parser.add_argument("--save_model", type=str2bool, default=False)
+    parser.add_argument("--debug_mode", type=str2bool, default=False)
+    parser.add_argument("--use_cpu", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()

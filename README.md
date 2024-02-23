@@ -2,10 +2,10 @@
 
 [Document] | [Datasets] | [Models] | [中文版]
 
-[Document]: DOC.md
-[Datasets]: KT_DATASETS.md
-[Models]: MODELS.md
-[中文版]: README_CN.md
+[Document]: md_doc/DOC.md
+[Datasets]: md_doc/KT_DATASETS.md
+[Models]: md_doc/MODELS.md
+[中文版]: md_doc/README_CN.md
 
 # Introduction
 
@@ -29,9 +29,9 @@
 
 ## Projects
 
-[papers](MODELS.md)
+[papers](md_doc/MODELS.md)
 
-[datasets](KT_DATASETS.md)
+[datasets](md_doc/KT_DATASETS.md)
 
 1. https://github.com/pykt-team/pykt-toolkit
 2. https://github.com/bigdata-ustc/EduKTM
@@ -69,7 +69,7 @@
      python set_up.py
      ```
 
-2. Place the original files of the dataset in the corresponding directory (Please refer to [Document (Section 1.3)](DOC.md) for details)
+2. Place the original files of the dataset in the corresponding directory (Please refer to [Document (Section 1.3)](md_doc/DOC.md) for details)
 
 3. Data Preprocessing: Run ` example/preprocess.py`, for example
 
@@ -83,7 +83,7 @@
    python akt_setting.py
    ```
 
-   - For details on dataset partitioning, please refer to [Document (Section 1.6)](DOC.md)
+   - For details on dataset partitioning, please refer to [Document (Section 1.6)](md_doc/DOC.md)
 
 5. Train model: Run the file under `example/train`. For example, train a DKT model
 

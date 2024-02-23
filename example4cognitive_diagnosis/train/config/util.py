@@ -15,6 +15,10 @@ def config_optimizer(local_params, global_params, global_objects, model_name="cd
     enable_clip_grad = local_params[f"enable_clip_grad{'' if (model_name == 'cd_model') else ('_' + model_name)}"]
     grad_clipped = local_params[f"grad_clipped{'' if (model_name == 'cd_model') else ('_' + model_name)}"]
 
+    global_params["optimizers_config"] = {}
+    global_params["grad_clip_config"] = {}
+    global_params["schedulers_config"] = {}
+
     global_params["optimizers_config"][model_name] = {}
     optimizer_config = global_params["optimizers_config"][model_name]
     optimizer_config["type"] = optimizer_type

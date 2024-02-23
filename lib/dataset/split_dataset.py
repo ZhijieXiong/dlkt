@@ -258,8 +258,8 @@ def n_fold_split4CD_task2(data4cd_task, params, objects, min_seq_len=10, seed=0)
     for user_data in data4cd_task:
         if user_data["num_interaction"] < min_seq_len:
             continue
+        user_id = num_user
         num_user += 1
-        user_id = user_data["user_id"]
         all_interaction_data = user_data["all_interaction_data"]
         for interaction_data in all_interaction_data:
             interaction_data["user_id"] = user_id

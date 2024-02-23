@@ -10,7 +10,7 @@ class NCD(nn.Module):
         self.params = params
         self.objects = objects
 
-        backbone_config = self.params["models_config"]["cd_model"]["backbone"]
+        backbone_config = self.params["models_config"]["cd_model"]["backbone"]["NCD"]
         num_user = backbone_config["num_user"]
         num_question = backbone_config["num_question"]
         num_concept = backbone_config["num_concept"]
@@ -46,9 +46,18 @@ class NCD(nn.Module):
         input_x = question_disc * (user_emb - question_diff) * Q_table[question_id]
         input_x = self.drop_1(torch.sigmoid(self.predict_layer1(input_x)))
         input_x = self.drop_2(torch.sigmoid(self.predict_layer2(input_x)))
-        output = torch.sigmoid(self.predict_layer3(input_x))
+        output = torch.sigmoid(self.predict_layer3(input_x)).squeeze(dim=-1)
 
         return output
+
+    def get_predict_loss(self, batch):
+        predict_score = self.forward(batch)
+        ground_truth = batch["correct"]
+        loss = torch.nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+        return loss
+
+    def get_predict_score(self, batch):
+        return self.forward(batch)
 
     def apply_clipper(self):
         clipper = NoneNegClipper()

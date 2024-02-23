@@ -33,6 +33,7 @@ def general_config(local_params, global_params, global_objects):
     file_manager = FileManager(FILE_MANAGER_ROOT)
     global_objects["file_manager"] = file_manager
     global_params["save_model"] = local_params["save_model"]
+    global_params["train_strategy"] = {}
     global_params["train_strategy"]["type"] = local_params["train_strategy"]
     global_params["device"] = "cuda" if (
             torch.cuda.is_available() and not local_params.get("use_cpu", False)
@@ -52,13 +53,14 @@ def general_config(local_params, global_params, global_objects):
     mutil_metrics = local_params["multi_metrics"]
     train_strategy_type = local_params["train_strategy"]
 
-    global_params["train_strategy"] = {}
     train_strategy_config = global_params["train_strategy"]
     train_strategy_config["num_epoch"] = num_epoch
     train_strategy_config["main_metric"] = main_metric
     train_strategy_config["use_multi_metrics"] = use_multi_metrics
     if use_multi_metrics:
         train_strategy_config["multi_metrics"] = eval(mutil_metrics)
+    else:
+        train_strategy_config["multi_metrics"] = [main_metric]
 
     train_strategy_config["type"] = train_strategy_type
     train_strategy_config[train_strategy_type] = {}
@@ -79,6 +81,11 @@ def general_config(local_params, global_params, global_objects):
     valid_file_name = local_params["valid_file_name"]
     test_file_name = local_params["test_file_name"]
 
+    global_params["datasets_config"] = {
+        "train": {},
+        "valid": {},
+        "test": {}
+    }
     datasets_config = global_params["datasets_config"]
     datasets_config["train"]["setting_name"] = setting_name
     datasets_config["test"]["setting_name"] = setting_name
@@ -100,7 +107,7 @@ def general_config(local_params, global_params, global_objects):
 
     # 优化器配置
     global_objects["logger"].info("optimizer setting")
-    config_optimizer(local_params, global_params, global_objects, model_name="kt_model")
+    config_optimizer(local_params, global_params, global_objects, model_name="cd_model")
 
     # Q table，并解析Q table并得到相关数据
     dataset_name = local_params["dataset_name"]
@@ -110,6 +117,8 @@ def general_config(local_params, global_params, global_objects):
     global_objects["data"] = {}
     global_objects["data"]["Q_table"] = Q_table
     if Q_table is not None:
+        global_objects["data"]["Q_table_tensor"] = \
+            torch.from_numpy(global_objects["data"]["Q_table"]).long().to(global_params["device"])
         # 如果有Q table的话，可以分析出question2concept_list和concept2question_list
         # 前者index表示习题id，value表示该习题对应的知识点列表
         # 后者index表示知识点id，value表示该知识点对应的习题列表
@@ -128,20 +137,7 @@ def general_config(local_params, global_params, global_objects):
         f"{f', valid: {valid_file_name}' if train_strategy_type == 'valid_test' else ''}, test: {test_file_name}"
     )
 
-    # 数据集统计信息
-    statics_info_file_path = os.path.join(
-        file_manager.get_setting_dir(setting_name),
-        datasets_config["train"]["file_name"].replace(".txt", f"_statics.json")
-    )
-    if not os.path.exists(statics_info_file_path):
-        global_objects["logger"].warning(
-            f"\nWARNING: statics of train dataset (`{statics_info_file_path}`) is not exist. This file is required for some cases, e.g., "
-            "fine grain evaluation such as long tail problem and some model using transfer_head2zero. "
-            "If it is necessary, please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset\n"
-        )
-    else:
-        with open(statics_info_file_path, "r") as file:
-            global_objects["data"]["train_data_statics"] = json.load(file)
+    global_params["loss_config"] = {}
 
 
 def save_params(global_params, global_objects):

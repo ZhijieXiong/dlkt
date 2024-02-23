@@ -36,6 +36,5 @@ if __name__ == "__main__":
     data_uniformed_path = objects["file_manager"].get_preprocessed_path(params["dataset_name"], params["data_type"])
     data_uniformed = read_preprocessed_file(data_uniformed_path)
 
-    remap_user_id4CD_task(data_uniformed)
     data = kt_data2cd_data(data_uniformed)
     n_fold_split4CD_task2(data, params, objects, min_seq_len=params["min_seq_len"])

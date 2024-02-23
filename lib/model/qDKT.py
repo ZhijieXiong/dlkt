@@ -1,5 +1,3 @@
-import numpy as np
-
 from .BaseModel4CL import BaseModel4CL
 from .Module.KTEmbedLayer import KTEmbedLayer
 from .Module.PredictorLayer import PredictorLayer

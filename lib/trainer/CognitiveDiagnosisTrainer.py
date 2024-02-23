@@ -48,26 +48,24 @@ class CognitiveDiagnosisTrainer:
 
     def train(self):
         train_strategy = self.params["train_strategy"]
-        grad_clip_config = self.params["grad_clip_config"]["kt_model"]
-        schedulers_config = self.params["schedulers_config"]["kt_model"]
+        grad_clip_config = self.params["grad_clip_config"]["cd_model"]
+        schedulers_config = self.params["schedulers_config"]["cd_model"]
         num_epoch = train_strategy["num_epoch"]
         train_loader = self.objects["data_loaders"]["train_loader"]
-        optimizer = self.objects["optimizers"]["kt_model"]
-        scheduler = self.objects["schedulers"]["kt_model"]
-        model = self.objects["models"]["kt_model"]
-
-        self.print_data_statics()
+        optimizer = self.objects["optimizers"]["cd_model"]
+        scheduler = self.objects["schedulers"]["cd_model"]
+        model = self.objects["models"]["cd_model"]
 
         for epoch in range(1, num_epoch + 1):
             model.train()
             for batch in train_loader:
                 optimizer.zero_grad()
-                predict_loss = model.get_predict_loss(batch, self.loss_record)
+                predict_loss = model.get_predict_loss(batch)
                 predict_loss.backward()
                 if grad_clip_config["use_clip"]:
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
                 optimizer.step()
-                if hasattr(model, "apply_clipper"):
+                if model.model_name == "NCD":
                     model.apply_clipper()
             if schedulers_config["use_scheduler"]:
                 scheduler.step()
@@ -106,7 +104,7 @@ class CognitiveDiagnosisTrainer:
         save_model = self.params["save_model"]
         data_loaders = self.objects["data_loaders"]
         train_loader = data_loaders["train_loader"]
-        model = self.objects["models"]["kt_model"]
+        model = self.objects["models"]["cd_model"]
         train_performance = self.evaluate_cd_dataset(model, train_loader)
         if train_strategy["type"] == "no_valid":
             # 无验证集，只有测试集
@@ -132,22 +130,8 @@ class CognitiveDiagnosisTrainer:
             if best_epoch == current_epoch:
                 if save_model:
                     save_model_dir = self.params["save_model_dir"]
-                    model_path = os.path.join(save_model_dir, "kt_model.pth")
+                    model_path = os.path.join(save_model_dir, "cd_model.pth")
                     torch.save(model, model_path)
-
-    def print_data_statics(self):
-        train_strategy = self.params["train_strategy"]
-        train_loader = self.objects["data_loaders"]["train_loader"]
-        test_loader = self.objects["data_loaders"]["test_loader"]
-
-        self.objects["logger"].info("")
-        train_statics = train_loader.dataset.get_statics_kt_dataset()
-        self.objects["logger"].info(f"train, seq: {train_statics[0]}, sample: {train_statics[1]}, accuracy: {train_statics[2]:<.4}")
-        if train_strategy["type"] == "valid_test":
-            valid_statics = self.objects["data_loaders"]["valid_loader"].dataset.get_statics_kt_dataset()
-            self.objects["logger"].info(f"valid, seq: {valid_statics[0]}, sample: {valid_statics[1]}, accuracy: {valid_statics[2]:<.4}")
-        test_statics = test_loader.dataset.get_statics_kt_dataset()
-        self.objects["logger"].info(f"test, seq: {test_statics[0]}, sample: {test_statics[1]}, accuracy: {test_statics[2]:<.4}")
 
     @staticmethod
     def evaluate_cd_dataset(model, data_loader):
@@ -156,10 +140,8 @@ class CognitiveDiagnosisTrainer:
             predict_score_all = []
             ground_truth_all = []
             for batch in data_loader:
-                correct_seq = batch["correct_seq"]
-                mask_bool_seq = torch.ne(batch["mask_seq"], 0)
                 predict_score = model.get_predict_score(batch).detach().cpu().numpy()
-                ground_truth = torch.masked_select(correct_seq[:, 1:], mask_bool_seq[:, 1:]).detach().cpu().numpy()
+                ground_truth = batch["correct"].detach().cpu().numpy()
                 predict_score_all.append(predict_score)
                 ground_truth_all.append(ground_truth)
             predict_score_all = np.concatenate(predict_score_all, axis=0)

@@ -254,9 +254,11 @@ def n_fold_split4CD_task2(data4cd_task, params, objects, min_seq_len=10, seed=0)
         train_datasets.append([])
         valid_datasets.append([])
         test_datasets.append([])
+    num_user = 0
     for user_data in data4cd_task:
         if user_data["num_interaction"] < min_seq_len:
             continue
+        num_user += 1
         user_id = user_data["user_id"]
         all_interaction_data = user_data["all_interaction_data"]
         for interaction_data in all_interaction_data:
@@ -280,6 +282,8 @@ def n_fold_split4CD_task2(data4cd_task, params, objects, min_seq_len=10, seed=0)
             valid_datasets[i] += dataset_train_valid[:num_valid]
             train_datasets[i] += dataset_train_valid[num_valid:]
 
+    with open(os.path.join(setting_dir, f"{dataset_name}_statics.txt"), "w") as f:
+        f.write(f"num of user: {num_user}\n")
     names_train = [f"{dataset_name}_train_fold_{fold}.txt" for fold in range(n_fold)]
     names_valid = [f"{dataset_name}_valid_fold_{fold}.txt" for fold in range(n_fold)]
     names_test = [f"{dataset_name}_test_fold_{fold}.txt" for fold in range(n_fold)]

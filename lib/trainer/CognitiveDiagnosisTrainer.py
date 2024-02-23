@@ -56,11 +56,15 @@ class CognitiveDiagnosisTrainer:
         scheduler = self.objects["schedulers"]["cd_model"]
         model = self.objects["models"]["cd_model"]
 
+        self.print_data_statics()
+
         for epoch in range(1, num_epoch + 1):
             model.train()
             for batch in train_loader:
                 optimizer.zero_grad()
                 predict_loss = model.get_predict_loss(batch)
+                num_sample = batch["user_id"].shape[0]
+                self.loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
                 predict_loss.backward()
                 if grad_clip_config["use_clip"]:
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
@@ -132,6 +136,22 @@ class CognitiveDiagnosisTrainer:
                     save_model_dir = self.params["save_model_dir"]
                     model_path = os.path.join(save_model_dir, "cd_model.pth")
                     torch.save(model, model_path)
+
+    def print_data_statics(self):
+        train_strategy = self.params["train_strategy"]
+        train_loader = self.objects["data_loaders"]["train_loader"]
+        test_loader = self.objects["data_loaders"]["test_loader"]
+
+        self.objects["logger"].info("")
+        if train_strategy["type"] == "valid_test":
+            valid_loader = self.objects["data_loaders"]["valid_loader"]
+            self.objects["logger"].info(f"train, sample: {len(train_loader.dataset)}\n"
+                                        f"valid, sample: {len(valid_loader.dataset)}\n"
+                                        f"test, sample: {len(test_loader.dataset)}")
+        else:
+            self.objects["logger"].info(f"train, sample: {len(train_loader.dataset)}\n"
+                                        f"test, sample: {len(test_loader.dataset)}")
+        self.objects["logger"].info("")
 
     @staticmethod
     def evaluate_cd_dataset(model, data_loader):

@@ -32,7 +32,7 @@ def ncd_general_config(local_params, global_params, global_objects):
     global_objects["logger"].info(
         "model params\n"
         f"    num of user: {num_user}, num of concept: {num_concept}, num of question: {num_question}, "
-        f"dim of predict layer 1: {dim_predict1}, dim of predict layer 2: {dim_predict2}, dropout: {dropout}\n"
+        f"dim of predict layer 1: {dim_predict1}, dim of predict layer 2: {dim_predict2}, dropout: {dropout}"
     )
 
     if local_params["save_model"]:

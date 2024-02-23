@@ -9,7 +9,7 @@ from lib.dataset.split_dataset import n_fold_split4CD_task2
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="assist2009",
+    parser.add_argument("--dataset_name", type=str, default="ednet-kt1",
                         choices=("assist2009", "assist2009-full", "assist2012", "assist2017", "edi2020-task34",
                                  "edi2020-task1", "ednet-kt1", "xes3g5m", "algebra2005", "bridge2algebra2006",
                                  "statics2011", "slepemapy"))

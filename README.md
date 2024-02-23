@@ -1,3 +1,5 @@
+[TOC]
+
 # DLKT
 
 [Document] | [Datasets] | [Models] | [中文版]
@@ -50,11 +52,13 @@
 
 # Quick-Start
 
+## Prepare
+
 1. Initialize project
 
-   - Create file `settings.json` in the `example` directory.
+   - Create file `settings.json` in the root directory.
 
-   - Modify the environment configuration file `example/settings.json`
+   - Modify the environment configuration file `settings.json`
 
      ```python
      {
@@ -63,7 +67,7 @@
      }
      ```
 
-   - Run `example/set_up.py`
+   - Run `set_up.py`
 
      ```shell
      python set_up.py
@@ -77,7 +81,9 @@
    python preprocess.py --dataset_name assist2009
    ```
 
-4. Divide the dataset according to the specified experimental settings: Run `example/prepare_dataset/akt_setting.py`. For example, dividing the dataset according to the experimental setup of the AKT paper, i.e. 
+## Knowledge Tracing
+
+1. Divide the dataset according to the specified experimental settings: Run `example/prepare_dataset/akt_setting.py`. For example, dividing the dataset according to the experimental setup of the AKT paper, i.e. 
 
    ```shell
    python akt_setting.py
@@ -85,13 +91,28 @@
 
    - For details on dataset partitioning, please refer to [Document (Section 1.6)](md_doc/DOC.md)
 
-5. Train model: Run the file under `example/train`. For example, train a DKT model
+2. Train model: Run the file under `example/train`. For example, train a DKT model
 
    ```shell
    python dkt.py
    ```
 
    - Regarding the meaning of parameters, please refer to [Document (Section 2)](Doc.md)
+
+## Cognitive Diagnosis
+
+1. Divide the dataset according to the specified experimental settings: Run `example4cognitive_diagnosis/prepare_dataset/akt_setting.py`. For example, dividing the dataset according to the experimental setup of the AKT paper, i.e. 
+
+   ```shell
+   python ncd_setting.py
+   ```
+
+2. Train model: Run the file under `example4cognitive_diagnosis/train`. For example, train a NCD model
+
+   ```shell
+   python dkt.py
+   ```
+
 
 # Contributing
 

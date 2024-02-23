@@ -21,8 +21,8 @@ if __name__ == "__main__":
     #         arg_default = match.group(1)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--target_python_file", type=str, default=r"F:\code\myProjects\dlkt\example\train\atkt.py")
-    parser.add_argument("--script_dir", type=str, default=r"F:\code\myProjects\dlkt\example\script_template")
+    parser.add_argument("--target_python_file", type=str, default=r"F:\code\myProjects\dlkt\example4cognitive_diagnosis\train\ncd.py")
+    parser.add_argument("--script_dir", type=str, default=r"F:\code\myProjects\dlkt\script_template")
     args = parser.parse_args()
     params = vars(args)
 

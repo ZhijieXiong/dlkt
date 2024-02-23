@@ -328,11 +328,6 @@ def kt_data2cd_data(data_uniformed):
     return data4cd
 
 
-def remap_user_id4CD_task(data_uniformed):
-    for i, item_data in enumerate(data_uniformed):
-        item_data["user_id"] = i
-
-
 def write_cd_task_dataset(data, data_path):
     id_keys = data[0].keys()
     with open(data_path, "w") as f:

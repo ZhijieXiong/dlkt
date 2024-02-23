@@ -3,7 +3,7 @@ import argparse
 import config
 
 from lib.util.FileManager import FileManager
-from lib.util.data import read_preprocessed_file, remap_user_id4CD_task, kt_data2cd_data
+from lib.util.data import read_preprocessed_file, kt_data2cd_data
 from lib.dataset.split_dataset import n_fold_split4CD_task2
 
 

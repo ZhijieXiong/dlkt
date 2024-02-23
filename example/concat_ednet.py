@@ -7,6 +7,7 @@ import config
 
 from lib.util.FileManager import FileManager
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--file_manager_root", type=str, default=r"")

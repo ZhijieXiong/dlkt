@@ -5,14 +5,14 @@
   data_type="single_concept"
   fold=0
 
-  dropouts='0.1 0.2 0.3'
+  dropouts='0.3 0.4 0.5'
   weight_decays='0'
   dims_concept=(64)
   dims_correct=(64)
   dims_latent=(256)
-  dims_attention=(64 256)
-  epsilons=(1 2 5 10 15)
-  betas='0.2 0.5 1 2'
+  dims_attention=(256)
+  epsilons=(2 5 10)
+  betas='0.2 0.5 1'
   for weight_decay in ${weight_decays}
   do
     for dim_attention in "${dims_attention[@]}"
@@ -53,3 +53,4 @@
     done
   done
 } >> /ghome/xiongzj/code/dlkt/example/result_cluster/atkt_que_our_setting_edi2020-task34_fold_0_ob.txt
+

@@ -8,11 +8,11 @@
   dropouts='0.1 0.2 0.3'
   weight_decays='0'
   dims_concept=(64)
-  dims_correct=(256)
+  dims_correct=(64)
   dims_latent=(256)
   dims_attention=(256)
-  epsilons=(12 15)
-  betas='2'
+  epsilons=(10 12 15)
+  betas='0.5 1 2'
   for weight_decay in ${weight_decays}
   do
     for dim_attention in "${dims_attention[@]}"

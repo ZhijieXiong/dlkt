@@ -3,14 +3,20 @@ notebook/.ipynb_checkpoints/
 result/
 lab/
 tmp/
+back_up/
+.idea/
+paper/
+
 example/cluster_models/
 example/server_models/
 example/result_cluster
 example/result_server
 example/result_local
-back_up/
-.idea/
-paper/
+example4cognitive_diagnosis/cluster_models/
+example4cognitive_diagnosis/server_models/
+example4cognitive_diagnosis/result_cluster
+example4cognitive_diagnosis/result_server
+example4cognitive_diagnosis/result_local
 
 /example/demo/*.csv
 /example/keys.py

@@ -20,6 +20,6 @@
       --use_concept True --num_concept 53 --num_question 948 \
       --dim_concept 64 --dim_correct 64 --dim_latent 256 \
       --dim_attention 256 --dropout 0.4 --epsilon 5 --beta 0.5 \
-      --save_model True --debug_mode False --seed 0
+      --save_model True --debug_mode False --use_cpu False --seed 0
   done
 } >> F:/code/myProjects/dlkt/example/result_local/atkt_our_setting_edi2020-task34_save.txt

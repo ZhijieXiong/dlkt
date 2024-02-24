@@ -20,7 +20,7 @@
       --num_concept 53 --num_question 948 \
       --dim_model 256 --key_query_same True --num_head 8 --num_block 2 --dim_ff 256 --dim_final_fc 512 --dropout 0.1 \
       --separate_qa False --seq_representation "encoder_output" --weight_rasch_loss 0.00001 \
-      --save_model True --seed 0
+      --save_model True --debug_mode False --use_cpu False --seed 0
   done
 
 } >> F:/code/myProjects/dlkt/example/result_local/akt_our_setting_edi2020-task34_save.txt

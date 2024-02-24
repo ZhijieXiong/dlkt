@@ -19,6 +19,6 @@
       --enable_clip_grad False --grad_clipped 10.0 \
       --num_concept 265 --num_question 53091 \
       --dim_e 128 --dim_k 128 --dim_correct 50 --dropout 0.2 \
-      --save_model True --debug_mode False --seed 0
+      --save_model True --debug_mode False --use_cpu False --seed 0
   done
 } >> F:/code/myProjects/dlkt/example/result_local/lpkt_our_setting_assist2012_save.txt

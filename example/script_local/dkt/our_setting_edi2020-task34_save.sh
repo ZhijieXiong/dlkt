@@ -19,6 +19,6 @@
       --enable_clip_grad False --grad_clipped 10.0 \
       --use_concept True --num_concept 53 --num_question 948 \
       --dim_emb 64 --dim_latent 256 --rnn_type gru --num_rnn_layer 1 --dropout 0.1 --num_predict_layer 2 --dim_predict_mid 512 --activate_type sigmoid \
-      --save_model True --seed 0
+      --save_model True --debug_mode False --use_cpu False --seed 0
   done
 } >> F:/code/myProjects/dlkt/example/result_local/dkt_our_setting_edi2020-task34_save.txt

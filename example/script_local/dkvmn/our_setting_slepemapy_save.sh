@@ -19,6 +19,6 @@
       --train_batch_size 64 --evaluate_batch_size 128 \
       --enable_clip_grad False --grad_clipped 10.0 \
       --use_concept True --num_concept 246 --num_question 5730 --dim_key 64 --dim_value 64 --dropout 0.2 \
-      --save_model True --seed 0
+      --save_model True --debug_mode False --use_cpu False --seed 0
   done
 } >> F:/code/myProjects/dlkt/example/result_local/dkvmn_our_setting_slepemapy_save.txt

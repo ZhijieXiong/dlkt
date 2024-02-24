@@ -20,7 +20,7 @@
       --enable_clip_grad False --grad_clipped 10.0 \
       --use_concept False --num_concept 101 --num_question 2803 \
       --dim_emb 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.2 --num_predict_layer 2 --dim_predict_mid 256 --activate_type "sigmoid" \
-      --save_model True --seed 0
+      --save_model True --debug_mode False --use_cpu False --seed 0
   done
 
 } >> F:/code/myProjects/dlkt/example/result_local/dkt_our_setting_assist2017_use_question_save.txt

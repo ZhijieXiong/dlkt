@@ -21,9 +21,9 @@
       --train_batch_size 64 --evaluate_batch_size 256 \
       --enable_clip_grad False --grad_clipped 10.0 \
       --num_concept 246 --num_question 5730 \
-      --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 128 --rnn_type gru --num_rnn_layer 1 --dropout 0.4 --num_predict_layer 3 --dim_predict_mid 128 --activate_type relu \
+      --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 128 --rnn_type gru --num_rnn_layer 1 --dropout 0.3 --num_predict_layer 3 --dim_predict_mid 128 --activate_type relu \
       --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
-      --save_model True --seed "${seed}"
+      --save_model True --debug_mode False --use_cpu False --seed "${seed}"
   done
 
 } >> F:/code/myProjects/dlkt/example/result_local/qdkt_our_setting_ood_by_country_slepemapy_split_0_save.txt

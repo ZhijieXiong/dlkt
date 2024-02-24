@@ -20,6 +20,6 @@
       --use_concept True --num_concept 101 --num_question 2803 \
       --dim_concept 64 --dim_correct 64 --dim_latent 256 \
       --dim_attention 64 --dropout 0.3 --epsilon 15 --beta 1 \
-      --save_model True --debug_mode False --seed 0
+      --save_model True --debug_mode False --use_cpu False --seed 0
   done
 } >> F:/code/myProjects/dlkt/example/result_local/atkt_our_setting_assist2017_save.txt

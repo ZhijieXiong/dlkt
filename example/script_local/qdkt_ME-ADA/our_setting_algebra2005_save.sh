@@ -21,7 +21,7 @@
       --dim_concept 64 --dim_question 64 --dim_correct 128 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.2 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
       --use_warm_up False --epoch_warm_up 4 \
       --epoch_interval_generate 1 --epoch_generate 200 --weight_adv_pred_loss 1 --loop_adv 3 --adv_learning_rate 1 --eta 5 --gamma 10 \
-      --save_model True --seed 0
+      --save_model True --debug_mode False --use_cpu False --seed 0
   done
 
 } >> F:/code/myProjects/dlkt/example/result_local/qdkt_ME-ADA_our_setting_algebra2005_save.txt

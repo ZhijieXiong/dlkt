@@ -20,6 +20,6 @@
       --use_concept True --num_concept 27 --num_question 1223 \
       --dim_concept 64 --dim_correct 64 --dim_latent 256 \
       --dim_attention 256 --dropout 0.2 --epsilon 15 --beta 1 \
-      --save_model True --debug_mode False --seed 0
+      --save_model True --debug_mode False --use_cpu False --seed 0
   done
 } >> F:/code/myProjects/dlkt/example/result_local/atkt_our_setting_statics2011_save.txt

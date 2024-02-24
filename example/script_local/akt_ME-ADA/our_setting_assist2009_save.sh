@@ -22,7 +22,7 @@
       --separate_qa False --seq_representation "encoder_output" --weight_rasch_loss 0.00001 \
       --use_warm_up True --epoch_warm_up 1 \
       --epoch_interval_generate 1 --epoch_generate 200 --weight_adv_pred_loss 0.5 --loop_adv 3 --adv_learning_rate 1 --eta 20 --gamma 20 \
-      --save_model True --debug_mode False --seed 0
+      --save_model True --debug_mode False --use_cpu False --seed 0
   done
 
 } >> F:/code/myProjects/dlkt/example/result_local/akt_ME-ADA_our_setting_assist2009_save.txt

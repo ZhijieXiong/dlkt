@@ -22,7 +22,7 @@
       --dim_e 128 --dim_k 128 --dim_correct 50 --dropout 0.4 \
       --use_warm_up False --epoch_warm_up 4 \
       --epoch_interval_generate 1 --epoch_generate 200 --weight_adv_pred_loss 0.8 --loop_adv 3 --adv_learning_rate 5 --eta 5 --gamma 10 \
-      --save_model True --debug_mode False --seed 0
+      --save_model True --debug_mode False --use_cpu False --seed 0
   done
 
 } >> F:/code/myProjects/dlkt/example/result_local/lpkt_ME-ADA_our_setting_assist2017_save.txt

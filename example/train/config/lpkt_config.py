@@ -76,3 +76,7 @@ def lpkt_max_entropy_adv_aug_config(local_params):
         save_params(global_params, global_objects)
 
     return global_params, global_objects
+
+
+def lpkt_plus_config(local_params):
+    pass

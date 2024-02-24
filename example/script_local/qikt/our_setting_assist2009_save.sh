@@ -22,6 +22,6 @@
       --lambda_q_all 1 --lambda_c_next 1 --lambda_c_all 1 --use_irt True \
       --weight_predict_q_all_loss 2 --weight_predict_q_next_loss 1 \
       --weight_predict_c_all_loss 2 --weight_predict_c_next_loss 1.5 \
-      --save_model True --debug_mode False --seed 0
+      --save_model True --debug_mode False --use_cpu False --seed 0
   done
 } >> F:/code/myProjects/dlkt/example/result_local/qikt_our_setting_assist2009_save.txt

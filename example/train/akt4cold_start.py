@@ -98,6 +98,7 @@ if __name__ == "__main__":
     dataset_test = KTDataset(test_params, global_objects)
     dataloader_test = DataLoader(dataset_test, batch_size=params["evaluate_batch_size"], shuffle=False)
 
+    global_objects["data_loaders"] = {}
     global_objects["data_loaders"]["train_loader"] = dataloader_train
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
@@ -106,7 +107,3 @@ if __name__ == "__main__":
     global_objects["models"]["kt_model"] = model
     trainer = KnowledgeTracingTrainer(global_params, global_objects)
     trainer.train()
-
-    # AUC: 0.85453, ACC: 0.81394, RMSE: 0.36004, MAE: 0.24395,
-    # AUC: 0.76588, ACC: 0.71075, RMSE: 0.4451, MAE: 0.33762,
-    # AUC: 0.77618, ACC: 0.71761, RMSE: 0.43167, MAE: 0.35192,

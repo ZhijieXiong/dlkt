@@ -140,6 +140,7 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
+    global_objects["data_loaders"] = {}
     kt_model = AKT(global_params, global_objects).to(global_params["device"])
     extractor1 = Extractor(global_params).to(global_params["device"])
     extractor2 = Extractor(global_params).to(global_params["device"])

@@ -11,17 +11,19 @@ class LPKTPlus(nn.Module):
         self.params = params
         self.objects = objects
 
-        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT"]
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT_PLUS"]
         num_question = encoder_config["num_question"]
+        num_interval_time = encoder_config["num_interval_time"]
+        num_use_time = encoder_config["num_use_time"]
         dim_correct = encoder_config["dim_correct"]
         dim_e = encoder_config["dim_e"]
         dim_k = encoder_config["dim_k"]
         dropout = encoder_config["dropout"]
 
         # 3600 sec: 1 hour, 43200 min: 1 month
-        self.embed_answer_time = nn.Embedding(3600 + 1, dim_k)
+        self.embed_answer_time = nn.Embedding(num_use_time + 1, dim_k)
         torch.nn.init.xavier_uniform_(self.embed_answer_time.weight)
-        self.embed_interval_time = nn.Embedding(10 + 1, dim_k)
+        self.embed_interval_time = nn.Embedding(num_interval_time + 1, dim_k)
         torch.nn.init.xavier_uniform_(self.embed_interval_time.weight)
         self.embed_question = nn.Embedding(num_question + 1, dim_k)
         torch.nn.init.xavier_uniform_(self.embed_question.weight)
@@ -49,11 +51,11 @@ class LPKTPlus(nn.Module):
         interval_time_seq = batch["interval_time_seq"]
         correct_seq = batch["correct_seq"]
 
-        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT"]
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT_PLUS"]
         num_concept = encoder_config["num_concept"]
         dim_correct = encoder_config["dim_correct"]
         dim_k = encoder_config["dim_k"]
-        q_matrix = self.objects["LPKT"]["q_matrix"]
+        q_matrix = self.objects["LPKT_PLUS"]["q_matrix"]
 
         batch_size, seq_len = question_seq.size(0), question_seq.size(1)
         question_emb = self.embed_question(question_seq)

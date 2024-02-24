@@ -28,17 +28,15 @@ from .util import config_optimizer
 
 
 def general_config(local_params, global_params, global_objects):
-    file_manager = FileManager(FILE_MANAGER_ROOT)
     global_objects["logger"] = logging.getLogger("train_log")
     global_objects["logger"].setLevel(4)
     ch = logging.StreamHandler(stream=sys.stdout)
     ch.setLevel(logging.DEBUG)
     global_objects["logger"].addHandler(ch)
+    file_manager = FileManager(FILE_MANAGER_ROOT)
     global_objects["file_manager"] = file_manager
 
     global_params["save_model"] = local_params["save_model"]
-    global_params["train_strategy"]["type"] = local_params["train_strategy"]
-    global_params["datasets_config"]["data_type"] = local_params["data_type"]
     global_params["device"] = "cuda" if (
             torch.cuda.is_available() and not local_params.get("use_cpu", False)
     ) else "cpu"
@@ -57,16 +55,18 @@ def general_config(local_params, global_params, global_objects):
     mutil_metrics = local_params["multi_metrics"]
     train_strategy_type = local_params["train_strategy"]
 
+    global_params["train_strategy"] = {}
+    global_params["train_strategy"]["type"] = local_params["train_strategy"]
     train_strategy_config = global_params["train_strategy"]
     train_strategy_config["num_epoch"] = num_epoch
     train_strategy_config["main_metric"] = main_metric
     train_strategy_config["use_multi_metrics"] = use_multi_metrics
     if use_multi_metrics:
         train_strategy_config["multi_metrics"] = eval(mutil_metrics)
-
+    else:
+        train_strategy_config["multi_metrics"] = [main_metric]
     train_strategy_config["type"] = train_strategy_type
     train_strategy_config[train_strategy_type] = {}
-
     if train_strategy_type == "valid_test":
         train_strategy_config["valid_test"]["use_early_stop"] = use_early_stop
         if use_early_stop:
@@ -85,6 +85,12 @@ def general_config(local_params, global_params, global_objects):
     valid_file_name = local_params["valid_file_name"]
     test_file_name = local_params["test_file_name"]
 
+    global_params["datasets_config"] = {
+        "train": {},
+        "valid": {},
+        "test": {},
+        "data_type": local_params["data_type"]
+    }
     datasets_config = global_params["datasets_config"]
     datasets_config["train"]["setting_name"] = setting_name
     datasets_config["test"]["setting_name"] = setting_name
@@ -145,8 +151,11 @@ def general_config(local_params, global_params, global_objects):
     dataset_name = local_params["dataset_name"]
     data_type = local_params["data_type"]
     Q_table = file_manager.get_q_table(dataset_name, data_type)
+    global_objects["data"] = {}
     global_objects["data"]["Q_table"] = Q_table
     if Q_table is not None:
+        global_objects["data"]["Q_table_tensor"] = \
+            torch.from_numpy(global_objects["data"]["Q_table"]).long().to(global_params["device"])
         # 如果有Q table的话，可以分析出question2concept_list和concept2question_list
         # 前者index表示习题id，value表示该习题对应的知识点列表
         # 后者index表示知识点id，value表示该知识点对应的习题列表

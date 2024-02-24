@@ -98,6 +98,7 @@ if __name__ == "__main__":
     dataset_test = KTDataset(test_params, global_objects)
     dataloader_test = DataLoader(dataset_test, batch_size=params["evaluate_batch_size"], shuffle=False)
 
+    global_objects["data_loaders"] = {}
     global_objects["data_loaders"]["train_loader"] = dataloader_train
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
@@ -106,23 +107,3 @@ if __name__ == "__main__":
     global_objects["models"]["kt_model"] = model
     trainer = DuoCLTrainer(global_params, global_objects)
     trainer.train()
-
-    # temp: 0.01, weight: 0.01
-    # AUC: 0.83285  , ACC: 0.80513  , RMSE: 0.37069  , MAE: 0.25545
-    # AUC: 0.75358  , ACC: 0.70416  , RMSE: 0.44996  , MAE: 0.34471
-    # AUC: 0.76353  , ACC: 0.71108  , RMSE: 0.43925  , MAE: 0.3522
-
-    # temp: 0.01, weight: 0.1
-    # AUC: 0.83509  , ACC: 0.80345  , RMSE: 0.37089  , MAE: 0.2553
-    # AUC: 0.75521  , ACC: 0.70492  , RMSE: 0.4511   , MAE: 0.34229
-    # AUC: 0.76264  , ACC: 0.71094  , RMSE: 0.44056  , MAE: 0.35121
-
-    # temp: 0.01, weight: 0.3
-    # AUC: 0.83147  , ACC: 0.80381  , RMSE: 0.37036  , MAE: 0.26171
-    # AUC: 0.75624  , ACC: 0.70515  , RMSE: 0.44571  , MAE: 0.34899
-    # AUC: 0.75885  , ACC: 0.70697  , RMSE: 0.44147  , MAE: 0.35562
-
-    # temp: 0.01, weight: 0.5
-    # AUC: 0.82977  , ACC: 0.79945  , RMSE: 0.37317  , MAE: 0.26569
-    # AUC: 0.75293  , ACC: 0.70168  , RMSE: 0.44845  , MAE: 0.35129
-    # AUC: 0.75417  , ACC: 0.70407  , RMSE: 0.4444   , MAE: 0.35624

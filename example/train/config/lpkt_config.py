@@ -4,6 +4,7 @@ from ._data_aug_config import *
 from lib.template.objects_template import OBJECTS
 from lib.template.params_template_v2 import PARAMS
 from lib.util.basic import *
+from lib.CONSTANT import INTERVAL_TIME4LPKT_PLUS, USE_TIME4LPKT_PLUS
 
 
 def lpkt_general_config(local_params, global_params, global_objects):
@@ -79,4 +80,32 @@ def lpkt_max_entropy_adv_aug_config(local_params):
 
 
 def lpkt_plus_config(local_params):
-    pass
+    global_params = {}
+    global_objects = {}
+    general_config(local_params, global_params, global_objects)
+    lpkt_general_config(local_params, global_params, global_objects)
+
+    global_params["datasets_config"]["train"]["type"] = "kt4lpkt_plus"
+    global_params["datasets_config"]["train"]["lpkt_plus"] = {}
+    global_params["datasets_config"]["test"]["type"] = "kt4lpkt_plus"
+    global_params["datasets_config"]["test"]["kt4lpkt_plus"] = {}
+    if local_params["train_strategy"] == "valid_test":
+        global_params["datasets_config"]["valid"]["type"] = "kt4lpkt_plus"
+        global_params["datasets_config"]["valid"]["kt4lpkt_plus"] = {}
+
+    encoder_config = global_params["models_config"]["kt_model"]["encoder_layer"]
+    global_params["models_config"]["kt_model"]["type"] = "LPKT_PLUS"
+    encoder_config["LPKT_PLUS"] = deepcopy(encoder_config["LPKT"])
+    del encoder_config["LPKT"]
+    encoder_config["LPKT_PLUS"]["num_interval_time"] = len(INTERVAL_TIME4LPKT_PLUS)
+    encoder_config["LPKT_PLUS"]["num_use_time"] = len(USE_TIME4LPKT_PLUS)
+
+    global_objects["LPKT_PLUS"] = {}
+    global_objects["LPKT_PLUS"]["q_matrix"] = global_objects["LPKT"]["q_matrix"]
+
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@LPKT@@", "@@LPKT_PLUS@@"))
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects

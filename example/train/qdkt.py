@@ -97,6 +97,7 @@ if __name__ == "__main__":
     dataset_test = KTDataset(test_params, global_objects)
     dataloader_test = DataLoader(dataset_test, batch_size=params["evaluate_batch_size"], shuffle=False)
 
+    global_objects["data_loaders"] = {}
     global_objects["data_loaders"]["train_loader"] = dataloader_train
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test

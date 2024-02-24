@@ -3,6 +3,7 @@ from torch.utils.data import Dataset
 from ..util.data import *
 from ..util.parse import *
 from .sample_weight import *
+from ..CONSTANT import INTERVAL_TIME4LPKT_PLUS, USE_TIME4LPKT_PLUS
 
 
 class KTDataset(Dataset):
@@ -26,11 +27,11 @@ class KTDataset(Dataset):
     def load_dataset(self):
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         data_type = self.params["datasets_config"]["data_type"]
-        dataset_type = dataset_config_this["type"]
+        dataset_type = dataset_config_this.get("type", "kt")
         setting_name = dataset_config_this["setting_name"]
         file_name = dataset_config_this["file_name"]
         dataset_path = os.path.join(self.objects["file_manager"].get_setting_dir(setting_name), file_name)
-        unuseful_keys = dataset_config_this["unuseful_seq_keys"]
+        unuseful_keys = dataset_config_this.get("unuseful_seq_keys", {"user_id"})
         unuseful_keys = unuseful_keys - {"seq_len"}
 
         if dataset_path != "":
@@ -78,11 +79,38 @@ class KTDataset(Dataset):
                     dataset_converted["question_seq_mask"].append(question_seq)
                 elif k == "time_seq":
                     interval_time_seq = [0]
-                    for time_i in range(1, len(item_data["time_seq"])):
-                        interval_time = (item_data["time_seq"][time_i] - item_data["time_seq"][time_i - 1]) // 60
-                        interval_time = max(0, min(interval_time, 60 * 24 * 30))
-                        interval_time_seq.append(interval_time)
+                    seq_len = item_data["seq_len"]
+                    for time_i in range(1, seq_len):
+                        interval_time_real = (item_data["time_seq"][time_i] - item_data["time_seq"][time_i - 1]) // 60
+                        if dataset_type == "kt4lpkt_plus":
+                            interval_time_idx = len(INTERVAL_TIME4LPKT_PLUS)
+                            for idx, interval_time_value in enumerate(INTERVAL_TIME4LPKT_PLUS):
+                                if interval_time_real < 0:
+                                    interval_time_idx = 0
+                                    break
+                                if interval_time_real <= interval_time_value:
+                                    interval_time_idx = idx
+                                    break
+                        else:
+                            interval_time_idx = max(0, min(interval_time_real, 60 * 24 * 30))
+                        interval_time_seq.append(interval_time_idx)
+                    interval_time_seq += [0] * (max_seq_len - seq_len)
                     dataset_converted["interval_time_seq"].append(interval_time_seq)
+                elif k == "use_time_seq":
+                    if dataset_type == "kt4lpkt_plus":
+                        seq_len = item_data["seq_len"]
+                        use_time_seq = []
+                        for time_i, use_time in enumerate(item_data["use_time_seq"][:seq_len]):
+                            use_time_idx = len(USE_TIME4LPKT_PLUS)
+                            for idx, use_time_value in enumerate(USE_TIME4LPKT_PLUS):
+                                if use_time <= use_time_value:
+                                    use_time_idx = idx
+                                    break
+                            use_time_seq.append(use_time_idx)
+                        use_time_seq += [0] * (max_seq_len - seq_len)
+                        dataset_converted["use_time_seq"].append(use_time_seq)
+                    else:
+                        dataset_converted["use_time_seq"].append(item_data["use_time_seq"])
                 else:
                     dataset_converted[k].append(item_data[k])
 

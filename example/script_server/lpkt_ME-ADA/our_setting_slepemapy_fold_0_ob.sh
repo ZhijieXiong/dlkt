@@ -39,7 +39,7 @@
 #                --dim_e 128 --dim_k 128 --dim_correct 50 --dropout "${dropout}" \
 #                --use_warm_up False --epoch_warm_up 4 \
 #                --epoch_interval_generate 1 --epoch_generate 200 --weight_adv_pred_loss "${weight_adv_pred_loss}" --loop_adv 2 --adv_learning_rate "${adv_learning_rate}" --eta "${eta}" --gamma "${gamma}" \
-#                --save_model False --debug_mode False --seed 0
+#                --save_model False --debug_mode False --use_cpu False --seed 0
 #            done
 #          done
 #        done
@@ -74,7 +74,7 @@
 #            --dim_e 128 --dim_k 128 --dim_correct 50 --dropout "${dropout}" \
 #            --use_warm_up False --epoch_warm_up 4 \
 #            --epoch_interval_generate 1 --epoch_generate 200 --weight_adv_pred_loss "${weight_adv_pred_loss}" --loop_adv 2 --adv_learning_rate "${adv_learning_rate}" --eta 10 --gamma 5 \
-#            --save_model False --debug_mode False --seed 0
+#            --save_model False --debug_mode False --use_cpu False --seed 0
 #
 #          echo -e "lr: 0.001, no lr decay, weight decay: ${weight_decay}, adv_learning_rate: ${adv_learning_rate}, dropout: ${dropout}, weight_adv_pred_loss: ${weight_adv_pred_loss}, eta: 20, gamma: 10"
 #          CUDA_VISIBLE_DEVICES=0 python /home/xiongzj/myProjects/KT/dlkt/example/train/lpkt_max_entropy_aug.py \
@@ -91,7 +91,7 @@
 #            --dim_e 128 --dim_k 128 --dim_correct 50 --dropout "${dropout}" \
 #            --use_warm_up False --epoch_warm_up 4 \
 #            --epoch_interval_generate 1 --epoch_generate 200 --weight_adv_pred_loss "${weight_adv_pred_loss}" --loop_adv 2 --adv_learning_rate "${adv_learning_rate}" --eta 20 --gamma 10 \
-#            --save_model False --debug_mode False --seed 0
+#            --save_model False --debug_mode False --use_cpu False --seed 0
 #
 #        done
 #      done
@@ -132,7 +132,7 @@
                 --dim_e 128 --dim_k 128 --dim_correct 50 --dropout "${dropout}" \
                 --use_warm_up False --epoch_warm_up 4 \
                 --epoch_interval_generate 1 --epoch_generate 200 --weight_adv_pred_loss "${weight_adv_pred_loss}" --loop_adv 2 --adv_learning_rate "${adv_learning_rate}" --eta "${eta}" --gamma "${gamma}" \
-                --save_model False --debug_mode False --seed 0
+                --save_model False --debug_mode False --use_cpu False --seed 0
             done
           done
         done

@@ -28,7 +28,7 @@
             --num_concept 27 --num_question 1223 \
             --dim_model "${dim_model}" --key_query_same True --num_head "${num_head}" --num_block "${num_block}" --dim_ff "${dim_model}" --dim_final_fc 512 --dropout "${dropout}" \
             --separate_qa False --seq_representation "encoder_output" --weight_rasch_loss 0.00001 \
-            --save_model True --seed 0
+            --save_model False --debug_mode False --use_cpu False --seed 0
         done
       done
     done

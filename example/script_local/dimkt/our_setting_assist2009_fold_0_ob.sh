@@ -34,7 +34,7 @@
 #                --num_min_question "${num_min_question}" --num_min_concept "${num_min_concept}" --num_concept 123 --num_question 17751 \
 #                --dim_emb "${dim_emb}" --num_question_diff "${num_diff}" --num_concept_diff "${num_diff}" --dropout "${dropout}" \
 #                --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
-#                --save_model False --seed 0
+#                --save_model False --debug_mode False --use_cpu False --seed 0
 #
 #              rm F:/code/myProjects/dlkt/lab/settings/our_setting/assist2009_train_fold_0_dimkt_diff.json
 #            done
@@ -60,7 +60,7 @@
     --num_min_question 15 --num_min_concept 30 --num_concept 123 --num_question 17751 \
     --dim_emb 128 --num_question_diff 50 --num_concept_diff 50 --dropout 0.3 \
     --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
-    --save_model False --seed 0
+    --save_model False --debug_mode False --use_cpu False --seed 0
 
   echo -e "lr: 0.002, lr decay: StepLR, lr step: 5, lr gamma: 0.5"
   python F:/code/myProjects/dlkt/example/train/dimkt.py \
@@ -77,7 +77,7 @@
     --num_min_question 15 --num_min_concept 30 --num_concept 123 --num_question 17751 \
     --dim_emb 128 --num_question_diff 50 --num_concept_diff 50 --dropout 0.3 \
     --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
-    --save_model False --seed 0
+    --save_model False --debug_mode False --use_cpu False --seed 0
 
   echo -e "lr: 0.001, lr decay: StepLR, lr step: 5, lr gamma: 0.5"
   python F:/code/myProjects/dlkt/example/train/dimkt.py \
@@ -94,7 +94,7 @@
     --num_min_question 15 --num_min_concept 30 --num_concept 123 --num_question 17751 \
     --dim_emb 128 --num_question_diff 50 --num_concept_diff 50 --dropout 0.3 \
     --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
-    --save_model False --seed 0
+    --save_model False --debug_mode False --use_cpu False --seed 0
 
   echo -e "lr: 0.002, lr decay: MultiStepLR, lr step: [5, 10], lr gamma: 0.5"
   python F:/code/myProjects/dlkt/example/train/dimkt.py \
@@ -111,7 +111,7 @@
     --num_min_question 15 --num_min_concept 30 --num_concept 123 --num_question 17751 \
     --dim_emb 128 --num_question_diff 50 --num_concept_diff 50 --dropout 0.3 \
     --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
-    --save_model False --seed 0
+    --save_model False --debug_mode False --use_cpu False --seed 0
 
   echo -e "lr: 0.001, lr decay: MultiStepLR, lr step: [5], lr gamma: 0.5"
   python F:/code/myProjects/dlkt/example/train/dimkt.py \
@@ -128,7 +128,7 @@
     --num_min_question 15 --num_min_concept 30 --num_concept 123 --num_question 17751 \
     --dim_emb 128 --num_question_diff 50 --num_concept_diff 50 --dropout 0.3 \
     --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
-    --save_model False --seed 0
+    --save_model False --debug_mode False --use_cpu False --seed 0
 
   echo -e "lr: 0.001, lr decay: MultiStepLR, lr step: [5, 10], lr gamma: 0.5"
   python F:/code/myProjects/dlkt/example/train/dimkt.py \
@@ -145,5 +145,5 @@
     --num_min_question 15 --num_min_concept 30 --num_concept 123 --num_question 17751 \
     --dim_emb 128 --num_question_diff 50 --num_concept_diff 50 --dropout 0.3 \
     --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
-    --save_model False --seed 0
+    --save_model False --debug_mode False --use_cpu False --seed 0
 } >> F:/code/myProjects/dlkt/example/result_local/dimkt_our_setting_assist2009_fold_0_ob2.txt

@@ -33,7 +33,7 @@
                 --enable_clip_grad False --grad_clipped 10.0 \
                 --use_concept True --num_concept 246 --num_question 5730 \
                 --dim_emb "${dim_emb}" --dim_latent "${latent}" --rnn_type gru --num_rnn_layer 1 --dropout "${dropout}" --num_predict_layer "${num_predict_layer}" --dim_predict_mid "${dim_predict_mid}" --activate_type sigmoid \
-                --save_model False --seed 0
+                --save_model False --debug_mode False --use_cpu False --seed 0
             done
           done
         done

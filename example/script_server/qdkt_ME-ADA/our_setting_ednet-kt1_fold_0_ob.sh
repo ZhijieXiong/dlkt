@@ -40,7 +40,7 @@
                 --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout "${dropout}" --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
                 --use_warm_up False --epoch_warm_up 4 \
                 --epoch_interval_generate 1 --epoch_generate 200 --weight_adv_pred_loss "${weight_adv_pred_loss}" --loop_adv 3 --adv_learning_rate "${adv_learning_rate}" --eta "${eta}" --gamma "${gamma}" \
-                --save_model False --seed 0
+                --save_model False --debug_mode False --use_cpu False --seed 0
             done
           done
         done

@@ -25,7 +25,7 @@
         --enable_clip_grad False --grad_clipped 10.0 \
         --num_concept 265 --num_question 53091 \
         --dim_e 128 --dim_k 128 --dim_correct 50 --dropout "${dropout}" \
-        --save_model False --debug_mode False --seed 0
+        --save_model False --debug_mode False --use_cpu False --seed 0
     done
   done
 } >> /home/xiongzj/myProjects/KT/dlkt/example/results/lpkt_our_setting_assist2012_fold_0_ob.txt

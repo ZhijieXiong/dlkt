@@ -29,7 +29,7 @@
               --num_concept 53 --num_question 948 \
               --dim_concept 64 --dim_question 64 --dim_correct "${dim_correct}" --dim_latent "${dim_latent}" --rnn_type gru --num_rnn_layer 1 --dropout "${dropout}" --num_predict_layer 3 --dim_predict_mid 128 --activate_type relu \
               --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
-              --save_model False --seed 0
+              --save_model False --debug_mode False --use_cpu False --seed 0
         done
       done
     done

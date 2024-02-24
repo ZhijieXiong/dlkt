@@ -28,7 +28,7 @@
           --num_min_question "${num_min_question}" --num_min_concept 30 --num_concept 27 --num_question 1223 \
           --dim_emb 128 --num_question_diff 100 --num_concept_diff 100 --dropout "${dropout}" \
           --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
-          --save_model False --seed 0
+          --save_model False --debug_mode False --use_cpu False --seed 0
 
         rm F:/code/myProjects/dlkt/lab/settings/our_setting/statics2011_train_fold_0_dimkt_diff.json
 

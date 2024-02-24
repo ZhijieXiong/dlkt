@@ -27,7 +27,7 @@
           --enable_clip_grad False --grad_clipped 10.0 \
           --num_concept 246 --num_question 5730 \
           --dim_e "${dim}" --dim_k "${dim}" --dim_correct 50 --dropout "${dropout}" \
-          --save_model False --debug_mode False --seed 0
+          --save_model False --debug_mode False --use_cpu False --seed 0
       done
     done
   done

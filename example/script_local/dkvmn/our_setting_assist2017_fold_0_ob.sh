@@ -29,7 +29,7 @@
             --train_batch_size 64 --evaluate_batch_size 128 \
             --enable_clip_grad False --grad_clipped 10.0 \
             --use_concept True --num_concept 101 --num_question 2803 --dim_key "${dim_key}" --dim_value "${dim_value}" --dropout "${dropout}" \
-            --save_model False --seed 0
+            --save_model False --debug_mode False --use_cpu False --seed 0
         done
       done
     done

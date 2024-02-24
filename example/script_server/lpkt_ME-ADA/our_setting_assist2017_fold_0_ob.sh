@@ -39,7 +39,7 @@
 #                --dim_e 128 --dim_k 128 --dim_correct 50 --dropout "${dropout}" \
 #                --use_warm_up False --epoch_warm_up 4 \
 #                --epoch_interval_generate 1 --epoch_generate 200 --weight_adv_pred_loss "${weight_adv_pred_loss}" --loop_adv 3 --adv_learning_rate "${adv_learning_rate}" --eta "${eta}" --gamma "${gamma}" \
-#                --save_model False --debug_mode False --seed 0
+#                --save_model False --debug_mode False --use_cpu False --seed 0
 #            done
 #          done
 #        done
@@ -80,7 +80,7 @@
                 --dim_e 128 --dim_k 128 --dim_correct 50 --dropout "${dropout}" \
                 --use_warm_up False --epoch_warm_up 4 \
                 --epoch_interval_generate 1 --epoch_generate 200 --weight_adv_pred_loss "${weight_adv_pred_loss}" --loop_adv 3 --adv_learning_rate "${adv_learning_rate}" --eta "${eta}" --gamma "${gamma}" \
-                --save_model False --debug_mode False --seed 0
+                --save_model False --debug_mode False --use_cpu False --seed 0
             done
           done
         done

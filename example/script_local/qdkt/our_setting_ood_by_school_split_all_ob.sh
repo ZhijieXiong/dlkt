@@ -21,7 +21,7 @@
       --num_concept 123 --num_question 17751 \
       --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.3 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
       --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
-      --save_model False --seed 0
+      --save_model False --debug_mode False --use_cpu False --seed 0
   done
 
 } >> F:/code/myProjects/dlkt/example/result_local/qdkt_our_setting_ood_by_school_assist2009_split_all_ob.txt
@@ -49,7 +49,7 @@
       --dim_concept 64 --dim_question 64 --dim_correct 128 --dim_latent 128 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.3 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
       --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
       --transfer_head2zero False --head2tail_transfer_method "mean_pool" \
-      --save_model False --seed 0
+      --save_model False --debug_mode False --use_cpu False --seed 0
   done
 
 } >> F:/code/myProjects/dlkt/example/result_local/qdkt_our_setting_ood_by_school_assist2012_split_all_ob.txt
@@ -78,7 +78,7 @@
       --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.1 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
       --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
       --transfer_head2zero False --head2tail_transfer_method "mean_pool" \
-      --save_model False --seed 0
+      --save_model False --debug_mode False --use_cpu False --seed 0
   done
 
 } >> F:/code/myProjects/dlkt/example/result_local/qdkt_our_setting_ood_by_school_SLP-mat_split_all_ob.txt
@@ -107,7 +107,7 @@
       --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.1 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
       --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
       --transfer_head2zero False --head2tail_transfer_method "mean_pool" \
-      --save_model False --seed 0
+      --save_model False --debug_mode False --use_cpu False --seed 0
   done
 
 } >> F:/code/myProjects/dlkt/example/result_local/qdkt_our_setting_ood_by_school_SLP-bio_split_all_ob.txt
@@ -136,7 +136,7 @@
       --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.1 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
       --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
       --transfer_head2zero False --head2tail_transfer_method "mean_pool" \
-      --save_model False --seed 0
+      --save_model False --debug_mode False --use_cpu False --seed 0
   done
 
 } >> F:/code/myProjects/dlkt/example/result_local/qdkt_our_setting_ood_by_school_SLP-his_split_all_ob.txt
@@ -166,7 +166,7 @@
       --dim_concept 64 --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.1 --num_predict_layer 3 --dim_predict_mid 128 --activate_type "relu" \
       --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
       --transfer_head2zero False --head2tail_transfer_method "mean_pool" \
-      --save_model False --seed 0
+      --save_model False --debug_mode False --use_cpu False --seed 0
   done
 
 } >> F:/code/myProjects/dlkt/example/result_local/qdkt_our_setting_ood_by_school_SLP-phy_split_all_ob.txt

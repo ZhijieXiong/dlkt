@@ -7,12 +7,12 @@
 
   dropouts='0.1 0.2 0.3'
   weight_decays='0'
-  dims_model=(64 256)
+  dims_model=(256)
   nums_block=(2 4)
   nums_head=(4 8)
-  dims_ff=(64 256)
-  dims_final_fc=(64 256)
-  dims_final_fc2=(64 256)
+  dims_ff=(256)
+  dims_final_fc=(256 512)
+  dims_final_fc2=(256 512)
   for weight_decay in ${weight_decays}
   do
     for dim_model in "${dims_model[@]}"
@@ -37,8 +37,8 @@ echo -e "weight_decay: ${weight_decay}, dim_model: ${dim_model}, num_block: ${nu
                       --train_strategy "valid_test" --num_epoch 200 \
                       --use_early_stop True --epoch_early_stop 10 --use_last_average False --epoch_last_average 5 \
                       --main_metric "AUC" --use_multi_metrics False \
-                      --learning_rate 0.0001 --enable_lr_schedule False --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
-                      --train_batch_size 24 --evaluate_batch_size 128 \
+                      --learning_rate 0.0004 --enable_lr_schedule True --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5, 10]" --lr_schedule_gamma 0.5 \
+                      --train_batch_size 64 --evaluate_batch_size 128 \
                       --enable_clip_grad False --grad_clipped 10.0 \
                       --num_concept 265 --num_question 53091 \
                       --dim_model "${dim_model}" --num_block "${num_block}" --num_head "${num_head}" --dim_ff "${dim_ff}" \

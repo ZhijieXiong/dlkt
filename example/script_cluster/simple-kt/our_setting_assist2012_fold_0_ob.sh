@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 
 {
-  dataset_name="assist2009"
-  data_type="only_question"
+  dataset_name="assist2012"
+  data_type="single_concept"
   fold=0
 
   dropouts='0.1 0.2 0.3'
   weight_decays='0'
-  dims_model=(256)
+  dims_model=(64 256)
   nums_block=(2 4)
-  nums_head=(4)
+  nums_head=(4 8)
   dims_ff=(64 256)
   dims_final_fc=(64 256)
-  dims_final_fc2=(64)
+  dims_final_fc2=(64 256)
   for weight_decay in ${weight_decays}
   do
     for dim_model in "${dims_model[@]}"
@@ -40,7 +40,7 @@ echo -e "weight_decay: ${weight_decay}, dim_model: ${dim_model}, num_block: ${nu
                       --learning_rate 0.0001 --enable_lr_schedule False --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
                       --train_batch_size 24 --evaluate_batch_size 128 \
                       --enable_clip_grad False --grad_clipped 10.0 \
-                      --num_concept 123 --num_question 17751 \
+                      --num_concept 265 --num_question 53091 \
                       --dim_model "${dim_model}" --num_block "${num_block}" --num_head "${num_head}" --dim_ff "${dim_ff}" \
                       --dim_final_fc "${dim_final_fc}" --dim_final_fc2 "${dim_final_fc2}" --dropout "${dropout}" \
                       --seq_len 200 --key_query_same True --separate_qa False --difficulty_scalar False \
@@ -55,4 +55,4 @@ echo -e "weight_decay: ${weight_decay}, dim_model: ${dim_model}, num_block: ${nu
       done
     done
   done
-} >> /ghome/xiongzj/code/dlkt/example/result_cluster/simple_kt_our_setting_assist2009_fold_0_ob.txt
+} >> /ghome/xiongzj/code/dlkt/example/result_cluster/simple_kt_our_setting_assist2012_fold_0_ob.txt

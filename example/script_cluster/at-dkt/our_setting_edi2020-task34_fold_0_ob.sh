@@ -32,7 +32,7 @@
               --dim_emb 256 --dim_latent 256 --rnn_type "lstm" --num_rnn_layer 1 --dropout "${dropout}" \
               --QT_net_type "transformer" --QT_transformer_num_block 1 --QT_rnn_type "lstm" --QT_num_rnn_layer 4 \
               --QT_transformer_num_head 4 --IK_start 30 --weight_QT_loss "${weight_QT_loss}" --weight_IK_loss "${weight_IK_loss}" \
-              --save_model False --debug_mode False --seed 0
+              --save_model False --debug_mode False --use_cpu False --seed 0
         done
       done
     done

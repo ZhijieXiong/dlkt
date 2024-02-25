@@ -38,7 +38,7 @@
               --dim_emb "${dim_emb}" --dropout "${dropout}" \
               --num_min_question "${num_min_question}" --num_min_concept 30 --num_question_diff "${num_diff}" --num_concept_diff "${num_diff}" \
               --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
-              --save_model False --debug_mode False --seed 0
+              --save_model False --debug_mode False --use_cpu False --seed 0
 
             rm /ghome/xiongzj/code/dlkt/lab/settings/our_setting_ood_by_school/SLP-his_train_split_6_dimkt_diff.json
           done

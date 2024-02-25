@@ -46,7 +46,7 @@ echo -e "weight_decay: ${weight_decay}, dim_model: ${dim_model}, num_block: ${nu
                       --seq_len 200 --key_query_same True --separate_qa False --difficulty_scalar False \
                       --use_sample_weight False --sample_weight_method "highlight_tail" --tail_weight 1.1 \
                       --use_LLM_emb4question False --use_LLM_emb4concept False --train_LLM_emb True \
-                      --save_model False --debug_mode False --seed 0
+                      --save_model False --debug_mode False --use_cpu False --seed 0
                 done
               done
             done

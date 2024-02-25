@@ -43,7 +43,7 @@
                     --use_concept False --num_concept 27 --num_question 1223 \
                     --dim_concept "${dim_concept}" --dim_correct "${dim_correct}" --dim_latent "${dim_latent}" \
                     --dim_attention "${dim_attention}" --dropout "${dropout}" --epsilon "${epsilon}" --beta "${beta}" \
-                    --save_model False --debug_mode False --seed 0
+                    --save_model False --debug_mode False --use_cpu False --seed 0
                 done
               done
             done

@@ -48,7 +48,7 @@
 #                      --lambda_q_all "${lambda_q_all}" --lambda_c_next "${lambda_c_next}" --lambda_c_all "${lambda_c_all}" --use_irt True \
 #                      --weight_predict_q_all_loss "${q_all_loss}" --weight_predict_q_next_loss 1 \
 #                      --weight_predict_c_all_loss "${c_all_loss}" --weight_predict_c_next_loss "${c_next_loss}" \
-#                      --save_model False --debug_mode False --seed 0
+#                      --save_model False --debug_mode False --use_cpu False --seed 0
 
 echo -e "emb: 256, weight_decay: ${weight_decay}, lambda_q_all: ${lambda_q_all}, lambda_c_next: ${lambda_c_next}, lambda_c_all: ${lambda_c_all}, q_all_loss: ${q_all_loss}, c_all_loss: ${c_all_loss}, c_next_loss: ${c_next_loss}, num_mlp_layer: ${num_mlp_layer}, dropout: ${dropout}"
                     python /ghome/xiongzj/code/dlkt/example/train/qikt.py \
@@ -66,7 +66,7 @@ echo -e "emb: 256, weight_decay: ${weight_decay}, lambda_q_all: ${lambda_q_all},
                       --lambda_q_all "${lambda_q_all}" --lambda_c_next "${lambda_c_next}" --lambda_c_all "${lambda_c_all}" --use_irt True \
                       --weight_predict_q_all_loss "${q_all_loss}" --weight_predict_q_next_loss 1 \
                       --weight_predict_c_all_loss "${c_all_loss}" --weight_predict_c_next_loss "${c_next_loss}" \
-                      --save_model False --debug_mode False --seed 0
+                      --save_model False --debug_mode False --use_cpu False --seed 0
                   done
                 done
               done

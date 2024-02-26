@@ -39,8 +39,7 @@ This algorithm library was developed inspired by `PYKT` (the code repository cor
 
     1. We did not first extend the exercise sequence into a knowledge concept sequence like `PYKT` (`PYKT` paper picture 2), then train the model on the knowledge concept sequence, and finally test the model on the question (`PYKT` paper Section 3.3). We reproduce by training and testing the model directly on the question sequence, that is, for multi-concept questions, we use `mean pooling` for multiple concept embeddings.
     2. This difference is not only reflected in the training and testing of the model, but also in the data preprocessing. `PYKT` first extends the sequence and then cuts the sequence, fixing the length of each sequence to 200. We cut the sequence directly, with a fixed sequence length of 200.
-  
-    
+    3. We currently only implement average pooling of concepts on `DKT, AKT, SimpleKT, DIMKT, and QIKT` models.
   
     |      | Assist2009     | Algebra2005 (AL2005) | Bridge2Algebra2006 (BD2006) | xes3g5m         |
     | ---- | -------------- | -------------------- | --------------------------- | --------------- |
@@ -48,13 +47,11 @@ This algorithm library was developed inspired by `PYKT` (the code repository cor
     | AKT  |                |                      |                             |                 |
     | QIKT |                |                      |                             |                 |
     | qDKT |                |                      |                             |                 |
-
+  
   - Reproduction results on `single concept` datasets. Please note: 
   
     1. For datasets with a small number of questions, our DKT and ATKT also provide results with questions as items.
     2. For the `statics2011` and `edi2020-task34` dataset, our data preprocessing is different from `PYKT`
-  
-    
   
     |          | Statics2011    | Edi2020-task34 (NIPS34) |
     | -------- | -------------- | ----------------------- |

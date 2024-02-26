@@ -15,7 +15,7 @@
       --use_early_stop True --epoch_early_stop 10 --use_last_average False --epoch_last_average 5 \
       --main_metric AUC --use_multi_metrics False \
       --learning_rate 0.0001 --enable_lr_schedule False --lr_schedule_type MultiStepLR --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
-      --train_batch_size 32 --evaluate_batch_size 256 \
+      --train_batch_size 32 --evaluate_batch_size 128 \
       --enable_clip_grad False --grad_clipped 10.0 \
       --num_concept 246 --num_question 5730 \
       --dim_emb 256 --rnn_type "gru" --num_rnn_layer 1 --dropout 0.3 --num_mlp_layer 1 \

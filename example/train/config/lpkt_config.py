@@ -99,6 +99,7 @@ def lpkt_plus_config(local_params):
     del encoder_config["LPKT"]
     encoder_config["LPKT_PLUS"]["num_interval_time"] = len(INTERVAL_TIME4LPKT_PLUS)
     encoder_config["LPKT_PLUS"]["num_use_time"] = len(USE_TIME4LPKT_PLUS)
+    encoder_config["LPKT_PLUS"]["ablation_set"] = local_params["ablation_set"]
 
     global_objects["LPKT_PLUS"] = {}
     global_objects["LPKT_PLUS"]["q_matrix"] = global_objects["LPKT"]["q_matrix"]

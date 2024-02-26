@@ -46,7 +46,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     # batch size
     parser.add_argument("--train_batch_size", type=int, default=32)
-    parser.add_argument("--evaluate_batch_size", type=int, default=256)
+    parser.add_argument("--evaluate_batch_size", type=int, default=128)
     # 梯度裁剪
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
@@ -57,6 +57,11 @@ if __name__ == "__main__":
     parser.add_argument("--dim_k", type=int, default=128)
     parser.add_argument("--dim_correct", type=int, default=50)
     parser.add_argument("--dropout", type=float, default=0.3)
+    # 消融
+    parser.add_argument("--ablation_set", type=int, default=1,
+                        help="0: use time seq and interval time seq"
+                             "1: only interval time seq"
+                             "2: do not use time information")
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

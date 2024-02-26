@@ -29,40 +29,40 @@ This algorithm library was developed inspired by `PYKT` (the code repository cor
 |                                                              |       |       |
 | Wandb                                                        | False | True  |
 
-- Reproducible results under PYKT experimental settings.
+- Reproducible results under `PYKT` experimental settings.
 
   - All scripts for this experiment are in the `example\script_local\pykt_repo` directory.
 
-  - All reproduction results are based on adjusting parameters at 1 fold, and then taking the average of 5 folds (in order to reduce randomness, the random seeds of all experiments are fixed to 0)
+  - All reproduction results are based on adjusting parameters at 1 fold, and then taking the average of 5 folds (in order to reduce randomness, the random seeds of all experiments are fixed to 0). The values in parentheses are the results reported in the paper.
 
   - Reproduction results on `multi concept` datasets. Please note: 
 
-    1. We did not first extend the exercise sequence into a knowledge concept sequence like PYKT (PYKT paper picture 2), then train the model on the knowledge concept sequence, and finally test the model on the question (PYKT paper Section 3.3). We reproduce by training and testing the model directly on the question sequence, that is, for multi-concept questions, we use `mean pooling` for multiple concept embeddings.
+    1. We did not first extend the exercise sequence into a knowledge concept sequence like `PYKT` (`PYKT` paper picture 2), then train the model on the knowledge concept sequence, and finally test the model on the question (`PYKT` paper Section 3.3). We reproduce by training and testing the model directly on the question sequence, that is, for multi-concept questions, we use `mean pooling` for multiple concept embeddings.
     1. This difference is not only reflected in the training and testing of the model, but also in the data preprocessing. `PYKT` first extends the sequence and then cuts the sequence, fixing the length of each sequence to 200. We cut the sequence directly, with a fixed sequence length of 200.
   
-    | AUC, repo (paper) | Assist2009     | Algebra2005 (AL2005) | Bridge2Algebra2006 (BD2006) | xes3g5m         |
-    | ----------------- | -------------- | -------------------- | --------------------------- | --------------- |
-    | DKT               | 0.756 (0.7541) | 0.8162 (0.8149)      | 0.7748(0.8015)              | 0.7849 (0.7852) |
-    | AKT               |                |                      |                             |                 |
-    | QIKT              |                |                      |                             |                 |
-    | qDKT              |                |                      |                             |                 |
+    |      | Assist2009     | Algebra2005 (AL2005) | Bridge2Algebra2006 (BD2006) | xes3g5m         |
+    | ---- | -------------- | -------------------- | --------------------------- | --------------- |
+    | DKT  | 0.756 (0.7541) | 0.8162 (0.8149)      | 0.7748(0.8015)              | 0.7849 (0.7852) |
+    | AKT  |                |                      |                             |                 |
+    | QIKT |                |                      |                             |                 |
+    | qDKT |                |                      |                             |                 |
 
   - Reproduction results on `single concept` datasets. Please note: 
 
     1. For datasets with a small number of questions, our DKT and ATKT also provide results with questions as items.
     2. For the `statics2011` and `edi2020-task34` dataset, our data preprocessing is different from `PYKT`
   
-    | AUC, repo (paper) | Statics2011    | Edi2020-task34 (NIPS34) |
-    | ----------------- | -------------- | ----------------------- |
-    | DKT               | 0.7142         | 0.7142 (0.7681)         |
-    | DKT_que           | 0.8161(0.8222) | 0.7935                  |
-    | DKVMN             |                |                         |
-    | ATKT              |                |                         |
-    | ATKT_que          |                |                         |
-    | AKT               |                |                         |
-    | AT-DKT            |                |                         |
-    | QIKT              |                |                         |
-    | qDKT              |                |                         |
+    |          | Statics2011    | Edi2020-task34 (NIPS34) |
+    | -------- | -------------- | ----------------------- |
+    | DKT      | 0.7142         | 0.7142 (0.7681)         |
+    | DKT_que  | 0.8161(0.8222) | 0.7935                  |
+    | DKVMN    |                |                         |
+    | ATKT     |                |                         |
+    | ATKT_que |                |                         |
+    | AKT      |                |                         |
+    | AT-DKT   |                |                         |
+    | QIKT     |                |                         |
+    | qDKT     |                |                         |
   
 
 # Referrence

@@ -22,7 +22,7 @@
 | bridge2algebra2008 |      T      |     T      |    T    |     T     |          |      |
 |     junyi2015      |             |            |         |           |          |      |
 |      xes3g5m       |      T      |     T      |    T    |     T     |          |      |
-|    statics2011     |      T      |            |    T    |           |          |      |
+|    statics2011     |      T      |            |    T    |     T     |          |      |
 |     slepemapy      |      T      |     T      |    T    |     T     |    T     |      |
 |      SLP-bio       |      T      |     T      |    T    |           |          |      |
 |      SLP-chi       |      T      |     T      |    T    |           |          |      |

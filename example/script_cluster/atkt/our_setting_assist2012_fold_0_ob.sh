@@ -9,7 +9,7 @@
   weight_decays='0'
   dims_concept=(64)
   dims_correct=(64)
-  dims_latent=(64 256)
+  dims_latent=(256)
   dims_attention=(64 256)
   epsilons=(5 10 15)
   betas='0.5 1 2'

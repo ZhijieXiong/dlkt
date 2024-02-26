@@ -11,9 +11,9 @@ from lib.dataset.split_dataset import n_fold_split1
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="assist2017",
+    parser.add_argument("--dataset_name", type=str, default="xes3g5m",
                         choices=("assist2009", "algebra2005", "bridge2algebra2006",
-                                 "statics2011", "edi2020-task34"))
+                                 "statics2011", "edi2020-task34", "xes3g5m"))
     args = parser.parse_args()
     params = vars(args)
 

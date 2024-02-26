@@ -11,14 +11,18 @@ from lib.dataset.split_dataset import n_fold_split1
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="xes3g5m",
-                        choices=("assist2009", "algebra2005", "bridge2algebra2006", "xes3g5m"))
+    parser.add_argument("--dataset_name", type=str, default="assist2017",
+                        choices=("assist2009", "algebra2005", "bridge2algebra2006",
+                                 "statics2011", "edi2020-task34"))
     args = parser.parse_args()
     params = vars(args)
 
-    params["setting_name"] = "pykt_multi_concept_setting"
-    # 对多知识点习题，将其展开为多个记录，测试的时候再聚合回去
-    params["data_type"] = "multi_concept"
+    params["setting_name"] = "pykt_question_setting"
+    # 直接在习题级别上训练
+    if params["dataset_name"] in ["statics2011", "edi2020-task34"]:
+        params["data_type"] = "single_concept"
+    else:
+        params["data_type"] = "only_question"
     params["max_seq_len"] = 200
     params["min_seq_len"] = 3
     params["n_fold"] = 5
@@ -42,5 +46,5 @@ if __name__ == "__main__":
     dataset_truncated = dataset_truncate2multi_seq(data_uniformed,
                                                    params["min_seq_len"],
                                                    params["max_seq_len"],
-                                                   single_concept=False)
+                                                   single_concept=True)
     n_fold_split1(dataset_truncated, params, objects)

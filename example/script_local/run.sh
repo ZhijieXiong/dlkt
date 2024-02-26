@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-bash F:/code/myProjects/dlkt/example/script_local/qdkt/ood/our_setting_ood_SLP-his_split_6_save.sh
-bash F:/code/myProjects/dlkt/example/script_local/qdkt/ood/our_setting_ood_SLP-phy_split_2_save.sh
-bash F:/code/myProjects/dlkt/example/script_local/qdkt/ood/our_setting_ood_assist2009_split_7_save.sh
-bash F:/code/myProjects/dlkt/example/script_local/qdkt/ood/our_setting_ood_slepemapy_split_0_save.sh
-bash F:/code/myProjects/dlkt/example/script_local/qdkt/ood/our_setting_ood_assist2012_split_7_save.sh
+python F:/code/myProjects/dlkt/example/prepare_dataset/pykt_question_setting.py --dataset_name "assist2009"
+python F:/code/myProjects/dlkt/example/prepare_dataset/pykt_question_setting.py --dataset_name "algebra2005"
+python F:/code/myProjects/dlkt/example/prepare_dataset/pykt_question_setting.py --dataset_name "bridge2algebra2006"
+python F:/code/myProjects/dlkt/example/prepare_dataset/pykt_question_setting.py --dataset_name "statics2011"
+python F:/code/myProjects/dlkt/example/prepare_dataset/pykt_question_setting.py --dataset_name "edi2020-task34"

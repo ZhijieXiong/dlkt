@@ -7,7 +7,7 @@ from config.lpkt_config import lpkt_plus_config
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.model.LPKTPlus import LPKTPlus
+from lib.model.LPKTPlus import *
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 
@@ -45,23 +45,27 @@ if __name__ == "__main__":
     parser.add_argument("--lr_schedule_milestones", type=str, default="[5]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     # batch size
-    parser.add_argument("--train_batch_size", type=int, default=32)
-    parser.add_argument("--evaluate_batch_size", type=int, default=128)
+    parser.add_argument("--train_batch_size", type=int, default=64)
+    parser.add_argument("--evaluate_batch_size", type=int, default=256)
     # 梯度裁剪
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=246)
     parser.add_argument("--num_question", type=int, default=5730)
-    parser.add_argument("--dim_e", type=int, default=128)
-    parser.add_argument("--dim_k", type=int, default=128)
+    parser.add_argument("--dim_e", type=int, default=256)
+    parser.add_argument("--dim_k", type=int, default=256)
     parser.add_argument("--dim_correct", type=int, default=50)
-    parser.add_argument("--dropout", type=float, default=0.3)
+    parser.add_argument("--dropout", type=float, default=0.2)
     # 消融
-    parser.add_argument("--ablation_set", type=int, default=1,
+    parser.add_argument("--ablation_set", type=int, default=0,
                         help="0: use time seq and interval time seq"
                              "1: only interval time seq"
                              "2: do not use time information")
+    parser.add_argument("--model_version", type=int, default=2,
+                        help="1: LPKTPusV1"
+                             "2: LPKTPusV2"
+                             "3: LPKTPusV3")
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)
@@ -96,7 +100,14 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = LPKTPlus(global_params, global_objects).to(global_params["device"])
+    if params["model_version"] == 1:
+        model = LPKTPlusV1(global_params, global_objects).to(global_params["device"])
+    elif params["model_version"] == 2:
+        model = LPKTPlusV2(global_params, global_objects).to(global_params["device"])
+    elif params["model_version"] == 3:
+        model = LPKTPlusV3(global_params, global_objects).to(global_params["device"])
+    else:
+        raise NotImplementedError()
     global_objects["models"] = {}
     global_objects["models"]["kt_model"] = model
     trainer = KnowledgeTracingTrainer(global_params, global_objects)

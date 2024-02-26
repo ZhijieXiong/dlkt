@@ -1,13 +1,14 @@
+import torch
 from torch import nn
 
 from .util import *
 
 
-class LPKTPlus(nn.Module):
+class LPKTPlusV1(nn.Module):
     model_name = "LPKTPlus"
 
     def __init__(self, params, objects):
-        super(LPKTPlus, self).__init__()
+        super(LPKTPlusV1, self).__init__()
         self.params = params
         self.objects = objects
 
@@ -116,6 +117,256 @@ class LPKTPlus(nn.Module):
             learning_pre = learning
             h_pre = h
             h_tilde_pre = h_tilde
+
+        return pred
+
+    def get_predict_score(self, batch):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        predict_score = self.forward(batch)
+        predict_score = torch.masked_select(predict_score[:, 1:], mask_bool_seq[:, 1:])
+
+        return predict_score
+
+    def get_predict_loss(self, batch, loss_record=None):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+
+        predict_score = self.get_predict_score(batch)
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+        predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+
+        if loss_record is not None:
+            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+
+        return predict_loss
+
+
+class LPKTPlusV2(nn.Module):
+    model_name = "LPKTPlus"
+
+    def __init__(self, params, objects):
+        super(LPKTPlusV2, self).__init__()
+        self.params = params
+        self.objects = objects
+
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT_PLUS"]
+        num_concept = encoder_config["num_concept"]
+        num_question = encoder_config["num_question"]
+        num_interval_time = encoder_config["num_interval_time"]
+        num_use_time = encoder_config["num_use_time"]
+        dim_correct = encoder_config["dim_correct"]
+        dim_e = encoder_config["dim_e"]
+        dim_k = encoder_config["dim_k"]
+        dropout = encoder_config["dropout"]
+        ablation_set = encoder_config["ablation_set"]
+
+        if ablation_set == 0:
+            self.embed_answer_time = nn.Embedding(num_use_time + 1, dim_k)
+            torch.nn.init.xavier_uniform_(self.embed_answer_time.weight)
+        if ablation_set == 0 or ablation_set == 1:
+            self.embed_interval_time = nn.Embedding(num_interval_time + 1, dim_k)
+            torch.nn.init.xavier_uniform_(self.embed_interval_time.weight)
+        self.embed_question = nn.Embedding(num_question + 1, dim_k)
+        torch.nn.init.xavier_uniform_(self.embed_question.weight)
+
+        if ablation_set == 0:
+            self.linear_1 = nn.Linear(dim_correct + dim_e + dim_k, dim_k)
+        elif ablation_set == 1:
+            self.linear_1 = nn.Linear(dim_correct + dim_e, dim_k)
+        else:
+            raise NotImplementedError()
+        self.linear_2 = nn.Linear(4 * dim_k, dim_k)
+        self.linear_3 = nn.Linear(4 * dim_k, dim_k)
+        self.linear_4 = nn.Linear(3 * dim_k, dim_k)
+        torch.nn.init.xavier_uniform_(self.linear_1.weight)
+        torch.nn.init.xavier_uniform_(self.linear_2.weight)
+        torch.nn.init.xavier_uniform_(self.linear_3.weight)
+        torch.nn.init.xavier_uniform_(self.linear_4.weight)
+
+        self.proj_latent2ability = nn.Linear(dim_k, num_concept)
+        self.proj_que2difficulty = nn.Linear(dim_k, num_concept)
+        self.proj_que2discrimination = nn.Linear(dim_k, 1)
+        torch.nn.init.xavier_uniform_(self.proj_latent2ability.weight)
+        torch.nn.init.xavier_uniform_(self.proj_que2difficulty.weight)
+        torch.nn.init.xavier_uniform_(self.proj_que2discrimination.weight)
+
+        self.tanh = nn.Tanh()
+        self.sig = nn.Sigmoid()
+        self.dropout = nn.Dropout(dropout)
+
+    # ------------------------------------------------------base--------------------------------------------------------
+    def predict_score(self, latent, question_emb):
+        y = self.proj_latent2ability(latent) - self.proj_que2difficulty(question_emb)
+        predict_score = torch.sigmoid(torch.sum(y * self.proj_que2discrimination(question_emb), dim=-1))
+
+        return predict_score
+
+    def forward(self, batch):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT_PLUS"]
+        dim_correct = encoder_config["dim_correct"]
+        dim_k = encoder_config["dim_k"]
+        ablation_set = encoder_config["ablation_set"]
+        batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
+
+        question_emb = self.embed_question(batch["question_seq"])
+        interval_time_emb = self.embed_interval_time(batch["interval_time_seq"])
+        correct_emb = batch["correct_seq"].view(-1, 1).repeat(1, dim_correct).view(batch_size, -1, dim_correct)
+        if ablation_set == 0:
+            use_time_seq = batch["use_time_seq"]
+            use_time_emb = self.embed_answer_time(use_time_seq)
+            learning_emb = self.linear_1(torch.cat((question_emb, use_time_emb, correct_emb), 2))
+        else:
+            learning_emb = self.linear_1(torch.cat((question_emb, correct_emb), 2))
+
+        h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_k)).to(self.params["device"])
+        learning_pre = torch.zeros(batch_size, dim_k).to(self.params["device"])
+        pred = torch.zeros(batch_size, seq_len).to(self.params["device"])
+
+        for t in range(0, seq_len - 1):
+            it = interval_time_emb[:, t]
+            learning = learning_emb[:, t]
+
+            # Learning Module
+            learning_gain = self.tanh(self.linear_2(torch.cat((learning_pre, it, learning, h_pre), dim=1)))
+            gamma_l = self.sig(self.linear_3(torch.cat((learning_pre, it, learning, h_pre), dim=1)))
+            LG = gamma_l * ((learning_gain + 1) / 2)
+
+            # Forgetting Module
+            gamma_f = self.sig(self.linear_4(torch.cat((h_pre, LG, it), dim=1)))
+            h = self.dropout(LG) + gamma_f * h_pre
+
+            # Predicting Module
+            y = self.predict_score(h, question_emb[:, t + 1])
+            pred[:, t + 1] = y
+
+            # prepare for next prediction
+            learning_pre = learning
+            h_pre = h
+
+        return pred
+
+    def get_predict_score(self, batch):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        predict_score = self.forward(batch)
+        predict_score = torch.masked_select(predict_score[:, 1:], mask_bool_seq[:, 1:])
+
+        return predict_score
+
+    def get_predict_loss(self, batch, loss_record=None):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+
+        predict_score = self.get_predict_score(batch)
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+        predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+
+        if loss_record is not None:
+            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+
+        return predict_loss
+
+
+class LPKTPlusV3(nn.Module):
+    model_name = "LPKTPlus"
+
+    def __init__(self, params, objects):
+        super(LPKTPlusV3, self).__init__()
+        self.params = params
+        self.objects = objects
+
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT_PLUS"]
+        num_concept = encoder_config["num_concept"]
+        num_question = encoder_config["num_question"]
+        num_interval_time = encoder_config["num_interval_time"]
+        num_use_time = encoder_config["num_use_time"]
+        dim_correct = encoder_config["dim_correct"]
+        dim_e = encoder_config["dim_e"]
+        dim_k = encoder_config["dim_k"]
+        dropout = encoder_config["dropout"]
+        ablation_set = encoder_config["ablation_set"]
+
+        if ablation_set == 0:
+            self.embed_answer_time = nn.Embedding(num_use_time + 1, dim_k)
+            torch.nn.init.xavier_uniform_(self.embed_answer_time.weight)
+        if ablation_set == 0 or ablation_set == 1:
+            self.embed_interval_time = nn.Embedding(num_interval_time + 1, dim_k)
+            torch.nn.init.xavier_uniform_(self.embed_interval_time.weight)
+        self.embed_question = nn.Embedding(num_question + 1, dim_k)
+        torch.nn.init.xavier_uniform_(self.embed_question.weight)
+
+        if ablation_set == 0:
+            self.linear_1 = nn.Linear(dim_correct + dim_e + dim_k, dim_k)
+        elif ablation_set == 1:
+            self.linear_1 = nn.Linear(dim_correct + dim_e, dim_k)
+        else:
+            raise NotImplementedError()
+        self.linear_2 = nn.Linear(4 * dim_k, dim_k)
+        self.linear_3 = nn.Linear(4 * dim_k, dim_k)
+        self.linear_4 = nn.Linear(3 * dim_k, dim_k)
+        torch.nn.init.xavier_uniform_(self.linear_1.weight)
+        torch.nn.init.xavier_uniform_(self.linear_2.weight)
+        torch.nn.init.xavier_uniform_(self.linear_3.weight)
+        torch.nn.init.xavier_uniform_(self.linear_4.weight)
+
+        self.proj_latent2ability = nn.Linear(dim_k, num_concept)
+        self.proj_que2difficulty = nn.Linear(dim_k, num_concept)
+        self.proj_que2discrimination = nn.Linear(dim_k, 1)
+        torch.nn.init.xavier_uniform_(self.proj_latent2ability.weight)
+        torch.nn.init.xavier_uniform_(self.proj_que2difficulty.weight)
+        torch.nn.init.xavier_uniform_(self.proj_que2discrimination.weight)
+
+        self.tanh = nn.Tanh()
+        self.sig = nn.Sigmoid()
+        self.dropout = nn.Dropout(dropout)
+
+    # ------------------------------------------------------base--------------------------------------------------------
+    def predict_score(self, latent, question_emb):
+        y = self.proj_latent2ability(latent) - self.proj_que2difficulty(question_emb)
+        predict_score = torch.sigmoid(torch.sum(y * self.proj_que2discrimination(question_emb), dim=-1))
+
+        return predict_score
+
+    def forward(self, batch):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT_PLUS"]
+        dim_correct = encoder_config["dim_correct"]
+        dim_k = encoder_config["dim_k"]
+        ablation_set = encoder_config["ablation_set"]
+        batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
+
+        question_emb = self.embed_question(batch["question_seq"])
+        interval_time_emb = self.embed_interval_time(batch["interval_time_seq"])
+        correct_emb = batch["correct_seq"].view(-1, 1).repeat(1, dim_correct).view(batch_size, -1, dim_correct)
+        if ablation_set == 0:
+            use_time_seq = batch["use_time_seq"]
+            use_time_emb = self.embed_answer_time(use_time_seq)
+            learning_emb = self.linear_1(torch.cat((question_emb, use_time_emb, correct_emb), 2))
+        else:
+            learning_emb = self.linear_1(torch.cat((question_emb, correct_emb), 2))
+
+        h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_k)).to(self.params["device"])
+        learning_pre = torch.zeros(batch_size, dim_k).to(self.params["device"])
+        pred = torch.zeros(batch_size, seq_len).to(self.params["device"])
+
+        for t in range(0, seq_len - 1):
+            it = interval_time_emb[:, t]
+            learning = learning_emb[:, t]
+
+            # Learning Module
+            learning_gain = self.tanh(self.linear_2(torch.cat((learning_pre, it, learning, h_pre), dim=1)))
+            gamma_l = self.sig(self.linear_3(torch.cat((learning_pre, it, learning, h_pre), dim=1)))
+            LG = gamma_l * ((learning_gain + 1) / 2)
+
+            # Forgetting Module
+            gamma_f = self.sig(self.linear_4(torch.cat((h_pre, LG, it), dim=1)))
+            h = self.dropout(LG) + gamma_f * h_pre
+
+            # Predicting Module
+            y = self.predict_score(h, question_emb[:, t + 1])
+            pred[:, t + 1] = y
+
+            # prepare for next prediction
+            learning_pre = learning
+            h_pre = h
 
         return pred
 

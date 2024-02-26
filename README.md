@@ -41,29 +41,29 @@ This algorithm library was developed inspired by `PYKT` (the code repository cor
     2. This difference is not only reflected in the training and testing of the model, but also in the data preprocessing. `PYKT` first extends the sequence and then cuts the sequence, fixing the length of each sequence to 200. We cut the sequence directly, with a fixed sequence length of 200.
     3. We currently only implement average pooling of concepts on `DKT, AKT, SimpleKT, DIMKT, and QIKT` models.
   
-    |      | Assist2009     | Algebra2005 (AL2005) | Bridge2Algebra2006 (BD2006) | xes3g5m         |
-    | ---- | -------------- | -------------------- | --------------------------- | --------------- |
-    | DKT  | 0.756 (0.7541) | 0.8162 (0.8149)      | 0.7748(0.8015)              | 0.7849 (0.7852) |
-    | AKT  |                |                      |                             |                 |
-    | QIKT |                |                      |                             |                 |
-    | qDKT |                |                      |                             |                 |
+    |      | Assist2009     | AL2005          | BD2006         | xes3g5m         |
+    | ---- | -------------- | --------------- | -------------- | --------------- |
+    | DKT  | 0.756 (0.7541) | 0.8162 (0.8149) | 0.7748(0.8015) | 0.7849 (0.7852) |
+    | AKT  |                |                 |                |                 |
+    | QIKT |                |                 |                |                 |
+    | qDKT |                |                 |                |                 |
   
   - Reproduction results on `single concept` datasets. Please note: 
   
     1. For datasets with a small number of questions, our DKT and ATKT also provide results with questions as items.
     2. For the `statics2011` and `edi2020-task34` dataset, our data preprocessing is different from `PYKT`
   
-    |          | Statics2011    | Edi2020-task34 (NIPS34) |
-    | -------- | -------------- | ----------------------- |
-    | DKT      | 0.7142         | 0.7142 (0.7681)         |
-    | DKT_que  | 0.8161(0.8222) | 0.7935                  |
-    | DKVMN    |                |                         |
-    | ATKT     |                |                         |
-    | ATKT_que |                |                         |
-    | AKT      |                |                         |
-    | AT-DKT   |                |                         |
-    | QIKT     |                |                         |
-    | qDKT     |                |                         |
+    |          | Statics2011    | NIPS34          |
+    | -------- | -------------- | --------------- |
+    | DKT      | 0.7142         | 0.7142 (0.7681) |
+    | DKT_que  | 0.8161(0.8222) | 0.7935          |
+    | DKVMN    |                |                 |
+    | ATKT     |                |                 |
+    | ATKT_que |                |                 |
+    | AKT      |                |                 |
+    | AT-DKT   |                |                 |
+    | QIKT     |                |                 |
+    | qDKT     |                |                 |
   
 
 # Referrence

@@ -33,7 +33,7 @@ This algorithm library was developed inspired by `PYKT` (the code repository cor
 
   - All scripts for this experiment are in the `example\script_local\pykt_repo` directory.
 
-  - All reproduction results are based on adjusting parameters at 1 fold, and then taking the average of 5 folds (in order to reduce randomness, the random seeds of all experiments are fixed to 0). The values in parentheses are the results reported in the paper.
+  - All reproduction results are based on adjusting parameters at 1 fold, and then taking the average of 5 folds (in order to reduce randomness, the random seeds of all experiments are fixed to 0). The values in parentheses are the results reported in the paper. The metric in the table is `AUC`.
 
   - Reproduction results on `multi concept` datasets. Please note: 
 

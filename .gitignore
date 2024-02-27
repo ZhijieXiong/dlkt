@@ -37,5 +37,6 @@ example4cognitive_diagnosis/result_local
 # future to open
 /example/prepare_dataset/our_setting_ood_by_country4slepemapy.py
 /example/prepare_dataset/our_setting_ood_by_school.py
+/example/train/lpkt_plus.py
 /lib/dataset/KTDataset4LPKTPlus.py
 /lib/model/LPKTPlus_dev.py

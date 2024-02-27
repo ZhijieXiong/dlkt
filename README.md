@@ -29,48 +29,82 @@ This algorithm library was developed inspired by `PYKT` (the code repository cor
 |                                                              |       |       |
 | Wandb                                                        | False | True  |
 
-- Reproducible results under `PYKT` experimental settings.
+# Experiement Results
 
-  - All scripts for this experiment are in the `example\script_local\pykt_repo` directory.
+## PYKT settings
 
-  - All reproduction results are based on adjusting parameters at 1 fold, and then taking the average of 5 folds (in order to reduce randomness, the random seeds of all experiments are fixed to 0). The values in parentheses are the results reported in the paper. The metric in the table is `AUC`.
+- All scripts for this experiment are in the `example\script_local\pykt_repo` directory.
 
-  - The results reported in the paper come from `PYKT`, `SimpleKT` `AT-DKT` and `QIKT`. Please see [the corresponding paper](md_doc/MODELS.md).
+- To view the complete experimental record, please click [here](https://docs.qq.com/sheet/DREdTc3lVQWJkdFJw?tab=BB08J2).
 
-  - Reproduction results on `multi concept` datasets. Please note: 
-  
-    1. We did not first extend the exercise sequence into a knowledge concept sequence like `PYKT` (`PYKT` paper picture 2), then train the model on the knowledge concept sequence, and finally test the model on the question (`PYKT` paper Section 3.3). We reproduce by training and testing the model directly on the question sequence, that is, for multi-concept questions, we use `mean pooling` for multiple concept embeddings.
-    2. This difference is not only reflected in the training and testing of the model, but also in the data preprocessing. `PYKT` first extends the sequence and then cuts the sequence, fixing the length of each sequence to 200. We cut the sequence directly, with a fixed sequence length of 200.
-    3. We currently only implement average pooling of concepts on `DKT, AKT, SimpleKT, DIMKT, and QIKT` models.
-  
-    |          | Assist2009     | AL2005         | BD2006         | xes3g5m        |
-    | -------- | -------------- | -------------- | -------------- | -------------- |
-    | DKT      | 0.756(0.7541)  | 0.8162(0.8149) | 0.7748(0.8015) | 0.7849(0.7852) |
-    | AKT      | 0.7911(0.7853) | 0.8169(0.8306) | 0.8162(0.8208) |                |
-    | SimpleKT |                |                |                |                |
-    | QIKT     |                |                |                |                |
-    | qDKT     |                |                |                |                |
-  
-  - Reproduction results on `single concept` datasets. Please note: 
-  
-    1. For datasets with a small number of questions, our DKT and ATKT also provide results with questions as items.
-    2. For the `statics2011` and `edi2020-task34` dataset, our data preprocessing is different from `PYKT`
-  
-    |          | Statics2011    | NIPS34         |
-    | -------- | -------------- | -------------- |
-    | DKT      | 0.7142         | 0.762(0.7681)  |
-    | DKT_que  | 0.8161(0.8222) | 0.7935(0.7995) |
-    | DKVMN    |                |                |
-    | ATKT     |                |                |
-    | ATKT_que |                |                |
-    | AKT      | 0.8244(0.8309) | 0.7943(0.8033) |
-    | SimpleKT |                |                |
-    | AT-DKT   |                |                |
-    | QIKT     |                |                |
-    | qDKT     |                |                |
-  
+- All reproduction results are based on adjusting parameters at 1 fold (**Parameter adjustment is performed under the `example/prepare_datset/our_setting` experimental setting. We use the parameters of `our_setting` directly under `pykt_question_setting`, so the reproduction results are somewhat different from the results reported in the paper.**), and then taking the average of 5 folds (in order to reduce randomness, the random seeds of all experiments are fixed to 0). The values in parentheses are the results reported in the paper. The metric in the table is `AUC`.
 
-- To view more experimental results please click [here]().
+- The results reported in the paper come from `PYKT`, `SimpleKT` `AT-DKT` and `QIKT`. Please see [the corresponding paper](md_doc/MODELS.md).
+
+- Reproduction results on `multi concept` datasets. Please note: 
+
+  1. We did not first extend the exercise sequence into a knowledge concept sequence like `PYKT` (`PYKT` paper picture 2), then train the model on the knowledge concept sequence, and finally test the model on the question (`PYKT` paper Section 3.3). We reproduce by training and testing the model directly on the question sequence, that is, for multi-concept questions, we use `mean pooling` for multiple concept embeddings.
+  2. This difference is not only reflected in the training and testing of the model, but also in the data preprocessing. `PYKT` first extends the sequence and then cuts the sequence, fixing the length of each sequence to 200. We cut the sequence directly, with a fixed sequence length of 200.
+  3. We currently only implement average pooling of concepts on `DKT, AKT, SimpleKT, DIMKT, and QIKT` models.
+
+  |          | Assist2009     | AL2005         | BD2006         | xes3g5m        |
+  | -------- | -------------- | -------------- | -------------- | -------------- |
+  | DKT      | 0.756(0.7541)  | 0.8162(0.8149) | 0.7748(0.8015) | 0.7849(0.7852) |
+  | AKT      | 0.7911(0.7853) | 0.8169(0.8306) | 0.8162(0.8208) |                |
+  | SimpleKT |                |                |                |                |
+  | QIKT     |                |                |                |                |
+  | qDKT     |                |                |                |                |
+
+- Reproduction results on `single concept` datasets. Please note: 
+
+  1. For datasets with a small number of questions, our DKT and ATKT also provide results with questions as items.
+  2. For the `statics2011` and `edi2020-task34` dataset, our data preprocessing is different from `PYKT`
+
+  |          | Statics2011    | NIPS34         |
+  | -------- | -------------- | -------------- |
+  | DKT      | 0.7142         | 0.762(0.7681)  |
+  | DKT_que  | 0.8161(0.8222) | 0.7935(0.7995) |
+  | DKVMN    |                |                |
+  | ATKT     |                |                |
+  | ATKT_que |                |                |
+  | AKT      | 0.8244(0.8309) | 0.7943(0.8033) |
+  | SimpleKT |                |                |
+  | AT-DKT   |                |                |
+  | QIKT     |                |                |
+  | qDKT     |                |                |
+
+## Our Setting
+
+- To view the complete experimental record, please click [here](https://docs.qq.com/sheet/DRG50d3B5VlBJdGpK?tab=BB08J2).
+
+- The experimental results of the `AUC` are as follows:
+
+  |          | Assist2009 | Algebra2005 | Bridge2Algebra2006 | Ednet-kt1 | Xes3g5m |
+  | -------- | ---------- | ----------- | ------------------ | --------- | ------- |
+  | DKT      | 0.7484     | 0.8163      | 0.7768             | 0.6585    | 0.7842  |
+  | AKT      | 0.786      | 0.823       | 0.8163             | 0.7327    | 0.8215  |
+  | LPKT     |            |             |                    | 0.7381    |         |
+  | DIMKT    | 0.7647     |             |                    | 0.7109    |         |
+  | SimpleKT | 0.7848     | 0.8431      |                    |           |         |
+  | QIKT     | 0.7838     |             |                    |           |         |
+  | qDKT     | 0.7657     | 0.835       | 0.8166             | 0.729     | 0.8254  |
+
+  |          | Assist2012 | Assist2015 | Assist2017 | Statics2011 | Slepemapy | Edi2020-task34 |
+  | -------- | ---------- | ---------- | ---------- | ----------- | --------- | -------------- |
+  | DKT      | 0.7333     |            | 0.7296     | 0.7117      | 0.6844    | 0.7598         |
+  | DKT_que  |            |            | 0.795      | 0.8148      |           | 0.7912         |
+  | DKVMN    | 0.7197     |            | 0.6944     | 0.7042      | 0.6732    | 0.7479         |
+  | ATKT     |            |            | 0.7206     | 0.6943      | 0.6692    | 0.7569         |
+  | ATKT_que |            |            | 0.7394     | 0.7961      |           | 0.7834         |
+  | AKT      | 0.7905     |            | 0.7732     | 0.8201      | 0.7285    | 0.793          |
+  | LPKT     | 0.7889     |            | 0.811      |             | 0.7373    |                |
+  | DIMKT    | 0.7854     |            | 0.801      | 0.8202      | 0.7283    | 0.7943         |
+  | SimpleKT |            |            | 0.7741     | 0.822       | 0.7316    | 0.7931         |
+  | AT-DKT   |            |            |            |             |           |                |
+  | QIKT     |            |            | 0.7879     | 0.8266      | 0.7236    | 0.7972         |
+  | qDKT     | 0.7855     | 0.7921     |            | 0.8199      | 0.724     | 0.7952         |
+
+  
 
 # Referrence
 

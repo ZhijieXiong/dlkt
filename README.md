@@ -102,7 +102,7 @@ This algorithm library was developed inspired by `PYKT` (the code repository cor
   | SimpleKT |            |            |   0.7741   |    0.822    |  0.7316   |     0.7931     |
   |  AT-DKT  |            |            |            |             |           |                |
   |   QIKT   |            |            |   0.7879   |   0.8266    |  0.7236   |     0.7972     |
-  |   qDKT   |   0.7855   |   0.7921   |            |   0.8199    |   0.724   |     0.7952     |
+  |   qDKT   |   0.7855   |            |   0.7921   |   0.8199    |   0.724   |     0.7952     |
 
   
 

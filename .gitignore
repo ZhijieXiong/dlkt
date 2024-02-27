@@ -32,3 +32,10 @@ example4cognitive_diagnosis/result_local
 /.DS_Store
 /freeze.yml
 /requirements.txt
+
+
+# future to open
+/example/prepare_dataset/our_setting_ood_by_country4slepemapy.py
+/example/prepare_dataset/our_setting_ood_by_school.py
+/lib/dataset/KTDataset4LPKTPlus.py
+/lib/model/LPKTPlus_dev.py

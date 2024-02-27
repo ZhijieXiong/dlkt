@@ -7,8 +7,8 @@
   split=0
 
   weights_decay='0.00001 0.000001 0.0000001'
-  learning_rates='0.001 0.0005'
-  dims=(256 128)
+  learning_rates='0.001'
+  dims=(128 96 64 48)
   dropouts='0.2'
   for weight_decay in ${weights_decay}
   do
@@ -27,7 +27,7 @@
             --use_early_stop True --epoch_early_stop 10 --use_last_average False --epoch_last_average 5 \
             --main_metric "AUC" --use_multi_metrics False \
             --learning_rate "${learning_rate}" --enable_lr_schedule True --lr_schedule_type "StepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
-            --train_batch_size 64 --evaluate_batch_size 256 \
+            --train_batch_size 64 --evaluate_batch_size 128 \
             --enable_clip_grad False --grad_clipped 10.0 \
             --num_concept 246 --num_question 5730 --ablation_set 0 --model_version 2 \
             --dim_e "${dim}" --dim_k "${dim}" --dim_correct 50 --dropout "${dropout}" \

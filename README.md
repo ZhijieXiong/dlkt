@@ -41,29 +41,29 @@ This algorithm library was developed inspired by `PYKT` (the code repository cor
     2. This difference is not only reflected in the training and testing of the model, but also in the data preprocessing. `PYKT` first extends the sequence and then cuts the sequence, fixing the length of each sequence to 200. We cut the sequence directly, with a fixed sequence length of 200.
     3. We currently only implement average pooling of concepts on `DKT, AKT, SimpleKT, DIMKT, and QIKT` models.
   
-    |      | Assist2009      | AL2005          | BD2006         | xes3g5m         |
-    | ---- | --------------- | --------------- | -------------- | --------------- |
-    | DKT  | 0.756 (0.7541)  | 0.8162 (0.8149) | 0.7748(0.8015) | 0.7849 (0.7852) |
-    | AKT  | 0.7911 (0.7853) | 0.8169 (0.8306) |                |                 |
-    | QIKT |                 |                 |                |                 |
-    | qDKT |                 |                 |                |                 |
+    |      | Assist2009      | AL2005          | BD2006          | xes3g5m         |
+    | ---- | --------------- | --------------- | --------------- | --------------- |
+    | DKT  | 0.756 (0.7541)  | 0.8162 (0.8149) | 0.7748(0.8015)  | 0.7849 (0.7852) |
+    | AKT  | 0.7911 (0.7853) | 0.8169 (0.8306) | 0.8162 (0.8208) |                 |
+    | QIKT |                 |                 |                 |                 |
+    | qDKT |                 |                 |                 |                 |
   
   - Reproduction results on `single concept` datasets. Please note: 
   
     1. For datasets with a small number of questions, our DKT and ATKT also provide results with questions as items.
     2. For the `statics2011` and `edi2020-task34` dataset, our data preprocessing is different from `PYKT`
   
-    |          | Statics2011    | NIPS34          |
-    | -------- | -------------- | --------------- |
-    | DKT      | 0.7142         | 0.7142 (0.7681) |
-    | DKT_que  | 0.8161(0.8222) | 0.7935          |
-    | DKVMN    |                |                 |
-    | ATKT     |                |                 |
-    | ATKT_que |                |                 |
-    | AKT      |                |                 |
-    | AT-DKT   |                |                 |
-    | QIKT     |                |                 |
-    | qDKT     |                |                 |
+    |          | Statics2011     | NIPS34          |
+    | -------- | --------------- | --------------- |
+    | DKT      | 0.7142          | 0.7142 (0.7681) |
+    | DKT_que  | 0.8161(0.8222)  | 0.7935          |
+    | DKVMN    |                 |                 |
+    | ATKT     |                 |                 |
+    | ATKT_que |                 |                 |
+    | AKT      | 0.8244 (0.8309) | 0.7943 (0.8033) |
+    | AT-DKT   |                 |                 |
+    | QIKT     |                 |                 |
+    | qDKT     |                 |                 |
   
 
 # Referrence
@@ -147,7 +147,7 @@ This algorithm library was developed inspired by `PYKT` (the code repository cor
 2. Train model: Run the file under `example4cognitive_diagnosis/train`. For example, train a NCD model
 
    ```shell
-   python dkt.py
+   python ncd.py
    ```
 
 

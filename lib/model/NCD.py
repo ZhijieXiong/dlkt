@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from .util import NoneNegClipper
+
 
 class NCD(nn.Module):
     model_name = "NCD"
@@ -73,14 +75,3 @@ class NCD(nn.Module):
         k_difficulty = torch.sigmoid(self.embed_question_diff(question_id))
         e_discrimination = torch.sigmoid(self.embed_question_disc(question_id)) * 10
         return k_difficulty.data, e_discrimination.data
-
-
-class NoneNegClipper(object):
-    def __init__(self):
-        super(NoneNegClipper, self).__init__()
-
-    def __call__(self, module):
-        if hasattr(module, 'weight'):
-            w = module.weight.data
-            a = torch.relu(torch.neg(w))
-            w.add_(a)

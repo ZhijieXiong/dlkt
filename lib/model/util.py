@@ -42,3 +42,14 @@ def l2_normalize_adv(d):
     # "learning_rate": 0.01,"lr_schedule_step": 30,"lr_schedule_gamma": 0.5
     d = d / (np.sqrt(np.sum(d ** 2, axis=(1, 2))).reshape((-1, 1, 1)) + 1e-16)
     return torch.from_numpy(d)
+
+
+class NoneNegClipper(object):
+    def __init__(self):
+        super(NoneNegClipper, self).__init__()
+
+    def __call__(self, module):
+        if hasattr(module, 'weight'):
+            w = module.weight.data
+            a = torch.relu(torch.neg(w))
+            w.add_(a)

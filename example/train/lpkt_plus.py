@@ -7,7 +7,7 @@ from config.lpkt_config import lpkt_plus_config
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.model.LPKTPlus import *
+from lib.model.LPKTPlus_dev import *
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 

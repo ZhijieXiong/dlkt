@@ -123,3 +123,6 @@ class DKT(nn.Module):
         predict_score = torch.sum(predict_score, dim=1)
 
         return predict_score
+
+    def get_predict_score_seq_len_minus1(self, batch):
+        return self.forward(batch)

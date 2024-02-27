@@ -18,23 +18,23 @@ if __name__ == "__main__":
 
     # 基本配置
     parser.add_argument("--save_model_dir", type=str,
-                        default=r"F:\code\myProjects\dlkt\lab\saved_models\save\qDKT_ME-ADA\2024-02-21@10-38-57@@qDKT-ME-ADA@@seed_0@@our_setting@@statics2011_train_fold_0")
+                        default=r"F:\code\myProjects\dlkt\lab\saved_models\save\pykt_question_setting\dkt\2024-02-26@21-19-09@@DKT@@seed_0@@pykt_question_setting@@assist2009_train_fold_0")
     parser.add_argument("--save_model_name", type=str, default="kt_model.pth")
-    parser.add_argument("--setting_name", type=str, default="our_setting")
-    parser.add_argument("--dataset_name", type=str, default="statics2011")
-    parser.add_argument("--data_type", type=str, default="single_concept",
+    parser.add_argument("--setting_name", type=str, default="pykt_question_setting")
+    parser.add_argument("--dataset_name", type=str, default="assist2009")
+    parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--test_file_name", type=str, default="statics2011_test_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2009_test.txt")
     parser.add_argument("--base_type", type=str, default="concept", choices=("concept", "question"))
-    parser.add_argument("--evaluate_batch_size", type=int, default=512)
+    parser.add_argument("--evaluate_batch_size", type=int, default=256)
     # 细粒度配置（不适用于base_type为question的evaluate）
     # 长尾问题（注意不同训练集的长尾统计信息不一样）
     parser.add_argument("--statics_file_path", type=str,
-                        default=r"F:\code\myProjects\dlkt\lab\settings\our_setting\statics2011_train_fold_0_statics.json")
+                        default=r"F:\code\myProjects\dlkt\lab\settings\pykt_question_setting\assist2009_test_statics.json")
     # 冷启动问题
     parser.add_argument("--max_seq_len", type=int, default=200)
     parser.add_argument("--seq_len_absolute", type=str,
-                        default="[0, 5, 10, 20, 30]",
+                        default="[0, 5, 10, 20, 30, 50, 100, 150, 200]",
                         choices=("[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]",
                                  "[0, 5, 10, 20, 30, 40, 50, 60, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200]"))
 

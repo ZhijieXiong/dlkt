@@ -11,11 +11,11 @@
 
 # Introduction
 
-This algorithm library was developed inspired by `PYKT` (the code repository corresponding to the paper `"PYKT: A Python Library to Benchmark Deep Learning based Knowledge Tracing Models", NeurIPS 2022`). `PYKT` provides great convenience to researchers in the field of `Knowledge Tracing` and has made outstanding contributions to the development of `Knowledge Tracing`. However, we believe that `PYKT` also has some shortcomings, so we opened this algorithm library, named `DLKT`, to achieve complementary effects with `PYKT`.
+This algorithm library was developed inspired by `pyKT` (the code repository corresponding to the paper [`"pyKT: A Python Library to Benchmark Deep Learning based Knowledge Tracing Models", NeurIPS 2022`](https://proceedings.neurips.cc/paper_files/paper/2022/hash/75ca2b23d9794f02a92449af65a57556-Abstract-Datasets_and_Benchmarks.html)). `pyKT` provides great convenience to researchers in the field of `Knowledge Tracing` and has made outstanding contributions to the development of `Knowledge Tracing`. However, we believe that `pyKT` also has some shortcomings, so we opened this algorithm library, named `DLKT`, to achieve complementary effects with `pyKT`.
 
-- The Comparison with `PYKT`
+- The Comparison with `pyKT`
 
-|                                                              | DLKT  | PYKT  |
+|                                                              | DLKT  | pyKT  |
 | ------------------------------------------------------------ | ----- | ----- |
 | Arbitrary Experimental Settings (Data Processing, Dataset  Partitioning, ...) | True  | False |
 | Mainstream Knowledge Tracing Model (DKT, DKVMN, AKT, LPKT, ...) | True  | True  |
@@ -31,7 +31,7 @@ This algorithm library was developed inspired by `PYKT` (the code repository cor
 
 # Experiement Results
 
-## PYKT settings (Knowledge Tracing)
+## pyKT settings (Knowledge Tracing)
 
 - All scripts for this experiment are in the `example\script_local\pykt_repo` directory.
 
@@ -39,13 +39,13 @@ This algorithm library was developed inspired by `PYKT` (the code repository cor
 
 - All reproduction results are based on adjusting parameters at 1 fold (**Parameter adjustment is performed under the `example/prepare_datset/our_setting` experimental setting. We use the parameters of `our_setting` directly under `pykt_question_setting`, so the reproduction results are somewhat different from the results reported in the paper.**), and then taking the average of 5 folds (in order to reduce randomness, the random seeds of all experiments are fixed to 0). The values in parentheses are the results reported in the paper. The metric in the table is `AUC`.
 
-- The results reported in the paper come from `PYKT`, `SimpleKT` `AT-DKT` and `QIKT`. Please see [the corresponding paper](md_doc/MODELS.md).
+- The results reported in the paper come from `pyKT`, `SimpleKT` `AT-DKT` and `QIKT`. Please see [the corresponding paper](md_doc/MODELS.md).
 
 - Reproduction results on `multi concept` datasets. Please note: 
 
-  1. We did not first extend the exercise sequence into a knowledge concept sequence like `PYKT` (`PYKT` paper picture 2), then train the model on the knowledge concept sequence, and finally test the model on the question (`PYKT` paper Section 3.3). We reproduce by training and testing the model directly on the question sequence, that is, for multi-concept questions, we use `mean pooling` for multiple concept embeddings.
-  2. This difference is not only reflected in the training and testing of the model, but also in the data preprocessing. `PYKT` first extends the sequence and then cuts the sequence, fixing the length of each sequence to 200. We cut the sequence directly, with a fixed sequence length of 200.
-  3. We currently only implement average pooling of concepts on `DKT, AKT, SimpleKT, DIMKT, and QIKT` models. In addition, because the original code of `ATKT` has data leakage problems, we use the `atktfix` provided by `PYKT`.
+  1. We did not first extend the exercise sequence into a knowledge concept sequence like `pyKT` (`pyKT` paper picture 2), then train the model on the knowledge concept sequence, and finally test the model on the question (`pyKT` paper Section 3.3). We reproduce by training and testing the model directly on the question sequence, that is, for multi-concept questions, we use `mean pooling` for multiple concept embeddings.
+  2. This difference is not only reflected in the training and testing of the model, but also in the data preprocessing. `pyKT` first extends the sequence and then cuts the sequence, fixing the length of each sequence to 200. We cut the sequence directly, with a fixed sequence length of 200.
+  3. We currently only implement average pooling of concepts on `DKT, AKT, SimpleKT, DIMKT, and QIKT` models. In addition, because the original code of `ATKT` has data leakage problems, we use the `atktfix` provided by `pyKT`.
 
   |          |   Assist2009   |     AL2005     |     BD2006     |    xes3g5m     |
   | :------: | :------------: | :------------: | :------------: | :------------: |
@@ -58,7 +58,7 @@ This algorithm library was developed inspired by `PYKT` (the code repository cor
 - Reproduction results on `single concept` datasets. Please note: 
 
   1. For datasets with a small number of questions, our DKT and ATKT also provide results with questions as items.
-  2. For the `statics2011` and `edi2020-task34` dataset, our data preprocessing is different from `PYKT`
+  2. For the `statics2011` and `edi2020-task34` dataset, our data preprocessing is different from `pyKT`
 
   |           |  Statics2011   |     NIPS34     |
   | :-------: | :------------: | :------------: |

@@ -18,16 +18,21 @@ class LPKT(nn.Module):
         dim_e = encoder_config["dim_e"]
         dim_k = encoder_config["dim_k"]
         dropout = encoder_config["dropout"]
+        ablation_set = encoder_config["ablation_set"]
 
         # 3600 sec: 1 hour, 43200 min: 1 month
-        self.at_embed = nn.Embedding(3600 + 1, dim_k)
-        torch.nn.init.xavier_uniform_(self.at_embed.weight)
+        if ablation_set == 0:
+            self.at_embed = nn.Embedding(3600 + 1, dim_k)
+            torch.nn.init.xavier_uniform_(self.at_embed.weight)
         self.it_embed = nn.Embedding(43200 + 1, dim_k)
         torch.nn.init.xavier_uniform_(self.it_embed.weight)
         self.e_embed = nn.Embedding(num_question + 1, dim_k)
         torch.nn.init.xavier_uniform_(self.e_embed.weight)
 
-        self.linear_1 = nn.Linear(dim_correct + dim_e + dim_k, dim_k)
+        if ablation_set == 0:
+            self.linear_1 = nn.Linear(dim_correct + dim_e + dim_k, dim_k)
+        else:
+            self.linear_1 = nn.Linear(dim_correct + dim_e, dim_k)
         torch.nn.init.xavier_uniform_(self.linear_1.weight)
         self.linear_2 = nn.Linear(4 * dim_k, dim_k)
         torch.nn.init.xavier_uniform_(self.linear_2.weight)
@@ -46,7 +51,6 @@ class LPKT(nn.Module):
 
     def forward(self, batch):
         question_seq = batch["question_seq"]
-        use_time_seq = batch["use_time_seq"]
         interval_time_seq = batch["interval_time_seq"]
         correct_seq = batch["correct_seq"]
 
@@ -54,16 +58,22 @@ class LPKT(nn.Module):
         num_concept = encoder_config["num_concept"]
         dim_correct = encoder_config["dim_correct"]
         dim_k = encoder_config["dim_k"]
+        ablation_set = encoder_config["ablation_set"]
         q_matrix = self.objects["LPKT"]["q_matrix"]
 
         batch_size, seq_len = question_seq.size(0), question_seq.size(1)
         e_embed_data = self.e_embed(question_seq)
-        at_embed_data = self.at_embed(use_time_seq)
+
         it_embed_data = self.it_embed(interval_time_seq)
         correct_seq = correct_seq.view(-1, 1).repeat(1, dim_correct).view(batch_size, -1, dim_correct)
         h_pre = nn.init.xavier_uniform_(torch.zeros(num_concept, dim_k)).repeat(batch_size, 1, 1).to(self.params["device"])
         h_tilde_pre = None
-        all_learning = self.linear_1(torch.cat((e_embed_data, at_embed_data, correct_seq), 2))
+        if ablation_set == 0:
+            use_time_seq = batch["use_time_seq"]
+            at_embed_data = self.at_embed(use_time_seq)
+            all_learning = self.linear_1(torch.cat((e_embed_data, at_embed_data, correct_seq), 2))
+        else:
+            all_learning = self.linear_1(torch.cat((e_embed_data, correct_seq), 2))
         learning_pre = torch.zeros(batch_size, dim_k).to(self.params["device"])
 
         pred = torch.zeros(batch_size, seq_len).to(self.params["device"])

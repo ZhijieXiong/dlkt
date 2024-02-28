@@ -1,3 +1,5 @@
+import torch
+
 from ._config import *
 from ._data_aug_config import *
 
@@ -33,6 +35,7 @@ def lpkt_general_config(local_params, global_params, global_objects):
     encoder_layer_config["dim_k"] = dim_k
     encoder_layer_config["dim_correct"] = dim_correct
     encoder_layer_config["dropout"] = dropout
+    encoder_layer_config["ablation_set"] = local_params["ablation_set"]
 
     # q matrix
     global_objects["LPKT"] = {}
@@ -103,7 +106,12 @@ def lpkt_plus_config(local_params):
     encoder_config["LPKT_PLUS"]["ablation_set"] = local_params["ablation_set"]
 
     global_objects["LPKT_PLUS"] = {}
-    global_objects["LPKT_PLUS"]["q_matrix"] = global_objects["LPKT"]["q_matrix"]
+    global_objects["LPKT_PLUS"]["q_matrix"] = torch.from_numpy(
+        global_objects["data"]["Q_table"]
+    ).float().to(global_params["device"]) + 0.05
+    q_matrix = global_objects["LPKT_PLUS"]["q_matrix"]
+    q_matrix[q_matrix > 1] = 1
+    del global_objects["LPKT"]
 
     # 统计习题难度和区分度
     dataset_train = read_preprocessed_file(os.path.join(
@@ -112,11 +120,29 @@ def lpkt_plus_config(local_params):
     ))
     que_accuracy = cal_diff(dataset_train, "question_seq", local_params["min_fre4diff"])
     que_difficulty = {k: round(1 - v, 4) for k, v in que_accuracy.items()}
+    global_objects["LPKT_PLUS"]["Q_table_mask"] = torch.from_numpy(
+        global_objects["data"]["Q_table"]
+    ).long().to(global_params["device"])
+    global_objects["LPKT_PLUS"]["que_diff_ground_truth"] = torch.from_numpy(
+        global_objects["data"]["Q_table"]
+    ).float().to(global_params["device"])
+    que_diff_ground_truth = global_objects["LPKT_PLUS"]["que_diff_ground_truth"]
+    for q_id, que_diff in que_difficulty.items():
+        que_diff_ground_truth[q_id] = que_diff_ground_truth[q_id] * que_diff
+    global_objects["LPKT_PLUS"]["que_has_diff_ground_truth"] = torch.tensor(
+        list(que_difficulty.keys())
+    ).long().to(global_params["device"])
+
     que_discrimination = cal_que_discrimination(dataset_train, {
         "num2drop4question": local_params["min_fre4disc"],
         "min_seq_len": local_params["min_seq_len4disc"],
         "percent_threshold": local_params["percent_threshold"]
     })
+
+    # 损失权重配置
+    global_params["loss_config"]["que diff pred loss"] = local_params["w_que_diff_pred"]
+    global_params["loss_config"]["que disc pred loss"] = local_params["w_que_disc_pred"]
+
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
             global_params["save_model_dir_name"].replace("@@LPKT@@", "@@LPKT_PLUS@@"))

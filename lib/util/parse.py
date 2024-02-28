@@ -217,3 +217,10 @@ def cal_que_discrimination(data_uniformed, params):
     H_question, L_question = get_high_low_accuracy_seqs(dataset_question, MIN_SEQ_LEN, PERCENT_THRESHOLD)
     H_question_diff = cal_diff(H_question, "question_seq", NUM2DROP4QUESTION)
     L_question_diff = cal_diff(L_question, "question_seq", NUM2DROP4QUESTION)
+
+    intersection_H_L = set(H_question_diff.keys()).intersection(set(L_question_diff.keys()))
+    res = {}
+    for q_id in intersection_H_L:
+        res[q_id] = H_question_diff[q_id] - L_question_diff[q_id]
+
+    return res

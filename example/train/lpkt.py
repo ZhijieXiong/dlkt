@@ -57,6 +57,11 @@ if __name__ == "__main__":
     parser.add_argument("--dim_k", type=int, default=128)
     parser.add_argument("--dim_correct", type=int, default=50)
     parser.add_argument("--dropout", type=float, default=0.2)
+    # 消融
+    parser.add_argument("--ablation_set", type=int, default=0,
+                        help="0: use time seq and interval time seq"
+                             "1: only interval time seq"
+                             "2: do not use time information")
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

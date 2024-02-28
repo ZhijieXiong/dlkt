@@ -62,7 +62,7 @@
       --enable_clip_grad False --grad_clipped 10.0 \
       --num_concept 246 --num_question 5730 --model_version 2 --ablation_set 0 \
       --dim_e 48 --dim_k 48 --dim_correct 50 --dropout 0.2 \
-      --save_model True --debug_mode False --use_cpu False --seed "${seed}"
+      --save_model False --debug_mode False --use_cpu False --seed "${seed}"
   done
 
 } >> F:/code/myProjects/dlkt/example/result_local/lpkt_plus_v2_our_setting_ood_slepemapy_split_0_save_ob.txt

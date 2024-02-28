@@ -31,7 +31,7 @@ This algorithm library was developed inspired by `PYKT` (the code repository cor
 
 # Experiement Results
 
-## PYKT settings
+## PYKT settings (Knowledge Tracing)
 
 - All scripts for this experiment are in the `example\script_local\pykt_repo` directory.
 
@@ -45,12 +45,12 @@ This algorithm library was developed inspired by `PYKT` (the code repository cor
 
   1. We did not first extend the exercise sequence into a knowledge concept sequence like `PYKT` (`PYKT` paper picture 2), then train the model on the knowledge concept sequence, and finally test the model on the question (`PYKT` paper Section 3.3). We reproduce by training and testing the model directly on the question sequence, that is, for multi-concept questions, we use `mean pooling` for multiple concept embeddings.
   2. This difference is not only reflected in the training and testing of the model, but also in the data preprocessing. `PYKT` first extends the sequence and then cuts the sequence, fixing the length of each sequence to 200. We cut the sequence directly, with a fixed sequence length of 200.
-  3. We currently only implement average pooling of concepts on `DKT, AKT, SimpleKT, DIMKT, and QIKT` models.
+  3. We currently only implement average pooling of concepts on `DKT, AKT, SimpleKT, DIMKT, and QIKT` models. In addition, because the original code of `ATKT` has data leakage problems, we use the `atktfix` provided by `PYKT`.
 
   |          |   Assist2009   |     AL2005     |     BD2006     |    xes3g5m     |
   | :------: | :------------: | :------------: | :------------: | :------------: |
   |   DKT    | 0.756(0.7541)  | 0.8162(0.8149) | 0.7748(0.8015) | 0.7849(0.7852) |
-  |   AKT    | 0.7911(0.7853) | 0.8169(0.8306) | 0.8162(0.8208) |                |
+  |   AKT    | 0.7911(0.7853) | 0.8169(0.8306) | 0.8162(0.8208) | 0.8231(0.8207) |
   | SimpleKT |                |                |                |                |
   |   QIKT   |                |                |                |                |
   |   qDKT   |                |                |                |                |
@@ -64,7 +64,7 @@ This algorithm library was developed inspired by `PYKT` (the code repository cor
   | :------: | :------------: | :------------: |
   |   DKT    |     0.7142     | 0.762(0.7681)  |
   | DKT_que  | 0.8161(0.8222) | 0.7935(0.7995) |
-  |  DKVMN   |                |                |
+  |  DKVMN   |     0.7066     | 0.7512(0.7673) |
   |   ATKT   |                |                |
   | ATKT_que |                |                |
   |   AKT    | 0.8244(0.8309) | 0.7943(0.8033) |
@@ -73,7 +73,7 @@ This algorithm library was developed inspired by `PYKT` (the code repository cor
   |   QIKT   |                |                |
   |   qDKT   |                |                |
 
-## Our Setting
+## Our Setting (Knowledge Tracing)
 
 - To view the complete experimental record, please click [here](https://docs.qq.com/sheet/DRG50d3B5VlBJdGpK?tab=BB08J2).
 
@@ -104,7 +104,17 @@ This algorithm library was developed inspired by `PYKT` (the code repository cor
   |   QIKT   |            |            |   0.7879   |   0.8266    |  0.7236   |     0.7972     |
   |   qDKT   |   0.7855   |            |   0.7921   |   0.8199    |   0.724   |     0.7952     |
 
-  
+
+## NCD Setting (Cognitive Diagnosis)
+
+- paper: `"Neural Cognitive Diagnosis for Intelligent Education Systems"`	
+
+| Assist2009 | AUC    | ACC    | RMSE   |
+| ---------- | ------ | ------ | ------ |
+| paper      | 0.749  | 0.719  | 0.439  |
+| repo       | 0.7551 | 0.7236 | 0.4328 |
+
+
 
 # Referrence
 

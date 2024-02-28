@@ -52,26 +52,27 @@ This algorithm library was developed inspired by `PYKT` (the code repository cor
   |   DKT    | 0.756(0.7541)  | 0.8162(0.8149) | 0.7748(0.8015) | 0.7849(0.7852) |
   |   AKT    | 0.7911(0.7853) | 0.8169(0.8306) | 0.8162(0.8208) | 0.8231(0.8207) |
   | SimpleKT |                |                |                |                |
-  |   QIKT   |                |                |                |                |
-  |   qDKT   |                |                |                |                |
+  |   QIKT   | 0.7907(0.7878) |                |                |                |
+  |   qDKT   |     0.7762     |     0.8363     |     0.8144     | 0.8261(0.8225) |
 
 - Reproduction results on `single concept` datasets. Please note: 
 
   1. For datasets with a small number of questions, our DKT and ATKT also provide results with questions as items.
   2. For the `statics2011` and `edi2020-task34` dataset, our data preprocessing is different from `PYKT`
 
-  |          |  Statics2011   |     NIPS34     |
-  | :------: | :------------: | :------------: |
-  |   DKT    |     0.7142     | 0.762(0.7681)  |
-  | DKT_que  | 0.8161(0.8222) | 0.7935(0.7995) |
-  |  DKVMN   |     0.7066     | 0.7512(0.7673) |
-  |   ATKT   |                |                |
-  | ATKT_que |                |                |
-  |   AKT    | 0.8244(0.8309) | 0.7943(0.8033) |
-  | SimpleKT |                |                |
-  |  AT-DKT  |                |                |
-  |   QIKT   |                |                |
-  |   qDKT   |                |                |
+  |           |  Statics2011   |     NIPS34     |
+  | :-------: | :------------: | :------------: |
+  |    DKT    |     0.7142     | 0.762(0.7681)  |
+  |  DKT_que  | 0.8161(0.8222) | 0.7935(0.7995) |
+  |   DKVMN   |     0.7066     | 0.7512(0.7673) |
+  | DKVMN_que |                |                |
+  |   ATKT    |                |                |
+  | ATKT_que  |                |                |
+  |    AKT    | 0.8244(0.8309) | 0.7943(0.8033) |
+  | SimpleKT  |                |                |
+  |  AT-DKT   |                |                |
+  |   QIKT    |                | 0.7993(0.8044) |
+  |   qDKT    |     0.8236     |     0.7968     |
 
 ## Our Setting (Knowledge Tracing)
 

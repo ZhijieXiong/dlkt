@@ -4,7 +4,7 @@ import re
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--file_path", type=str, default=r"F:\code\myProjects\dlkt\example\result_local\akt_pykt_question_setting_algebra2005_save.txt")
+    parser.add_argument("--file_path", type=str, default=r"F:\code\myProjects\dlkt\example4cognitive_diagnosis\result_local\ncd_ncd_setting_assist2009.txt")
     parser.add_argument("--key_words", type=str, default="test performance by best valid epoch is main metric")
     parser.add_argument("--n", help="隔几个做一次平均", type=int, default=5)
     args = parser.parse_args()

@@ -4,6 +4,7 @@ from ._data_aug_config import *
 from lib.template.objects_template import OBJECTS
 from lib.template.params_template_v2 import PARAMS
 from lib.util.basic import *
+from lib.util.parse import cal_diff
 from lib.CONSTANT import INTERVAL_TIME4LPKT_PLUS, USE_TIME4LPKT_PLUS
 
 
@@ -104,6 +105,18 @@ def lpkt_plus_config(local_params):
     global_objects["LPKT_PLUS"] = {}
     global_objects["LPKT_PLUS"]["q_matrix"] = global_objects["LPKT"]["q_matrix"]
 
+    # 统计习题难度和区分度
+    dataset_train = read_preprocessed_file(os.path.join(
+        global_objects["file_manager"].get_setting_dir(global_params["datasets_config"]["train"]["setting_name"]),
+        global_params["datasets_config"]["train"]["file_name"]
+    ))
+    que_accuracy = cal_diff(dataset_train, "question_seq", local_params["min_fre4diff"])
+    que_difficulty = {k: round(1 - v, 4) for k, v in que_accuracy.items()}
+    que_discrimination = cal_que_discrimination(dataset_train, {
+        "num2drop4question": local_params["min_fre4disc"],
+        "min_seq_len": local_params["min_seq_len4disc"],
+        "percent_threshold": local_params["percent_threshold"]
+    })
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
             global_params["save_model_dir_name"].replace("@@LPKT@@", "@@LPKT_PLUS@@"))

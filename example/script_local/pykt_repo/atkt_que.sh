@@ -3,6 +3,7 @@
 setting_name="pykt_question_setting"
 
 
+
 {
   dataset_name="edi2020-task34"
   data_type="single_concept"
@@ -20,12 +21,12 @@ setting_name="pykt_question_setting"
       --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
       --train_batch_size 64 --evaluate_batch_size 128 \
       --enable_clip_grad False --grad_clipped 10.0 \
-      --use_concept True --num_concept 53 --num_question 948 \
+      --use_concept False --num_concept 53 --num_question 948 \
       --dim_concept 64 --dim_correct 64 --dim_latent 256 \
-      --dim_attention 256 --dropout 0.4 --epsilon 5 --beta 0.5 \
+      --dim_attention 256 --dropout 0.5 --epsilon 10 --beta 1 \
       --save_model True --debug_mode False --use_cpu False --seed 0
   done
-} >> F:/code/myProjects/dlkt/example/result_local/atkt_pykt_question_setting_edi2020-task34_save.txt
+} >> F:/code/myProjects/dlkt/example/result_local/atkt_que_pykt_question_setting_edi2020-task34_save.txt
 
 
 
@@ -46,9 +47,9 @@ setting_name="pykt_question_setting"
       --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
       --train_batch_size 64 --evaluate_batch_size 128 \
       --enable_clip_grad False --grad_clipped 10.0 \
-      --use_concept True --num_concept 27 --num_question 1223 \
+      --use_concept False --num_concept 27 --num_question 1223 \
       --dim_concept 64 --dim_correct 64 --dim_latent 256 \
-      --dim_attention 256 --dropout 0.2 --epsilon 15 --beta 1 \
+      --dim_attention 256 --dropout 0.1 --epsilon 15 --beta 2 \
       --save_model True --debug_mode False --use_cpu False --seed 0
   done
-} >> F:/code/myProjects/dlkt/example/result_local/atkt_pykt_question_setting_statics2011_save.txt
+} >> F:/code/myProjects/dlkt/example/result_local/atkt_que_pykt_question_setting_statics2011_save.txt

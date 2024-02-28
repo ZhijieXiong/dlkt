@@ -101,7 +101,7 @@ def cal_accuracy4data(D):
         item_data["acc"] = accuracy
 
 
-def get_high_distinction(H, L, dis_threshold):
+def get_high_discrimination(H, L, dis_threshold):
     intersection_H_L = set(H.keys()).intersection(set(L.keys()))
     res = []
     for k_id in intersection_H_L:
@@ -110,12 +110,12 @@ def get_high_distinction(H, L, dis_threshold):
     return res
 
 
-def get_high_low_accuracy_seqs(data_added_acc, min_seq_len):
+def get_high_low_accuracy_seqs(data_added_acc, min_seq_len, k=0.27):
     acc_list = list(map(lambda x: x["acc"], data_added_acc))
     acc_list = sorted(acc_list)
     count_statics = len(acc_list)
-    high_acc = acc_list[int(count_statics * (1 - 0.27))]
-    low_acc = acc_list[int(count_statics * 0.27)]
+    high_acc = acc_list[int(count_statics * (1 - k))]
+    low_acc = acc_list[int(count_statics * k)]
     H_acc = list(filter(lambda item: item["seq_len"] >= min_seq_len and item["acc"] >= high_acc, data_added_acc))
     L_acc = list(filter(lambda item: item["seq_len"] >= min_seq_len and item["acc"] <= low_acc, data_added_acc))
     return H_acc, L_acc
@@ -157,7 +157,7 @@ def get_high_dis_qc(data_uniformed, params, objects):
     H_concept, L_concept = get_high_low_accuracy_seqs(dataset_concept, MIN_SEQ_LEN)
     H_concept_diff = cal_diff(H_concept, "concept_seq", NUM2DROP4CONCEPT)
     L_concept_diff = cal_diff(L_concept, "concept_seq", NUM2DROP4CONCEPT)
-    concepts_high_distinction = get_high_distinction(H_concept_diff, L_concept_diff, DIS_THRESHOLD)
+    concepts_high_distinction = get_high_discrimination(H_concept_diff, L_concept_diff, DIS_THRESHOLD)
     if data_type == "only_question":
         for item_data in dataset_concept:
             del item_data["concept_seq"]
@@ -180,7 +180,7 @@ def get_high_dis_qc(data_uniformed, params, objects):
         L_question = L_concept
     H_question_diff = cal_diff(H_question, "question_seq", NUM2DROP4QUESTION)
     L_question_diff = cal_diff(L_question, "question_seq", NUM2DROP4QUESTION)
-    questions_high_distinction1 = get_high_distinction(H_question_diff, L_question_diff, DIS_THRESHOLD)
+    questions_high_distinction1 = get_high_discrimination(H_question_diff, L_question_diff, DIS_THRESHOLD)
 
     # 从concepts_high_distinction选出最难的习题作为questions_high_distinction
     questions_frequency = defaultdict(float)
@@ -204,3 +204,16 @@ def get_high_dis_qc(data_uniformed, params, objects):
 
     questions_high_distinction = list(set(questions_high_distinction1).union(questions_high_distinction2))
     return concepts_high_distinction, questions_high_distinction
+
+
+def cal_que_discrimination(data_uniformed, params):
+    # 公式：总分最高的PERCENT_THRESHOLD学生（H）和总分最低的PERCENT_THRESHOLD学生（L），计算H和L对某道题的通过率，之差为区分度
+    NUM2DROP4QUESTION = params.get("num2drop4question", 30)
+    MIN_SEQ_LEN = params.get("min_seq_len", 20)
+    PERCENT_THRESHOLD = params.get("percent_threshold", 0.37)
+
+    dataset_question = deepcopy(data_uniformed)
+    cal_accuracy4data(dataset_question)
+    H_question, L_question = get_high_low_accuracy_seqs(dataset_question, MIN_SEQ_LEN, PERCENT_THRESHOLD)
+    H_question_diff = cal_diff(H_question, "question_seq", NUM2DROP4QUESTION)
+    L_question_diff = cal_diff(L_question, "question_seq", NUM2DROP4QUESTION)

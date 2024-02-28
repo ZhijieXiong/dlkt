@@ -7,7 +7,7 @@
 
 
   weight_decays='0.00001 0.000001'
-  dropouts='0.2 0.3 0.4'
+  dropouts='0.1 0.2 0.3'
   dims=(64 128)
   for weight_decay in ${weight_decays}
   do

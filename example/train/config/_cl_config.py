@@ -1,7 +1,7 @@
 import os
 from copy import deepcopy
 
-from lib.template.model.Extractor import MODEL_PARAMS as EXTRACTOR_PARAMS
+from lib.template.kt_model.Extractor import MODEL_PARAMS as EXTRACTOR_PARAMS
 from lib.util.parse import get_high_dis_qc
 from lib.util.data import read_preprocessed_file, load_json, write_json
 

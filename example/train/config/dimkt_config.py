@@ -7,7 +7,7 @@ from ._melt_config import *
 
 from lib.template.objects_template import OBJECTS
 from lib.template.params_template_v2 import PARAMS
-from lib.template.model.DIMKT import MODEL_PARAMS as DIMKT_MODEL_PARAMS
+from lib.template.kt_model.DIMKT import MODEL_PARAMS as DIMKT_MODEL_PARAMS
 from lib.util.basic import *
 from lib.dataset.util import parse_difficulty
 from lib.util.data import read_preprocessed_file, write_json, load_json

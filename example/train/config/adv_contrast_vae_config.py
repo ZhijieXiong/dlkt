@@ -1,7 +1,7 @@
 from ._config import *
 
 from lib.template.params_template_v2 import PARAMS
-from lib.template.model.AC_VAE import MODEL_PARAMS as AC_VAE_PARAMS
+from lib.template.kt_model.AC_VAE import MODEL_PARAMS as AC_VAE_PARAMS
 from lib.template.objects_template import OBJECTS
 from lib.template.other_params_template import AC_VAE_PARAMS as AC_VAE_PARAMS_OTHER
 from lib.util.basic import *

@@ -2,7 +2,7 @@ from ._config import *
 
 from lib.template.params_template import PARAMS
 from lib.template.objects_template import OBJECTS
-from lib.template.model.AT_DKT import MODEL_PARAMS
+from lib.template.kt_model.AT_DKT import MODEL_PARAMS
 from lib.util.basic import *
 
 

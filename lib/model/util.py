@@ -1,6 +1,9 @@
 import torch
+import copy
 import numpy as np
 
+from torch import nn
+from torch.nn import Module, Linear, Dropout, Sequential, ReLU
 from torch.autograd import Variable
 
 
@@ -8,8 +11,10 @@ def get_mask4last_or_penultimate(mask_seq, penultimate=False):
     device = mask_seq.device
 
     with torch.no_grad():
-        mask4last = mask_seq.long() - torch.cat((mask_seq[:, 1:], torch.zeros((mask_seq.shape[0], 1)).to(device)), dim=1).long()
-        mask4penultimate = mask_seq[:, 1:].long() - torch.cat((mask_seq[:, 2:], torch.zeros((mask_seq.shape[0], 1)).to(device)), dim=1).long()
+        mask4last = mask_seq.long() - torch.cat((mask_seq[:, 1:], torch.zeros((mask_seq.shape[0], 1)).to(device)),
+                                                dim=1).long()
+        mask4penultimate = mask_seq[:, 1:].long() - torch.cat(
+            (mask_seq[:, 2:], torch.zeros((mask_seq.shape[0], 1)).to(device)), dim=1).long()
         mask4penultimate = torch.cat((mask4penultimate, torch.zeros((mask_seq.shape[0], 1)).to(device)), dim=1).long()
 
     if penultimate:
@@ -53,3 +58,47 @@ class NoneNegClipper(object):
             w = module.weight.data
             a = torch.relu(torch.neg(w))
             w.add_(a)
+
+
+class transformer_FFN(Module):
+    def __init__(self, emb_size, dropout):
+        super(transformer_FFN, self).__init__()
+        self.emb_size = emb_size
+        self.dropout = dropout
+        self.FFN = Sequential(
+            Linear(self.emb_size, self.emb_size),
+            ReLU(),
+            Dropout(self.dropout),
+            Linear(self.emb_size, self.emb_size),
+        )
+
+    def forward(self, in_fea):
+        return self.FFN(in_fea)
+
+
+def ut_mask(seq_len, device):
+    """
+    Upper Triangular Mask
+    """
+    return torch.triu(torch.ones(seq_len, seq_len), diagonal=1).to(dtype=torch.bool).to(device)
+
+
+def lt_mask(seq_len, device):
+    """
+    Upper Triangular Mask
+    """
+    return torch.tril(torch.ones(seq_len, seq_len), diagonal=-1).to(dtype=torch.bool).to(device)
+
+
+def encode_position(seq_len, device):
+    """
+    position Encoding
+    """
+    return torch.arange(seq_len).unsqueeze(0).to(device)
+
+
+def get_clones(module, N):
+    """
+    Cloning nn modules
+    """
+    return nn.ModuleList([copy.deepcopy(module) for i in range(N)])

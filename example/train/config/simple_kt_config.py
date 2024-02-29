@@ -3,7 +3,7 @@ from ._cl_config import *
 # from _data_aug_config import *
 
 from lib.template.params_template_v2 import PARAMS
-from lib.template.model.SimpleKT import MODEL_PARAMS as SimpleKT_MODEL_PARAMS
+from lib.template.kt_model.SimpleKT import MODEL_PARAMS as SimpleKT_MODEL_PARAMS
 from lib.template.objects_template import OBJECTS
 from lib.util.basic import *
 

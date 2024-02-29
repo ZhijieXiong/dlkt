@@ -6,7 +6,7 @@ from ._dro_config import *
 
 from lib.template.params_template import PARAMS
 from lib.template.params_template_v2 import PARAMS as PARAMS2
-from lib.template.model.qDKT import MODEL_PARAMS as qDKT_MODEL_PARAMS
+from lib.template.kt_model.qDKT import MODEL_PARAMS as qDKT_MODEL_PARAMS
 from lib.template.objects_template import OBJECTS
 from lib.util.basic import *
 from lib.util.statics import cal_propensity

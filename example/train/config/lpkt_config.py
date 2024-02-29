@@ -19,7 +19,6 @@ def lpkt_general_config(local_params, global_params, global_objects):
     dim_correct = local_params["dim_correct"]
     dropout = local_params["dropout"]
 
-    # embed layer
     global_params["models_config"] = {
         "kt_model": {
             "type": "LPKT",

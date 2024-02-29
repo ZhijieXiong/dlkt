@@ -5,7 +5,7 @@ from ._data_aug_config import *
 from lib.template.params_template import PARAMS
 from lib.template.objects_template import OBJECTS
 from lib.template.params_template_v2 import PARAMS as PARAMS2
-from lib.template.model.AKT import MODEL_PARAMS as AKT_MODEL_PARAMS
+from lib.template.kt_model.AKT import MODEL_PARAMS as AKT_MODEL_PARAMS
 from lib.util.basic import *
 
 

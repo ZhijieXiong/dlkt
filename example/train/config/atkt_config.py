@@ -1,6 +1,6 @@
 from ._config import *
 
-from lib.template.model.ATKT import MODEL_PARAMS
+from lib.template.kt_model.ATKT import MODEL_PARAMS
 from lib.template.objects_template import OBJECTS
 from lib.template.params_template_v2 import PARAMS
 

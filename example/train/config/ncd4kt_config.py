@@ -1,6 +1,6 @@
 from ._config import *
 from lib.template.params_template import PARAMS
-from lib.template.model.NCD4KT import MODEL_PARAMS as NCD4KT_MODEL_PARAMS
+from lib.template.kt_model.NCD4KT import MODEL_PARAMS as NCD4KT_MODEL_PARAMS
 from lib.template.objects_template import OBJECTS
 
 

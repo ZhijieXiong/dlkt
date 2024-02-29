@@ -1,4 +1,5 @@
 import argparse
+import math
 import numpy as np
 
 from collections import defaultdict
@@ -224,3 +225,12 @@ def cal_que_discrimination(data_uniformed, params):
         res[q_id] = H_question_diff[q_id] - L_question_diff[q_id]
 
     return res
+
+
+def get_concept_mastery(Q_table):
+    def concept_mastery(x):
+        return round(1 / (1 + math.exp(-(x - 2))), 4)
+
+    num_concept = Q_table.shape[1]
+    num_max_concept = int(max(Q_table.sum(axis=1)))
+    pass

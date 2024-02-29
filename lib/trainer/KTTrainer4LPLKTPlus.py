@@ -1,12 +1,15 @@
-import torch
 import torch.nn as nn
 
 from .KnowledgeTracingTrainer import KnowledgeTracingTrainer
+from .TimeRecord import TimeRecord
+from ..util.basic import get_now_time
 
 
 class KTTrainer4LPLKTPlus(KnowledgeTracingTrainer):
     def __init__(self, params, objects):
         super(KTTrainer4LPLKTPlus, self).__init__(params, objects)
+        # self.time_record = TimeRecord()
+        self.time_record = None
 
     def train(self):
         train_strategy = self.params["train_strategy"]
@@ -29,10 +32,17 @@ class KTTrainer4LPLKTPlus(KnowledgeTracingTrainer):
                 loss = 0.
 
                 # 预测损失
+                if self.time_record is not None:
+                    self.time_record.add_record("0")
+
                 loss = loss + model.get_predict_loss(batch, self.loss_record)
 
                 # 习题diff预测损失
                 if w_que_diff_pred != 0:
+
+                    if self.time_record is not None:
+                        self.time_record.add_record("1")
+
                     target_que4diff = self.objects["LPKT_PLUS"]["que_has_diff_ground_truth"]
                     que_diff_pred_loss = model.get_que_diff_pred_loss(target_que4diff)
                     num_que4diff = target_que4diff.shape[0]
@@ -42,6 +52,10 @@ class KTTrainer4LPLKTPlus(KnowledgeTracingTrainer):
 
                 # 习题disc预测损失
                 if w_que_disc_pred != 0:
+
+                    if self.time_record is not None:
+                        self.time_record.add_record("2")
+
                     target_que4disc = self.objects["LPKT_PLUS"]["que_has_disc_ground_truth"]
                     que_disc_pred_loss = model.get_que_disc_pred_loss(target_que4disc)
                     num_que4disc = target_que4disc.shape[0]
@@ -49,12 +63,26 @@ class KTTrainer4LPLKTPlus(KnowledgeTracingTrainer):
                                               que_disc_pred_loss.detach().cpu().item() * num_que4disc, num_que4disc)
                     loss = loss + que_disc_pred_loss * w_que_disc_pred
 
+                if self.time_record is not None:
+                    self.time_record.add_record("3")
+
                 loss.backward()
                 if grad_clip_config["use_clip"]:
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
                 optimizer.step()
+
+                if self.time_record is not None:
+                    self.time_record.add_record("4")
+
+            if self.time_record is not None:
+                self.time_record.parse_time()
+
             if schedulers_config["use_scheduler"]:
                 scheduler.step()
+
+            # print(f"evaluation start: {get_now_time()}")
             self.evaluate()
+            # print(f"evaluation end: {get_now_time()}")
+
             if self.stop_train():
                 break

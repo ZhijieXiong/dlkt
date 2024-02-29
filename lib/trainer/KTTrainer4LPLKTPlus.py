@@ -31,15 +31,23 @@ class KTTrainer4LPLKTPlus(KnowledgeTracingTrainer):
                 # 预测损失
                 loss = loss + model.get_predict_loss(batch, self.loss_record)
 
-                # 习题diff和disc预测损失
-                question_unique = torch.unique(batch["question_seq"])
-                que_has_diff = self.objects["LPKT_PLUS"]["que_has_diff_ground_truth"]
-                target_que4diff = question_unique[torch.isin(question_unique, que_has_diff)]
-                que_diff_pred_loss = model.get_que_diff_pred_loss(target_que4diff)
-                num_que4diff = target_que4diff.shape[0]
-                self.loss_record.add_loss("que diff pred loss",
-                                          que_diff_pred_loss.detach().cpu().item() * num_que4diff, num_que4diff)
-                loss = loss + que_diff_pred_loss * w_que_diff_pred
+                # 习题diff预测损失
+                if w_que_diff_pred != 0:
+                    target_que4diff = self.objects["LPKT_PLUS"]["que_has_diff_ground_truth"]
+                    que_diff_pred_loss = model.get_que_diff_pred_loss(target_que4diff)
+                    num_que4diff = target_que4diff.shape[0]
+                    self.loss_record.add_loss("que diff pred loss",
+                                              que_diff_pred_loss.detach().cpu().item() * num_que4diff, num_que4diff)
+                    loss = loss + que_diff_pred_loss * w_que_diff_pred
+
+                # 习题disc预测损失
+                if w_que_disc_pred != 0:
+                    target_que4disc = self.objects["LPKT_PLUS"]["que_has_disc_ground_truth"]
+                    que_disc_pred_loss = model.get_que_disc_pred_loss(target_que4disc)
+                    num_que4disc = target_que4disc.shape[0]
+                    self.loss_record.add_loss("que disc pred loss",
+                                              que_disc_pred_loss.detach().cpu().item() * num_que4disc, num_que4disc)
+                    loss = loss + que_disc_pred_loss * w_que_disc_pred
 
                 loss.backward()
                 if grad_clip_config["use_clip"]:

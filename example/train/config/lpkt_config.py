@@ -118,7 +118,7 @@ def lpkt_plus_config(local_params):
         global_params["datasets_config"]["train"]["file_name"]
     ))
     que_accuracy = cal_diff(dataset_train, "question_seq", local_params["min_fre4diff"])
-    que_difficulty = {k: round(1 - v, 4) for k, v in que_accuracy.items()}
+    que_difficulty = {k: 1 - v for k, v in que_accuracy.items()}
     global_objects["LPKT_PLUS"]["Q_table_mask"] = torch.from_numpy(
         global_objects["data"]["Q_table"]
     ).long().to(global_params["device"])
@@ -137,6 +137,12 @@ def lpkt_plus_config(local_params):
         "min_seq_len": local_params["min_seq_len4disc"],
         "percent_threshold": local_params["percent_threshold"]
     })
+    que_has_disc_ground_truth = list(que_discrimination.keys())
+    global_objects["LPKT_PLUS"]["que_has_disc_ground_truth"] = \
+        torch.tensor(que_has_disc_ground_truth).long().to(global_params["device"])
+    global_objects["LPKT_PLUS"]["que_disc_ground_truth"] = torch.tensor(
+        [que_discrimination[q_id] * 10 for q_id in que_has_disc_ground_truth]
+    ).float().to(global_params["device"])
 
     # 损失权重配置
     global_params["loss_config"]["que diff pred loss"] = local_params["w_que_diff_pred"]

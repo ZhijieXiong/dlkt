@@ -12,7 +12,6 @@ class KTDataset(Dataset):
         self.params = params
         self.objects = objects
         self.dataset = None
-        self.label4lpkt_plus = {}
 
         self.load_dataset()
 

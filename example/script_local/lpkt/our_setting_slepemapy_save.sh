@@ -18,7 +18,7 @@
       --train_batch_size 32 --evaluate_batch_size 256 \
       --enable_clip_grad False --grad_clipped 10.0 \
       --num_concept 246 --num_question 5730 \
-      --dim_e 128 --dim_k 128 --dim_correct 50 --dropout 0.3 \
+      --ablation_set 0 --dim_e 128 --dim_k 128 --dim_correct 50 --dropout 0.3 \
       --save_model True --debug_mode False --use_cpu False --seed 0
   done
 } >> F:/code/myProjects/dlkt/example/result_local/lpkt_our_setting_slepemapy_save.txt

@@ -125,6 +125,7 @@ def lpkt_plus_config(local_params):
         global_params["other"]["lpkt_plus"]["min_fre4diff"] = local_params["min_fre4diff"]
         que_accuracy = lpkt_plus_util.cal_question_diff(dataset_train)
         que_difficulty = {k: 1 - v for k, v in que_accuracy.items()}
+        global_objects["lpkt_plus"]["que_difficulty"] = que_difficulty
         global_objects["lpkt_plus"]["Q_table_mask"] = torch.from_numpy(
             global_objects["data"]["Q_table"]
         ).long().to(global_params["device"])
@@ -161,7 +162,8 @@ def lpkt_plus_config(local_params):
         lpkt_plus_util.get_user_proj_weight_init_value(concept_accuracy)
 
     # 提取学生认知标签和对应mask以及权重
-    lpkt_plus_util.label_user_ability(dataset_train)
+    if local_params["w_user_ability_pred"] != 0:
+        lpkt_plus_util.label_user_ability(dataset_train)
 
     # 损失权重配置
     global_params["loss_config"]["que diff pred loss"] = local_params["w_que_diff_pred"]

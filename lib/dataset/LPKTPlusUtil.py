@@ -32,8 +32,8 @@ class LPKTPlusUtil:
     def label_user_ability(self, dataset):
         """
         对于一个user的序列，首先提取出一条这样的因子序列，即:\n
-        [..., (t, Ct, Nc, Sc, last_correct_c, last_interval_c), (t+1, Ct, Nc, Sc, last_correct_c, last_interval_c), ...]\n
-        来表示认知因子序列，其中t是序列的索引，Ct是t时刻做的习题对应的知识点，Nc是该知识点总共做了多少次（包括当前），Sc是该知识点做对了多少次（包括当前），
+        [..., (t, Ct, diff_q, Nc, Sc, last_correct_c, last_interval_c), (t+1, Ct, diff_q, Nc, Sc, last_correct_c, last_interval_c), ...]\n
+        来表示认知因子序列，其中t是序列的索引，Ct是t时刻做的习题对应的知识点，diff_q是该习题的难度，Nc是该知识点总共做了多少次（包括当前），Sc是该知识点做对了多少次（包括当前），
         last_correct_c是上一次做该知识点的习题对错情况，last_interval_c是上一次做该知识点的习题距离当前过了多久时间
 
         然后根据这个因子序列，在提取出user在每个时刻对指定知识点的认知标签和权重，即对于一个user，要提取出这样一条序列:\n
@@ -43,10 +43,30 @@ class LPKTPlusUtil:
         :return:
         """
         factor_seqs = []
+        que_difficulty = self.objects["lpkt_plus"]["que_difficulty"]
         for item_data in dataset:
-            for i in range(item_data["seq_len"]):
-                pass
-        pass
+            factor_seq = []
+            concept_record = {}
+            for t in range(item_data["seq_len"]):
+                q_id = item_data["question_seq"][t]
+                q_diff = que_difficulty.get(q_id, -1)
+                correct = item_data["correct_seq"][t]
+                time = item_data["time_seq"][t]
+                c_ids = self.objects["data"]["question2concept"][q_id]
+                for c_id in c_ids:
+                    concept_record.setdefault(c_id, {"N": 0, "S": 0, "last_correct": 0, "last_time": 0})
+                    concept_record[c_id]["N"] += 1
+                    concept_record[c_id]["S"] += correct
+                    concept_record[c_id]["last_correct"] = correct
+                    last_time = concept_record[c_id]["last_time"]
+                    last_interval_time = -1 if (last_time == 0) else (time - last_time)
+                    concept_record[c_id]["last_time"] = time
+                    factor_item = (t, c_id, q_diff, concept_record[c_id]["N"], concept_record[c_id]["S"],
+                                   concept_record[c_id]["last_correct"], last_interval_time)
+                    factor_seq.append(factor_item)
+            factor_seqs.append(factor_seq)
+
+        print("")
 
     def cal_question_diff(self, dataset):
         min_count2drop = self.params["other"]["lpkt_plus"]["min_fre4diff"]

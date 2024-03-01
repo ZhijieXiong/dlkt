@@ -115,7 +115,7 @@ def lpkt_plus_config(local_params):
     q_matrix[q_matrix > 1] = 1
     del global_objects["LPKT"]
 
-    # 统计习题难度和区分度
+    # 统计习题难度
     dataset_train = read_preprocessed_file(os.path.join(
         global_objects["file_manager"].get_setting_dir(global_params["datasets_config"]["train"]["setting_name"]),
         global_params["datasets_config"]["train"]["file_name"]
@@ -138,6 +138,7 @@ def lpkt_plus_config(local_params):
             list(que_difficulty.keys())
         ).long().to(global_params["device"])
 
+    # 统计习题区分度
     if local_params["w_que_disc_pred"] != 0:
         global_params["other"]["lpkt_plus"]["min_fre4disc"] = local_params["min_fre4disc"]
         global_params["other"]["lpkt_plus"]["min_seq_len4disc"] = local_params["min_seq_len4disc"]

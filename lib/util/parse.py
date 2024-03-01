@@ -90,6 +90,43 @@ def cal_diff(D, k, min_count2drop):
     return {k_id: corrects[k_id] / float(counts[k_id]) for k_id in corrects}
 
 
+def cal_concept_difficulty(data_uniformed, params, objects):
+    num_min_concept = params["num_min_concept"]
+    num_concept = params["num_concept"]
+    data_type = params["data_type"]
+
+    concepts_frequency = {c_id: 0 for c_id in range(num_concept)}
+    concepts_accuracy = {c_id: 0 for c_id in range(num_concept)}
+    concept_difficulty = {}
+
+    if data_type == "single_concept":
+        for item_data in data_uniformed:
+            for i in range(item_data["seq_len"]):
+                c_id = item_data["concept_seq"][i]
+                concepts_frequency[c_id] += 1
+                concepts_accuracy[c_id] += item_data["correct_seq"][i]
+    elif data_type == "only_question":
+        question2concept = objects["question2concept"]
+        for item_data in data_uniformed:
+            for i in range(item_data["seq_len"]):
+                q_id = item_data["question_seq"][i]
+                c_ids = question2concept[q_id]
+                for c_id in c_ids:
+                    concepts_frequency[c_id] += 1
+                for c_id in c_ids:
+                    concepts_accuracy[c_id] += item_data["correct_seq"][i]
+    else:
+        raise NotImplementedError()
+
+    for c_id in range(num_concept):
+        if concepts_frequency[c_id] < num_min_concept:
+            concept_difficulty[c_id] = -1
+        else:
+            concept_difficulty[c_id] = concepts_accuracy[c_id] / concepts_frequency[c_id]
+
+    return concept_difficulty
+
+
 def cal_accuracy4data(D):
     # 计算每条序列的正确率
     for item_data in D:
@@ -205,26 +242,6 @@ def get_high_dis_qc(data_uniformed, params, objects):
 
     questions_high_distinction = list(set(questions_high_distinction1).union(questions_high_distinction2))
     return concepts_high_distinction, questions_high_distinction
-
-
-def cal_que_discrimination(data_uniformed, params):
-    # 公式：总分最高的PERCENT_THRESHOLD学生（H）和总分最低的PERCENT_THRESHOLD学生（L），计算H和L对某道题的通过率，之差为区分度
-    NUM2DROP4QUESTION = params.get("num2drop4question", 30)
-    MIN_SEQ_LEN = params.get("min_seq_len", 20)
-    PERCENT_THRESHOLD = params.get("percent_threshold", 0.37)
-
-    dataset_question = deepcopy(data_uniformed)
-    cal_accuracy4data(dataset_question)
-    H_question, L_question = get_high_low_accuracy_seqs(dataset_question, MIN_SEQ_LEN, PERCENT_THRESHOLD)
-    H_question_diff = cal_diff(H_question, "question_seq", NUM2DROP4QUESTION)
-    L_question_diff = cal_diff(L_question, "question_seq", NUM2DROP4QUESTION)
-
-    intersection_H_L = set(H_question_diff.keys()).intersection(set(L_question_diff.keys()))
-    res = {}
-    for q_id in intersection_H_L:
-        res[q_id] = H_question_diff[q_id] - L_question_diff[q_id]
-
-    return res
 
 
 def get_concept_mastery(Q_table):

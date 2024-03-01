@@ -43,7 +43,7 @@ class KTTrainer4LPLKTPlus(KnowledgeTracingTrainer):
                     if self.time_record is not None:
                         self.time_record.add_record("1")
 
-                    target_que4diff = self.objects["LPKT_PLUS"]["que_has_diff_ground_truth"]
+                    target_que4diff = self.objects["lpkt_plus"]["que_has_diff_ground_truth"]
                     que_diff_pred_loss = model.get_que_diff_pred_loss(target_que4diff)
                     num_que4diff = target_que4diff.shape[0]
                     self.loss_record.add_loss("que diff pred loss",
@@ -56,7 +56,7 @@ class KTTrainer4LPLKTPlus(KnowledgeTracingTrainer):
                     if self.time_record is not None:
                         self.time_record.add_record("2")
 
-                    target_que4disc = self.objects["LPKT_PLUS"]["que_has_disc_ground_truth"]
+                    target_que4disc = self.objects["lpkt_plus"]["que_has_disc_ground_truth"]
                     que_disc_pred_loss = model.get_que_disc_pred_loss(target_que4disc)
                     num_que4disc = target_que4disc.shape[0]
                     self.loss_record.add_loss("que disc pred loss",
@@ -80,9 +80,11 @@ class KTTrainer4LPLKTPlus(KnowledgeTracingTrainer):
             if schedulers_config["use_scheduler"]:
                 scheduler.step()
 
-            # print(f"evaluation start: {get_now_time()}")
+            evaluation_start = get_now_time()
             self.evaluate()
-            # print(f"evaluation end: {get_now_time()}")
+            evaluation_end = get_now_time()
+            if self.time_record is not None:
+                print(f"evaluation: from {evaluation_start} to {evaluation_end}")
 
             if self.stop_train():
                 break

@@ -51,8 +51,8 @@ This algorithm library was developed inspired by `pyKT` (the code repository cor
   | :------: | :------------: | :------------: | :------------: | :------------: |
   |   DKT    | 0.756(0.7541)  | 0.8162(0.8149) | 0.7748(0.8015) | 0.7849(0.7852) |
   |   AKT    | 0.7911(0.7853) | 0.8169(0.8306) | 0.8162(0.8208) | 0.8231(0.8207) |
-  | SimpleKT | 0.7906(0.7744) | 0.8426(0.8254) |                |                |
-  |   QIKT   | 0.7907(0.7878) |                |                |                |
+  | SimpleKT | 0.7906(0.7744) | 0.8426(0.8254) | 0.8144(0.816)  | 0.821(0.8163)  |
+  |   QIKT   | 0.7907(0.7878) |      OOM       |      OOM       |      todo      |
   |   qDKT   |     0.7762     |     0.8363     |     0.8144     | 0.8261(0.8225) |
 
 - Reproduction results on `single concept` datasets. Please note: 
@@ -65,13 +65,14 @@ This algorithm library was developed inspired by `pyKT` (the code repository cor
   |    DKT    |     0.7142     | 0.762(0.7681)  |
   |  DKT_que  | 0.8161(0.8222) | 0.7935(0.7995) |
   |   DKVMN   |     0.7066     | 0.7512(0.7673) |
-  | DKVMN_que |                |                |
+  | DKVMN_que |      todo      |      todo      |
+  |   SAINT   | 0.7273(0.7599) | 0.7846(0.7873) |
   |   ATKT    |     0.696      | 0.7603(0.7665) |
   | ATKT_que  | 0.8018(0.8055) |     0.7844     |
   |    AKT    | 0.8244(0.8309) | 0.7943(0.8033) |
   | SimpleKT  | 0.8258(0.8199) | 0.7955(0.8035) |
-  |  AT-DKT   |                |                |
-  |   QIKT    |                | 0.7993(0.8044) |
+  |  AT-DKT   |      todo      |      todo      |
+  |   QIKT    |     0.8303     | 0.7993(0.8044) |
   |   qDKT    |     0.8236     |     0.7968     |
 
 ## Our Setting (Knowledge Tracing)
@@ -80,30 +81,32 @@ This algorithm library was developed inspired by `pyKT` (the code repository cor
 
 - The experimental results of the `AUC` are as follows:
 
-  |          | Assist2009 | Algebra2005 | Bridge2Algebra2006 | Ednet-kt1 | Xes3g5m |
-  | :------: | :--------: | :---------: | :----------------: | :-------: | :-----: |
-  |   DKT    |   0.7484   |   0.8163    |       0.7768       |  0.6585   | 0.7842  |
-  |   AKT    |   0.786    |    0.823    |       0.8163       |  0.7327   | 0.8215  |
-  |   LPKT   |            |             |                    |  0.7381   |         |
-  |  DIMKT   |   0.7647   |             |                    |  0.7109   |         |
-  | SimpleKT |   0.7848   |   0.8431    |                    |           |         |
-  |   QIKT   |   0.7838   |             |                    |           |         |
-  |   qDKT   |   0.7657   |    0.835    |       0.8166       |   0.729   | 0.8254  |
+  |          |  Assist2009  |     Algebra2005     | Bridge2Algebra2006  | Ednet-kt1 | Xes3g5m |
+  | :------: | :----------: | :-----------------: | :-----------------: | :-------: | :-----: |
+  |   DKT    |    0.7484    |       0.8163        |       0.7768        |  0.6585   | 0.7842  |
+  |   AKT    |    0.786     |        0.823        |       0.8163        |  0.7327   | 0.8215  |
+  |   LPKT   | no time info |        todo         |        todo         |  0.7381   |  todo   |
+  |  DIMKT   |    0.7647    | too sparse question | too sparse question |  0.7109   |  todo   |
+  | SimpleKT |    0.7848    |       0.8431        |       0.8152        |  0.7336   |  todo   |
+  |   QIKT   |    0.7838    |         OOM         |         OOM         |   todo    |  todo   |
+  |   qDKT   |    0.7657    |        0.835        |       0.8166        |   0.729   | 0.8254  |
 
   |          | Assist2012 | Assist2015 | Assist2017 | Statics2011 | Slepemapy | Edi2020-task34 |
   | :------: | :--------: | :--------: | :--------: | :---------: | :-------: | :------------: |
-  |   DKT    |   0.7333   |            |   0.7296   |   0.7117    |  0.6844   |     0.7598     |
-  | DKT_que  |            |            |   0.795    |   0.8148    |           |     0.7912     |
-  |  DKVMN   |   0.7197   |            |   0.6944   |   0.7042    |  0.6732   |     0.7479     |
-  |   ATKT   |            |            |   0.7206   |   0.6943    |  0.6692   |     0.7569     |
-  | ATKT_que |            |            |   0.7394   |   0.7961    |           |     0.7834     |
-  |   AKT    |   0.7905   |            |   0.7732   |   0.8201    |  0.7285   |     0.793      |
-  |   LPKT   |   0.7889   |            |   0.811    |             |  0.7373   |                |
-  |  DIMKT   |   0.7854   |            |   0.801    |   0.8202    |  0.7283   |     0.7943     |
-  | SimpleKT |            |            |   0.7741   |    0.822    |  0.7316   |     0.7931     |
-  |  AT-DKT  |            |            |            |             |           |                |
-  |   QIKT   |            |            |   0.7879   |   0.8266    |  0.7236   |     0.7972     |
-  |   qDKT   |   0.7855   |            |   0.7921   |   0.8199    |   0.724   |     0.7952     |
+  |   DKT    |   0.7333   | todo |   0.7296   |   0.7117    |  0.6844   |     0.7598     |
+  | DKT_que  | too many question | same as DKT |   0.795    |   0.8148    | too many question |     0.7912     |
+  |  DKVMN   |   0.7197   | todo |   0.6944   |   0.7042    |  0.6732   |     0.7479     |
+  |  DKVMN_que  | too many question | same as DKVMN | todo |todo|too many question|todo|
+  |SAINT          | todo | todo |todo|0.7465|todo|0.7824|
+  |   ATKT   | todo | todo |   0.7206   |   0.6943    |  0.6692   |     0.7569     |
+  | ATKT_que | too many question | same as ATKT |   0.7394   |   0.7961    | too many question |     0.7834     |
+  |   AKT    |   0.7905   | no question info |   0.7732   |   0.8201    |  0.7285   |     0.793      |
+  |   LPKT   |   0.7889   | no time info |   0.811    |   0.8217    |  0.7373   | todo |
+  |  DIMKT   |   0.7854   | no question info |   0.801    |   0.8202    |  0.7283   |     0.7943     |
+  | SimpleKT | todo | no question info |   0.7741   |    0.822    |  0.7316   |     0.7931     |
+  |  AT-DKT  | OOM | no question info | todo | todo | todo | todo |
+  |   QIKT   | OOM | no question info |   0.7879   |   0.8266    |  0.7236   |     0.7972     |
+  |   qDKT   |   0.7855   | no question info |   0.7921   |   0.8199    |   0.724   |     0.7952     |
 
 
 ## NCD Setting (Cognitive Diagnosis)

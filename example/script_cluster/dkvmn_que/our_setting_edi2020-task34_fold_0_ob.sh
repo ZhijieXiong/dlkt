@@ -34,5 +34,5 @@
       done
     done
   done
-} >> /ghome/xiongzj/code/dlkt/example/result_cluster/dkvmn_our_setting_edi2020-task34_fold_0_ob.txt
+} >> /ghome/xiongzj/code/dlkt/example/result_cluster/dkvmn_que_our_setting_edi2020-task34_fold_0_ob.txt
 

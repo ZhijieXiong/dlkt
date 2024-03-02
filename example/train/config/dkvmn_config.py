@@ -11,20 +11,20 @@ def dkvmn_general_config(local_params, global_params, global_objects):
     global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "DKVMN"
 
     # 配置模型参数
+    use_concept = local_params["use_concept"]
     num_concept = local_params["num_concept"]
     num_question = local_params["num_question"]
     dim_key = local_params["dim_key"]
     dim_value = local_params["dim_value"]
     dropout = local_params["dropout"]
-    use_concept = local_params["use_concept"]
 
     # encoder layer
     encoder_config = global_params["models_config"]["kt_model"]["encoder_layer"]["DKVMN"]
+    encoder_config["use_concept"] = use_concept
     encoder_config["num_concept"] = num_concept
     encoder_config["num_question"] = num_question
     encoder_config["dim_key"] = dim_key
     encoder_config["dim_value"] = dim_value
-    encoder_config["use_concept"] = use_concept
 
     global_objects["logger"].info(
         "model params\n"

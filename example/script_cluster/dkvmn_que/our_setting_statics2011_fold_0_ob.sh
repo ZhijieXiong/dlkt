@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-{
+#{
   dataset_name="statics2011"
   data_type="single_concept"
   fold=0
@@ -34,4 +34,4 @@
       done
     done
   done
-} >> /ghome/xiongzj/code/dlkt/example/result_cluster/dkvmn_our_setting_statics2011_fold_0_ob.txt
+#} >> /ghome/xiongzj/code/dlkt/example/result_cluster/dkvmn_our_setting_statics2011_fold_0_ob.txt

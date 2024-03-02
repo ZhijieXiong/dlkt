@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#{
+{
   dataset_name="assist2017"
   data_type="single_concept"
   fold=0
@@ -34,4 +34,5 @@
       done
     done
   done
-#} >> /ghome/xiongzj/code/dlkt/example/result_cluster/dkvmn_our_setting_assist2017_fold_0_ob.txt
+} >> /ghome/xiongzj/code/dlkt/example/result_cluster/dkvmn_our_setting_assist2017_fold_0_ob.txt
+

@@ -40,6 +40,8 @@ def lpkt_general_config(local_params, global_params, global_objects):
     global_objects["LPKT"]["q_matrix"] = torch.from_numpy(
         global_objects["data"]["Q_table"]
     ).float().to(global_params["device"]) + 0.03
+    q_matrix = global_objects["LPKT"]["q_matrix"]
+    q_matrix[q_matrix > 1] = 1
 
     global_objects["logger"].info(
         "model params\n"

@@ -179,7 +179,6 @@
 
   - 数据集划分
     - 五折交叉划分训练集和测试集，再在训练集划分20%数据作为验证集
-
 - AKT
   - 数据预处理
     1. 序列固定长度为200，大于该长度的序列截成多个子序列（视为新序列）
@@ -189,8 +188,13 @@
 
   - 数据集划分
     - 五折交叉划分训练集、验证集和测试集，占总数据集比例分别为60%、20%、20%
-
 - LPKT
+  - 数据预处理
+    1. 序列固定长度为100（assist2015序列固定长度为500），大于该长度的序列截成多个子序列（视为新序列）
+    2. 未提及序列最短长度，按常规设置，丢弃长度小于3的序列
+  - 数据集划分
+    - 五折交叉划分训练集和测试集，再在训练集划分20%数据作为验证集
+
 
 # 二、训练模型
 
@@ -267,7 +271,127 @@
 
 ## 1、自动生成脚本
 
+- 因为参数过多，在写shell脚本时比较麻烦，所以写了一个小工具，直接根据代码文件生成对应的shell脚本
+- 工具代码：` auto_export_script.py `，各参数含义如下
+  - `target_python_file` 想要生成脚本的训练代码文件（使用`argparse`接受参数），如`example/train/dkt.py`
+  - `script_dir` 存放生成的shell脚本的文件夹
+
 ## 2、自动处理结果
+
+- 解析训练日志文件，对多个结果取平均值，工具代码：` parse_result.py `
+
+- 假设一份训练日志如下，是同一参数的模型在同一数据集（5折）下跑出来的结果，想计算在5折上测试集的平均结果，则设置参数
+
+  - `file_path` 日志路径
+  - `key_words` `"test performance by best valid epoch is main metric"`
+  - `n` 5
+
+  ```
+  fold: 0
+  basic setting
+      device: cuda, seed: 0
+  ...
+  model params
+      num of concept: 265, num of question: 53091, dim of e: 128, dim of k: 128, dim of correct emb: 50, dropout: 0.2
+  
+  train, seq: 18202, sample: 1707155, accuracy: 0.6962
+  valid, seq: 4550, sample: 421796, accuracy: 0.7002
+  test, seq: 5688, sample: 523566, accuracy: 0.6913
+  2024-01-26 14:19:46 epoch 1   , ...
+  ...
+  2024-01-26 15:02:09 epoch 14  , ...
+  best valid epoch: 4   , best test epoch: 4
+  train performance by best valid epoch is main metric: 0.82957  , AUC: 0.82957  , ACC: 0.78909  , RMSE: 0.38264  , MAE: 0.30218  , 
+  valid performance by best valid epoch is main metric: 0.78778  , AUC: 0.78778  , ACC: 0.76575  , RMSE: 0.4016   , MAE: 0.31836  , 
+  test performance by best valid epoch is main metric: 0.78986  , AUC: 0.78986  , ACC: 0.76307  , RMSE: 0.40327  , MAE: 0.32076  , 
+  ----------------------------------------------------------------------------------------------------
+  train performance by best train epoch is main metric: 0.89888  , AUC: 0.89888  , ACC: 0.83917  , RMSE: 0.3373   , MAE: 0.24221  , 
+  test performance by best test epoch is main metric: 0.78986  , AUC: 0.78986  , ACC: 0.76307  , RMSE: 0.40327  , MAE: 0.32076  , 
+  
+  fold: 1
+  basic setting
+      device: cuda, seed: 0
+  ...
+  model params
+      num of concept: 265, num of question: 53091, dim of e: 128, dim of k: 128, dim of correct emb: 50, dropout: 0.2
+  
+  train, seq: 18202, sample: 1704329, accuracy: 0.6952
+  valid, seq: 4550, sample: 419658, accuracy: 0.6925
+  test, seq: 5688, sample: 528530, accuracy: 0.7006
+  2024-01-26 14:19:46 epoch 1   , ...
+  ...
+  2024-01-26 15:02:09 epoch 14  , ...
+  best valid epoch: 4   , best test epoch: 4
+  train performance by best valid epoch is main metric: 0.83059  , AUC: 0.83059  , ACC: 0.78958  , RMSE: 0.38226  , MAE: 0.30111  , 
+  valid performance by best valid epoch is main metric: 0.78966  , AUC: 0.78966  , ACC: 0.7634   , RMSE: 0.40328  , MAE: 0.32049  , 
+  test performance by best valid epoch is main metric: 0.78705  , AUC: 0.78705  , ACC: 0.7653   , RMSE: 0.40204  , MAE: 0.31846  , 
+  ----------------------------------------------------------------------------------------------------
+  train performance by best train epoch is main metric: 0.90126  , AUC: 0.90126  , ACC: 0.8404   , RMSE: 0.33573  , MAE: 0.23832  , 
+  test performance by best test epoch is main metric: 0.78705  , AUC: 0.78705  , ACC: 0.7653   , RMSE: 0.40204  , MAE: 0.31846  , 
+  
+  fold: 2
+  basic setting
+      device: cuda, seed: 0
+  ...
+  model params
+      num of concept: 265, num of question: 53091, dim of e: 128, dim of k: 128, dim of correct emb: 50, dropout: 0.2
+  
+  train, seq: 18202, sample: 1700994, accuracy: 0.6962
+  valid, seq: 4550, sample: 419658, accuracy: 0.6925
+  test, seq: 5688, sample: 531865, accuracy: 0.6975
+  2024-01-26 14:19:46 epoch 1   , ...
+  ...
+  2024-01-26 15:02:09 epoch 14  , ...
+  best valid epoch: 4   , best test epoch: 4
+  train performance by best valid epoch is main metric: 0.82985  , AUC: 0.82985  , ACC: 0.78979  , RMSE: 0.38258  , MAE: 0.30337  , 
+  valid performance by best valid epoch is main metric: 0.79009  , AUC: 0.79009  , ACC: 0.76466  , RMSE: 0.40252  , MAE: 0.32118  , 
+  test performance by best valid epoch is main metric: 0.79002  , AUC: 0.79002  , ACC: 0.76625  , RMSE: 0.40116  , MAE: 0.31912  , 
+  ----------------------------------------------------------------------------------------------------
+  train performance by best train epoch is main metric: 0.89959  , AUC: 0.89959  , ACC: 0.83784  , RMSE: 0.33843  , MAE: 0.24319  , 
+  test performance by best test epoch is main metric: 0.79002  , AUC: 0.79002  , ACC: 0.76625  , RMSE: 0.40116  , MAE: 0.31912  , 
+  
+  fold: 3
+  basic setting
+      device: cuda, seed: 0
+  ...
+  model params
+      num of concept: 265, num of question: 53091, dim of e: 128, dim of k: 128, dim of correct emb: 50, dropout: 0.2
+  
+  train, seq: 18202, sample: 1695457, accuracy: 0.6966
+  valid, seq: 4550, sample: 419658, accuracy: 0.6925
+  test, seq: 5688, sample: 537402, accuracy: 0.696
+  2024-01-26 14:19:46 epoch 1   , ...
+  ...
+  2024-01-26 15:02:09 epoch 14  , ...
+  best valid epoch: 4   , best test epoch: 4
+  train performance by best valid epoch is main metric: 0.82923  , AUC: 0.82923  , ACC: 0.78908  , RMSE: 0.38311  , MAE: 0.30516  , 
+  valid performance by best valid epoch is main metric: 0.7895   , AUC: 0.7895   , ACC: 0.76412  , RMSE: 0.40272  , MAE: 0.32309  , 
+  test performance by best valid epoch is main metric: 0.78946  , AUC: 0.78946  , ACC: 0.76614  , RMSE: 0.40156  , MAE: 0.32135  , 
+  ----------------------------------------------------------------------------------------------------
+  train performance by best train epoch is main metric: 0.89618  , AUC: 0.89618  , ACC: 0.83512  , RMSE: 0.3406   , MAE: 0.24216  , 
+  test performance by best test epoch is main metric: 0.78946  , AUC: 0.78946  , ACC: 0.76614  , RMSE: 0.40156  , MAE: 0.32135  , 
+  
+  fold: 4
+  basic setting
+      device: cuda, seed: 0
+  ...
+  model params
+      num of concept: 265, num of question: 53091, dim of e: 128, dim of k: 128, dim of correct emb: 50, dropout: 0.2
+  
+  train, seq: 18202, sample: 1701705, accuracy: 0.6973
+  valid, seq: 4550, sample: 419658, accuracy: 0.6925
+  test, seq: 5688, sample: 531154, accuracy: 0.6938
+  2024-01-26 14:19:46 epoch 1   , ...
+  ...
+  2024-01-26 15:02:09 epoch 13  , ...
+  best valid epoch: 3   , best test epoch: 3
+  train performance by best valid epoch is main metric: 0.82341  , AUC: 0.82341  , ACC: 0.78603  , RMSE: 0.38598  , MAE: 0.31031  , 
+  valid performance by best valid epoch is main metric: 0.78841  , AUC: 0.78841  , ACC: 0.76316  , RMSE: 0.40364  , MAE: 0.32645  , 
+  test performance by best valid epoch is main metric: 0.78818  , AUC: 0.78818  , ACC: 0.76245  , RMSE: 0.40349  , MAE: 0.32623  , 
+  ----------------------------------------------------------------------------------------------------
+  train performance by best train epoch is main metric: 0.88779  , AUC: 0.88779  , ACC: 0.83077  , RMSE: 0.34583  , MAE: 0.25411  , 
+  test performance by best test epoch is main metric: 0.78818  , AUC: 0.78818  , ACC: 0.76245  , RMSE: 0.40349  , MAE: 0.32623  , 
+  ```
 
 # 五、加入自己的数据和模型
 

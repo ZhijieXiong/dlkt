@@ -60,20 +60,20 @@ This algorithm library was developed inspired by `pyKT` (the code repository cor
   1. For datasets with a small number of questions, our DKT and ATKT also provide results with questions as items.
   2. For the `statics2011` and `edi2020-task34` dataset, our data preprocessing is different from `pyKT`
 
-  |           |  Statics2011   |     NIPS34     |
-  | :-------: | :------------: | :------------: |
-  |    DKT    |     0.7142     | 0.762(0.7681)  |
-  |  DKT_que  | 0.8161(0.8222) | 0.7935(0.7995) |
-  |   DKVMN   |     0.7066     | 0.7512(0.7673) |
-  | DKVMN_que |      todo      |      todo      |
-  |   SAINT   | 0.7273(0.7599) | 0.7846(0.7873) |
-  |   ATKT    |     0.696      | 0.7603(0.7665) |
-  | ATKT_que  | 0.8018(0.8055) |     0.7844     |
-  |    AKT    | 0.8244(0.8309) | 0.7943(0.8033) |
-  | SimpleKT  | 0.8258(0.8199) | 0.7955(0.8035) |
-  |  AT-DKT   |      todo      |      todo      |
-  |   QIKT    |     0.8303     | 0.7993(0.8044) |
-  |   qDKT    |     0.8236     |     0.7968     |
+  |           |   Statics2011   |     NIPS34     |
+  | :-------: | :-------------: | :------------: |
+  |    DKT    |     0.7142      | 0.762(0.7681)  |
+  |  DKT_que  | 0.8161(0.8222)  | 0.7935(0.7995) |
+  |   DKVMN   |     0.7066      | 0.7512(0.7673) |
+  | DKVMN_que | 0.8078 (0.8093) |     0.7901     |
+  |   SAINT   | 0.7273(0.7599)  | 0.7846(0.7873) |
+  |   ATKT    |      0.696      | 0.7603(0.7665) |
+  | ATKT_que  | 0.8018(0.8055)  |     0.7844     |
+  |    AKT    | 0.8244(0.8309)  | 0.7943(0.8033) |
+  | SimpleKT  | 0.8258(0.8199)  | 0.7955(0.8035) |
+  |  AT-DKT   |      todo       |      todo      |
+  |   QIKT    |     0.8303      | 0.7993(0.8044) |
+  |   qDKT    |     0.8236      |     0.7968     |
 
 ## Our Setting (Knowledge Tracing)
 
@@ -96,7 +96,7 @@ This algorithm library was developed inspired by `pyKT` (the code repository cor
   |   DKT    |   0.7333   | todo |   0.7296   |   0.7117    |  0.6844   |     0.7598     |
   | DKT_que  | too many question | same as DKT |   0.795    |   0.8148    | too many question |     0.7912     |
   |  DKVMN   |   0.7197   | todo |   0.6944   |   0.7042    |  0.6732   |     0.7479     |
-  |  DKVMN_que  | too many question | same as DKVMN | todo |todo|too many question|todo|
+  |  DKVMN_que  | too many question | same as DKVMN | 0.7418 |0.803|too many question|0.7885|
   |SAINT          | todo | todo |todo|0.7465|todo|0.7824|
   |   ATKT   | todo | todo |   0.7206   |   0.6943    |  0.6692   |     0.7569     |
   | ATKT_que | too many question | same as ATKT |   0.7394   |   0.7961    | too many question |     0.7834     |

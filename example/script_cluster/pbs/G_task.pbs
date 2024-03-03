@@ -14,7 +14,7 @@ echo -n "Gpus:"
 cat $PBS_GPUFILE
 echo "CUDA_VISIBLE_DEVICES:"$CUDA_VISIBLE_DEVICES
 
-BASH_DIR="dkvmn_que"
-BASH_FILE="our_setting_assist2017_fold_0_ob.sh"
+BASH_DIR="lpkt"
+BASH_FILE="lpkt_setting_assist2017_fold_0_ob.sh"
 echo "file: ${BASH_DIR}/${BASH_FILE}"
 startdocker -P /ghome/xiongzj -c "bash /ghome/xiongzj/code/dlkt/example/script_cluster/${BASH_DIR}/${BASH_FILE}" bit:5000/chenxh_py3.8_torch_1.8_cu11.1

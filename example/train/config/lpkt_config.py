@@ -112,7 +112,7 @@ def lpkt_plus_config(local_params):
     global_objects["lpkt_plus"] = {}
     global_objects["lpkt_plus"]["q_matrix"] = torch.from_numpy(
         global_objects["data"]["Q_table"]
-    ).float().to(global_params["device"]) + 0.05
+    ).float().to(global_params["device"]) + local_params["gamma"]
     q_matrix = global_objects["lpkt_plus"]["q_matrix"]
     q_matrix[q_matrix > 1] = 1
     del global_objects["LPKT"]
@@ -123,23 +123,24 @@ def lpkt_plus_config(local_params):
         global_params["datasets_config"]["train"]["file_name"]
     ))
     global_objects["lpkt_plus"]["dataset_train"] = dataset_train
-    if local_params["w_que_diff_pred"] != 0:
+    if (local_params["w_que_diff_pred"] != 0) or (local_params["w_user_ability_pred"] != 0):
         global_params["other"]["lpkt_plus"]["min_fre4diff"] = local_params["min_fre4diff"]
         que_accuracy = lpkt_plus_util.cal_question_diff(dataset_train)
         que_difficulty = {k: 1 - v for k, v in que_accuracy.items()}
         global_objects["lpkt_plus"]["que_difficulty"] = que_difficulty
-        global_objects["lpkt_plus"]["Q_table_mask"] = torch.from_numpy(
-            global_objects["data"]["Q_table"]
-        ).long().to(global_params["device"])
-        global_objects["lpkt_plus"]["que_diff_ground_truth"] = torch.from_numpy(
-            global_objects["data"]["Q_table"]
-        ).float().to(global_params["device"])
-        que_diff_ground_truth = global_objects["lpkt_plus"]["que_diff_ground_truth"]
-        for q_id, que_diff in que_difficulty.items():
-            que_diff_ground_truth[q_id] = que_diff_ground_truth[q_id] * que_diff
-        global_objects["lpkt_plus"]["que_has_diff_ground_truth"] = torch.tensor(
-            list(que_difficulty.keys())
-        ).long().to(global_params["device"])
+        if local_params["w_que_diff_pred"] != 0:
+            global_objects["lpkt_plus"]["Q_table_mask"] = torch.from_numpy(
+                global_objects["data"]["Q_table"]
+            ).long().to(global_params["device"])
+            global_objects["lpkt_plus"]["que_diff_ground_truth"] = torch.from_numpy(
+                global_objects["data"]["Q_table"]
+            ).float().to(global_params["device"])
+            que_diff_ground_truth = global_objects["lpkt_plus"]["que_diff_ground_truth"]
+            for q_id, que_diff in que_difficulty.items():
+                que_diff_ground_truth[q_id] = que_diff_ground_truth[q_id] * que_diff
+            global_objects["lpkt_plus"]["que_has_diff_ground_truth"] = torch.tensor(
+                list(que_difficulty.keys())
+            ).long().to(global_params["device"])
 
     # 统计习题区分度
     if local_params["w_que_disc_pred"] != 0:
@@ -171,6 +172,7 @@ def lpkt_plus_config(local_params):
     global_params["loss_config"]["que diff pred loss"] = local_params["w_que_diff_pred"]
     global_params["loss_config"]["que disc pred loss"] = local_params["w_que_disc_pred"]
     global_params["loss_config"]["penalty neg loss"] = local_params["w_penalty_neg"]
+    global_params["loss_config"]["learning loss"] = local_params["w_learning"]
 
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (

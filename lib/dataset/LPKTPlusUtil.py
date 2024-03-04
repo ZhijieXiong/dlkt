@@ -5,6 +5,7 @@ from copy import deepcopy
 from collections import defaultdict
 
 from ..util.parse import cal_accuracy4data, get_high_low_accuracy_seqs, cal_diff
+from ..CONST import FORGET_POINT, REMAIN_PERCENT
 
 
 class LPKTPlusUtil:
@@ -31,12 +32,7 @@ class LPKTPlusUtil:
 
     def label_user_ability(self, dataset):
         """
-        对于一个user的序列，首先提取出一条这样的因子序列，即:\n
-        [..., (t, Ct, diff_q, Nc, Sc, last_correct_c, last_interval_c), (t+1, Ct, diff_q, Nc, Sc, last_correct_c, last_interval_c), ...]\n
-        来表示认知因子序列，其中t是序列的索引，Ct是t时刻做的习题对应的知识点，diff_q是该习题的难度，Nc是该知识点总共做了多少次（包括当前），Sc是该知识点做对了多少次（包括当前），
-        last_correct_c是上一次做该知识点的习题对错情况，last_interval_c是上一次做该知识点的习题距离当前过了多久时间
-
-        然后根据这个因子序列，在提取出user在每个时刻对指定知识点的认知标签和权重，即对于一个user，要提取出这样一条序列:\n
+        提取出user在每个时刻对指定知识点的认知标签和权重，即对于一个user，要提取出这样一条序列:\n
         [..., (t, Ct, master_score_c, weight_c_t), ...]\n
 
         :param dataset:
@@ -44,6 +40,7 @@ class LPKTPlusUtil:
         """
         factor_seqs = []
         que_difficulty = self.objects["lpkt_plus"]["que_difficulty"]
+        que_diff_ave = sum(que_difficulty.values()) / len(que_difficulty)
         for item_data in dataset:
             factor_seq = []
             concept_record = {}
@@ -54,15 +51,44 @@ class LPKTPlusUtil:
                 time = item_data["time_seq"][t]
                 c_ids = self.objects["data"]["question2concept"][q_id]
                 for c_id in c_ids:
-                    concept_record.setdefault(c_id, {"N": 0, "S": 0, "last_correct": 0, "last_time": 0})
-                    concept_record[c_id]["N"] += 1
-                    concept_record[c_id]["S"] += correct
-                    concept_record[c_id]["last_correct"] = correct
+                    concept_record.setdefault(c_id, {"last_time": 0, 'N': 0, "last_master_score": 0})
                     last_time = concept_record[c_id]["last_time"]
-                    last_interval_time = -1 if (last_time == 0) else (time - last_time)
+                    last_master_score = concept_record[c_id]["last_master_score"]
+
+                    # 类似LPKT：计算历史正确率（不包括当前），得到一个历史掌握情况m_{t-1}
+                    #          计算当前做的习题能带来的提升l_t（根据做对做错以及习题难度）
+                    #          计算遗忘情况f_t（根据艾宾浩斯遗忘曲线和间隔时间）
+                    #          m_t = w_t * l_t + (1 - w_t) * m_{t-1} * f_t，其中w_t是根据间隔时间得到的，上一次间隔时间越大，w_t越大
+                    if last_time == 0:
+                        if q_diff == -1:
+                            master_score = (0.5 if correct else 0.1) * que_diff_ave
+                            weight = 0.05
+                        else:
+                            master_score = (0.5 if correct else 0.1) * q_diff
+                            weight = 0.1
+                    else:
+                        weight = min(1, concept_record[c_id]["N"] / 10)
+                        interval_time = time - last_time
+                        if q_diff == -1:
+                            learn = (0.5 if correct else 0.1) * que_diff_ave
+                            weight *= 0.5
+                        else:
+                            learn = (0.5 if correct else 0.1) * q_diff
+
+                        # 以天为单位
+                        if (interval_time // (60 * 24)) > 30:
+                            master_score = min(1, learn + last_master_score * 0.2)
+                            weight = 0.1
+                        elif (interval_time // (60 * 24)) > 7:
+                            master_score = min(1, learn + last_master_score * 0.5)
+                            weight = 0.2
+                        else:
+                            master_score = min(1, learn + last_master_score * 0.8)
+
                     concept_record[c_id]["last_time"] = time
-                    factor_item = (t, c_id, q_diff, concept_record[c_id]["N"], concept_record[c_id]["S"],
-                                   concept_record[c_id]["last_correct"], last_interval_time)
+                    concept_record[c_id]["N"] += 1
+                    concept_record[c_id]["last_master_score"] = master_score
+                    factor_item = (t, c_id, master_score, weight)
                     factor_seq.append(factor_item)
             factor_seqs.append(factor_seq)
 

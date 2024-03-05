@@ -6,7 +6,7 @@
   fold=0
 
   dropouts='0.2'
-  weights_decay='0.0001'
+  weights_decay='0.00001 0.000001'
   for weight_decay in ${weights_decay}
   do
       for dropout in ${dropouts}

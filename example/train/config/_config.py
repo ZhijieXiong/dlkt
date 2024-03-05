@@ -37,6 +37,7 @@ def general_config(local_params, global_params, global_objects):
     global_objects["file_manager"] = file_manager
 
     global_params["loss_config"] = {}
+    global_params["other"] = {}
     global_params["save_model"] = local_params["save_model"]
     global_params["device"] = "cuda" if (
             torch.cuda.is_available() and not local_params.get("use_cpu", False)

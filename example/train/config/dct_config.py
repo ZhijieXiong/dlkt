@@ -1,4 +1,5 @@
 from ._config import *
+from ._cognition_tracing_config import *
 from lib.template.kt_model.DCT import MODEL_PARAMS as DCT_MODEL_PARAMS
 
 
@@ -28,13 +29,6 @@ def dct_general_config(local_params, global_params, global_objects):
     encoder_config["num_rnn_layer"] = num_rnn_layer
     encoder_config["dropout"] = dropout
 
-    global_objects["dct"] = {}
-    global_objects["dct"]["q_matrix"] = torch.from_numpy(
-        global_objects["data"]["Q_table"]
-    ).float().to(global_params["device"]) + 0.05
-    q_matrix = global_objects["dct"]["q_matrix"]
-    q_matrix[q_matrix > 1] = 1
-
     global_objects["logger"].info(
           f"model params\n"
           f"    num_concept: {num_concept}, num_question: {num_question}\n"
@@ -55,6 +49,7 @@ def dct_config(local_params):
     global_objects = {}
     general_config(local_params, global_params, global_objects)
     dct_general_config(local_params, global_params, global_objects)
+    cognition_tracing_general_config(local_params, global_params, global_objects)
 
     if local_params["save_model"]:
         save_params(global_params, global_objects)

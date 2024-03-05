@@ -37,10 +37,10 @@
 
   weight_decays='0.00001'
   dropouts='0.3'
-  ws_que_diff_pred='0.01 0.001'
+  ws_que_diff_pred='1 0.1 0.01'
   ws_que_disc_pred='0.01 0.001'
-  ws_penalty_neg='0.1 0.01'
-  ws_learning='0.1 0.01'
+  ws_penalty_neg='0.1 0.01 0.001'
+  ws_learning='0.1 0.01 0.001'
   dims=(128)
   for weight_decay in ${weight_decays}
   do
@@ -64,11 +64,11 @@
                   --train_strategy "valid_test" --num_epoch 200 \
                   --use_early_stop True --epoch_early_stop 10 --use_last_average False --epoch_last_average 5 \
                   --main_metric "AUC" --use_multi_metrics False \
-                  --learning_rate 0.001 --enable_lr_schedule True --lr_schedule_type "StepLR" --lr_schedule_step 20 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
+                  --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type "StepLR" --lr_schedule_step 20 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
                   --train_batch_size 64 --evaluate_batch_size 1024 \
                   --enable_clip_grad False --grad_clipped 10.0 \
                   --num_concept 188 --num_question 11858 --model_version 3 --ablation_set 0 \
-                  --dim_e "${dim}" --dim_k "${dim}" --dim_correct 50 --dropout "${dropout}" --gamma 0.05 \
+                  --dim_e "${dim}" --dim_k "${dim}" --dim_correct 50 --dropout "${dropout}" --gamma 0 \
                   --min_fre4diff 30 --min_fre4disc 30 --min_seq_len4disc 30 --percent_threshold 0.27 \
                   --w_que_diff_pred "${w_que_diff_pred}" --w_que_disc_pred "${w_que_disc_pred}" \
                   --w_user_ability_pred 0 --w_penalty_neg "${w_penalty_neg}" --w_learning "${w_learning}" \
@@ -80,4 +80,4 @@
       done
     done
   done
-} >> F:/code/myProjects/dlkt/example/result_local/lpkt_plus_v3_our_setting_ednet-kt1_fold_0_ob2.txt
+} >> F:/code/myProjects/dlkt/example/result_local/lpkt_plus_v3_our_setting_ednet-kt1_fold_0_ob3.txt

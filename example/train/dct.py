@@ -8,7 +8,7 @@ from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
 from lib.model.DCT import DCT
-from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
+from lib.trainer.CognitionTracingTrainer import CognitionTracingTrainer
 
 
 if __name__ == "__main__":
@@ -60,6 +60,20 @@ if __name__ == "__main__":
                         choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=1)
     parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument("--gamma", type=float, default=0.05)
+    # 生成伪标签的参数
+    parser.add_argument("--min_fre4diff", type=int, default=20)
+    parser.add_argument("--min_fre4disc", type=int, default=20)
+    parser.add_argument("--min_seq_len4disc", type=int, default=20)
+    parser.add_argument("--percent_threshold", type=float, default=0.37,
+                        help="计算区分度时，选择正确率最高的k%和最低的k%序列")
+    # 损失权重
+    parser.add_argument("--w_que_diff_pred", type=float, default=0)
+    parser.add_argument("--w_que_disc_pred", type=float, default=0)
+    parser.add_argument("--w_penalty_neg", type=float, default=0,
+                        help="计算最终得分时，对于做对的题，惩罚ability-difficulty小于0（对应知识点）")
+    parser.add_argument("--w_user_ability_pred", type=float, default=0)
+    parser.add_argument("--w_learning", type=float, default=0)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)
@@ -97,5 +111,5 @@ if __name__ == "__main__":
     model = DCT(global_params, global_objects).to(global_params["device"])
     global_objects["models"] = {}
     global_objects["models"]["kt_model"] = model
-    trainer = KnowledgeTracingTrainer(global_params, global_objects)
+    trainer = CognitionTracingTrainer(global_params, global_objects)
     trainer.train()

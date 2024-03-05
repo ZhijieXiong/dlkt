@@ -5,9 +5,9 @@ from .TimeRecord import TimeRecord
 from ..util.basic import get_now_time
 
 
-class KTTrainer4LPLKTPlus(KnowledgeTracingTrainer):
+class CognitionTracingTrainer(KnowledgeTracingTrainer):
     def __init__(self, params, objects):
-        super(KTTrainer4LPLKTPlus, self).__init__(params, objects)
+        super(CognitionTracingTrainer, self).__init__(params, objects)
         # self.time_record = TimeRecord()
         self.time_record = None
 
@@ -43,7 +43,7 @@ class KTTrainer4LPLKTPlus(KnowledgeTracingTrainer):
                     if self.time_record is not None:
                         self.time_record.add_record("1")
 
-                    target_que4diff = self.objects["lpkt_plus"]["que_has_diff_ground_truth"]
+                    target_que4diff = self.objects["cognition_tracing"]["que_has_diff_ground_truth"]
                     que_diff_pred_loss = model.get_que_diff_pred_loss(target_que4diff)
                     num_que4diff = target_que4diff.shape[0]
                     self.loss_record.add_loss("que diff pred loss",
@@ -56,7 +56,7 @@ class KTTrainer4LPLKTPlus(KnowledgeTracingTrainer):
                     if self.time_record is not None:
                         self.time_record.add_record("2")
 
-                    target_que4disc = self.objects["lpkt_plus"]["que_has_disc_ground_truth"]
+                    target_que4disc = self.objects["cognition_tracing"]["que_has_disc_ground_truth"]
                     que_disc_pred_loss = model.get_que_disc_pred_loss(target_que4disc)
                     num_que4disc = target_que4disc.shape[0]
                     self.loss_record.add_loss("que disc pred loss",

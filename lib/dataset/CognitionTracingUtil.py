@@ -8,7 +8,7 @@ from ..util.parse import cal_accuracy4data, get_high_low_accuracy_seqs, cal_diff
 from ..CONST import FORGET_POINT, REMAIN_PERCENT
 
 
-class LPKTPlusUtil:
+class CognitionTracingUtil:
     """
     建模学生学习和遗忘行为
 
@@ -39,7 +39,7 @@ class LPKTPlusUtil:
         :return:
         """
         factor_seqs = []
-        que_difficulty = self.objects["lpkt_plus"]["que_difficulty"]
+        que_difficulty = self.objects["cognition_tracing"]["que_difficulty"]
         que_diff_ave = sum(que_difficulty.values()) / len(que_difficulty)
         for item_data in dataset:
             factor_seq = []
@@ -95,7 +95,7 @@ class LPKTPlusUtil:
         print("")
 
     def cal_question_diff(self, dataset):
-        min_count2drop = self.params["other"]["lpkt_plus"]["min_fre4diff"]
+        min_count2drop = self.params["other"]["cognition_tracing"]["min_fre4diff"]
         corrects = defaultdict(int)
         counts = defaultdict(int)
 
@@ -155,4 +155,4 @@ class LPKTPlusUtil:
             x = get_weight_init_value(init_v) / dim_emb
             result[c_id, :] = x
 
-        self.objects["lpkt_plus"]["user_proj_weight_init_value"] = result
+        self.objects["cognition_tracing"]["user_proj_weight_init_value"] = result

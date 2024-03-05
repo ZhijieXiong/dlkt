@@ -39,14 +39,13 @@ class DCT(nn.Module):
         torch.nn.init.xavier_uniform_(self.proj_que2difficulty.weight)
         torch.nn.init.xavier_uniform_(self.proj_que2discrimination.weight)
 
-    def predict_score(self, latent, question_emb, target_question):
+    def predict_score(self, latent, question_emb):
         user_ability = torch.sigmoid(self.proj_latent2ability(latent))
         que_difficulty = torch.sigmoid(self.proj_que2difficulty(question_emb))
         que_discrimination = torch.sigmoid(self.proj_que2discrimination(question_emb)) * 10
         # 要将target_que_concept变成可学习的一个参数
-        target_que_concept = self.objects["cognition_tracing"]["q_matrix"][target_question]
         y = (que_discrimination * (user_ability - que_difficulty))
-        predict_score = torch.sigmoid(torch.sum(y * target_que_concept, dim=-1))
+        predict_score = torch.sigmoid(torch.sum(y * que_difficulty, dim=-1))
 
         return predict_score
 
@@ -62,7 +61,7 @@ class DCT(nn.Module):
 
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(interaction_emb)
-        predict_score = self.predict_score(latent, question_emb[:, 1:], question_seq[:, 1:])
+        predict_score = self.predict_score(latent, question_emb[:, 1:])
 
         return predict_score
 
@@ -96,7 +95,6 @@ class DCT(nn.Module):
 
     def get_predict_loss(self, batch, loss_record=None):
         dim_correct = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]["dim_correct"]
-        num_concept = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]["num_concept"]
         w_penalty_neg = self.params["loss_config"]["penalty neg loss"]
         w_learning = self.params["loss_config"]["learning loss"]
 
@@ -116,9 +114,8 @@ class DCT(nn.Module):
         que_difficulty = torch.sigmoid(self.proj_que2difficulty(self.dropout(question_emb[:, 1:])))
         que_discrimination = torch.sigmoid(self.proj_que2discrimination(self.dropout(question_emb[:, 1:]))) * 10
         # 要将target_que_concept变成可学习的一个参数
-        target_que_concept = self.objects["cognition_tracing"]["q_matrix"][question_seq[:, 1:]]
         inter_func_in = user_ability - que_difficulty
-        predict_score = torch.sigmoid(torch.sum(que_discrimination * inter_func_in * target_que_concept, dim=-1))
+        predict_score = torch.sigmoid(torch.sum(que_discrimination * inter_func_in * que_difficulty, dim=-1))
         predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
 
         loss = 0.

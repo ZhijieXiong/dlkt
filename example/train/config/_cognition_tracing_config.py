@@ -10,12 +10,6 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
     cognition_tracing_util = global_objects["cognition_tracing_util"]
 
     global_objects["cognition_tracing"] = {}
-    global_objects["cognition_tracing"]["q_matrix"] = torch.from_numpy(
-        global_objects["data"]["Q_table"]
-    ).float().to(global_params["device"]) + local_params["gamma"]
-    q_matrix = global_objects["cognition_tracing"]["q_matrix"]
-    q_matrix[q_matrix > 1] = 1
-
     # 统计习题难度
     dataset_train = read_preprocessed_file(os.path.join(
         global_objects["file_manager"].get_setting_dir(global_params["datasets_config"]["train"]["setting_name"]),

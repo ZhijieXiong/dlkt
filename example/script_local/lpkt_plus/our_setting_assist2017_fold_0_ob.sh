@@ -67,8 +67,8 @@
                   --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type "StepLR" --lr_schedule_step 20 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
                   --train_batch_size 64 --evaluate_batch_size 1024 \
                   --enable_clip_grad False --grad_clipped 10.0 \
-                  --num_concept 101 --num_question 2803 --model_version 3 --ablation_set 0 \
-                  --dim_e "${dim}" --dim_k "${dim}" --dim_correct 50 --dropout "${dropout}" --gamma 0 \
+                  --num_concept 101 --num_question 2803 --ablation_set 0 \
+                  --dim_e "${dim}" --dim_k "${dim}" --dim_correct 50 --dropout "${dropout}" \
                   --min_fre4diff 50 --min_fre4disc 50 --min_seq_len4disc 30 --percent_threshold 0.27 \
                   --w_que_diff_pred "${w_que_diff_pred}" --w_que_disc_pred "${w_que_disc_pred}" \
                   --w_user_ability_pred 0 --w_penalty_neg "${w_penalty_neg}" --w_learning "${w_learning}" \

@@ -19,7 +19,7 @@
       --learning_rate 0.001 --enable_lr_schedule True --lr_schedule_type "StepLR" --lr_schedule_step 20 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
       --train_batch_size 64 --evaluate_batch_size 256 \
       --enable_clip_grad False --grad_clipped 10.0 \
-      --num_concept 265 --num_question 53091 --model_version 3 --ablation_set 0 \
+      --num_concept 265 --num_question 53091 --ablation_set 0 \
       --dim_e 128 --dim_k 128 --dim_correct 50 --dropout 0.1 \
       --w_que_diff_pred 0 --w_que_disc_pred 0 --w_user_ability_pred 0 --w_penalty_neg 0 \
       --save_model True --debug_mode False --use_cpu False --seed "${seed}"

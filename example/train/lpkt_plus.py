@@ -9,7 +9,7 @@ from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset4LPKTPlus import KTDataset4LPKTPlus
 from lib.dataset.KTDataset import KTDataset
-from lib.model.LPKTPlus_dev import LPKTPlusV3
+from lib.model.LPKTPlus_dev import LPKTPlus
 from lib.trainer.CognitionTracingTrainer import CognitionTracingTrainer
 
 
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = LPKTPlusV3(global_params, global_objects).to(global_params["device"])
+    model = LPKTPlus(global_params, global_objects).to(global_params["device"])
     global_objects["models"] = {}
     global_objects["models"]["kt_model"] = model
     trainer = CognitionTracingTrainer(global_params, global_objects)

@@ -280,11 +280,11 @@ class LPKTPlusV2(nn.Module):
         return predict_loss
 
 
-class LPKTPlusV3(nn.Module):
+class LPKTPlus(nn.Module):
     model_name = "LPKTPlus"
 
     def __init__(self, params, objects):
-        super(LPKTPlusV3, self).__init__()
+        super(LPKTPlus, self).__init__()
         self.params = params
         self.objects = objects
 

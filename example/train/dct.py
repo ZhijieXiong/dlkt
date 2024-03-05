@@ -59,7 +59,7 @@ if __name__ == "__main__":
     parser.add_argument("--rnn_type", type=str, default="gru",
                         choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=1)
-    parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument("--dropout", type=float, default=0.05)
     # 生成伪标签的参数
     parser.add_argument("--min_fre4diff", type=int, default=20)
     parser.add_argument("--min_fre4disc", type=int, default=20)

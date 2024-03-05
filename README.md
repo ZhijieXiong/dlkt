@@ -108,6 +108,9 @@ This algorithm library was developed inspired by `pyKT` (the code repository cor
   |   QIKT   | OOM | no question info |   0.7879   |   0.8266    |  0.7236   |     0.7972     |
   |   qDKT   |   0.7855   | no question info |   0.7921   |   0.8199    |   0.724   |     0.7952     |
 
+## Other Setting (Knowledge Tracing)
+
+- To view the complete experimental record, please click [here](https://docs.qq.com/sheet/DREtXSUtqTkZrTVVY?tab=BB08J2)
 
 ## NCD Setting (Cognitive Diagnosis)
 

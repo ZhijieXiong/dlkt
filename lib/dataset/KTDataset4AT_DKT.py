@@ -29,10 +29,8 @@ class KTDataset4AT_DKT(Dataset):
         setting_name = dataset_config_this["setting_name"]
         file_name = dataset_config_this["file_name"]
         dataset_path = os.path.join(self.objects["file_manager"].get_setting_dir(setting_name), file_name)
-        dataset_config = dataset_config_this["kt"]
-        unuseful_keys = dataset_config_this["unuseful_seq_keys"]
+        unuseful_keys = dataset_config_this.get("unuseful_seq_keys", {"user_id"})
         unuseful_keys = unuseful_keys - {"seq_len"}
-        base_type = dataset_config["base_type"]
 
         if dataset_path != "":
             dataset_original = read_preprocessed_file(dataset_path)
@@ -48,54 +46,51 @@ class KTDataset4AT_DKT(Dataset):
             for k in unuseful_keys:
                 del item_data[k]
 
-        if data_type == "multi_concept" and base_type == "question":
-            dataset_converted = self.dataset_multi_concept2question_pykt(dataset_original)
-        else:
-            dataset_converted = {k: [] for k in (id_keys + seq_keys)}
-            if "question_seq" in seq_keys:
-                dataset_converted["question_seq_mask"] = []
-            if "time_seq" in seq_keys:
-                dataset_converted["interval_time_seq"] = []
-            dataset_converted["seq_id"] = []
-            dataset_converted["history_acc_seq"] = []
-            for seq_i, item_data in enumerate(dataset_original):
-                for k in id_keys:
+        dataset_converted = {k: [] for k in (id_keys + seq_keys)}
+        if "question_seq" in seq_keys:
+            dataset_converted["question_seq_mask"] = []
+        if "time_seq" in seq_keys:
+            dataset_converted["interval_time_seq"] = []
+        dataset_converted["seq_id"] = []
+        dataset_converted["history_acc_seq"] = []
+        for seq_i, item_data in enumerate(dataset_original):
+            for k in id_keys:
+                dataset_converted[k].append(item_data[k])
+            for k in seq_keys:
+                if data_type == "multi_concept" and k == "question_seq":
+                    question_seq = item_data["question_seq"]
+                    question_seq_new = []
+                    current_q = question_seq[0]
+                    for q in question_seq:
+                        if q != -1:
+                            current_q = q
+                        question_seq_new.append(current_q)
+                    dataset_converted["question_seq"].append(question_seq_new)
+                    dataset_converted["question_seq_mask"].append(question_seq)
+                elif k == "time_seq":
+                    interval_time_seq = [0]
+                    for time_i in range(1, len(item_data["time_seq"])):
+                        interval_time = (item_data["time_seq"][time_i] - item_data["time_seq"][time_i - 1]) // 60
+                        interval_time = max(0, min(interval_time, 60 * 24 * 30))
+                        interval_time_seq.append(interval_time)
+                    dataset_converted["interval_time_seq"].append(interval_time_seq)
+                else:
                     dataset_converted[k].append(item_data[k])
-                for k in seq_keys:
-                    if data_type == "multi_concept" and k == "question_seq":
-                        question_seq = item_data["question_seq"]
-                        question_seq_new = []
-                        current_q = question_seq[0]
-                        for q in question_seq:
-                            if q != -1:
-                                current_q = q
-                            question_seq_new.append(current_q)
-                        dataset_converted["question_seq"].append(question_seq_new)
-                        dataset_converted["question_seq_mask"].append(question_seq)
-                    elif k == "time_seq":
-                        interval_time_seq = [0]
-                        for time_i in range(1, len(item_data["time_seq"])):
-                            interval_time = (item_data["time_seq"][time_i] - item_data["time_seq"][time_i - 1]) // 60
-                            interval_time = max(0, min(interval_time, 60 * 24 * 30))
-                            interval_time_seq.append(interval_time)
-                        dataset_converted["interval_time_seq"].append(interval_time_seq)
-                    else:
-                        dataset_converted[k].append(item_data[k])
 
-                history_acc_seq = []
-                right, total = 0, 0
-                for correct in item_data["correct_seq"]:
-                    if correct:
-                        right += 1
-                    total += 1
-                    history_acc_seq.append(right / total)
-                dataset_converted["history_acc_seq"].append(history_acc_seq)
+            history_acc_seq = []
+            right, total = 0, 0
+            for correct in item_data["correct_seq"]:
+                if correct:
+                    right += 1
+                total += 1
+                history_acc_seq.append(right / total)
+            dataset_converted["history_acc_seq"].append(history_acc_seq)
 
-                dataset_converted["seq_id"].append(seq_i)
-            if "time_seq" in dataset_converted.keys():
-                del dataset_converted["time_seq"]
-            if "question_seq_mask" in dataset_converted.keys():
-                del dataset_converted["question_seq_mask"]
+            dataset_converted["seq_id"].append(seq_i)
+        if "time_seq" in dataset_converted.keys():
+            del dataset_converted["time_seq"]
+        if "question_seq_mask" in dataset_converted.keys():
+            del dataset_converted["question_seq_mask"]
 
         for k in dataset_converted.keys():
             if k == "history_acc_seq":

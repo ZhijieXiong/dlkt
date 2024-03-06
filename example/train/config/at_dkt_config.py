@@ -10,6 +10,7 @@ def at_dkt_general_config(local_params, global_params):
     global_params["models_config"]["kt_model"] = deepcopy(MODEL_PARAMS)
     global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "AT_DKT"
 
+
     # 配置模型参数
     num_concept = local_params["num_concept"]
     num_question = local_params["num_question"]

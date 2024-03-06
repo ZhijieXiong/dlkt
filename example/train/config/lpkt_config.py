@@ -139,9 +139,9 @@ def lpkt_plus_config(local_params):
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]
-
         global_params["save_model_dir_name"] = (
             f"{get_now_time().replace(' ', '@').replace(':', '-')}@@LPKT+@@seed_{local_params['seed']}@@{setting_name}@@"
             f"{train_file_name.replace('.txt', '')}")
+        save_params(global_params, global_objects)
 
     return global_params, global_objects

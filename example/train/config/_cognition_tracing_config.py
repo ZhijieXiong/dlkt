@@ -65,8 +65,21 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
     #     cognition_tracing_util.label_user_ability(dataset_train)
 
     # 损失权重配置
-    global_params["loss_config"]["que diff pred loss"] = local_params["w_que_diff_pred"]
-    global_params["loss_config"]["que disc pred loss"] = local_params["w_que_disc_pred"]
-    global_params["loss_config"]["penalty neg loss"] = local_params["w_penalty_neg"]
-    global_params["loss_config"]["learning loss"] = local_params["w_learning"]
-    global_params["loss_config"]["counterfactual loss"] = local_params["w_counter_fact"]
+    w_que_diff_pred = local_params["w_que_diff_pred"]
+    w_que_disc_pred = local_params["w_que_disc_pred"]
+    w_user_ability_pred = local_params["w_user_ability_pred"]
+    w_penalty_neg = local_params["w_penalty_neg"]
+    w_learning = local_params["w_learning"]
+    w_counter_fact = local_params["w_counter_fact"]
+
+    global_params["loss_config"]["que diff pred loss"] = w_que_diff_pred
+    global_params["loss_config"]["que disc pred loss"] = w_que_disc_pred
+    global_params["loss_config"]["penalty neg loss"] = w_penalty_neg
+    global_params["loss_config"]["learning loss"] = w_learning
+    global_params["loss_config"]["counterfactual loss"] = w_counter_fact
+
+    global_objects["logger"].info(
+        "loss weight params\n"
+        f"    w_que_diff_pred: {w_que_diff_pred}, w_que_disc_pred: {w_que_disc_pred}, w_penalty_neg: {w_penalty_neg}, "
+        f"w_learning: {w_learning}, w_counter_fact: {w_counter_fact}"
+    )

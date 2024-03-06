@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 {
-  dataset_name="assist2012"
-  data_type="single_concept"
+  dataset_name="xes3g5m"
+  data_type="only_question"
 
   for fold in 0 1 2 3 4
   do
@@ -14,12 +14,12 @@
       --train_strategy "valid_test" --num_epoch 200 \
       --use_early_stop True --epoch_early_stop 10 --use_last_average False --epoch_last_average 5 \
       --main_metric "AUC" --use_multi_metrics False \
-      --learning_rate 0.001 --enable_lr_schedule True --lr_schedule_type "StepLR" --lr_schedule_step 20 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
+      --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type "StepLR" --lr_schedule_step 20 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
       --train_batch_size 64 --evaluate_batch_size 512 \
       --enable_clip_grad False --grad_clipped 10.0 \
-      --num_concept 265 --num_question 53091 --ablation_set 0 \
-      --dim_e 128 --dim_k 128 --dim_correct 50 --dropout 0.1 \
-      --w_que_diff_pred 0 --w_que_disc_pred 0 --w_user_ability_pred 0 --w_penalty_neg 0 \
+      --num_concept 865 --num_question 7652 --ablation_set 1 \
+      --dim_question 256 --dim_latent 256 --dim_correct 50 --dropout 0.1 \
+      --w_que_diff_pred 0 --w_que_disc_pred 0 --w_user_ability_pred 0 --w_penalty_neg 0 --w_learning 0 --w_counter_fact 0 \
       --save_model True --debug_mode False --use_cpu False --seed 0
   done
-} >> F:/code/myProjects/dlkt/example/result_local/lpkt_plus_v2_our_setting_assist2012_save_ob.txt
+} >> F:/code/myProjects/dlkt/example/result_local/lpkt_plus_v2_our_setting_xes3g5m_save_ob.txt

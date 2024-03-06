@@ -29,7 +29,7 @@ fold=0
           --enable_clip_grad False --grad_clipped 10.0 \
           --num_concept 101 --num_question 2803 --ablation_set 0 \
           --dim_question "${dim}" --dim_latent "${dim}" --dim_correct 50 --dropout "${dropout}" \
-          --w_que_diff_pred 0 --w_que_disc_pred 0 --w_user_ability_pred 0 --w_penalty_neg 0 --w_learning 0 \
+          --w_que_diff_pred 0 --w_que_disc_pred 0 --w_user_ability_pred 0 --w_penalty_neg 0 --w_learning 0 --w_counter_fact 0 \
           --save_model False --debug_mode False --use_cpu False --seed 0
       done
     done
@@ -71,7 +71,7 @@ fold=0
 #                  --train_batch_size 64 --evaluate_batch_size 1024 \
 #                  --enable_clip_grad False --grad_clipped 10.0 \
 #                  --num_concept 101 --num_question 2803 --ablation_set 0 \
-#                  --dim_e "${dim}" --dim_k "${dim}" --dim_correct 50 --dropout "${dropout}" \
+#                  --dim_question "${dim}" --dim_k "${dim}" --dim_correct 50 --dropout "${dropout}" \
 #                  --min_fre4diff 50 --min_fre4disc 50 --min_seq_len4disc 30 --percent_threshold 0.27 \
 #                  --w_que_diff_pred "${w_que_diff_pred}" --w_que_disc_pred "${w_que_disc_pred}" \
 #                  --w_user_ability_pred 0 --w_penalty_neg "${w_penalty_neg}" --w_learning "${w_learning}" \

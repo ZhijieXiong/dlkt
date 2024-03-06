@@ -43,7 +43,6 @@ class DCT(nn.Module):
         user_ability = torch.sigmoid(self.proj_latent2ability(latent))
         que_difficulty = torch.sigmoid(self.proj_que2difficulty(question_emb))
         que_discrimination = torch.sigmoid(self.proj_que2discrimination(question_emb)) * 10
-        # 要将target_que_concept变成可学习的一个参数
         y = (que_discrimination * (user_ability - que_difficulty))
         predict_score = torch.sigmoid(torch.sum(y * que_difficulty, dim=-1))
 
@@ -177,10 +176,10 @@ class DCT(nn.Module):
             learn_loss = 0.
 
             master_leval = user_ability[:, 1:] - user_ability[:, :-1]
-            mask4master = mask_bool_seq[:, :-2].unsqueeze(-1) & q2c_mask_table[:, :-2].bool()
+            mask4master = mask_bool_seq[:, 1:-1].unsqueeze(-1) & q2c_mask_table[:, 1:-1].bool()
             # 对于每个时刻，都应该比上个时刻有所增长（对应当前时刻所做题的知识点），惩罚小于0的部分
             target_neg_master_leval = torch.masked_select(
-                torch.gather(master_leval, 2, q2c_table[:, :-2]), mask4master
+                torch.gather(master_leval, 2, q2c_table[:, 1:-1]), mask4master
             )
             neg_master_leval = target_neg_master_leval[target_neg_master_leval < 0]
             num_sample = neg_master_leval.numel()
@@ -196,11 +195,12 @@ class DCT(nn.Module):
             # 反事实约束：做对一道题比做错一道题的学习增长大
             cf_loss = 0.
 
-            f_minus_cf = torch.gather(user_ability[:, 1:] - cf_user_ability[:, 1:-1], 2, q2c_table[:, 1:-1])
-            correct_seq1 = batch["correct_seq"][:, 1:-1].bool()
-            correct_seq2 = (1 - batch["correct_seq"][:, 1:-1]).bool()
-            mask4correct = mask_bool_seq[:, 1:-1].unsqueeze(-1) & correct_seq1.unsqueeze(-1) & q2c_mask_table[:, 1:-1].bool()
-            mask4wrong = mask_bool_seq[:, 1:-1].unsqueeze(-1) & correct_seq2.unsqueeze(-1) & q2c_mask_table[:, 1:-1].bool()
+            f_minus_cf = torch.gather(user_ability - cf_user_ability, 2, q2c_table[:, :-1])
+            correct_seq1 = batch["correct_seq"][:, :-1].bool()
+            correct_seq2 = (1 - batch["correct_seq"][:, :-1]).bool()
+            mask4correct = mask_bool_seq[:, :-1].unsqueeze(-1) & correct_seq1.unsqueeze(-1) & q2c_mask_table[:, :-1].bool()
+            mask4wrong = mask_bool_seq[:, :-1].unsqueeze(-1) & correct_seq2.unsqueeze(-1) & q2c_mask_table[:, :-1].bool()
+
             # 对于做对的时刻，f_minus_cf应该大于0，惩罚小于0的部分
             target_neg_f_minus_cf = torch.masked_select(f_minus_cf, mask4correct)
             neg_f_minus_cf = target_neg_f_minus_cf[target_neg_f_minus_cf < 0]
@@ -209,7 +209,8 @@ class DCT(nn.Module):
                 cf_loss1 = -neg_f_minus_cf.mean()
                 cf_loss = cf_loss + cf_loss1
                 if loss_record is not None:
-                    loss_record.add_loss("learning loss", cf_loss1.detach().cpu().item() * num_sample1, num_sample1)
+                    loss_record.add_loss("counterfactual loss", cf_loss1.detach().cpu().item() * num_sample1, num_sample1)
+
             # 对于做错的时刻，f_minus_cf应该小于0，惩罚大于0的部分
             target_pos_f_minus_cf = torch.masked_select(f_minus_cf, mask4wrong)
             pos_f_minus_cf = target_pos_f_minus_cf[target_pos_f_minus_cf > 0]
@@ -218,7 +219,7 @@ class DCT(nn.Module):
                 cf_loss2 = pos_f_minus_cf.mean()
                 cf_loss = cf_loss + cf_loss2
                 if loss_record is not None:
-                    loss_record.add_loss("learning loss", cf_loss2.detach().cpu().item() * num_sample2, num_sample2)
+                    loss_record.add_loss("counterfactual loss", cf_loss2.detach().cpu().item() * num_sample2, num_sample2)
 
             if (num_sample1 + num_sample2) > 0:
                 loss = loss + cf_loss * w_counter_fact

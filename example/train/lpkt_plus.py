@@ -87,6 +87,7 @@ if __name__ == "__main__":
                         help="计算最终得分时，对于做对的题，惩罚ability-difficulty小于0（对应知识点）")
     parser.add_argument("--w_user_ability_pred", type=float, default=0)
     parser.add_argument("--w_learning", type=float, default=0)
+    parser.add_argument("--w_counter_fact", type=float, default=1)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

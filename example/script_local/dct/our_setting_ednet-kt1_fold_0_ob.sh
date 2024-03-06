@@ -7,7 +7,7 @@
 
   dropouts='0.05 0.1 0.15'
 #  weight_decays='0 0.0001 0.00001 0.000001'
-  weight_decays='0.01 0.001'
+  weight_decays='0.001'
   nums_rnn_layer=(1 2)
   dims_question=(64 128)
   dims_latent=(64 128)

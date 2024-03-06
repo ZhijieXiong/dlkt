@@ -69,3 +69,4 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
     global_params["loss_config"]["que disc pred loss"] = local_params["w_que_disc_pred"]
     global_params["loss_config"]["penalty neg loss"] = local_params["w_penalty_neg"]
     global_params["loss_config"]["learning loss"] = local_params["w_learning"]
+    global_params["loss_config"]["counterfactual loss"] = local_params["w_counter_fact"]

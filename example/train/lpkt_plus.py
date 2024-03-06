@@ -65,8 +65,8 @@ if __name__ == "__main__":
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=27)
     parser.add_argument("--num_question", type=int, default=1223)
-    parser.add_argument("--dim_e", type=int, default=64)
-    parser.add_argument("--dim_k", type=int, default=64)
+    parser.add_argument("--dim_question", type=int, default=64)
+    parser.add_argument("--dim_latent", type=int, default=64)
     parser.add_argument("--dim_correct", type=int, default=50)
     parser.add_argument("--dropout", type=float, default=0.1)
     # 生成伪标签的参数
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     parser.add_argument("--w_penalty_neg", type=float, default=0,
                         help="计算最终得分时，对于做对的题，惩罚ability-difficulty小于0（对应知识点）")
     parser.add_argument("--w_user_ability_pred", type=float, default=0)
-    parser.add_argument("--w_learning", type=float, default=0.1)
+    parser.add_argument("--w_learning", type=float, default=0)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

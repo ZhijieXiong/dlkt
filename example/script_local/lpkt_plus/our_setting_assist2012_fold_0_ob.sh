@@ -6,8 +6,8 @@
   fold=0
 
 
-  weight_decays='0.00001 0.000001'
-  dropouts='0.1 0.2'
+  weight_decays='0.0001 0.00001 0.000001'
+  dropouts='0.05 0.1 0.15'
   dims=(64 128)
   for weight_decay in ${weight_decays}
   do
@@ -33,4 +33,4 @@
       done
     done
   done
-} >> F:/code/myProjects/dlkt/example/result_local/lpkt_plus_v2_our_setting_assist2012_fold_0_ob.txt
+} >> F:/code/myProjects/dlkt/example/result_local/lpkt+_baseline_our_setting_assist2012_fold_0_ob.txt

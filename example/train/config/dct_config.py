@@ -32,7 +32,7 @@ def dct_general_config(local_params, global_params, global_objects):
     global_objects["logger"].info(
           f"model params\n"
           f"    num_concept: {num_concept}, num_question: {num_question}\n"
-          f"    dim of question emb: {dim_question}, dim_question: {dim_correct}, dim_latent: {dim_latent}, "
+          f"    dim_question: {dim_question}, dim_correct: {dim_correct}, dim_latent: {dim_latent}, "
           f"rnn type: {rnn_type}, num of rnn layer: {num_rnn_layer}, dropout: {dropout}")
 
     if local_params["save_model"]:
@@ -40,7 +40,7 @@ def dct_general_config(local_params, global_params, global_objects):
         train_file_name = local_params["train_file_name"]
 
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '-').replace(':', '-')}@@DCT@@seed_{local_params['seed']}@@{setting_name}@@"
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@DCT@@seed_{local_params['seed']}@@{setting_name}@@"
             f"{train_file_name.replace('.txt', '')}")
 
 

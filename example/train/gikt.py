@@ -2,28 +2,28 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from config.dct_config import dct_config
+from config.gikt_config import gikt_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.model.DCT import DCT
-from lib.trainer.CognitionTracingTrainer import CognitionTracingTrainer
+from lib.model.GIKT import GIKT, GIKT_PYG
+from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="our_setting")
-    parser.add_argument("--dataset_name", type=str, default="assist2009")
+    parser.add_argument("--dataset_name", type=str, default="ednet-kt1")
     parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
+    parser.add_argument("--train_file_name", type=str, default="ednet-kt1_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="ednet-kt1_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="ednet-kt1_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0.0001)
+    parser.add_argument("--weight_decay", type=float, default=0)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
@@ -45,35 +45,24 @@ if __name__ == "__main__":
     parser.add_argument("--lr_schedule_milestones", type=str, default="[5]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     # batch size
-    parser.add_argument("--train_batch_size", type=int, default=64)
+    parser.add_argument("--train_batch_size", type=int, default=32)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     # 梯度裁剪
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
+    # 使用纯torch写的或者pyg写的GIKT
+    parser.add_argument("--use_pyg", type=str2bool, default=False)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=123)
-    parser.add_argument("--num_question", type=int, default=17751)
-    parser.add_argument("--dim_question", type=int, default=64)
-    parser.add_argument("--dim_latent", type=int, default=32)
-    parser.add_argument("--dim_correct", type=int, default=64)
-    parser.add_argument("--rnn_type", type=str, default="gru",
-                        choices=("rnn", "lstm", "gru"))
-    parser.add_argument("--num_rnn_layer", type=int, default=2)
-    parser.add_argument("--dropout", type=float, default=0.1)
-    # 生成伪标签的参数
-    parser.add_argument("--min_fre4diff", type=int, default=20)
-    parser.add_argument("--min_fre4disc", type=int, default=20)
-    parser.add_argument("--min_seq_len4disc", type=int, default=20)
-    parser.add_argument("--percent_threshold", type=float, default=0.37,
-                        help="计算区分度时，选择正确率最高的k%和最低的k%序列")
-    # 损失权重
-    parser.add_argument("--w_que_diff_pred", type=float, default=0)
-    parser.add_argument("--w_que_disc_pred", type=float, default=0)
-    parser.add_argument("--w_penalty_neg", type=float, default=0,
-                        help="计算最终得分时，对于做对的题，惩罚ability-difficulty小于0（对应知识点）")
-    parser.add_argument("--w_user_ability_pred", type=float, default=0)
-    parser.add_argument("--w_learning", type=float, default=0)
-    parser.add_argument("--w_counter_fact", type=float, default=0)
+    parser.add_argument("--num_concept", type=int, default=188)
+    parser.add_argument("--num_question", type=int, default=11858)
+    parser.add_argument("--dim_emb", type=int, default=100)
+    parser.add_argument("--num_q_neighbor", type=int, default=1)
+    parser.add_argument("--num_c_neighbor", type=int, default=10)
+    parser.add_argument("--agg_hops", type=int, default=3)
+    parser.add_argument("--hard_recap", type=str2bool, default=True)
+    parser.add_argument("--rank_k", type=int, default=10)
+    parser.add_argument("--dropout4gru", type=float, default=0.6)
+    parser.add_argument("--dropout4gnn", type=float, default=0.3)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)
@@ -83,7 +72,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = dct_config(params)
+    global_params, global_objects = gikt_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)
@@ -108,8 +97,11 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = DCT(global_params, global_objects).to(global_params["device"])
+    if params["use_pyg"]:
+        model = GIKT_PYG(global_params, global_objects).to(global_params["device"])
+    else:
+        model = GIKT(global_params, global_objects).to(global_params["device"])
     global_objects["models"] = {}
     global_objects["models"]["kt_model"] = model
-    trainer = CognitionTracingTrainer(global_params, global_objects)
+    trainer = KnowledgeTracingTrainer(global_params, global_objects)
     trainer.train()

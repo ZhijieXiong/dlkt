@@ -34,7 +34,7 @@
                 --enable_clip_grad False --grad_clipped 10.0 \
                 --num_concept 101 --num_question 2803 \
                 --dim_question "${dim_question}" --dim_correct 64 --dim_latent "${dim_latent}" --rnn_type "gru" --num_rnn_layer "${num_rnn_layer}" --dropout "${dropout}" \
-                --w_que_diff_pred 0 --w_que_disc_pred 0 --w_user_ability_pred 0 --w_penalty_neg 0 --w_learning 0 \
+                --w_que_diff_pred 0 --w_que_disc_pred 0 --w_user_ability_pred 0 --w_penalty_neg 0 --w_learning 0 --w_counter_fact 0 \
                 --save_model False --debug_mode False --use_cpu False --seed 0
           done
         done

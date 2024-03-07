@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-python F:/code/myProjects/dlkt/example/prepare_dataset/akt_setting.py --dataset_name "assist2009"
-python F:/code/myProjects/dlkt/example/prepare_dataset/akt_setting.py --dataset_name "assist2017"
-python F:/code/myProjects/dlkt/example/prepare_dataset/akt_setting.py --dataset_name "statics2011"
-python F:/code/myProjects/dlkt/example/prepare_dataset/akt_table6_setting.py --dataset_name "assist2009"
-python F:/code/myProjects/dlkt/example/prepare_dataset/dimkt_setting.py --dataset_name "assist2012"
-python F:/code/myProjects/dlkt/example/prepare_dataset/dimkt_setting.py --dataset_name "edi2020-task1"
-python F:/code/myProjects/dlkt/example/prepare_dataset/lpkt_setting.py --dataset_name "assist2012"
-python F:/code/myProjects/dlkt/example/prepare_dataset/lpkt_setting.py --dataset_name "assist2017"
+bash F:/code/myProjects/dlkt/example/script_local/dct/our_setting_ood_assist2009_split_7_ob.sh
+bash F:/code/myProjects/dlkt/example/script_local/dct/our_setting_edi2020-task34_fold_0_ob.sh
+bash F:/code/myProjects/dlkt/example/script_local/dct/our_setting_slepemapy_fold_0_ob.sh

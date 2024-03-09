@@ -65,11 +65,11 @@
 
 - 按照`README.md`中`Quick-Start`操作，生成的目录结构如下，原始数据放到 `lab/dataset_raw` 下
 
-  <div align=center><img src="./resources/lab_dir.png" /></div>
+  <div align=center><img src="../resources/lab_dir.png" /></div>
 
 - `ednet-kt1`因为原始数据文件太多，所以先使用`exampe/concat_ednet.py`将每5000名学生的记录合成一个文件（通常情况下做`ednet-kt1`的实验也是随机选5000名学生的记录），合成后的文件会放到`dataset_raw/ednet-kt1`下，其目录为：
 
-  <div align=center><img src="./resources/ednet-kt1_raw_dir.png" /></div>
+  <div align=center><img src="../resources/ednet-kt1_raw_dir.png" /></div>
 
 - 运行 `example/preprocess`处理指定数据集（即`dataset_preprocessed`下的目录名），生成的数据在 `lab/dataset_preprocessed`
 
@@ -77,7 +77,7 @@
 
 以`assist2009`（多知识点数据集）为例，生成的预处理文件如下
 
-<div align=center><img src="./resources/assist2009_preprocessed_dir.png" /></div>
+<div align=center><img src="../resources/assist2009_preprocessed_dir.png" /></div>
 
 - `concpet_id_map_[data_type].csv` ：知识点id映射文件，包括以下字段
 
@@ -120,15 +120,15 @@
   - 后面的是序列的id，如`question_seq`表示学生做题的习题序列，`concept_seq`表示学生做题对应的知识点序列，`correct_seq`表示学生做题的结果序列（0或1表示错误或正确），`time_seq`表示学生做题的时间戳序列，`use_time_seq`表示学生做题所用时间序列
   - `multi_concept` 其中`question_seq`里的-1表示当前知识点和前一知识点对应同一习题
 
-  <div align=center><img src="./resources/assist2009_multi_concept.png" /></div>
+  <div align=center><img src="../resources/assist2009_multi_concept.png" /></div>
 
   - `single_concept` 因为都是单知识点，所以`question_seq`中不会出现-1
 
-  <div align=center><img src="resources/assist2009_single_concept.png" /></div>
+  <div align=center><img src="../resources/assist2009_single_concept.png" /></div>
 
   - `only_question` 只有习题序列，所以序列长度比`multi_concept`短
 
-  <div align=center><img src="./resources/assist2009_only_question.png" /></div>
+  <div align=center><img src="../resources/assist2009_only_question.png" /></div>
 
 
 - `Q_table_[data_type].npy`

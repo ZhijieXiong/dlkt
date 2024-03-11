@@ -79,7 +79,7 @@ fold=0
                       --train_batch_size 64 --evaluate_batch_size 1024 \
                       --enable_clip_grad False --grad_clipped 10.0 \
                       --num_concept 27 --num_question 1223 --ablation_set 1 \
-                      --multi_stage True --user_weight_init True --que_weight_init True \
+                      --multi_stage True --user_weight_init False --que_weight_init True \
                       --dim_question "${dim}" --dim_latent "${dim}" --dim_correct 50 --dropout "${dropout}" \
                       --min_fre4diff 50 --min_fre4disc 50 --min_seq_len4disc 20 --percent_threshold 0.32 \
                       --w_que_diff_pred "${w_que_diff_pred}" --w_que_disc_pred "${w_que_disc_pred}" --w_user_ability_pred 0 \
@@ -94,4 +94,4 @@ fold=0
       done
     done
   done
-} >> F:/code/myProjects/dlkt/example/result_local/lpkt+-penalty_neg-learn-q_table-our_setting_statics2011_fold_0_ob.txt
+} >> F:/code/myProjects/dlkt/example/result_local/lpkt+-penalty_neg-learn-q_table-our_setting_statics2011_fold_0_ob1.txt

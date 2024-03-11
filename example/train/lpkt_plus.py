@@ -79,7 +79,7 @@ if __name__ == "__main__":
                         help="0: use time seq and interval time seq"
                              "1: only interval time seq"
                              "2: do not use time information")
-    parser.add_argument("--user_weight_init", type=str2bool, default=True, help="是否使用基于IRT的参数初始化")
+    parser.add_argument("--user_weight_init", type=str2bool, default=False, help="是否使用基于IRT的参数初始化")
     parser.add_argument("--que_weight_init", type=str2bool, default=True, help="是否使用基于Q table的初始化")
     # 单阶段还是多阶段训练
     parser.add_argument("--multi_stage", type=str2bool, default=True)

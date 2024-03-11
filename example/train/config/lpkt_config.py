@@ -18,8 +18,8 @@ def lpkt_general_config(local_params, global_params, global_objects):
 
     global_params["models_config"] = {
         "kt_model": {
-            "type": "LPKT",
             "encoder_layer": {
+                "type": "LPKT",
                 "LPKT": {}
             }
         }

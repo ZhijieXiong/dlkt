@@ -2,6 +2,7 @@ import torch
 import os
 
 from lib.util.data import read_preprocessed_file
+from lib.util.parse import cal_concept_difficulty
 from lib.dataset.CognitionTracingUtil import CognitionTracingUtil
 
 
@@ -52,15 +53,16 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
         ).float().to(global_params["device"])
 
     # 统计知识点正确率，用于初始化学生参数
-    # if local_params["user_weight_init"]:
-    #     concept_accuracy = cal_concept_difficulty(dataset_train, {
-    #       "data_type": global_params["datasets_config"]["data_type"],
-    #       "num_concept": local_params["num_concept"],
-    #       "num_min_concept": 50
-    #     }, {"question2concept": global_objects["data"]["question2concept"]})
-    #     cognition_tracing_util.get_user_proj_weight_init_value(concept_accuracy)
+    if local_params["user_weight_init"]:
+        concept_accuracy = cal_concept_difficulty(dataset_train, {
+          "data_type": global_params["datasets_config"]["data_type"],
+          "num_concept": local_params["num_concept"],
+          "num_min_concept": 50
+        }, {"question2concept": global_objects["data"]["question2concept"]})
+        cognition_tracing_util.get_user_proj_weight_init_value(concept_accuracy)
 
     # 初始化习题参数
+    global_params["other"]["cognition_tracing"]["user_weight_init"] = local_params["user_weight_init"]
     global_params["other"]["cognition_tracing"]["que_weight_init"] = local_params["que_weight_init"]
 
     # # 提取学生认知标签和对应mask以及权重

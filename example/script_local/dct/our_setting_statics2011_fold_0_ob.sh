@@ -94,6 +94,7 @@ fold=0
                           --train_batch_size 64 --evaluate_batch_size 256 \
                           --enable_clip_grad False --grad_clipped 10.0 \
                           --num_concept 27 --num_question 1223 \
+                          --multi_stage True --user_weight_init True --que_weight_init True \
                           --dim_question "${dim_question}" --dim_correct 64 --dim_latent "${dim_latent}" --rnn_type "gru" --num_rnn_layer "${num_rnn_layer}" --dropout "${dropout}" \
                           --w_que_diff_pred "${w_que_diff_pred}" --w_que_disc_pred "${w_que_disc_pred}" --w_user_ability_pred 0 \
                           --w_penalty_neg "${w_penalty_neg}" --w_learning "${w_learning}" --w_counter_fact "${w_counter_fact}" --w_q_table "${w_q_able}" \
@@ -109,4 +110,4 @@ fold=0
       done
     done
   done
-} >> F:/code/myProjects/dlkt/example/result_local/dct+aux_loss_our_setting_statics2011_fold_0_ob1.txt
+} >> F:/code/myProjects/dlkt/example/result_local/dct-penalty_neg-learn-q_table-our_setting_statics2011_fold_0_ob1.txt

@@ -24,12 +24,11 @@ def lpkt_plus_general_config(local_params, global_params, global_objects):
     dim_correct = local_params["dim_correct"]
     dropout = local_params["dropout"]
     ablation_set = local_params["ablation_set"]
-    use_init_weight = local_params["use_init_weight"]
 
     global_params["models_config"] = {
         "kt_model": {
-            "type": "LPKT+",
             "encoder_layer": {
+                "type": "LPKT+",
                 "LPKT+": {}
             }
         }
@@ -42,7 +41,6 @@ def lpkt_plus_general_config(local_params, global_params, global_objects):
     encoder_config["dim_correct"] = dim_correct
     encoder_config["dropout"] = dropout
     encoder_config["ablation_set"] = ablation_set
-    encoder_config["use_init_weight"] = use_init_weight
     encoder_config["num_interval_time"] = len(INTERVAL_TIME4LPKT_PLUS)
     encoder_config["num_use_time"] = len(USE_TIME4LPKT_PLUS)
 
@@ -51,7 +49,7 @@ def lpkt_plus_general_config(local_params, global_params, global_objects):
         "model params\n"
         f"    num_concept: {num_concept}, num_question: {num_question}, num_interval_time: {len(INTERVAL_TIME4LPKT_PLUS)}, "
         f"num_use_time: {len(USE_TIME4LPKT_PLUS)}, ablation_set: {ablation_set}\n"
-        f"    dim_question: {dim_question}, dim_latent: {dim_latent}, use_init_weight: {use_init_weight}, dim_correct: {dim_correct}, dropout: {dropout}"
+        f"    dim_question: {dim_question}, dim_latent: {dim_latent}, dim_correct: {dim_correct}, dropout: {dropout}"
     )
 
     if local_params["save_model"]:

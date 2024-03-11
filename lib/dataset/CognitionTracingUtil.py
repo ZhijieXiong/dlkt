@@ -153,6 +153,6 @@ class CognitionTracingUtil:
         result = torch.ones(num_concept, dim_emb).float().to(self.params["device"])
         for c_id, init_v in concept_init_value.items():
             x = get_weight_init_value(init_v) / dim_emb
-            result[c_id, :] = x
+            result[c_id, :] = x * 10
 
         self.objects["cognition_tracing"]["user_proj_weight_init_value"] = result

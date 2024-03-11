@@ -38,40 +38,22 @@ class DCT(nn.Module):
 
     def init_weight(self):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
-        dim_question = encoder_config["dim_question"]
+        que_weight_init = self.params["other"]["cognition_tracing"]["que_weight_init"]
 
         torch.nn.init.xavier_uniform_(self.proj_latent2ability.weight)
 
-        if not self.params["other"].get("cognition_tracing", False):
-            torch.nn.init.xavier_uniform_(self.proj_que2difficulty.weight)
+        if que_weight_init:
+            dim_question = encoder_config["dim_question"]
+            k = math.sqrt(1 / dim_question)
+            num_question = encoder_config["num_question"]
+            num_concept = encoder_config["num_concept"]
+            que_weight = torch.ones(num_concept, dim_question).to(self.params["device"]) * -k
+            que_emb_weight = torch.ones(num_question, dim_question).to(self.params["device"]) * k
+            self.proj_que2difficulty.weight = nn.Parameter(que_weight)
+            self.embed_question.weight = nn.Parameter(que_emb_weight)
         else:
-            que_weight_init = self.params["other"]["cognition_tracing"]["que_weight_init"]
-            if que_weight_init:
-                # 方法1
-                k = math.sqrt(1 / dim_question)
-                num_question = encoder_config["num_question"]
-                num_concept = encoder_config["num_concept"]
-                que_weight = nn.init.xavier_uniform_(torch.ones(num_concept, dim_question) * -k).to(self.params["device"])
-                que_emb_weight = nn.init.xavier_uniform_(torch.ones(num_question, dim_question) * k).to(self.params["device"])
-                self.proj_que2difficulty.weight = nn.Parameter(que_weight)
-                self.embed_question.weight = nn.Parameter(que_emb_weight)
-
-                # 方法2
-                # k = math.sqrt(1 / dim_question)
-                # torch.nn.init.constant_(self.embed_question.weight, k)
-                # torch.nn.init.constant_(self.proj_que2difficulty.weight, -k)
-                # torch.nn.init.constant_(self.proj_que2difficulty.bias, 0)
-
-                # 方法3
-                # num_question = encoder_config["num_question"]
-                # num_concept = encoder_config["num_concept"]
-                # que_weight = nn.init.xavier_uniform_(torch.zeros(num_concept, dim_question)).to(self.params["device"])
-                # que_emb_weight = nn.init.xavier_uniform_(torch.zeros(num_question, dim_question)).to(self.params["device"])
-                # self.proj_que2difficulty.weight = nn.Parameter(que_weight)
-                # self.embed_question.weight = nn.Parameter(que_emb_weight)
-                # torch.nn.init.constant_(self.proj_que2difficulty.bias, -3)
-            else:
-                torch.nn.init.xavier_uniform_(self.proj_que2difficulty.weight)
+            torch.nn.init.xavier_uniform_(self.proj_que2difficulty.weight)
+            torch.nn.init.xavier_uniform_(self.embed_question.weight)
 
         torch.nn.init.xavier_uniform_(self.proj_que2discrimination.weight)
 

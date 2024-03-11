@@ -1,3 +1,4 @@
+import math
 import torch.nn.init
 
 from .util import *
@@ -46,13 +47,15 @@ class LPKTPlus(nn.Module):
 
     def init_weight(self):
         ablation_set = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT+"]["ablation_set"]
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT+"]
         user_weight_init = self.params["other"]["cognition_tracing"]["user_weight_init"]
+        que_weight_init = self.params["other"]["cognition_tracing"]["que_weight_init"]
 
         if ablation_set == 0:
             torch.nn.init.xavier_uniform_(self.embed_answer_time.weight)
         if ablation_set == 0 or ablation_set == 1:
             torch.nn.init.xavier_uniform_(self.embed_interval_time.weight)
-        torch.nn.init.xavier_uniform_(self.embed_question.weight)
+
         torch.nn.init.xavier_uniform_(self.linear_1.weight)
         torch.nn.init.xavier_uniform_(self.linear_2.weight)
         torch.nn.init.xavier_uniform_(self.linear_3.weight)
@@ -63,7 +66,20 @@ class LPKTPlus(nn.Module):
             torch.nn.init.constant_(self.proj_latent2ability.bias, 0)
         else:
             torch.nn.init.xavier_uniform_(self.proj_latent2ability.weight)
-        torch.nn.init.xavier_uniform_(self.proj_que2difficulty.weight)
+
+        if que_weight_init:
+            dim_question = encoder_config["dim_question"]
+            k = math.sqrt(1 / dim_question)
+            num_question = encoder_config["num_question"]
+            num_concept = encoder_config["num_concept"]
+            que_weight = nn.init.xavier_uniform_(torch.ones(num_concept, dim_question) * -k).to(self.params["device"])
+            que_emb_weight = nn.init.xavier_uniform_(torch.ones(num_question, dim_question) * k).to(self.params["device"])
+            self.proj_que2difficulty.weight = nn.Parameter(que_weight)
+            self.embed_question.weight = nn.Parameter(que_emb_weight)
+        else:
+            torch.nn.init.xavier_uniform_(self.proj_que2difficulty.weight)
+            torch.nn.init.xavier_uniform_(self.embed_question.weight)
+
         torch.nn.init.xavier_uniform_(self.proj_que2discrimination.weight)
 
     # ------------------------------------------------------base--------------------------------------------------------
@@ -82,7 +98,7 @@ class LPKTPlus(nn.Module):
         dim_correct = encoder_config["dim_correct"]
         dim_latent = encoder_config["dim_latent"]
         ablation_set = encoder_config["ablation_set"]
-        user_weight_init = encoder_config["user_weight_init"]
+        user_weight_init = self.params["other"]["cognition_tracing"]["user_weight_init"]
 
         batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
         question_emb = self.embed_question(batch["question_seq"])
@@ -148,13 +164,28 @@ class LPKTPlus(nn.Module):
 
         return predict_loss
 
+    def get_q_table_loss(self, target_question, question_ids, related_concept_ids, unrelated_concept_ids):
+        question_emb = self.embed_question(target_question)
+        question_diff = torch.sigmoid(self.proj_que2difficulty(self.dropout(question_emb)))
+
+        related_diff = question_diff[question_ids, related_concept_ids]
+        unrelated_diff = question_diff[question_ids, unrelated_concept_ids]
+
+        minus_diff = unrelated_diff - related_diff
+        to_punish = minus_diff[minus_diff > 0]
+        num_sample = to_punish.numel()
+        if num_sample > 0:
+            return to_punish.mean(), num_sample
+        else:
+            return 0, 0
+
     def get_learn_loss(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT+"]
         num_concept = encoder_config["num_concept"]
         dim_correct = encoder_config["dim_correct"]
         dim_latent = encoder_config["dim_latent"]
         ablation_set = encoder_config["ablation_set"]
-        user_weight_init = encoder_config["user_weight_init"]
+        user_weight_init = self.params["other"]["cognition_tracing"]["user_weight_init"]
 
         batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
         question_emb = self.embed_question(batch["question_seq"])
@@ -233,7 +264,7 @@ class LPKTPlus(nn.Module):
         dim_correct = encoder_config["dim_correct"]
         dim_latent = encoder_config["dim_latent"]
         ablation_set = encoder_config["ablation_set"]
-        user_weight_init = encoder_config["user_weight_init"]
+        user_weight_init = self.params["other"]["cognition_tracing"]["user_weight_init"]
 
         batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
         question_emb = self.embed_question(batch["question_seq"])
@@ -312,7 +343,7 @@ class LPKTPlus(nn.Module):
         dim_correct = encoder_config["dim_correct"]
         dim_latent = encoder_config["dim_latent"]
         ablation_set = encoder_config["ablation_set"]
-        user_weight_init = encoder_config["user_weight_init"]
+        user_weight_init = self.params["other"]["cognition_tracing"]["user_weight_init"]
 
         batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
         question_emb = self.embed_question(batch["question_seq"])
@@ -429,11 +460,12 @@ class LPKTPlus(nn.Module):
         dim_correct = encoder_config["dim_correct"]
         dim_latent = encoder_config["dim_latent"]
         ablation_set = encoder_config["ablation_set"]
-        user_weight_init = encoder_config["user_weight_init"]
+
         w_penalty_neg = self.params["loss_config"].get("penalty neg loss", 0)
         w_learning = self.params["loss_config"].get("learning loss", 0)
         w_counter_fact = self.params["loss_config"].get("counterfactual loss", 0)
         multi_stage = self.params["other"]["cognition_tracing"]["multi_stage"]
+        user_weight_init = self.params["other"]["cognition_tracing"]["user_weight_init"]
 
         batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
         question_emb = self.embed_question(batch["question_seq"])

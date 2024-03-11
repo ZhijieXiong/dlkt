@@ -156,7 +156,3 @@ class CognitionTracingUtil:
             result[c_id, :] = x
 
         self.objects["cognition_tracing"]["user_proj_weight_init_value"] = result
-
-    def get_que_diff_proj_weight_init_value(self):
-        # 根据Q table初始化习题embedding和proj2diff参数
-        pass

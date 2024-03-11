@@ -62,8 +62,6 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
 
     # 初始化习题参数
     global_params["other"]["cognition_tracing"]["que_weight_init"] = local_params["que_weight_init"]
-    if local_params["que_weight_init"]:
-        cognition_tracing_util.get_que_diff_proj_weight_init_value()
 
     # # 提取学生认知标签和对应mask以及权重
     # if local_params["w_user_ability_pred"] != 0:

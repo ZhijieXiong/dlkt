@@ -41,6 +41,7 @@ class DCT(nn.Module):
         dim_question = encoder_config["dim_question"]
 
         torch.nn.init.xavier_uniform_(self.proj_latent2ability.weight)
+
         if not self.params["other"].get("cognition_tracing", False):
             torch.nn.init.xavier_uniform_(self.proj_que2difficulty.weight)
         else:
@@ -71,6 +72,7 @@ class DCT(nn.Module):
                 # torch.nn.init.constant_(self.proj_que2difficulty.bias, -3)
             else:
                 torch.nn.init.xavier_uniform_(self.proj_que2difficulty.weight)
+
         torch.nn.init.xavier_uniform_(self.proj_que2discrimination.weight)
 
     def predict_score(self, latent, question_emb):

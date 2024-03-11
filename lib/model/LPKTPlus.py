@@ -46,7 +46,7 @@ class LPKTPlus(nn.Module):
 
     def init_weight(self):
         ablation_set = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT+"]["ablation_set"]
-        # user_weight_init = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT_PLUS"]["user_weight_init"]
+        user_weight_init = self.params["other"]["cognition_tracing"]["user_weight_init"]
 
         if ablation_set == 0:
             torch.nn.init.xavier_uniform_(self.embed_answer_time.weight)
@@ -58,12 +58,11 @@ class LPKTPlus(nn.Module):
         torch.nn.init.xavier_uniform_(self.linear_3.weight)
         torch.nn.init.xavier_uniform_(self.linear_4.weight)
 
-        # if user_weight_init:
-        #     self.proj_latent2ability.weight = nn.Parameter(self.objects["lpkt_plus"]["user_proj_weight_init_value"])
-        #     torch.nn.init.constant_(self.proj_latent2ability.bias, 0)
-        # else:
-        #     torch.nn.init.xavier_uniform_(self.proj_latent2ability.weight)
-        torch.nn.init.xavier_uniform_(self.proj_latent2ability.weight)
+        if user_weight_init:
+            self.proj_latent2ability.weight = nn.Parameter(self.objects["cognition_tracing"]["user_proj_weight_init_value"])
+            torch.nn.init.constant_(self.proj_latent2ability.bias, 0)
+        else:
+            torch.nn.init.xavier_uniform_(self.proj_latent2ability.weight)
         torch.nn.init.xavier_uniform_(self.proj_que2difficulty.weight)
         torch.nn.init.xavier_uniform_(self.proj_que2discrimination.weight)
 
@@ -83,11 +82,13 @@ class LPKTPlus(nn.Module):
         dim_correct = encoder_config["dim_correct"]
         dim_latent = encoder_config["dim_latent"]
         ablation_set = encoder_config["ablation_set"]
-        batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
+        user_weight_init = encoder_config["user_weight_init"]
 
+        batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
         question_emb = self.embed_question(batch["question_seq"])
         interval_time_emb = self.embed_interval_time(batch["interval_time_seq"])
         correct_emb = batch["correct_seq"].view(-1, 1).repeat(1, dim_correct).view(batch_size, -1, dim_correct)
+
         if ablation_set == 0:
             use_time_seq = batch["use_time_seq"]
             use_time_emb = self.embed_answer_time(use_time_seq)
@@ -95,7 +96,11 @@ class LPKTPlus(nn.Module):
         else:
             learning_emb = self.linear_1(torch.cat((question_emb, correct_emb), 2))
 
-        h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
+        if user_weight_init:
+            h_pre = torch.ones(batch_size, dim_latent).to(self.params["device"])
+        else:
+            h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
+
         learning_pre = torch.zeros(batch_size, dim_latent).to(self.params["device"])
         predict_score = torch.zeros(batch_size, seq_len).to(self.params["device"])
 
@@ -143,29 +148,179 @@ class LPKTPlus(nn.Module):
 
         return predict_loss
 
-    def get_predict_score(self, batch):
-        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-        predict_score = self.forward(batch)
-        predict_score = torch.masked_select(predict_score[:, 1:], mask_bool_seq[:, 1:])
-
-        return predict_score
-
-    def get_predict_loss(self, batch, loss_record=None):
+    def get_learn_loss(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT+"]
         num_concept = encoder_config["num_concept"]
         dim_correct = encoder_config["dim_correct"]
         dim_latent = encoder_config["dim_latent"]
         ablation_set = encoder_config["ablation_set"]
-        # user_weight_init = encoder_config["user_weight_init"]
-        w_penalty_neg = self.params["loss_config"]["penalty neg loss"]
-        w_learning = self.params["loss_config"]["learning loss"]
-        batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
+        user_weight_init = encoder_config["user_weight_init"]
 
+        batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
+        question_emb = self.embed_question(batch["question_seq"])
+        interval_time_emb = self.embed_interval_time(batch["interval_time_seq"])
+        correct_emb = batch["correct_seq"].view(-1, 1).repeat(1, dim_correct).view(batch_size, -1, dim_correct)
+
+        if ablation_set == 0:
+            use_time_seq = batch["use_time_seq"]
+            use_time_emb = self.embed_answer_time(use_time_seq)
+            learning_emb = self.linear_1(torch.cat((question_emb, use_time_emb, correct_emb), 2))
+        else:
+            learning_emb = self.linear_1(torch.cat((question_emb, correct_emb), 2))
+
+        if user_weight_init:
+            h_pre = torch.ones(batch_size, dim_latent).to(self.params["device"])
+        else:
+            h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
+
+        learning_pre = torch.zeros(batch_size, dim_latent).to(self.params["device"])
+        predict_score_all = torch.zeros(batch_size, seq_len).to(self.params["device"])
+        inter_func_in_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
+        user_ability_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
+        user_ability_all[:, 0] = torch.sigmoid(self.proj_latent2ability(h_pre))
+
+        for t in range(0, seq_len - 1):
+            it = interval_time_emb[:, t]
+            learning = learning_emb[:, t]
+
+            # Learning Module
+            learning_gain = self.tanh(self.linear_2(torch.cat((learning_pre, it, learning, h_pre), dim=1)))
+            gamma_l = self.sig(self.linear_3(torch.cat((learning_pre, it, learning, h_pre), dim=1)))
+            LG = gamma_l * ((learning_gain + 1) / 2)
+
+            # Forgetting Module
+            gamma_f = self.sig(self.linear_4(torch.cat((h_pre, LG, it), dim=1)))
+            h = LG + gamma_f * h_pre
+
+            # Predicting Module
+            user_ability = torch.sigmoid(self.proj_latent2ability(self.dropout(h)))
+            que_difficulty = torch.sigmoid(self.proj_que2difficulty(self.dropout(question_emb[:, t + 1])))
+            que_discrimination = torch.sigmoid(self.proj_que2discrimination(self.dropout(question_emb[:, t + 1]))) * 10
+            user_ability_all[:, t + 1] = user_ability
+            interaction_func_in = user_ability - que_difficulty
+            inter_func_in_all[:, t + 1] = interaction_func_in
+            predict_score = torch.sigmoid(
+                torch.sum(que_discrimination * (user_ability - que_difficulty) * que_difficulty, dim=-1)
+            )
+            predict_score_all[:, t + 1] = predict_score
+
+            # prepare for next prediction
+            learning_pre = learning
+            h_pre = h
+
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        # 对于做对的题，惩罚user_ability - que_difficulty小于0的值（只惩罚考察的知识点）
+        q2c_table = self.objects["data"]["q2c_table"][batch["question_seq"][:, 1:]]
+        q2c_mask_table = self.objects["data"]["q2c_mask_table"][batch["question_seq"][:, 1:]]
+
+        master_leval = user_ability_all[:, 2:] - user_ability_all[:, 1:-1]
+        mask4master = mask_bool_seq[:, 1:-1].unsqueeze(-1) & q2c_mask_table[:, :-1].bool()
+
+        # 对于每个时刻，都应该比上个时刻有所增长（对应当前时刻所做题的知识点），惩罚小于0的部分
+        target_neg_master_leval = torch.masked_select(torch.gather(master_leval, 2, q2c_table[:, :-1]), mask4master)
+        neg_master_leval = target_neg_master_leval[target_neg_master_leval < 0]
+        num_sample = neg_master_leval.numel()
+
+        if num_sample > 0:
+            learn_loss = -neg_master_leval.mean()
+            return learn_loss, num_sample
+        else:
+            return 0, 0
+
+    def get_penalty_neg_loss(self, batch):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT+"]
+        num_concept = encoder_config["num_concept"]
+        dim_correct = encoder_config["dim_correct"]
+        dim_latent = encoder_config["dim_latent"]
+        ablation_set = encoder_config["ablation_set"]
+        user_weight_init = encoder_config["user_weight_init"]
+
+        batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
+        question_emb = self.embed_question(batch["question_seq"])
+        interval_time_emb = self.embed_interval_time(batch["interval_time_seq"])
+        correct_emb = batch["correct_seq"].view(-1, 1).repeat(1, dim_correct).view(batch_size, -1, dim_correct)
+
+        if ablation_set == 0:
+            use_time_seq = batch["use_time_seq"]
+            use_time_emb = self.embed_answer_time(use_time_seq)
+            learning_emb = self.linear_1(torch.cat((question_emb, use_time_emb, correct_emb), 2))
+        else:
+            learning_emb = self.linear_1(torch.cat((question_emb, correct_emb), 2))
+
+        if user_weight_init:
+            h_pre = torch.ones(batch_size, dim_latent).to(self.params["device"])
+        else:
+            h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
+        learning_pre = torch.zeros(batch_size, dim_latent).to(self.params["device"])
+        predict_score_all = torch.zeros(batch_size, seq_len).to(self.params["device"])
+        inter_func_in_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
+        user_ability_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
+        user_ability_all[:, 0] = torch.sigmoid(self.proj_latent2ability(h_pre))
+
+        for t in range(0, seq_len - 1):
+            it = interval_time_emb[:, t]
+            learning = learning_emb[:, t]
+
+            # Learning Module
+            learning_gain = self.tanh(self.linear_2(torch.cat((learning_pre, it, learning, h_pre), dim=1)))
+            gamma_l = self.sig(self.linear_3(torch.cat((learning_pre, it, learning, h_pre), dim=1)))
+            LG = gamma_l * ((learning_gain + 1) / 2)
+
+            # Forgetting Module
+            gamma_f = self.sig(self.linear_4(torch.cat((h_pre, LG, it), dim=1)))
+            h = LG + gamma_f * h_pre
+
+            # Predicting Module
+            user_ability = torch.sigmoid(self.proj_latent2ability(self.dropout(h)))
+            que_difficulty = torch.sigmoid(self.proj_que2difficulty(self.dropout(question_emb[:, t + 1])))
+            que_discrimination = torch.sigmoid(self.proj_que2discrimination(self.dropout(question_emb[:, t + 1]))) * 10
+            user_ability_all[:, t + 1] = user_ability
+            interaction_func_in = user_ability - que_difficulty
+            inter_func_in_all[:, t + 1] = interaction_func_in
+            predict_score = torch.sigmoid(
+                torch.sum(que_discrimination * (user_ability - que_difficulty) * que_difficulty, dim=-1)
+            )
+            predict_score_all[:, t + 1] = predict_score
+
+            # prepare for next prediction
+            learning_pre = learning
+            h_pre = h
+
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+
+        # 对于做对的题，惩罚user_ability - que_difficulty小于0的值（只惩罚考察的知识点）
+        q2c_table = self.objects["data"]["q2c_table"][batch["question_seq"][:, 1:]]
+        q2c_mask_table = self.objects["data"]["q2c_mask_table"][batch["question_seq"][:, 1:]]
+
+        target_inter_func_in = torch.gather(inter_func_in_all[:, 1:], 2, q2c_table)
+        mask4inter_func_in = mask_bool_seq[:, 1:].unsqueeze(-1) & \
+                             batch["correct_seq"][:, 1:].bool().unsqueeze(-1) & \
+                             q2c_mask_table.bool()
+        target_inter_func_in = torch.masked_select(target_inter_func_in, mask4inter_func_in)
+        neg_inter_func_in = target_inter_func_in[target_inter_func_in <= 0]
+        num_sample = neg_inter_func_in.numel()
+
+        if num_sample > 0:
+            penalty_neg_loss = -neg_inter_func_in.mean()
+            return penalty_neg_loss, num_sample
+        else:
+            return 0, 0
+
+    def get_counter_fact_loss(self, batch):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT+"]
+        num_concept = encoder_config["num_concept"]
+        dim_correct = encoder_config["dim_correct"]
+        dim_latent = encoder_config["dim_latent"]
+        ablation_set = encoder_config["ablation_set"]
+        user_weight_init = encoder_config["user_weight_init"]
+
+        batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
         question_emb = self.embed_question(batch["question_seq"])
         interval_time_emb = self.embed_interval_time(batch["interval_time_seq"])
         correct_emb = batch["correct_seq"].view(-1, 1).repeat(1, dim_correct).view(batch_size, -1, dim_correct)
         # cf: counterfactual
         cf_correct_emb = (1 - batch["correct_seq"]).view(-1, 1).repeat(1, dim_correct).view(batch_size, -1, dim_correct)
+
         if ablation_set == 0:
             use_time_seq = batch["use_time_seq"]
             use_time_emb = self.embed_answer_time(use_time_seq)
@@ -175,11 +330,11 @@ class LPKTPlus(nn.Module):
             learning_emb = self.linear_1(torch.cat((question_emb, correct_emb), 2))
             cf_learning_emb = self.linear_1(torch.cat((question_emb, cf_correct_emb), 2))
 
-        # if user_weight_init:
-        #     h_pre = torch.ones(batch_size, dim_latent).to(self.params["device"])
-        # else:
-        #     h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
-        h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
+        if user_weight_init:
+            h_pre = torch.ones(batch_size, dim_latent).to(self.params["device"])
+        else:
+            h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
+
         learning_pre = torch.zeros(batch_size, dim_latent).to(self.params["device"])
         predict_score_all = torch.zeros(batch_size, seq_len).to(self.params["device"])
         inter_func_in_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
@@ -204,11 +359,131 @@ class LPKTPlus(nn.Module):
             user_ability = torch.sigmoid(self.proj_latent2ability(self.dropout(h)))
             que_difficulty = torch.sigmoid(self.proj_que2difficulty(self.dropout(question_emb[:, t + 1])))
             que_discrimination = torch.sigmoid(self.proj_que2discrimination(self.dropout(question_emb[:, t + 1]))) * 10
+            user_ability_all[:, t + 1] = user_ability
 
-            if w_learning != 0:
-                user_ability_all[:, t + 1] = user_ability
+            cf_learning = cf_learning_emb[:, t]
+            cf_learning_gain = self.tanh(self.linear_2(torch.cat((learning_pre, it, cf_learning, h_pre), dim=1)))
+            cf_gamma_l = self.sig(self.linear_3(torch.cat((learning_pre, it, cf_learning, h_pre), dim=1)))
+            cf_LG = cf_gamma_l * ((cf_learning_gain + 1) / 2)
+            cf_gamma_f = self.sig(self.linear_4(torch.cat((h_pre, cf_LG, it), dim=1)))
+            cf_h = cf_LG + cf_gamma_f * h_pre
+            cf_user_ability = torch.sigmoid(self.proj_latent2ability(self.dropout(cf_h)))
+            cf_user_ability_all[:, t + 1] = cf_user_ability
+
+            interaction_func_in = user_ability - que_difficulty
+            inter_func_in_all[:, t + 1] = interaction_func_in
+            predict_score = torch.sigmoid(
+                torch.sum(que_discrimination * (user_ability - que_difficulty) * que_difficulty, dim=-1)
+            )
+            predict_score_all[:, t + 1] = predict_score
+
+            # prepare for next prediction
+            learning_pre = learning
+            h_pre = h
+
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+
+        # 对于做对的题，惩罚user_ability - que_difficulty小于0的值（只惩罚考察的知识点）
+        q2c_table = self.objects["data"]["q2c_table"][batch["question_seq"][:, 1:]]
+        q2c_mask_table = self.objects["data"]["q2c_mask_table"][batch["question_seq"][:, 1:]]
+        # 反事实约束：做对一道题比做错一道题的学习增长大
+        cf_loss = 0.
+
+        f_minus_cf = torch.gather(user_ability_all[:, 1:] - cf_user_ability_all[:, 1:], 2, q2c_table)
+        correct_seq1 = batch["correct_seq"][:, :-1].bool()
+        correct_seq2 = (1 - batch["correct_seq"][:, :-1]).bool()
+        mask4correct = mask_bool_seq[:, 1:].unsqueeze(-1) & correct_seq1.unsqueeze(-1) & q2c_mask_table.bool()
+        mask4wrong = mask_bool_seq[:, 1:].unsqueeze(-1) & correct_seq2.unsqueeze(-1) & q2c_mask_table.bool()
+
+        # 对于做对的时刻，f_minus_cf应该大于0，惩罚小于0的部分
+        target_neg_f_minus_cf = torch.masked_select(f_minus_cf, mask4correct)
+        neg_f_minus_cf = target_neg_f_minus_cf[target_neg_f_minus_cf < 0]
+        num_sample1 = neg_f_minus_cf.numel()
+        if num_sample1 > 0:
+            cf_loss1 = -neg_f_minus_cf.mean()
+            cf_loss = cf_loss + cf_loss1
+
+        # 对于做错的时刻，f_minus_cf应该小于0，惩罚大于0的部分
+        target_pos_f_minus_cf = torch.masked_select(f_minus_cf, mask4wrong)
+        pos_f_minus_cf = target_pos_f_minus_cf[target_pos_f_minus_cf > 0]
+        num_sample2 = pos_f_minus_cf.numel()
+        if num_sample2 > 0:
+            cf_loss2 = pos_f_minus_cf.mean()
+            cf_loss = cf_loss + cf_loss2
+
+        if (num_sample1 + num_sample2) > 0:
+            return cf_loss, (num_sample1 + num_sample2)
+        else:
+            return 0, 0
+
+    def get_predict_score(self, batch):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        predict_score = self.forward(batch)
+        predict_score = torch.masked_select(predict_score[:, 1:], mask_bool_seq[:, 1:])
+
+        return predict_score
+
+    def get_predict_loss(self, batch, loss_record=None):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT+"]
+        num_concept = encoder_config["num_concept"]
+        dim_correct = encoder_config["dim_correct"]
+        dim_latent = encoder_config["dim_latent"]
+        ablation_set = encoder_config["ablation_set"]
+        user_weight_init = encoder_config["user_weight_init"]
+        w_penalty_neg = self.params["loss_config"].get("penalty neg loss", 0)
+        w_learning = self.params["loss_config"].get("learning loss", 0)
+        w_counter_fact = self.params["loss_config"].get("counterfactual loss", 0)
+        multi_stage = self.params["other"]["cognition_tracing"]["multi_stage"]
+
+        batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
+        question_emb = self.embed_question(batch["question_seq"])
+        interval_time_emb = self.embed_interval_time(batch["interval_time_seq"])
+        correct_emb = batch["correct_seq"].view(-1, 1).repeat(1, dim_correct).view(batch_size, -1, dim_correct)
+        # cf: counterfactual
+        cf_correct_emb = (1 - batch["correct_seq"]).view(-1, 1).repeat(1, dim_correct).view(batch_size, -1, dim_correct)
+
+        if ablation_set == 0:
+            use_time_seq = batch["use_time_seq"]
+            use_time_emb = self.embed_answer_time(use_time_seq)
+            learning_emb = self.linear_1(torch.cat((question_emb, use_time_emb, correct_emb), 2))
+            cf_learning_emb = self.linear_1(torch.cat((question_emb, use_time_emb, cf_correct_emb), 2))
+        else:
+            learning_emb = self.linear_1(torch.cat((question_emb, correct_emb), 2))
+            cf_learning_emb = self.linear_1(torch.cat((question_emb, cf_correct_emb), 2))
+
+        if user_weight_init:
+            h_pre = torch.ones(batch_size, dim_latent).to(self.params["device"])
+        else:
+            h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
+
+        learning_pre = torch.zeros(batch_size, dim_latent).to(self.params["device"])
+        predict_score_all = torch.zeros(batch_size, seq_len).to(self.params["device"])
+        inter_func_in_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
+        user_ability_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
+        user_ability_all[:, 0] = torch.sigmoid(self.proj_latent2ability(h_pre))
+        cf_user_ability_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
+
+        for t in range(0, seq_len - 1):
+            it = interval_time_emb[:, t]
+            learning = learning_emb[:, t]
+
+            # Learning Module
+            learning_gain = self.tanh(self.linear_2(torch.cat((learning_pre, it, learning, h_pre), dim=1)))
+            gamma_l = self.sig(self.linear_3(torch.cat((learning_pre, it, learning, h_pre), dim=1)))
+            LG = gamma_l * ((learning_gain + 1) / 2)
+
+            # Forgetting Module
+            gamma_f = self.sig(self.linear_4(torch.cat((h_pre, LG, it), dim=1)))
+            h = LG + gamma_f * h_pre
+
+            # Predicting Module
+            user_ability = torch.sigmoid(self.proj_latent2ability(self.dropout(h)))
+            que_difficulty = torch.sigmoid(self.proj_que2difficulty(self.dropout(question_emb[:, t + 1])))
+            que_discrimination = torch.sigmoid(self.proj_que2discrimination(self.dropout(question_emb[:, t + 1]))) * 10
+            user_ability_all[:, t + 1] = user_ability
+
+            if (not multi_stage) and (w_counter_fact != 0):
                 cf_learning = cf_learning_emb[:, t]
-
                 cf_learning_gain = self.tanh(self.linear_2(torch.cat((learning_pre, it, cf_learning, h_pre), dim=1)))
                 cf_gamma_l = self.sig(self.linear_3(torch.cat((learning_pre, it, cf_learning, h_pre), dim=1)))
                 cf_LG = cf_gamma_l * ((cf_learning_gain + 1) / 2)
@@ -241,7 +516,7 @@ class LPKTPlus(nn.Module):
         # 对于做对的题，惩罚user_ability - que_difficulty小于0的值（只惩罚考察的知识点）
         q2c_table = self.objects["data"]["q2c_table"][batch["question_seq"][:, 1:]]
         q2c_mask_table = self.objects["data"]["q2c_mask_table"][batch["question_seq"][:, 1:]]
-        if w_penalty_neg != 0:
+        if (not multi_stage) and (w_penalty_neg != 0):
             target_inter_func_in = torch.gather(inter_func_in_all[:, 1:], 2, q2c_table)
             mask4inter_func_in = mask_bool_seq[:, 1:].unsqueeze(-1) & \
                                  batch["correct_seq"][:, 1:].bool().unsqueeze(-1) & \
@@ -255,21 +530,24 @@ class LPKTPlus(nn.Module):
                     loss_record.add_loss("penalty neg loss", penalty_neg_loss.detach().cpu().item() * num_sample, num_sample)
                 loss = loss + penalty_neg_loss * w_penalty_neg
 
-        # 反事实约束：做对一道题比做错一道题的增长要大；做了题要比不做题增长大
-        if w_learning != 0:
+        if (not multi_stage) and (w_learning != 0):
+            # 学习约束：做了题比不做题学习增长大
             master_leval = user_ability_all[:, 2:] - user_ability_all[:, 1:-1]
             mask4master = mask_bool_seq[:, 1:-1].unsqueeze(-1) & q2c_mask_table[:, :-1].bool()
 
-            learn_loss = 0.
             # 对于每个时刻，都应该比上个时刻有所增长（对应当前时刻所做题的知识点），惩罚小于0的部分
             target_neg_master_leval = torch.masked_select(torch.gather(master_leval, 2, q2c_table[:, :-1]), mask4master)
             neg_master_leval = target_neg_master_leval[target_neg_master_leval < 0]
             num_sample = neg_master_leval.numel()
             if num_sample > 0:
-                learn_loss1 = -neg_master_leval.mean()
-                learn_loss = learn_loss + learn_loss1
+                learn_loss = -neg_master_leval.mean()
                 if loss_record is not None:
-                    loss_record.add_loss("learning loss", learn_loss1.detach().cpu().item() * num_sample, num_sample)
+                    loss_record.add_loss("learning loss", learn_loss.detach().cpu().item() * num_sample, num_sample)
+                loss = loss + learn_loss * w_learning
+
+        if (not multi_stage) and (w_counter_fact != 0):
+            # 反事实约束：做对一道题比做错一道题的学习增长大
+            cf_loss = 0.
 
             f_minus_cf = torch.gather(user_ability_all[:, 1:] - cf_user_ability_all[:, 1:], 2, q2c_table)
             correct_seq1 = batch["correct_seq"][:, :-1].bool()
@@ -280,23 +558,24 @@ class LPKTPlus(nn.Module):
             # 对于做对的时刻，f_minus_cf应该大于0，惩罚小于0的部分
             target_neg_f_minus_cf = torch.masked_select(f_minus_cf, mask4correct)
             neg_f_minus_cf = target_neg_f_minus_cf[target_neg_f_minus_cf < 0]
-            num_sample = neg_f_minus_cf.numel()
-            if num_sample > 0:
-                learn_loss2 = -neg_f_minus_cf.mean()
-                learn_loss = learn_loss + learn_loss2
+            num_sample1 = neg_f_minus_cf.numel()
+            if num_sample1 > 0:
+                cf_loss1 = -neg_f_minus_cf.mean()
+                cf_loss = cf_loss + cf_loss1
                 if loss_record is not None:
-                    loss_record.add_loss("learning loss", learn_loss2.detach().cpu().item() * num_sample, num_sample)
+                    loss_record.add_loss("learning loss", cf_loss1.detach().cpu().item() * num_sample1, num_sample1)
 
             # 对于做错的时刻，f_minus_cf应该小于0，惩罚大于0的部分
             target_pos_f_minus_cf = torch.masked_select(f_minus_cf, mask4wrong)
             pos_f_minus_cf = target_pos_f_minus_cf[target_pos_f_minus_cf > 0]
-            num_sample = pos_f_minus_cf.numel()
-            if num_sample > 0:
-                learn_loss3 = pos_f_minus_cf.mean()
-                learn_loss = learn_loss + learn_loss3
+            num_sample2 = pos_f_minus_cf.numel()
+            if num_sample2 > 0:
+                cf_loss2 = pos_f_minus_cf.mean()
+                cf_loss = cf_loss + cf_loss2
                 if loss_record is not None:
-                    loss_record.add_loss("learning loss", learn_loss3.detach().cpu().item() * num_sample, num_sample)
+                    loss_record.add_loss("learning loss", cf_loss2.detach().cpu().item() * num_sample2, num_sample2)
 
-            loss = loss + learn_loss * w_learning
+            if (num_sample1 + num_sample2) > 0:
+                loss = loss + cf_loss * w_counter_fact
 
         return loss

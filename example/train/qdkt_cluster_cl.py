@@ -24,7 +24,7 @@ if __name__ == "__main__":
     parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0.0001)
+    parser.add_argument("--weight_decay", type=float, default=0.001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
@@ -67,9 +67,10 @@ if __name__ == "__main__":
     # cluster CL参数（对比学习）
     parser.add_argument("--num_cluster", type=int, default=256)
     parser.add_argument("--temp", type=float, default=0.05)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.3)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.001)
     parser.add_argument("--latent_type4cl", type=str, default="last_time",
                         choices=("last_time", "mean_pool"))
+    parser.add_argument("--multi_stage", type=str2bool, default=True, help="单阶段还是多阶段训练")
     # CL warm up
     parser.add_argument("--use_warm_up4cl", type=str2bool, default=True)
     parser.add_argument("--epoch_warm_up4cl", type=float, default=4)

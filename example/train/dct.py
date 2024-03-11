@@ -61,7 +61,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_rnn_layer", type=int, default=2)
     parser.add_argument("--dropout", type=float, default=0.1)
     # 单阶段还是多阶段训练
-    parser.add_argument("--multi_stage", type=str2bool, default=False)
+    parser.add_argument("--multi_stage", type=str2bool, default=True)
     # 生成伪标签的参数
     parser.add_argument("--min_fre4diff", type=int, default=20)
     parser.add_argument("--min_fre4disc", type=int, default=20)
@@ -70,15 +70,15 @@ if __name__ == "__main__":
                         help="计算区分度时，选择正确率最高的k%和最低的k%序列")
     # 消融
     parser.add_argument("--user_weight_init", type=str2bool, default=False, help="是否使用基于IRT的参数初始化")
-    parser.add_argument("--que_weight_init", type=str2bool, default=False, help="是否使用基于Q table的初始化")
+    parser.add_argument("--que_weight_init", type=str2bool, default=True, help="是否使用基于Q table的初始化")
     parser.add_argument("--w_que_diff_pred", type=float, default=0)
     parser.add_argument("--w_que_disc_pred", type=float, default=0)
     parser.add_argument("--w_penalty_neg", type=float, default=1,
                         help="计算最终得分时，对于做对的题，惩罚ability-difficulty小于0（对应知识点）")
     parser.add_argument("--w_user_ability_pred", type=float, default=0)
     parser.add_argument("--w_learning", type=float, default=1)
-    parser.add_argument("--w_counter_fact", type=float, default=0)
-    parser.add_argument("--w_q_table", type=float, default=0)
+    parser.add_argument("--w_counter_fact", type=float, default=1)
+    parser.add_argument("--w_q_table", type=float, default=1)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

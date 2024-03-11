@@ -22,6 +22,7 @@ def aug_general_config(local_params, global_params, global_objects):
 
     datasets_train_config = global_params["datasets_config"]["train"]
     datasets_train_config["type"] = "kt4aug"
+    datasets_train_config["kt4aug"] = {}
     datasets_train_config["kt4aug"]["aug_type"] = aug_type
     if data_aug_type4cl == "original_data_aug":
         datasets_train_config["kt4aug"]["num_aug"] = 2
@@ -95,6 +96,7 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     num2drop_concept4dis = local_params.get("num2drop_concept4dis", 500)
     min_seq_len4dis = local_params.get("min_seq_len4dis", 30)
     dis_threshold = local_params.get("dis_threshold", 0.2)
+    multi_stage = local_params["multi_stage"]
 
     global_params["other"]["instance_cl"] = {}
     instance_cl_config = global_params["other"]["instance_cl"]
@@ -110,6 +112,7 @@ def instance_cl_general_config(local_params, global_params, global_objects):
     instance_cl_config["use_neg_filter"] = use_neg_filter
     instance_cl_config["neg_sim_threshold"] = neg_sim_threshold
     instance_cl_config["cl_space"] = cl_space
+    instance_cl_config["multi_stage"] = multi_stage
 
     # max entropy adv aug参数
     use_adv_aug = local_params["use_adv_aug"]
@@ -225,6 +228,7 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
     data_aug_type4cl = local_params["data_aug_type4cl"]
     use_emb_dropout4cl = local_params["use_emb_dropout4cl"]
     emb_dropout4cl = local_params["emb_dropout4cl"]
+    multi_stage = local_params["multi_stage"]
 
     global_params["other"]["cluster_cl"] = {}
     cluster_cl_config = global_params["other"]["cluster_cl"]
@@ -240,6 +244,7 @@ def cluster_cl_general_config(local_params, global_params, global_objects):
     cluster_cl_config["data_aug_type4cl"] = data_aug_type4cl
     cluster_cl_config["use_emb_dropout4cl"] = use_emb_dropout4cl
     cluster_cl_config["emb_dropout4cl"] = emb_dropout4cl
+    cluster_cl_config["multi_stage"] = multi_stage
 
     # max entropy adv aug参数
     use_adv_aug = local_params["use_adv_aug"]

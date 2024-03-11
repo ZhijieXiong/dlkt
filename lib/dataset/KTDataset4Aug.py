@@ -409,7 +409,7 @@ class KTDataset4Aug(Dataset):
         setting_name = dataset_config_this["setting_name"]
         file_name = dataset_config_this["file_name"]
         dataset_path = os.path.join(self.objects["file_manager"].get_setting_dir(setting_name), file_name)
-        unuseful_keys = dataset_config_this["unuseful_seq_keys"]
+        unuseful_keys = dataset_config_this.get("unuseful_seq_keys", {"user_id"})
         unuseful_keys = unuseful_keys - {"seq_len"}
 
         if dataset_path != "":

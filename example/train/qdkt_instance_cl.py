@@ -66,8 +66,9 @@ if __name__ == "__main__":
     parser.add_argument("--activate_type", type=str, default="relu")
     # 对比学习
     parser.add_argument("--cl_space", type=str, default="latent", choices=("latent", "output"))
-    parser.add_argument("--temp", type=float, default=0.01)
-    parser.add_argument("--weight_cl_loss", type=float, default=0.1)
+    parser.add_argument("--temp", type=float, default=0.05)
+    parser.add_argument("--weight_cl_loss", type=float, default=0.01)
+    parser.add_argument("--multi_stage", type=str2bool, default=True, help="单阶段还是多阶段训练")
     # cl_space output：挑选高区分度习题的参数
     parser.add_argument("--num2drop_question4dis", type=int, default=15)
     parser.add_argument("--num2drop_concept4dis", type=int, default=100)

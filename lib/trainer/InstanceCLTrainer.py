@@ -25,6 +25,7 @@ class InstanceCLTrainer(BaseTrainer4ME_ADA):
         instance_cl_params = self.params["other"]["instance_cl"]
         use_adv_aug = instance_cl_params["use_adv_aug"]
         latent_type4cl = instance_cl_params["latent_type4cl"]
+        multi_stage = instance_cl_params["multi_stage"]
 
         for epoch in range(1, num_epoch + 1):
             self.do_online_sim()
@@ -35,30 +36,54 @@ class InstanceCLTrainer(BaseTrainer4ME_ADA):
 
             model.train()
             for batch_idx, batch in enumerate(train_loader):
-                optimizer.zero_grad()
-
                 num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
                 num_seq = batch["mask_seq"].shape[0]
-                loss = 0.
 
-                if latent_type4cl in ["mean_pool", "last_time"]:
-                    cl_loss = model.get_instance_cl_loss(batch, instance_cl_params, self.dataset_adv_generated)
-                elif latent_type4cl == "all_time":
-                    cl_loss = model.get_instance_cl_loss_all_interaction(batch, instance_cl_params)
+                if multi_stage:
+                    optimizer.zero_grad()
+                    predict_loss = model.get_predict_loss(batch)
+                    self.loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample,
+                                              num_sample)
+                    predict_loss.backward()
+                    if grad_clip_config["use_clip"]:
+                        nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
+                    optimizer.step()
+
+                    optimizer.zero_grad()
+                    if latent_type4cl in ["mean_pool", "last_time"]:
+                        cl_loss = model.get_instance_cl_loss(batch, instance_cl_params, self.dataset_adv_generated)
+                    elif latent_type4cl == "all_time":
+                        cl_loss = model.get_instance_cl_loss_all_interaction(batch, instance_cl_params)
+                    else:
+                        raise NotImplementedError()
+                    self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)
+                    cl_loss = cl_loss * weight_cl_loss
+                    cl_loss.backward()
+                    if grad_clip_config["use_clip"]:
+                        nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
+                    optimizer.step()
                 else:
-                    raise NotImplementedError()
-                self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)
-                loss = loss + weight_cl_loss * cl_loss
+                    optimizer.zero_grad()
+                    loss = 0.
 
-                predict_loss = model.get_predict_loss(batch)
-                self.loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
-                loss = loss + predict_loss
+                    if latent_type4cl in ["mean_pool", "last_time"]:
+                        cl_loss = model.get_instance_cl_loss(batch, instance_cl_params, self.dataset_adv_generated)
+                    elif latent_type4cl == "all_time":
+                        cl_loss = model.get_instance_cl_loss_all_interaction(batch, instance_cl_params)
+                    else:
+                        raise NotImplementedError()
+                    self.loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)
+                    loss = loss + weight_cl_loss * cl_loss
 
-                loss.backward()
-                if grad_clip_config["use_clip"]:
-                    nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
+                    predict_loss = model.get_predict_loss(batch)
+                    self.loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+                    loss = loss + predict_loss
 
-                optimizer.step()
+                    loss.backward()
+                    if grad_clip_config["use_clip"]:
+                        nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
+
+                    optimizer.step()
             if schedulers_config["use_scheduler"]:
                 scheduler.step()
             self.evaluate()

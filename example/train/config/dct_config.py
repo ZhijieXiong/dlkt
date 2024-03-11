@@ -1,5 +1,6 @@
 from ._config import *
 from ._cognition_tracing_config import *
+from ._data_aug_config import *
 from lib.template.kt_model.DCT import MODEL_PARAMS as DCT_MODEL_PARAMS
 
 
@@ -33,7 +34,8 @@ def dct_general_config(local_params, global_params, global_objects):
           f"model params\n"
           f"    num_concept: {num_concept}, num_question: {num_question}\n"
           f"    dim_question: {dim_question}, dim_correct: {dim_correct}, dim_latent: {dim_latent}, "
-          f"rnn type: {rnn_type}, num of rnn layer: {num_rnn_layer}, dropout: {dropout}")
+          f"rnn type: {rnn_type}, num of rnn layer: {num_rnn_layer}, dropout: {dropout}"
+    )
 
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]
@@ -52,6 +54,20 @@ def dct_config(local_params):
     cognition_tracing_general_config(local_params, global_params, global_objects)
 
     if local_params["save_model"]:
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects
+
+
+def dct_mex_entropy_aug_config(local_params):
+    global_params = {}
+    global_objects = {}
+    general_config(local_params, global_params, global_objects)
+    dct_general_config(local_params, global_params, global_objects)
+    max_entropy_adv_aug_general_config(local_params, global_params, global_objects)
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("@@DCT@@", "@@DCT-ME-ADA@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects

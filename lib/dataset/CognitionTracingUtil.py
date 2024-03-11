@@ -144,7 +144,7 @@ class CognitionTracingUtil:
 
         concept_init_value = {}
         num_concept = len(concept_accuracy)
-        dim_emb = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT_PLUS"]["dim_k"]
+        dim_emb = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT+"]["dim_latent"]
         min_acc = min(set(concept_accuracy.values()) - {-1})
         unknown_init = concept_inti_mastery(min_acc)
         for c_id, c_acc in concept_accuracy.items():
@@ -156,3 +156,7 @@ class CognitionTracingUtil:
             result[c_id, :] = x
 
         self.objects["cognition_tracing"]["user_proj_weight_init_value"] = result
+
+    def get_que_diff_proj_weight_init_value(self):
+        # 根据Q table初始化习题embedding和proj2diff参数
+        pass

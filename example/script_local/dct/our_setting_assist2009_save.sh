@@ -5,7 +5,7 @@ data_type="only_question"
 folds=(0 1 2 3 4)
 
 {
-#  # weight_decay: 0.0001, num_rnn_layer: 2, dim_question: 32, dim_latent: 32, dropout: 0.1
+#  # weight_decay: 0.0001, num_rnn_layer: 2, dim_question: 32, dim_latent: 32, dropout: 0.1 epoch_early_stop 10
 #  for fold in "${folds[@]}"
 #  do
 #    echo -e "fold: ${fold}"
@@ -25,7 +25,7 @@ folds=(0 1 2 3 4)
 #      --save_model True --debug_mode False --use_cpu False --seed 0
 #  done
 
-  # weight_decay: 0.001, num_rnn_layer: 2, dim_question: 64, dim_latent: 32, dropout: 0.1
+  # weight_decay: 0.001, num_rnn_layer: 2, dim_question: 64, dim_latent: 32, dropout: 0.1 epoch_early_stop 20
   for fold in "${folds[@]}"
   do
     echo -e "fold: ${fold}"

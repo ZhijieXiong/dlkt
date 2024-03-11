@@ -46,7 +46,7 @@ class LPKTPlus(nn.Module):
 
     def init_weight(self):
         ablation_set = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT+"]["ablation_set"]
-        # use_init_weight = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT_PLUS"]["use_init_weight"]
+        # user_weight_init = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT_PLUS"]["user_weight_init"]
 
         if ablation_set == 0:
             torch.nn.init.xavier_uniform_(self.embed_answer_time.weight)
@@ -58,7 +58,7 @@ class LPKTPlus(nn.Module):
         torch.nn.init.xavier_uniform_(self.linear_3.weight)
         torch.nn.init.xavier_uniform_(self.linear_4.weight)
 
-        # if use_init_weight:
+        # if user_weight_init:
         #     self.proj_latent2ability.weight = nn.Parameter(self.objects["lpkt_plus"]["user_proj_weight_init_value"])
         #     torch.nn.init.constant_(self.proj_latent2ability.bias, 0)
         # else:
@@ -156,7 +156,7 @@ class LPKTPlus(nn.Module):
         dim_correct = encoder_config["dim_correct"]
         dim_latent = encoder_config["dim_latent"]
         ablation_set = encoder_config["ablation_set"]
-        # use_init_weight = encoder_config["use_init_weight"]
+        # user_weight_init = encoder_config["user_weight_init"]
         w_penalty_neg = self.params["loss_config"]["penalty neg loss"]
         w_learning = self.params["loss_config"]["learning loss"]
         batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
@@ -175,7 +175,7 @@ class LPKTPlus(nn.Module):
             learning_emb = self.linear_1(torch.cat((question_emb, correct_emb), 2))
             cf_learning_emb = self.linear_1(torch.cat((question_emb, cf_correct_emb), 2))
 
-        # if use_init_weight:
+        # if user_weight_init:
         #     h_pre = torch.ones(batch_size, dim_latent).to(self.params["device"])
         # else:
         #     h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])

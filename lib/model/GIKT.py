@@ -366,6 +366,7 @@ class GIKT_PYG(nn.Module):
         dim_emb = encoder_config["dim_emb"]
         num_question = encoder_config["num_question"]
         num_concept = encoder_config["num_concept"]
+        hard_recap = encoder_config["hard_recap"]
         rank_k = encoder_config["rank_k"]
 
         edge_index_q2c = self.objects["gikt"]["edge_index"][0]
@@ -383,10 +384,10 @@ class GIKT_PYG(nn.Module):
         state_history = torch.zeros(batch_size, seq_len, dim_emb).to(self.params["device"])
         y_hat = torch.zeros(batch_size, seq_len).to(self.params["device"])
         all_emb_question = self.embed_question(
-            torch.tensor([i for i in range(self.num_question)]).long().to(self.params["device"])
+            torch.tensor([i for i in range(num_question)]).long().to(self.params["device"])
         )
         all_emb_concept = self.embed_concept(
-            torch.tensor([i for i in range(self.num_concept)]).long().to(self.params["device"])
+            torch.tensor([i for i in range(num_concept)]).long().to(self.params["device"])
         )
         x = torch.concat((all_emb_concept, all_emb_question), dim=0)
         if self.training:
@@ -402,7 +403,7 @@ class GIKT_PYG(nn.Module):
                 # 如果每个step都做GCN，显存不够
                 if t % 2 == 0:
                     selected_question_nodes = torch.unique(selected_question_nodes).clone().detach()
-                    selected_neighbor_nodes = self.Q_table[selected_question_nodes]
+                    selected_neighbor_nodes = self.objects["data"]["Q_table_tensor"][selected_question_nodes]
                     # x的前self.num_concept行是知识点
                     selected_question_nodes = selected_question_nodes + num_concept
                     selected_neighbor_nodes = torch.unique(torch.nonzero(selected_neighbor_nodes == 1)[:, 1])
@@ -470,7 +471,7 @@ class GIKT_PYG(nn.Module):
                 continue
 
             # recap选取历史状态
-            if self.hard_recap:
+            if hard_recap:
                 pass
                 # history_time = self.recap_hard(question_next, question[:, 0:t])
                 # selected_states = []
@@ -491,7 +492,7 @@ class GIKT_PYG(nn.Module):
                 # current_history_state = current_history_state.to(DEVICE)
             else:
                 current_state = gru2_output.unsqueeze(dim=1)
-                if t <= self.rank_k:
+                if t <= rank_k:
                     current_history_state = torch.concat((current_state, state_history[:, 0:t]), dim=1)
                 else:
                     Q = self.embed_question(question_next).clone().detach().unsqueeze(dim=-1)

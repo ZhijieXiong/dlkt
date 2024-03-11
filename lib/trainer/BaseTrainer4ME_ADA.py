@@ -44,7 +44,7 @@ class BaseTrainer4ME_ADA(KnowledgeTracingTrainer):
             model.eval()
             # RNN就需要加上torch.backends.cudnn.enabled = False，才能在eval模式下通过网络还能保留梯度，否则报错：RuntimeError: cudnn RNN backward can only be called in training mode
             # 不使用RNN就可以不加
-            use_rnn = model.model_name in ["qDKT"]
+            use_rnn = model.model_name in ["qDKT", "DCT"]
             if use_rnn:
                 torch.backends.cudnn.enabled = False
 
@@ -75,6 +75,14 @@ class BaseTrainer4ME_ADA(KnowledgeTracingTrainer):
             self.dataset_adv_generated["embed_layer"] = (
                 KTEmbedLayer(self.params, self.objects).to(self.params["device"]))
             optimizer = optim.SGD(self.dataset_adv_generated["embed_layer"].parameters(), lr=adv_learning_rate)
+        elif model_name == "DCT":
+            encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
+            num_question = encoder_config["num_question"]
+            dim_question = encoder_config["dim_question"]
+            self.dataset_adv_generated["embed_question"] = \
+                nn.Embedding(num_question, dim_question,
+                             _weight=model.embed_question.weight.detach().clone())
+            optimizer = optim.SGD(params=[self.dataset_adv_generated["embed_question"].weight], lr=adv_learning_rate)
         elif model_name == "AKT":
             encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
             num_concept = encoder_config["num_concept"]
@@ -176,6 +184,8 @@ class BaseTrainer4ME_ADA(KnowledgeTracingTrainer):
         if model_name == "qDKT":
             self.dataset_adv_generated["embed_layer"].embed_concept.weight.requires_grad_(False)
             self.dataset_adv_generated["embed_layer"].embed_question.weight.requires_grad_(False)
+        elif model_name == "DCT":
+            self.dataset_adv_generated["embed_question"].weight.requires_grad_(False)
         elif model_name == "AKT":
             self.dataset_adv_generated["embed_question_difficulty"].weight.requires_grad_(False)
             self.dataset_adv_generated["embed_concept_variation"].weight.requires_grad_(False)

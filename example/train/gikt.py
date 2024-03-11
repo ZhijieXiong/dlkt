@@ -14,13 +14,13 @@ from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
-    parser.add_argument("--setting_name", type=str, default="our_setting")
-    parser.add_argument("--dataset_name", type=str, default="ednet-kt1")
+    parser.add_argument("--setting_name", type=str, default="pykt_question_setting")
+    parser.add_argument("--dataset_name", type=str, default="assist2009")
     parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="ednet-kt1_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="ednet-kt1_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="ednet-kt1_test_fold_0.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2009_test.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
     parser.add_argument("--weight_decay", type=float, default=0)
@@ -51,18 +51,18 @@ if __name__ == "__main__":
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 使用纯torch写的或者pyg写的GIKT
-    parser.add_argument("--use_pyg", type=str2bool, default=False)
+    parser.add_argument("--use_pyg", type=str2bool, default=True)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=188)
-    parser.add_argument("--num_question", type=int, default=11858)
+    parser.add_argument("--num_concept", type=int, default=123)
+    parser.add_argument("--num_question", type=int, default=17751)
     parser.add_argument("--dim_emb", type=int, default=100)
-    parser.add_argument("--num_q_neighbor", type=int, default=1)
+    parser.add_argument("--num_q_neighbor", type=int, default=4)
     parser.add_argument("--num_c_neighbor", type=int, default=10)
     parser.add_argument("--agg_hops", type=int, default=3)
-    parser.add_argument("--hard_recap", type=str2bool, default=True)
+    parser.add_argument("--hard_recap", type=str2bool, default=False)
     parser.add_argument("--rank_k", type=int, default=10)
-    parser.add_argument("--dropout4gru", type=float, default=0.6)
-    parser.add_argument("--dropout4gnn", type=float, default=0.3)
+    parser.add_argument("--dropout4gru", type=float, default=0.4)
+    parser.add_argument("--dropout4gnn", type=float, default=0.2)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

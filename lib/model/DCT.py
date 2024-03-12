@@ -1,5 +1,7 @@
 import math
 
+import torch.nn.init
+
 from .util import *
 from .loss_util import binary_entropy
 
@@ -12,7 +14,7 @@ class DCT(nn.Module):
         self.params = params
         self.objects = objects
 
-        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
+        encoder_config = params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
         num_question = encoder_config["num_question"]
         num_concept = encoder_config["num_concept"]
         dim_question = encoder_config["dim_question"]
@@ -20,48 +22,48 @@ class DCT(nn.Module):
         dim_latent = encoder_config["dim_latent"]
         rnn_type = encoder_config["rnn_type"]
         num_rnn_layer = encoder_config["num_rnn_layer"]
+        que_user_share_proj = encoder_config["que_user_share_proj"]
         dropout = encoder_config["dropout"]
 
         self.embed_question = nn.Embedding(num_question, dim_question)
+        dim_rnn_output = dim_question if que_user_share_proj else dim_latent
+        dim_rrn_input = dim_question + dim_correct
         if rnn_type == "rnn":
-            self.encoder_layer = nn.RNN(dim_question + dim_correct, dim_latent, batch_first=True, num_layers=num_rnn_layer)
+            self.encoder_layer = nn.RNN(dim_rrn_input, dim_rnn_output, batch_first=True, num_layers=num_rnn_layer)
         elif rnn_type == "lstm":
-            self.encoder_layer = nn.LSTM(dim_question + dim_correct, dim_latent, batch_first=True, num_layers=num_rnn_layer)
+            self.encoder_layer = nn.LSTM(dim_rrn_input, dim_rnn_output, batch_first=True, num_layers=num_rnn_layer)
         else:
-            self.encoder_layer = nn.GRU(dim_question + dim_correct, dim_latent, batch_first=True, num_layers=num_rnn_layer)
-        self.proj_latent2ability = nn.Linear(dim_latent, num_concept)
-        self.proj_que2difficulty = nn.Linear(dim_question, num_concept)
-        self.proj_que2discrimination = nn.Linear(dim_question, 1)
+            self.encoder_layer = nn.GRU(dim_rrn_input, dim_rnn_output, batch_first=True, num_layers=num_rnn_layer)
+        self.que2difficulty = nn.Linear(dim_question, num_concept)
+        self.latent2ability = self.que2difficulty if que_user_share_proj else nn.Linear(dim_latent, num_concept)
+        self.que2discrimination = nn.Linear(dim_question, 1)
         self.dropout = nn.Dropout(dropout)
 
         self.init_weight()
 
     def init_weight(self):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
-        que_weight_init = self.params["other"]["cognition_tracing"]["que_weight_init"]
+        que_user_share_proj = encoder_config["que_user_share_proj"]
 
-        torch.nn.init.xavier_uniform_(self.proj_latent2ability.weight)
+        if not que_user_share_proj:
+            torch.nn.init.xavier_uniform_(self.latent2ability.weight)
 
-        if que_weight_init:
-            dim_question = encoder_config["dim_question"]
-            k = math.sqrt(1 / dim_question)
-            num_question = encoder_config["num_question"]
-            num_concept = encoder_config["num_concept"]
-            que_weight = torch.ones(num_concept, dim_question).to(self.params["device"]) * -k
-            que_emb_weight = torch.ones(num_question, dim_question).to(self.params["device"]) * k
-            self.proj_que2difficulty.weight = nn.Parameter(que_weight)
-            self.embed_question.weight = nn.Parameter(que_emb_weight)
-        else:
-            torch.nn.init.xavier_uniform_(self.proj_que2difficulty.weight)
-            torch.nn.init.xavier_uniform_(self.embed_question.weight)
+        torch.nn.init.xavier_uniform_(self.que2difficulty.weight)
+        torch.nn.init.xavier_uniform_(self.embed_question.weight)
 
-        torch.nn.init.xavier_uniform_(self.proj_que2discrimination.weight)
+        torch.nn.init.xavier_uniform_(self.que2discrimination.weight)
 
     def predict_score(self, latent, question_emb):
-        user_ability = torch.sigmoid(self.proj_latent2ability(latent))
-        que_difficulty = torch.sigmoid(self.proj_que2difficulty(question_emb))
-        que_discrimination = torch.sigmoid(self.proj_que2discrimination(question_emb)) * 10
-        y = (que_discrimination * (user_ability - que_difficulty))
+        test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
+        if test_theory == "rasch":
+            user_ability = self.latent2ability(latent)
+            que_difficulty = self.que2difficulty(question_emb)
+            y = (user_ability + que_difficulty)
+        else:
+            user_ability = torch.sigmoid(self.latent2ability(latent))
+            que_difficulty = torch.sigmoid(self.que2difficulty(question_emb))
+            que_discrimination = torch.sigmoid(self.que2discrimination(question_emb)) * 10
+            y = (que_discrimination * (user_ability - que_difficulty))
         predict_score = torch.sigmoid(torch.sum(y * que_difficulty, dim=-1))
 
         return predict_score
@@ -88,7 +90,7 @@ class DCT(nn.Module):
         mask = Q_table_mask[target_question].bool()
 
         question_emb = self.embed_question(target_question)
-        pred_diff_all = torch.sigmoid(self.proj_que2difficulty(self.dropout(question_emb)))
+        pred_diff_all = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
         pred_diff = torch.masked_select(pred_diff_all, mask)
         ground_truth = torch.masked_select(que_diff_label[target_question], mask)
         predict_loss = nn.functional.mse_loss(pred_diff, ground_truth)
@@ -97,18 +99,22 @@ class DCT(nn.Module):
 
     def get_que_disc_pred_loss(self, target_question):
         question_emb = self.embed_question(target_question)
-        pred_disc = torch.sigmoid(self.proj_que2discrimination(self.dropout(question_emb))).squeeze(dim=-1) * 10
+        pred_disc = torch.sigmoid(self.que2discrimination(self.dropout(question_emb))).squeeze(dim=-1) * 10
         ground_truth = self.objects["cognition_tracing"]["que_disc_ground_truth"]
         predict_loss = nn.functional.mse_loss(pred_disc, ground_truth)
 
         return predict_loss
 
     def get_q_table_loss(self, target_question, question_ids, related_concept_ids, unrelated_concept_ids):
-        question_emb = self.embed_question(target_question)
-        question_diff = torch.sigmoid(self.proj_que2difficulty(self.dropout(question_emb)))
+        test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
 
-        related_diff = question_diff[question_ids, related_concept_ids]
-        unrelated_diff = question_diff[question_ids, unrelated_concept_ids]
+        question_emb = self.embed_question(target_question)
+        if test_theory == "rasch":
+            que_difficulty = self.que2difficulty(self.dropout(question_emb))
+        else:
+            que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
+        related_diff = que_difficulty[question_ids, related_concept_ids]
+        unrelated_diff = que_difficulty[question_ids, unrelated_concept_ids]
 
         minus_diff = unrelated_diff - related_diff
         to_punish = minus_diff[minus_diff > 0]
@@ -122,6 +128,7 @@ class DCT(nn.Module):
         # 学习约束：做了题比不做题学习增长大：对于每个时刻，都应该比上个时刻有所增长（对应当前时刻所做题的知识点），惩罚小于0的部分
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
         dim_correct = encoder_config["dim_correct"]
+        test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
 
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         correct_seq = batch["correct_seq"]
@@ -135,7 +142,11 @@ class DCT(nn.Module):
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(interaction_emb)
 
-        user_ability = torch.sigmoid(self.proj_latent2ability(self.dropout(latent)))
+        if test_theory == "rasch":
+            user_ability = self.latent2ability(self.dropout(latent))
+        else:
+            user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
+
         q2c_table = self.objects["data"]["q2c_table"][batch["question_seq"]]
         q2c_mask_table = self.objects["data"]["q2c_mask_table"][batch["question_seq"]]
 
@@ -156,6 +167,7 @@ class DCT(nn.Module):
         # 对于做对的题，惩罚user_ability - que_difficulty小于0的值（只惩罚考察的知识点）
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
         dim_correct = encoder_config["dim_correct"]
+        test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
 
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         correct_seq = batch["correct_seq"]
@@ -169,9 +181,14 @@ class DCT(nn.Module):
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(interaction_emb)
 
-        user_ability = torch.sigmoid(self.proj_latent2ability(self.dropout(latent)))
-        que_difficulty = torch.sigmoid(self.proj_que2difficulty(self.dropout(question_emb[:, 1:])))
-        inter_func_in = user_ability - que_difficulty
+        if test_theory == "rasch":
+            user_ability = self.latent2ability(self.dropout(latent))
+            que_difficulty = self.que2difficulty(self.dropout(question_emb[:, 1:]))
+            inter_func_in = user_ability + que_difficulty
+        else:
+            user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
+            que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, 1:])))
+            inter_func_in = user_ability - que_difficulty
 
         q2c_table = self.objects["data"]["q2c_table"][batch["question_seq"]]
         q2c_mask_table = self.objects["data"]["q2c_mask_table"][batch["question_seq"]]
@@ -195,6 +212,7 @@ class DCT(nn.Module):
         num_concept = encoder_config["num_concept"]
         dim_latent = encoder_config["dim_latent"]
         num_rnn_layer = encoder_config["num_rnn_layer"]
+        test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
 
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         correct_seq = batch["correct_seq"]
@@ -219,11 +237,14 @@ class DCT(nn.Module):
 
             cf_input_current = cf_interaction_emb[:, t].unsqueeze(1)
             cf_latent, _ = self.encoder_layer(cf_input_current, rnn_h_current)
-            cf_user_ability[:, t] = torch.sigmoid(self.proj_latent2ability(self.dropout(cf_latent.squeeze(1))))
+            cf_user_ability[:, t] = torch.sigmoid(self.latent2ability(self.dropout(cf_latent.squeeze(1))))
 
             rnn_h_current = rnn_h_next
 
-        user_ability = torch.sigmoid(self.proj_latent2ability(self.dropout(latent)))
+        if test_theory == "rasch":
+            user_ability = self.latent2ability(self.dropout(latent))
+        else:
+            user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
 
         q2c_table = self.objects["data"]["q2c_table"][batch["question_seq"]]
         q2c_mask_table = self.objects["data"]["q2c_mask_table"][batch["question_seq"]]
@@ -273,6 +294,7 @@ class DCT(nn.Module):
         w_learning = self.params["loss_config"].get("learning loss", 0)
         w_counter_fact = self.params["loss_config"].get("counterfactual loss", 0)
         multi_stage = self.params["other"]["cognition_tracing"]["multi_stage"]
+        test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
 
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         correct_seq = batch["correct_seq"]
@@ -301,7 +323,7 @@ class DCT(nn.Module):
 
                 cf_input_current = cf_interaction_emb[:, t].unsqueeze(1)
                 cf_latent, _ = self.encoder_layer(cf_input_current, rnn_h_current)
-                cf_user_ability[:, t] = torch.sigmoid(self.proj_latent2ability(self.dropout(cf_latent.squeeze(1))))
+                cf_user_ability[:, t] = torch.sigmoid(self.latent2ability(self.dropout(cf_latent.squeeze(1))))
 
                 rnn_h_current = rnn_h_next
         else:
@@ -309,12 +331,19 @@ class DCT(nn.Module):
             self.encoder_layer.flatten_parameters()
             latent, _ = self.encoder_layer(interaction_emb)
 
-        user_ability = torch.sigmoid(self.proj_latent2ability(self.dropout(latent)))
-        que_difficulty = torch.sigmoid(self.proj_que2difficulty(self.dropout(question_emb[:, 1:])))
-        que_discrimination = torch.sigmoid(self.proj_que2discrimination(self.dropout(question_emb[:, 1:]))) * 10
+        if test_theory == "rasch":
+            user_ability = self.latent2ability(self.dropout(latent))
+            que_difficulty = self.que2difficulty(self.dropout(question_emb[:, 1:]))
+            inter_func_in = user_ability + que_difficulty
+            y = (user_ability + que_difficulty)
+        else:
+            user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
+            que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, 1:])))
+            inter_func_in = user_ability - que_difficulty
+            que_discrimination = torch.sigmoid(self.que2discrimination(self.dropout(question_emb[:, 1:]))) * 10
+            y = (que_discrimination * inter_func_in)
 
-        inter_func_in = user_ability - que_difficulty
-        predict_score = torch.sigmoid(torch.sum(que_discrimination * inter_func_in * que_difficulty, dim=-1))
+        predict_score = torch.sigmoid(torch.sum(y * que_difficulty, dim=-1))
         predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
 
         loss = 0.

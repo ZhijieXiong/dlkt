@@ -1,4 +1,3 @@
-import math
 import torch.nn.init
 
 from .util import *
@@ -20,6 +19,7 @@ class LPKTPlus(nn.Module):
         dim_correct = encoder_config["dim_correct"]
         dim_question = encoder_config["dim_question"]
         dim_latent = encoder_config["dim_latent"]
+        que_user_share_proj = encoder_config["que_user_share_proj"]
         dropout = encoder_config["dropout"]
         ablation_set = encoder_config["ablation_set"]
 
@@ -36,8 +36,8 @@ class LPKTPlus(nn.Module):
         self.linear_2 = nn.Linear(4 * dim_latent, dim_latent)
         self.linear_3 = nn.Linear(4 * dim_latent, dim_latent)
         self.linear_4 = nn.Linear(3 * dim_latent, dim_latent)
-        self.proj_latent2ability = nn.Linear(dim_latent, num_concept)
         self.proj_que2difficulty = nn.Linear(dim_latent, num_concept)
+        self.latent2ability = self.que2difficulty if que_user_share_proj else nn.Linear(dim_latent, num_concept)
         self.proj_que2discrimination = nn.Linear(dim_latent, 1)
         self.tanh = nn.Tanh()
         self.sig = nn.Sigmoid()
@@ -46,10 +46,9 @@ class LPKTPlus(nn.Module):
         self.init_weight()
 
     def init_weight(self):
-        ablation_set = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT+"]["ablation_set"]
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT+"]
-        user_weight_init = self.params["other"]["cognition_tracing"]["user_weight_init"]
-        que_weight_init = self.params["other"]["cognition_tracing"]["que_weight_init"]
+        que_user_share_proj = encoder_config["que_user_share_proj"]
+        ablation_set = encoder_config["ablation_set"]
 
         if ablation_set == 0:
             torch.nn.init.xavier_uniform_(self.embed_answer_time.weight)
@@ -61,24 +60,11 @@ class LPKTPlus(nn.Module):
         torch.nn.init.xavier_uniform_(self.linear_3.weight)
         torch.nn.init.xavier_uniform_(self.linear_4.weight)
 
-        if user_weight_init:
-            self.proj_latent2ability.weight = nn.Parameter(self.objects["cognition_tracing"]["user_proj_weight_init_value"])
-            torch.nn.init.constant_(self.proj_latent2ability.bias, 0)
-        else:
+        if not que_user_share_proj:
             torch.nn.init.xavier_uniform_(self.proj_latent2ability.weight)
 
-        if que_weight_init:
-            dim_question = encoder_config["dim_question"]
-            k = math.sqrt(1 / dim_question)
-            num_question = encoder_config["num_question"]
-            num_concept = encoder_config["num_concept"]
-            que_weight = nn.init.xavier_uniform_(torch.ones(num_concept, dim_question) * -k).to(self.params["device"])
-            que_emb_weight = nn.init.xavier_uniform_(torch.ones(num_question, dim_question) * k).to(self.params["device"])
-            self.proj_que2difficulty.weight = nn.Parameter(que_weight)
-            self.embed_question.weight = nn.Parameter(que_emb_weight)
-        else:
-            torch.nn.init.xavier_uniform_(self.proj_que2difficulty.weight)
-            torch.nn.init.xavier_uniform_(self.embed_question.weight)
+        torch.nn.init.xavier_uniform_(self.proj_que2difficulty.weight)
+        torch.nn.init.xavier_uniform_(self.embed_question.weight)
 
         torch.nn.init.xavier_uniform_(self.proj_que2discrimination.weight)
 
@@ -98,7 +84,6 @@ class LPKTPlus(nn.Module):
         dim_correct = encoder_config["dim_correct"]
         dim_latent = encoder_config["dim_latent"]
         ablation_set = encoder_config["ablation_set"]
-        user_weight_init = self.params["other"]["cognition_tracing"]["user_weight_init"]
 
         batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
         question_emb = self.embed_question(batch["question_seq"])
@@ -112,10 +97,7 @@ class LPKTPlus(nn.Module):
         else:
             learning_emb = self.linear_1(torch.cat((question_emb, correct_emb), 2))
 
-        if user_weight_init:
-            h_pre = torch.ones(batch_size, dim_latent).to(self.params["device"])
-        else:
-            h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
+        h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
 
         learning_pre = torch.zeros(batch_size, dim_latent).to(self.params["device"])
         predict_score = torch.zeros(batch_size, seq_len).to(self.params["device"])
@@ -185,7 +167,6 @@ class LPKTPlus(nn.Module):
         dim_correct = encoder_config["dim_correct"]
         dim_latent = encoder_config["dim_latent"]
         ablation_set = encoder_config["ablation_set"]
-        user_weight_init = self.params["other"]["cognition_tracing"]["user_weight_init"]
 
         batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
         question_emb = self.embed_question(batch["question_seq"])
@@ -199,10 +180,7 @@ class LPKTPlus(nn.Module):
         else:
             learning_emb = self.linear_1(torch.cat((question_emb, correct_emb), 2))
 
-        if user_weight_init:
-            h_pre = torch.ones(batch_size, dim_latent).to(self.params["device"])
-        else:
-            h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
+        h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
 
         learning_pre = torch.zeros(batch_size, dim_latent).to(self.params["device"])
         predict_score_all = torch.zeros(batch_size, seq_len).to(self.params["device"])
@@ -264,7 +242,6 @@ class LPKTPlus(nn.Module):
         dim_correct = encoder_config["dim_correct"]
         dim_latent = encoder_config["dim_latent"]
         ablation_set = encoder_config["ablation_set"]
-        user_weight_init = self.params["other"]["cognition_tracing"]["user_weight_init"]
 
         batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
         question_emb = self.embed_question(batch["question_seq"])
@@ -278,10 +255,7 @@ class LPKTPlus(nn.Module):
         else:
             learning_emb = self.linear_1(torch.cat((question_emb, correct_emb), 2))
 
-        if user_weight_init:
-            h_pre = torch.ones(batch_size, dim_latent).to(self.params["device"])
-        else:
-            h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
+        h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
         learning_pre = torch.zeros(batch_size, dim_latent).to(self.params["device"])
         predict_score_all = torch.zeros(batch_size, seq_len).to(self.params["device"])
         inter_func_in_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
@@ -343,7 +317,6 @@ class LPKTPlus(nn.Module):
         dim_correct = encoder_config["dim_correct"]
         dim_latent = encoder_config["dim_latent"]
         ablation_set = encoder_config["ablation_set"]
-        user_weight_init = self.params["other"]["cognition_tracing"]["user_weight_init"]
 
         batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
         question_emb = self.embed_question(batch["question_seq"])
@@ -361,10 +334,7 @@ class LPKTPlus(nn.Module):
             learning_emb = self.linear_1(torch.cat((question_emb, correct_emb), 2))
             cf_learning_emb = self.linear_1(torch.cat((question_emb, cf_correct_emb), 2))
 
-        if user_weight_init:
-            h_pre = torch.ones(batch_size, dim_latent).to(self.params["device"])
-        else:
-            h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
+        h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
 
         learning_pre = torch.zeros(batch_size, dim_latent).to(self.params["device"])
         predict_score_all = torch.zeros(batch_size, seq_len).to(self.params["device"])
@@ -465,7 +435,6 @@ class LPKTPlus(nn.Module):
         w_learning = self.params["loss_config"].get("learning loss", 0)
         w_counter_fact = self.params["loss_config"].get("counterfactual loss", 0)
         multi_stage = self.params["other"]["cognition_tracing"]["multi_stage"]
-        user_weight_init = self.params["other"]["cognition_tracing"]["user_weight_init"]
 
         batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
         question_emb = self.embed_question(batch["question_seq"])
@@ -483,10 +452,7 @@ class LPKTPlus(nn.Module):
             learning_emb = self.linear_1(torch.cat((question_emb, correct_emb), 2))
             cf_learning_emb = self.linear_1(torch.cat((question_emb, cf_correct_emb), 2))
 
-        if user_weight_init:
-            h_pre = torch.ones(batch_size, dim_latent).to(self.params["device"])
-        else:
-            h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
+        h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
 
         learning_pre = torch.zeros(batch_size, dim_latent).to(self.params["device"])
         predict_score_all = torch.zeros(batch_size, seq_len).to(self.params["device"])

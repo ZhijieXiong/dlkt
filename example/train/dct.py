@@ -23,13 +23,13 @@ if __name__ == "__main__":
     parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0.0001)
+    parser.add_argument("--weight_decay", type=float, default=0.001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
     parser.add_argument("--num_epoch", type=int, default=200)
     parser.add_argument("--use_early_stop", type=str2bool, default=True)
-    parser.add_argument("--epoch_early_stop", type=int, default=15)
+    parser.add_argument("--epoch_early_stop", type=int, default=20)
     parser.add_argument("--use_last_average", type=str2bool, default=False)
     parser.add_argument("--epoch_last_average", type=int, default=5)
     # 评价指标选择
@@ -48,8 +48,8 @@ if __name__ == "__main__":
     parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     # 梯度裁剪
-    parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
-    parser.add_argument("--grad_clipped", type=float, default=10.0)
+    parser.add_argument("--enable_clip_grad", type=str2bool, default=True)
+    parser.add_argument("--grad_clipped", type=float, default=100.0)
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=123)
     parser.add_argument("--num_question", type=int, default=17751)
@@ -59,26 +59,26 @@ if __name__ == "__main__":
     parser.add_argument("--rnn_type", type=str, default="gru",
                         choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=2)
+    parser.add_argument("--que_user_share_proj", type=str2bool, default=True)
     parser.add_argument("--dropout", type=float, default=0.1)
-    # 单阶段还是多阶段训练
+    # 训练策略以及测试理论
     parser.add_argument("--multi_stage", type=str2bool, default=True)
+    parser.add_argument("--test_theory", type=str, default='irt', choices=("irt", "rasch"))
     # 生成伪标签的参数
     parser.add_argument("--min_fre4diff", type=int, default=20)
     parser.add_argument("--min_fre4disc", type=int, default=20)
     parser.add_argument("--min_seq_len4disc", type=int, default=20)
     parser.add_argument("--percent_threshold", type=float, default=0.37,
                         help="计算区分度时，选择正确率最高的k%和最低的k%序列")
-    # 消融
-    parser.add_argument("--user_weight_init", type=str2bool, default=False, help="是否使用基于IRT的参数初始化")
-    parser.add_argument("--que_weight_init", type=str2bool, default=False, help="是否使用基于Q table的初始化")
+    # 损失权重
     parser.add_argument("--w_que_diff_pred", type=float, default=0)
     parser.add_argument("--w_que_disc_pred", type=float, default=0)
-    parser.add_argument("--w_penalty_neg", type=float, default=1,
+    parser.add_argument("--w_penalty_neg", type=float, default=0,
                         help="计算最终得分时，对于做对的题，惩罚ability-difficulty小于0（对应知识点）")
     parser.add_argument("--w_user_ability_pred", type=float, default=0)
-    parser.add_argument("--w_learning", type=float, default=1)
+    parser.add_argument("--w_learning", type=float, default=0)
     parser.add_argument("--w_counter_fact", type=float, default=0)
-    parser.add_argument("--w_q_table", type=float, default=1)
+    parser.add_argument("--w_q_table", type=float, default=0)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

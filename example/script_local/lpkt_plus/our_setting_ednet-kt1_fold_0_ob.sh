@@ -45,9 +45,9 @@ fold=0
   dims=(64)
   ws_que_diff_pred='0'
   ws_que_disc_pred='0'
-  ws_q_able='0.01 0.1 1'
-  ws_penalty_neg='0.01 0.1 1'
-  ws_learning='0.01 0.1 1'
+  ws_q_able='0.001 0.01'
+  ws_penalty_neg='0.001 0.01'
+  ws_learning='0.001 0.01'
   ws_counter_fact='0'
   for weight_decay in ${weight_decays}
   do

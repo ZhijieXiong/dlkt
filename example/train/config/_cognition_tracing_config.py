@@ -2,7 +2,6 @@ import torch
 import os
 
 from lib.util.data import read_preprocessed_file
-from lib.util.parse import cal_concept_difficulty
 from lib.dataset.CognitionTracingUtil import CognitionTracingUtil
 
 
@@ -52,37 +51,26 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
             [que_discrimination[q_id] * 10 for q_id in que_has_disc_ground_truth]
         ).float().to(global_params["device"])
 
-    # 统计知识点正确率，用于初始化学生参数
-    if local_params["user_weight_init"]:
-        concept_accuracy = cal_concept_difficulty(dataset_train, {
-          "data_type": global_params["datasets_config"]["data_type"],
-          "num_concept": local_params["num_concept"],
-          "num_min_concept": 50
-        }, {"question2concept": global_objects["data"]["question2concept"]})
-        cognition_tracing_util.get_user_proj_weight_init_value(concept_accuracy)
+    # 提取学生认知标签和对应mask以及权重
+    if local_params["w_user_ability_pred"] != 0:
+        cognition_tracing_util.label_user_ability(dataset_train)
 
-    # 初始化习题参数
-    global_params["other"]["cognition_tracing"]["user_weight_init"] = local_params["user_weight_init"]
-    global_params["other"]["cognition_tracing"]["que_weight_init"] = local_params["que_weight_init"]
-
-    # # 提取学生认知标签和对应mask以及权重
-    # if local_params["w_user_ability_pred"] != 0:
-    #     cognition_tracing_util.label_user_ability(dataset_train)
-
-    # 单阶段还是多阶段
-    global_params["other"]["cognition_tracing"]["multi_stage"] = local_params["multi_stage"]
-
-    # 损失权重配置
-    w_que_diff_pred = local_params["w_que_diff_pred"]
-    w_que_disc_pred = local_params["w_que_disc_pred"]
-    w_user_ability_pred = local_params["w_user_ability_pred"]
+    # 单阶段还是多阶段；损失权重配置
+    multi_stage = local_params["multi_stage"]
+    test_theory = local_params["test_theory"]
+    w_que_diff_pred = 0 if (local_params["test_theory"] == "rasch") else local_params["w_que_diff_pred"]
+    w_que_disc_pred = 0 if (local_params["test_theory"] == "rasch") else local_params["w_que_disc_pred"]
+    w_user_ability_pred = 0
     w_penalty_neg = local_params["w_penalty_neg"]
     w_learning = local_params["w_learning"]
     w_counter_fact = local_params["w_counter_fact"]
     w_q_table = local_params["w_q_table"]
 
+    global_params["other"]["cognition_tracing"]["multi_stage"] = multi_stage
+    global_params["other"]["cognition_tracing"]["test_theory"] = test_theory
     global_params["loss_config"]["que diff pred loss"] = w_que_diff_pred
     global_params["loss_config"]["que disc pred loss"] = w_que_disc_pred
+    global_params["loss_config"]["user ability pred loss"] = w_user_ability_pred
     global_params["loss_config"]["penalty neg loss"] = w_penalty_neg
     global_params["loss_config"]["learning loss"] = w_learning
     global_params["loss_config"]["counterfactual loss"] = w_counter_fact
@@ -90,6 +78,8 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
 
     global_objects["logger"].info(
         "loss weight params\n"
-        f"    w_que_diff_pred: {w_que_diff_pred}, w_que_disc_pred: {w_que_disc_pred}, w_penalty_neg: {w_penalty_neg}, "
-        f"w_learning: {w_learning}, w_counter_fact: {w_counter_fact}, w_q_table: {w_q_table}"
+        f"    w_que_diff_pred: {w_que_diff_pred}, w_que_disc_pred: {w_que_disc_pred}, w_user_ability_pred: {w_user_ability_pred}, "
+        f"w_penalty_neg: {w_penalty_neg}, w_learning: {w_learning}, w_counter_fact: {w_counter_fact}, w_q_table: {w_q_table}\n"
+        f"other params:\n"
+        f"    multi_stage: {multi_stage}, test_theory: {test_theory}"
     )

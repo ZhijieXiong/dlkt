@@ -22,6 +22,7 @@ def lpkt_plus_general_config(local_params, global_params, global_objects):
     dim_question = local_params["dim_question"]
     dim_latent = local_params["dim_latent"]
     dim_correct = local_params["dim_correct"]
+    que_user_share_proj = local_params["que_user_share_proj"]
     dropout = local_params["dropout"]
     ablation_set = local_params["ablation_set"]
 
@@ -40,6 +41,7 @@ def lpkt_plus_general_config(local_params, global_params, global_objects):
     encoder_config["dim_latent"] = dim_latent
     encoder_config["dim_correct"] = dim_correct
     encoder_config["dropout"] = dropout
+    encoder_config["que_user_share_proj"] = que_user_share_proj
     encoder_config["ablation_set"] = ablation_set
     encoder_config["num_interval_time"] = len(INTERVAL_TIME4LPKT_PLUS)
     encoder_config["num_use_time"] = len(USE_TIME4LPKT_PLUS)

@@ -34,6 +34,7 @@ fold=0
 #                --train_batch_size 64 --evaluate_batch_size 256 \
 #                --enable_clip_grad False --grad_clipped 10.0 \
 #                --num_concept 101 --num_question 2803 \
+#                --multi_stage True --test_theory "irt" --user_weight_init False --que_weight_init False \
 #                --dim_question "${dim_question}" --dim_correct 64 --dim_latent "${dim_latent}" --rnn_type "gru" --num_rnn_layer "${num_rnn_layer}" --dropout "${dropout}" \
 #                --w_que_diff_pred 0 --w_que_disc_pred 0 --w_user_ability_pred 0 --w_penalty_neg 0 --w_learning 0 --w_counter_fact 0 \
 #                --save_model False --debug_mode False --use_cpu False --seed 0
@@ -55,9 +56,9 @@ fold=0
   dims_latent=(64)
   ws_que_diff_pred='0'
   ws_que_disc_pred='0'
-  ws_q_able='0.1 1 10'
-  ws_penalty_neg='0.1 1 10'
-  ws_learning='0.1 1 10'
+  ws_q_able='0.01 0.1 1'
+  ws_penalty_neg='0.01 0.1 1'
+  ws_learning='0.001 0.01 0.1 1'
   ws_counter_fact='0'
   for weight_decay in ${weight_decays}
   do

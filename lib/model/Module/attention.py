@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 import torch.nn.functional as F
 from torch.nn import Softplus
 
@@ -200,3 +201,52 @@ def attention_DTransformer(q, k, v, mask, gamma=None, max_out=False):
     # calculate output
     output = torch.matmul(scores, v)
     return output, scores
+
+
+def attention_CL4KT(q, k, v, d_k, mask, dropout, device, gamma=None, zero_pad=True):
+    scores = torch.matmul(q, k.transpose(-2, -1)) / np.sqrt(d_k)
+    bs, head, seq_len = scores.size(0), scores.size(1), scores.size(2)
+
+    x1 = torch.arange(seq_len).expand(seq_len, -1)
+    x2 = x1.transpose(0, 1).contiguous()
+
+    with torch.no_grad():
+        scores_ = scores.masked_fill(mask == 0, -1e32)
+        scores_ = F.softmax(scores_, dim=-1)
+        scores_ = scores_ * mask.float()
+
+        distance_cum_scores = torch.cumsum(scores_, dim=-1)
+
+        distance_total_scores = torch.sum(scores_, dim=-1, keepdim=True)
+
+        position_effect = torch.abs(x1 - x2)[None, None, :, :].type(torch.FloatTensor)
+        position_effect = position_effect.to(device)
+
+        dist_scores = torch.clamp(
+            (distance_total_scores - distance_cum_scores) * position_effect, min=0.0
+        )
+        dist_scores = dist_scores.sqrt().detach()
+
+    m = Softplus()
+
+    gamma = -1.0 * m(gamma).unsqueeze(0)
+
+    total_effect = torch.clamp(
+        torch.clamp((dist_scores * gamma).exp(), min=1e-5), max=1e5
+    )
+
+    scores = scores * total_effect
+
+    scores.masked_fill_(mask == 0, -1e32)
+    scores = F.softmax(scores, dim=-1)
+
+    attn_scores = scores
+
+    if zero_pad:
+        # mask为0，第一行score置0
+        pad_zero = torch.zeros(bs, head, 1, seq_len).to(device)
+        scores = torch.cat([pad_zero, scores[:, :, 1:, :]], dim=2)
+
+    scores = dropout(scores)
+    output = torch.matmul(scores, v)
+    return output, attn_scores

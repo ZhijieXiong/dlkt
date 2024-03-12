@@ -51,7 +51,8 @@ def lpkt_plus_general_config(local_params, global_params, global_objects):
         "model params\n"
         f"    num_concept: {num_concept}, num_question: {num_question}, num_interval_time: {len(INTERVAL_TIME4LPKT_PLUS)}, "
         f"num_use_time: {len(USE_TIME4LPKT_PLUS)}, ablation_set: {ablation_set}\n"
-        f"    dim_question: {dim_question}, dim_latent: {dim_latent}, dim_correct: {dim_correct}, dropout: {dropout}"
+        f"    dim_question: {dim_question}, dim_latent: {dim_latent}, dim_correct: {dim_correct}, "
+        f"que_user_share_proj: {que_user_share_proj}, dropout: {dropout}"
     )
 
     if local_params["save_model"]:

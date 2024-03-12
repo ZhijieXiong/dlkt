@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 {
-  setting_name="our_setting_ood_by_school"
-  dataset_name="assist2012"
+  setting_name="our_setting_ood_by_country"
+  dataset_name="slepemapy"
   data_type="single_concept"
-  split=7
+  split=0
 
   weights_decay='0.00001 0.000001'
   dims=(64 128)
@@ -26,12 +26,13 @@
           --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type "StepLR" --lr_schedule_step 20 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
           --train_batch_size 64 --evaluate_batch_size 128 \
           --enable_clip_grad False --grad_clipped 10.0 \
-          --num_concept 265 --num_question 53091 --ablation_set 0 \
-          --dim_question "${dim}" --dim_latent "${dim}" --dim_correct 50 --dropout "${dropout}" \
-          --w_que_diff_pred 0 --w_que_disc_pred 0 --w_user_ability_pred 0 --w_penalty_neg 0 --w_learning 0 --w_counter_fact 0 \
+          --num_concept 246 --num_question 5730 --ablation_set 0 \
+          --multi_stage True --test_theory "irt" \
+          --dim_question "${dim}" --dim_latent "${dim}" --dim_correct "${dim}" --dropout "${dropout}" --que_user_share_proj True \
+          --w_que_diff_pred 0 --w_que_disc_pred 0 --w_user_ability_pred 0 --w_penalty_neg 0 --w_learning 0 --w_counter_fact 0 --w_q_table 0 \
           --save_model False --debug_mode False --use_cpu False --seed 0
       done
     done
   done
 
-} >> F:/code/myProjects/dlkt/example/result_local/lpkt_plus_v2_our_setting_ood_assist2012_split_7_ob.txt
+} >> F:/code/myProjects/dlkt/example/result_local/lpkt+_irt_share_baseline_our_setting_ood_slepemapy_split_0_ob.txt

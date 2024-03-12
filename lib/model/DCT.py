@@ -51,18 +51,19 @@ class DCT(nn.Module):
 
         torch.nn.init.xavier_uniform_(self.que2discrimination.weight)
 
-    def predict_score(self, latent, question_emb):
+    def predict_score(self, latent, question_emb, question_seq):
         test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
         if test_theory == "rasch":
-            user_ability = self.latent2ability(latent)
-            que_difficulty = self.que2difficulty(question_emb)
-            y = (user_ability + que_difficulty)
+            user_ability = self.latent2ability(self.dropout(latent))
+            que_difficulty = self.que2difficulty(self.dropout(question_emb))
+            concept_related = self.objects["data"]["Q_table_tensor"][question_seq]
+            y = (user_ability + que_difficulty) * concept_related
         else:
-            user_ability = torch.sigmoid(self.latent2ability(latent))
-            que_difficulty = torch.sigmoid(self.que2difficulty(question_emb))
-            que_discrimination = torch.sigmoid(self.que2discrimination(question_emb)) * 10
-            y = (que_discrimination * (user_ability - que_difficulty))
-        predict_score = torch.sigmoid(torch.sum(y * que_difficulty, dim=-1))
+            user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
+            que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
+            que_discrimination = torch.sigmoid(self.que2discrimination(self.dropout(question_emb))) * 10
+            y = (que_discrimination * (user_ability - que_difficulty)) * que_difficulty
+        predict_score = torch.sigmoid(torch.sum(y, dim=-1))
 
         return predict_score
 
@@ -78,7 +79,7 @@ class DCT(nn.Module):
 
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(interaction_emb)
-        predict_score = self.predict_score(latent, question_emb[:, 1:])
+        predict_score = self.predict_score(latent, question_emb[:, 1:], question_seq[:, 1:])
 
         return predict_score
 
@@ -330,18 +331,19 @@ class DCT(nn.Module):
             latent, _ = self.encoder_layer(interaction_emb)
 
         if test_theory == "rasch":
+            concept_related = self.objects["data"]["Q_table_tensor"][question_seq[:, 1:]]
             user_ability = self.latent2ability(self.dropout(latent))
             que_difficulty = self.que2difficulty(self.dropout(question_emb[:, 1:]))
             inter_func_in = user_ability + que_difficulty
-            y = (user_ability + que_difficulty)
+            y = inter_func_in * concept_related
         else:
             user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
             que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, 1:])))
             inter_func_in = user_ability - que_difficulty
             que_discrimination = torch.sigmoid(self.que2discrimination(self.dropout(question_emb[:, 1:]))) * 10
-            y = (que_discrimination * inter_func_in)
+            y = (que_discrimination * inter_func_in) * que_difficulty
 
-        predict_score = torch.sigmoid(torch.sum(y * que_difficulty, dim=-1))
+        predict_score = torch.sigmoid(torch.sum(y, dim=-1))
         predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
 
         loss = 0.
@@ -437,7 +439,7 @@ class DCT(nn.Module):
 
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(interaction_emb)
-        predict_score = self.predict_score(latent, question_emb[:, 1:])
+        predict_score = self.predict_score(latent, question_emb[:, 1:], question_seq[:, 1:])
 
         return predict_score
 

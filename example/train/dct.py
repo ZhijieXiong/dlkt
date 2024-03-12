@@ -53,8 +53,8 @@ if __name__ == "__main__":
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=123)
     parser.add_argument("--num_question", type=int, default=17751)
-    parser.add_argument("--dim_question", type=int, default=32)
-    parser.add_argument("--dim_latent", type=int, default=32)
+    parser.add_argument("--dim_question", type=int, default=64)
+    parser.add_argument("--dim_latent", type=int, default=64)
     parser.add_argument("--dim_correct", type=int, default=64)
     parser.add_argument("--rnn_type", type=str, default="gru",
                         choices=("rnn", "lstm", "gru"))
@@ -73,11 +73,11 @@ if __name__ == "__main__":
     # 损失权重
     parser.add_argument("--w_que_diff_pred", type=float, default=0)
     parser.add_argument("--w_que_disc_pred", type=float, default=0)
-    parser.add_argument("--w_penalty_neg", type=float, default=0)
+    parser.add_argument("--w_penalty_neg", type=float, default=1)
     parser.add_argument("--w_user_ability_pred", type=float, default=0)
-    parser.add_argument("--w_learning", type=float, default=0)
+    parser.add_argument("--w_learning", type=float, default=1)
     parser.add_argument("--w_counter_fact", type=float, default=0)
-    parser.add_argument("--w_q_table", type=float, default=0)
+    parser.add_argument("--w_q_table", type=float, default=1)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

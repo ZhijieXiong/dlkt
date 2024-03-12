@@ -36,9 +36,9 @@ class LPKTPlus(nn.Module):
         self.linear_2 = nn.Linear(4 * dim_latent, dim_latent)
         self.linear_3 = nn.Linear(4 * dim_latent, dim_latent)
         self.linear_4 = nn.Linear(3 * dim_latent, dim_latent)
-        self.proj_que2difficulty = nn.Linear(dim_latent, num_concept)
+        self.que2difficulty = nn.Linear(dim_latent, num_concept)
         self.latent2ability = self.que2difficulty if que_user_share_proj else nn.Linear(dim_latent, num_concept)
-        self.proj_que2discrimination = nn.Linear(dim_latent, 1)
+        self.que2discrimination = nn.Linear(dim_latent, 1)
         self.tanh = nn.Tanh()
         self.sig = nn.Sigmoid()
         self.dropout = nn.Dropout(dropout)
@@ -61,21 +61,27 @@ class LPKTPlus(nn.Module):
         torch.nn.init.xavier_uniform_(self.linear_4.weight)
 
         if not que_user_share_proj:
-            torch.nn.init.xavier_uniform_(self.proj_latent2ability.weight)
+            torch.nn.init.xavier_uniform_(self.latent2ability.weight)
 
-        torch.nn.init.xavier_uniform_(self.proj_que2difficulty.weight)
+        torch.nn.init.xavier_uniform_(self.que2difficulty.weight)
         torch.nn.init.xavier_uniform_(self.embed_question.weight)
 
-        torch.nn.init.xavier_uniform_(self.proj_que2discrimination.weight)
+        torch.nn.init.xavier_uniform_(self.que2discrimination.weight)
 
     # ------------------------------------------------------base--------------------------------------------------------
-    def predict_score(self, latent, question_emb):
-        user_ability = torch.sigmoid(self.proj_latent2ability(self.dropout(latent)))
-        que_difficulty = torch.sigmoid(self.proj_que2difficulty(self.dropout(question_emb)))
-        que_discrimination = torch.sigmoid(self.proj_que2discrimination(self.dropout(question_emb))) * 10
-        predict_score = torch.sigmoid(
-            torch.sum(que_discrimination * (user_ability - que_difficulty) * que_difficulty, dim=-1)
-        )
+    def predict_score(self, latent, question_emb, question_seq):
+        test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
+        if test_theory == "rasch":
+            user_ability = self.latent2ability(self.dropout(latent))
+            que_difficulty = self.que2difficulty(self.dropout(question_emb))
+            concept_related = self.objects["data"]["Q_table_tensor"][question_seq]
+            y = (user_ability + que_difficulty) * concept_related
+        else:
+            user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
+            que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
+            que_discrimination = torch.sigmoid(self.que2discrimination(self.dropout(question_emb))) * 10
+            y = (que_discrimination * (user_ability - que_difficulty)) * que_difficulty
+        predict_score = torch.sigmoid(torch.sum(y, dim=-1))
 
         return predict_score
 
@@ -113,10 +119,10 @@ class LPKTPlus(nn.Module):
 
             # Forgetting Module
             gamma_f = self.sig(self.linear_4(torch.cat((h_pre, LG, it), dim=1)))
-            h = LG + gamma_f * h_pre
+            h = self.dropout(LG) + gamma_f * h_pre
 
             # Predicting Module
-            y = self.predict_score(h, question_emb[:, t + 1])
+            y = self.predict_score(h, question_emb[:, t + 1], batch["question_seq"][:, t+1])
             predict_score[:, t + 1] = y
 
             # prepare for next prediction
@@ -131,7 +137,7 @@ class LPKTPlus(nn.Module):
         mask = Q_table_mask[target_question].bool()
 
         question_emb = self.embed_question(target_question)
-        pred_diff_all = torch.sigmoid(self.proj_que2difficulty(question_emb))
+        pred_diff_all = torch.sigmoid(self.que2difficulty(question_emb))
         pred_diff = torch.masked_select(pred_diff_all, mask)
         ground_truth = torch.masked_select(que_diff_label[target_question], mask)
         predict_loss = nn.functional.mse_loss(pred_diff, ground_truth)
@@ -140,18 +146,23 @@ class LPKTPlus(nn.Module):
 
     def get_que_disc_pred_loss(self, target_question):
         question_emb = self.embed_question(target_question)
-        pred_disc = torch.sigmoid(self.proj_que2discrimination(question_emb)).squeeze(dim=-1) * 10
+        pred_disc = torch.sigmoid(self.que2discrimination(question_emb)).squeeze(dim=-1) * 10
         ground_truth = self.objects["cognition_tracing"]["que_disc_ground_truth"]
         predict_loss = nn.functional.mse_loss(pred_disc, ground_truth)
 
         return predict_loss
 
     def get_q_table_loss(self, target_question, question_ids, related_concept_ids, unrelated_concept_ids):
-        question_emb = self.embed_question(target_question)
-        question_diff = torch.sigmoid(self.proj_que2difficulty(self.dropout(question_emb)))
+        test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
 
-        related_diff = question_diff[question_ids, related_concept_ids]
-        unrelated_diff = question_diff[question_ids, unrelated_concept_ids]
+        question_emb = self.embed_question(target_question)
+        if test_theory == "rasch":
+            que_difficulty = self.que2difficulty(self.dropout(question_emb))
+        else:
+            que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
+
+        related_diff = que_difficulty[question_ids, related_concept_ids]
+        unrelated_diff = que_difficulty[question_ids, unrelated_concept_ids]
 
         minus_diff = unrelated_diff - related_diff
         to_punish = minus_diff[minus_diff > 0]
@@ -167,6 +178,7 @@ class LPKTPlus(nn.Module):
         dim_correct = encoder_config["dim_correct"]
         dim_latent = encoder_config["dim_latent"]
         ablation_set = encoder_config["ablation_set"]
+        test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
 
         batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
         question_emb = self.embed_question(batch["question_seq"])
@@ -183,10 +195,9 @@ class LPKTPlus(nn.Module):
         h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
 
         learning_pre = torch.zeros(batch_size, dim_latent).to(self.params["device"])
-        predict_score_all = torch.zeros(batch_size, seq_len).to(self.params["device"])
         inter_func_in_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
         user_ability_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
-        user_ability_all[:, 0] = torch.sigmoid(self.proj_latent2ability(h_pre))
+        user_ability_all[:, 0] = torch.sigmoid(self.latent2ability(h_pre))
 
         for t in range(0, seq_len - 1):
             it = interval_time_emb[:, t]
@@ -199,19 +210,20 @@ class LPKTPlus(nn.Module):
 
             # Forgetting Module
             gamma_f = self.sig(self.linear_4(torch.cat((h_pre, LG, it), dim=1)))
-            h = LG + gamma_f * h_pre
+            h = self.dropout(LG) + gamma_f * h_pre
 
             # Predicting Module
-            user_ability = torch.sigmoid(self.proj_latent2ability(self.dropout(h)))
-            que_difficulty = torch.sigmoid(self.proj_que2difficulty(self.dropout(question_emb[:, t + 1])))
-            que_discrimination = torch.sigmoid(self.proj_que2discrimination(self.dropout(question_emb[:, t + 1]))) * 10
-            user_ability_all[:, t + 1] = user_ability
-            interaction_func_in = user_ability - que_difficulty
+            if test_theory == "rasch":
+                user_ability = self.latent2ability(self.dropout(h))
+                que_difficulty = self.que2difficulty(self.dropout(question_emb[:, t + 1]))
+                user_ability_all[:, t + 1] = user_ability
+                interaction_func_in = user_ability + que_difficulty
+            else:
+                user_ability = torch.sigmoid(self.latent2ability(self.dropout(h)))
+                que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, t + 1])))
+                user_ability_all[:, t + 1] = user_ability
+                interaction_func_in = user_ability - que_difficulty
             inter_func_in_all[:, t + 1] = interaction_func_in
-            predict_score = torch.sigmoid(
-                torch.sum(que_discrimination * (user_ability - que_difficulty) * que_difficulty, dim=-1)
-            )
-            predict_score_all[:, t + 1] = predict_score
 
             # prepare for next prediction
             learning_pre = learning
@@ -242,6 +254,7 @@ class LPKTPlus(nn.Module):
         dim_correct = encoder_config["dim_correct"]
         dim_latent = encoder_config["dim_latent"]
         ablation_set = encoder_config["ablation_set"]
+        test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
 
         batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
         question_emb = self.embed_question(batch["question_seq"])
@@ -257,10 +270,9 @@ class LPKTPlus(nn.Module):
 
         h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
         learning_pre = torch.zeros(batch_size, dim_latent).to(self.params["device"])
-        predict_score_all = torch.zeros(batch_size, seq_len).to(self.params["device"])
         inter_func_in_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
         user_ability_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
-        user_ability_all[:, 0] = torch.sigmoid(self.proj_latent2ability(h_pre))
+        user_ability_all[:, 0] = torch.sigmoid(self.latent2ability(h_pre))
 
         for t in range(0, seq_len - 1):
             it = interval_time_emb[:, t]
@@ -273,19 +285,20 @@ class LPKTPlus(nn.Module):
 
             # Forgetting Module
             gamma_f = self.sig(self.linear_4(torch.cat((h_pre, LG, it), dim=1)))
-            h = LG + gamma_f * h_pre
+            h = self.dropout(LG) + gamma_f * h_pre
 
             # Predicting Module
-            user_ability = torch.sigmoid(self.proj_latent2ability(self.dropout(h)))
-            que_difficulty = torch.sigmoid(self.proj_que2difficulty(self.dropout(question_emb[:, t + 1])))
-            que_discrimination = torch.sigmoid(self.proj_que2discrimination(self.dropout(question_emb[:, t + 1]))) * 10
-            user_ability_all[:, t + 1] = user_ability
-            interaction_func_in = user_ability - que_difficulty
+            if test_theory == "rasch":
+                user_ability = self.latent2ability(self.dropout(h))
+                que_difficulty = self.que2difficulty(self.dropout(question_emb[:, t + 1]))
+                user_ability_all[:, t + 1] = user_ability
+                interaction_func_in = user_ability + que_difficulty
+            else:
+                user_ability = torch.sigmoid(self.latent2ability(self.dropout(h)))
+                que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, t + 1])))
+                user_ability_all[:, t + 1] = user_ability
+                interaction_func_in = user_ability - que_difficulty
             inter_func_in_all[:, t + 1] = interaction_func_in
-            predict_score = torch.sigmoid(
-                torch.sum(que_discrimination * (user_ability - que_difficulty) * que_difficulty, dim=-1)
-            )
-            predict_score_all[:, t + 1] = predict_score
 
             # prepare for next prediction
             learning_pre = learning
@@ -317,6 +330,7 @@ class LPKTPlus(nn.Module):
         dim_correct = encoder_config["dim_correct"]
         dim_latent = encoder_config["dim_latent"]
         ablation_set = encoder_config["ablation_set"]
+        test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
 
         batch_size, seq_len = batch["question_seq"].size(0), batch["question_seq"].size(1)
         question_emb = self.embed_question(batch["question_seq"])
@@ -337,10 +351,9 @@ class LPKTPlus(nn.Module):
         h_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_latent)).to(self.params["device"])
 
         learning_pre = torch.zeros(batch_size, dim_latent).to(self.params["device"])
-        predict_score_all = torch.zeros(batch_size, seq_len).to(self.params["device"])
         inter_func_in_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
         user_ability_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
-        user_ability_all[:, 0] = torch.sigmoid(self.proj_latent2ability(h_pre))
+        user_ability_all[:, 0] = torch.sigmoid(self.latent2ability(h_pre))
         cf_user_ability_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
 
         for t in range(0, seq_len - 1):
@@ -352,31 +365,31 @@ class LPKTPlus(nn.Module):
             gamma_l = self.sig(self.linear_3(torch.cat((learning_pre, it, learning, h_pre), dim=1)))
             LG = gamma_l * ((learning_gain + 1) / 2)
 
-            # Forgetting Module
-            gamma_f = self.sig(self.linear_4(torch.cat((h_pre, LG, it), dim=1)))
-            h = LG + gamma_f * h_pre
-
-            # Predicting Module
-            user_ability = torch.sigmoid(self.proj_latent2ability(self.dropout(h)))
-            que_difficulty = torch.sigmoid(self.proj_que2difficulty(self.dropout(question_emb[:, t + 1])))
-            que_discrimination = torch.sigmoid(self.proj_que2discrimination(self.dropout(question_emb[:, t + 1]))) * 10
-            user_ability_all[:, t + 1] = user_ability
-
             cf_learning = cf_learning_emb[:, t]
             cf_learning_gain = self.tanh(self.linear_2(torch.cat((learning_pre, it, cf_learning, h_pre), dim=1)))
             cf_gamma_l = self.sig(self.linear_3(torch.cat((learning_pre, it, cf_learning, h_pre), dim=1)))
             cf_LG = cf_gamma_l * ((cf_learning_gain + 1) / 2)
             cf_gamma_f = self.sig(self.linear_4(torch.cat((h_pre, cf_LG, it), dim=1)))
             cf_h = cf_LG + cf_gamma_f * h_pre
-            cf_user_ability = torch.sigmoid(self.proj_latent2ability(self.dropout(cf_h)))
+            cf_user_ability = torch.sigmoid(self.latent2ability(self.dropout(cf_h)))
             cf_user_ability_all[:, t + 1] = cf_user_ability
 
-            interaction_func_in = user_ability - que_difficulty
+            # Forgetting Module
+            gamma_f = self.sig(self.linear_4(torch.cat((h_pre, LG, it), dim=1)))
+            h = self.dropout(LG) + gamma_f * h_pre
+
+            # Predicting Module
+            if test_theory == "rasch":
+                user_ability = self.latent2ability(self.dropout(h))
+                que_difficulty = self.que2difficulty(self.dropout(question_emb[:, t + 1]))
+                user_ability_all[:, t + 1] = user_ability
+                interaction_func_in = user_ability + que_difficulty
+            else:
+                user_ability = torch.sigmoid(self.latent2ability(self.dropout(h)))
+                que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, t + 1])))
+                user_ability_all[:, t + 1] = user_ability
+                interaction_func_in = user_ability - que_difficulty
             inter_func_in_all[:, t + 1] = interaction_func_in
-            predict_score = torch.sigmoid(
-                torch.sum(que_discrimination * (user_ability - que_difficulty) * que_difficulty, dim=-1)
-            )
-            predict_score_all[:, t + 1] = predict_score
 
             # prepare for next prediction
             learning_pre = learning
@@ -430,6 +443,7 @@ class LPKTPlus(nn.Module):
         dim_correct = encoder_config["dim_correct"]
         dim_latent = encoder_config["dim_latent"]
         ablation_set = encoder_config["ablation_set"]
+        test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
 
         w_penalty_neg = self.params["loss_config"].get("penalty neg loss", 0)
         w_learning = self.params["loss_config"].get("learning loss", 0)
@@ -458,7 +472,7 @@ class LPKTPlus(nn.Module):
         predict_score_all = torch.zeros(batch_size, seq_len).to(self.params["device"])
         inter_func_in_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
         user_ability_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
-        user_ability_all[:, 0] = torch.sigmoid(self.proj_latent2ability(h_pre))
+        user_ability_all[:, 0] = torch.sigmoid(self.latent2ability(h_pre))
         cf_user_ability_all = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
 
         for t in range(0, seq_len - 1):
@@ -472,13 +486,7 @@ class LPKTPlus(nn.Module):
 
             # Forgetting Module
             gamma_f = self.sig(self.linear_4(torch.cat((h_pre, LG, it), dim=1)))
-            h = LG + gamma_f * h_pre
-
-            # Predicting Module
-            user_ability = torch.sigmoid(self.proj_latent2ability(self.dropout(h)))
-            que_difficulty = torch.sigmoid(self.proj_que2difficulty(self.dropout(question_emb[:, t + 1])))
-            que_discrimination = torch.sigmoid(self.proj_que2discrimination(self.dropout(question_emb[:, t + 1]))) * 10
-            user_ability_all[:, t + 1] = user_ability
+            h = self.dropout(LG) + gamma_f * h_pre
 
             if (not multi_stage) and (w_counter_fact != 0):
                 cf_learning = cf_learning_emb[:, t]
@@ -487,14 +495,27 @@ class LPKTPlus(nn.Module):
                 cf_LG = cf_gamma_l * ((cf_learning_gain + 1) / 2)
                 cf_gamma_f = self.sig(self.linear_4(torch.cat((h_pre, cf_LG, it), dim=1)))
                 cf_h = cf_LG + cf_gamma_f * h_pre
-                cf_user_ability = torch.sigmoid(self.proj_latent2ability(self.dropout(cf_h)))
+                cf_user_ability = torch.sigmoid(self.latent2ability(self.dropout(cf_h)))
                 cf_user_ability_all[:, t + 1] = cf_user_ability
 
-            interaction_func_in = user_ability - que_difficulty
-            inter_func_in_all[:, t + 1] = interaction_func_in
-            predict_score = torch.sigmoid(
-                torch.sum(que_discrimination * (user_ability - que_difficulty) * que_difficulty, dim=-1)
-            )
+            # Predicting Module
+            if test_theory == "rasch":
+                user_ability = self.latent2ability(self.dropout(h))
+                que_difficulty = self.que2difficulty(self.dropout(question_emb[:, t + 1]))
+                user_ability_all[:, t + 1] = user_ability
+                interaction_func_in = user_ability + que_difficulty
+                inter_func_in_all[:, t + 1] = interaction_func_in
+                concept_related = self.objects["data"]["Q_table_tensor"][batch["question_seq"][:, t + 1]]
+                y = interaction_func_in * concept_related
+            else:
+                user_ability = torch.sigmoid(self.latent2ability(self.dropout(h)))
+                que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, t + 1])))
+                que_discrimination = torch.sigmoid(self.que2discrimination(self.dropout(question_emb[:, t + 1]))) * 10
+                user_ability_all[:, t + 1] = user_ability
+                interaction_func_in = user_ability - que_difficulty
+                inter_func_in_all[:, t + 1] = interaction_func_in
+                y = (que_discrimination * interaction_func_in) * que_difficulty
+            predict_score = torch.sigmoid(torch.sum(y, dim=-1))
             predict_score_all[:, t + 1] = predict_score
 
             # prepare for next prediction

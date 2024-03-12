@@ -22,8 +22,9 @@ data_type="single_concept"
       --train_batch_size 64 --evaluate_batch_size 512 \
       --enable_clip_grad False --grad_clipped 10.0 \
       --num_concept 101 --num_question 2803 --ablation_set 0 \
-      --dim_question 64 --dim_latent 64 --dim_correct 50 --dropout 0.05 \
-      --w_que_diff_pred 0 --w_que_disc_pred 0 --w_user_ability_pred 0 --w_penalty_neg 0 --w_learning 0 --w_counter_fact 0 \
+      --dim_question 64 --dim_latent 64 --dim_correct 50 --dropout 0.05 --que_user_share_proj True \
+      --multi_stage True --test_theory "irt" \
+      --w_que_diff_pred 0 --w_que_disc_pred 0 --w_user_ability_pred 0 --w_penalty_neg 0 --w_learning 0 --w_counter_fact 0 --w_q_table 0 \
       --save_model True --debug_mode False --use_cpu False --seed 0
   done
-} >> F:/code/myProjects/dlkt/example/result_local/lpkt+_baseline_our_setting_assist2017_save.txt
+} >> F:/code/myProjects/dlkt/example/result_local/lpkt+_irt_share_baseline_our_setting_assist2017_save.txt

@@ -4,7 +4,6 @@ from torch.utils.data import DataLoader, Dataset
 
 from .KnowledgeTracingTrainer import KnowledgeTracingTrainer
 from .TimeRecord import TimeRecord
-from ..util.basic import get_now_time
 
 
 class QueDataset(Dataset):
@@ -208,17 +207,12 @@ class CognitionTracingTrainer(KnowledgeTracingTrainer):
             if schedulers_config["use_scheduler"]:
                 scheduler.step()
 
-            # evaluation_start = get_now_time()
             self.evaluate()
-            # evaluation_end = get_now_time()
-            # if self.time_record is not None:
-            #     print(f"evaluation: from {evaluation_start} to {evaluation_end}")
 
             if self.stop_train():
                 break
 
     def iter_que4q_table_loss(self, target_question):
-        # 极其耗时
         question_ids = []
         related_concept_ids = []
         unrelated_concept_ids = []

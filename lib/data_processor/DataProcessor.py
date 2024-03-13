@@ -684,7 +684,7 @@ class DataProcessor:
         self.statics_preprocessed["multi_concept"]["num_interaction"] = (
             sum(list(map(lambda x: x["seq_len"], self.data_uniformed["multi_concept"]))))
         self.statics_preprocessed["multi_concept"]["num_concept"] = len(concept_ids)
-        self.statics_preprocessed["multi_concept"]["num_question"] = len(question_ids)
+        self.statics_preprocessed["multi_concept"]["num_question"] = len(question_ids) + 1
         self.statics_preprocessed["multi_concept"]["num_max_concept"] = (int(max(Q_table_multi_concept.sum(axis=1))))
 
         # 处理为single_concept，即多知识点看成新的单知识点

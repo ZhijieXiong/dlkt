@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
 
 {
-  dataset_name="assist2012"
+  dataset_name="edi2020-task1"
   data_type="single_concept"
   fold=0
 
   dropouts='0.1 0.2'
-#  weight_decays='0.0001 0.00001 0.001'
-  weight_decays='0.000001 0'
-  nums_rnn_layer=(2 3)
+  weight_decays='0.0001 0.00001 0.000001'
+  nums_rnn_layer=(2 4)
   dims_question=(64 128)
   for weight_decay in ${weight_decays}
   do
     for num_rnn_layer in "${nums_rnn_layer[@]}"
-      do
+    do
       for dim_question in "${dims_question[@]}"
       do
         for dropout in ${dropouts}
@@ -29,7 +28,7 @@
             --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
             --train_batch_size 64 --evaluate_batch_size 256 \
             --enable_clip_grad False --grad_clipped 10.0 \
-            --num_concept 265 --num_question 53091 \
+            --num_concept 282 --num_question 27613 \
             --multi_stage True --test_theory "irt" \
             --dim_question "${dim_question}" --dim_correct "${dim_question}" --dim_latent "${dim_question}" --rnn_type "gru" \
             --num_rnn_layer "${num_rnn_layer}" --que_user_share_proj True --dropout "${dropout}" \
@@ -39,4 +38,4 @@
       done
     done
   done
-} >> F:/code/myProjects/dlkt/example/result_local/dct_irt_share_baseline_our_setting_assist2012_fold_0_ob.txt
+} >> F:/code/myProjects/dlkt/example/result_local/dct_irt_share_baseline_our_setting_edi2020-task1_fold_0_ob.txt

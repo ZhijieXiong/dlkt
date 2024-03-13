@@ -105,6 +105,7 @@ class DCT(nn.Module):
         return predict_loss
 
     def get_q_table_loss(self, target_question, question_ids, related_concept_ids, unrelated_concept_ids):
+        # 根据数据集提供的Q table约束que2difficulty的学习
         test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
 
         question_emb = self.embed_question(target_question)
@@ -124,7 +125,7 @@ class DCT(nn.Module):
             return 0, 0
 
     def get_learn_loss(self, batch):
-        # 学习约束：做了题比不做题学习增长大：对于每个时刻，都应该比上个时刻有所增长（对应当前时刻所做题的知识点），惩罚小于0的部分
+        # 学习约束：做对了题比不做题学习增长大
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
         dim_correct = encoder_config["dim_correct"]
         test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
@@ -136,7 +137,7 @@ class DCT(nn.Module):
 
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
         question_emb = self.embed_question(question_seq)
-        interaction_emb = torch.cat((question_emb[:, :-1], correct_emb[:, :-1]), dim=2)
+        interaction_emb = torch.cat((question_emb, correct_emb), dim=2)
 
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(interaction_emb)
@@ -150,9 +151,11 @@ class DCT(nn.Module):
         q2c_mask_table = self.objects["data"]["q2c_mask_table"][batch["question_seq"]]
 
         master_leval = user_ability[:, 1:] - user_ability[:, :-1]
-        mask4master = mask_bool_seq[:, 1:-1].unsqueeze(-1) & q2c_mask_table[:, 1:-1].bool()
+        mask4master = mask_bool_seq[:, 1:].unsqueeze(-1) & \
+                      correct_seq[:, 1:].unsqueeze(-1).bool() & \
+                      q2c_mask_table[:, 1:].bool()
         target_neg_master_leval = torch.masked_select(
-            torch.gather(master_leval, 2, q2c_table[:, 1:-1]), mask4master
+            torch.gather(master_leval, 2, q2c_table[:, 1:]), mask4master
         )
         neg_master_leval = target_neg_master_leval[target_neg_master_leval < 0]
         num_sample = neg_master_leval.numel()
@@ -164,9 +167,11 @@ class DCT(nn.Module):
 
     def get_penalty_neg_loss(self, batch):
         # 对于做对的题，惩罚user_ability - que_difficulty小于0的值（只惩罚考察的知识点）
+        # 如果是单知识点数据集，那么对于做错的题，惩罚user_ability - que_difficulty大于0的值（只惩罚考察的知识点）
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
         dim_correct = encoder_config["dim_correct"]
         test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
+        data_type = self.params["datasets_config"]["data_type"]
 
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         correct_seq = batch["correct_seq"]
@@ -195,14 +200,27 @@ class DCT(nn.Module):
         mask4inter_func_in = mask_bool_seq[:, 1:].unsqueeze(-1) & \
                              batch["correct_seq"][:, 1:].bool().unsqueeze(-1) & \
                              q2c_mask_table[:, 1:].bool()
-        target_inter_func_in = torch.masked_select(target_inter_func_in, mask4inter_func_in)
-        neg_inter_func_in = target_inter_func_in[target_inter_func_in <= 0]
+        target_inter_func_in1 = torch.masked_select(target_inter_func_in, mask4inter_func_in)
+        neg_inter_func_in = target_inter_func_in1[target_inter_func_in1 <= 0]
         num_sample = neg_inter_func_in.numel()
-        if num_sample > 0:
-            penalty_neg_loss = -neg_inter_func_in.mean()
-            return penalty_neg_loss, num_sample
+
+        if data_type == "single_concept":
+            mask4inter_func_in2 = mask_bool_seq[:, 1:].unsqueeze(-1) & \
+                                 (1 - batch["correct_seq"][:, 1:]).bool().unsqueeze(-1) & \
+                                 q2c_mask_table[:, 1:].bool()
+            target_inter_func_in2 = torch.masked_select(target_inter_func_in, mask4inter_func_in2)
+            pos_inter_func_in = target_inter_func_in2[target_inter_func_in2 >= 0]
+            num_sample = num_sample + pos_inter_func_in.numel()
+            if num_sample > 0:
+                penalty_value = torch.cat((-neg_inter_func_in, pos_inter_func_in))
+                return penalty_value.mean(), num_sample
+            else:
+                return 0, 0
         else:
-            return 0, 0
+            if num_sample > 0:
+                return -neg_inter_func_in.mean(), num_sample
+            else:
+                return 0, 0
 
     def get_counter_fact_loss(self, batch):
         # 反事实约束：做对一道题比做错一道题的学习增长大
@@ -220,16 +238,18 @@ class DCT(nn.Module):
 
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
         question_emb = self.embed_question(question_seq)
-        interaction_emb = torch.cat((question_emb[:, :-1], correct_emb[:, :-1]), dim=2)
+        interaction_emb = torch.cat((question_emb, correct_emb), dim=2)
 
-        cf_user_ability = torch.zeros(batch_size, seq_len - 1, num_concept).to(self.params["device"])
-        latent = torch.zeros(batch_size, seq_len - 1, dim_latent).to(self.params["device"])
+        cf_user_ability = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
+        latent = torch.zeros(batch_size, seq_len, dim_latent).to(self.params["device"])
         cf_correct_emb = (1 - correct_seq).reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, seq_len, -1)
         cf_interaction_emb = torch.cat((question_emb, cf_correct_emb), dim=2)
+
+        # torch中rnn的hidden state初始值为0
         rnn_h_current = torch.zeros(
             num_rnn_layer, batch_size, dim_latent, dtype=interaction_emb.dtype
         ).to(self.params["device"])
-        for t in range(seq_len - 1):
+        for t in range(seq_len):
             input_current = interaction_emb[:, t].unsqueeze(1)
             latent_current, rnn_h_next = self.encoder_layer(input_current, rnn_h_current)
             latent[:, t] = latent_current.squeeze(1)
@@ -248,31 +268,27 @@ class DCT(nn.Module):
         q2c_table = self.objects["data"]["q2c_table"][batch["question_seq"]]
         q2c_mask_table = self.objects["data"]["q2c_mask_table"][batch["question_seq"]]
 
-        cf_loss = 0.
-        f_minus_cf = torch.gather(user_ability - cf_user_ability, 2, q2c_table[:, :-1])
-        correct_seq1 = batch["correct_seq"][:, :-1].bool()
-        correct_seq2 = (1 - batch["correct_seq"][:, :-1]).bool()
-        mask4correct = mask_bool_seq[:, :-1].unsqueeze(-1) & correct_seq1.unsqueeze(-1) & q2c_mask_table[:, :-1].bool()
-        mask4wrong = mask_bool_seq[:, :-1].unsqueeze(-1) & correct_seq2.unsqueeze(-1) & q2c_mask_table[:, :-1].bool()
+        f_minus_cf = torch.gather(user_ability - cf_user_ability, 2, q2c_table)
+        mask4correct = mask_bool_seq.unsqueeze(-1) & \
+                       batch["correct_seq"].bool().unsqueeze(-1) & \
+                       q2c_mask_table.bool()
+        mask4wrong = mask_bool_seq.unsqueeze(-1) & \
+                     (1 - batch["correct_seq"]).bool().unsqueeze(-1) & \
+                     q2c_mask_table.bool()
 
         # 对于做对的时刻，f_minus_cf应该大于0，惩罚小于0的部分
         target_neg_f_minus_cf = torch.masked_select(f_minus_cf, mask4correct)
         neg_f_minus_cf = target_neg_f_minus_cf[target_neg_f_minus_cf < 0]
         num_sample1 = neg_f_minus_cf.numel()
-        if num_sample1 > 0:
-            cf_loss1 = -neg_f_minus_cf.mean()
-            cf_loss = cf_loss + cf_loss1
 
         # 对于做错的时刻，f_minus_cf应该小于0，惩罚大于0的部分
         target_pos_f_minus_cf = torch.masked_select(f_minus_cf, mask4wrong)
         pos_f_minus_cf = target_pos_f_minus_cf[target_pos_f_minus_cf > 0]
         num_sample2 = pos_f_minus_cf.numel()
-        if num_sample2 > 0:
-            cf_loss2 = pos_f_minus_cf.mean()
-            cf_loss = cf_loss + cf_loss2
 
         if (num_sample1 + num_sample2) > 0:
-            return cf_loss, (num_sample1 + num_sample2)
+            cf_value = torch.cat((-neg_f_minus_cf, pos_f_minus_cf))
+            return cf_value.mean(), (num_sample1 + num_sample2)
         else:
             return 0, 0
 
@@ -297,6 +313,7 @@ class DCT(nn.Module):
         w_counter_fact = self.params["loss_config"].get("counterfactual loss", 0)
         multi_stage = self.params["other"]["cognition_tracing"]["multi_stage"]
         test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
+        data_type = self.params["datasets_config"]["data_type"]
 
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         correct_seq = batch["correct_seq"]
@@ -365,21 +382,37 @@ class DCT(nn.Module):
             mask4inter_func_in = mask_bool_seq[:, 1:].unsqueeze(-1) & \
                                  batch["correct_seq"][:, 1:].bool().unsqueeze(-1) & \
                                  q2c_mask_table[:, 1:].bool()
-            target_inter_func_in = torch.masked_select(target_inter_func_in, mask4inter_func_in)
-            neg_inter_func_in = target_inter_func_in[target_inter_func_in <= 0]
-            if neg_inter_func_in.numel() > 0:
-                penalty_neg_loss = -neg_inter_func_in.mean()
-                if loss_record is not None:
-                    num_sample = neg_inter_func_in.shape[0]
-                    loss_record.add_loss("penalty neg loss", penalty_neg_loss.detach().cpu().item() * num_sample,
-                                         num_sample)
-                loss = loss + penalty_neg_loss * w_penalty_neg
+            target_inter_func_in1 = torch.masked_select(target_inter_func_in, mask4inter_func_in)
+            neg_inter_func_in = target_inter_func_in1[target_inter_func_in1 <= 0]
+            num_sample = neg_inter_func_in.numel()
+
+            if data_type == "single_concept":
+                mask4inter_func_in2 = mask_bool_seq[:, 1:].unsqueeze(-1) & \
+                                      (1 - batch["correct_seq"][:, 1:]).bool().unsqueeze(-1) & \
+                                      q2c_mask_table[:, 1:].bool()
+                target_inter_func_in2 = torch.masked_select(target_inter_func_in, mask4inter_func_in2)
+                pos_inter_func_in = target_inter_func_in2[target_inter_func_in2 >= 0]
+                num_sample = num_sample + pos_inter_func_in.numel()
+                if num_sample > 0:
+                    penalty_value = torch.cat((-neg_inter_func_in, pos_inter_func_in))
+                    penalty_neg_loss = penalty_value.mean()
+                    if loss_record is not None:
+                        loss_record.add_loss("penalty neg loss", penalty_neg_loss.detach().cpu().item() * num_sample, num_sample)
+                    loss = loss + penalty_neg_loss * w_penalty_neg
+            else:
+                if num_sample > 0:
+                    penalty_neg_loss = -neg_inter_func_in.mean()
+                    if loss_record is not None:
+                        loss_record.add_loss("penalty neg loss", penalty_neg_loss.detach().cpu().item() * num_sample,
+                                             num_sample)
+                    loss = loss + penalty_neg_loss * w_penalty_neg
 
         if (not multi_stage) and (w_learning != 0):
-            # 学习约束：做了题比不做题学习增长大
+            # 学习约束：做对了题比不做题学习增长大
             master_leval = user_ability[:, 1:] - user_ability[:, :-1]
-            mask4master = mask_bool_seq[:, 1:-1].unsqueeze(-1) & q2c_mask_table[:, 1:-1].bool()
-            # 对于每个时刻，都应该比上个时刻有所增长（对应当前时刻所做题的知识点），惩罚小于0的部分
+            mask4master = mask_bool_seq[:, 1:-1].unsqueeze(-1) & \
+                          correct_seq[:, 1:-1].unsqueeze(-1).bool() & \
+                          q2c_mask_table[:, 1:-1].bool()
             target_neg_master_leval = torch.masked_select(
                 torch.gather(master_leval, 2, q2c_table[:, 1:-1]), mask4master
             )
@@ -394,8 +427,6 @@ class DCT(nn.Module):
 
         if (not multi_stage) and (w_counter_fact != 0):
             # 反事实约束：做对一道题比做错一道题的学习增长大
-            cf_loss = 0.
-
             f_minus_cf = torch.gather(user_ability - cf_user_ability, 2, q2c_table[:, :-1])
             correct_seq1 = batch["correct_seq"][:, :-1].bool()
             correct_seq2 = (1 - batch["correct_seq"][:, :-1]).bool()
@@ -406,23 +437,17 @@ class DCT(nn.Module):
             target_neg_f_minus_cf = torch.masked_select(f_minus_cf, mask4correct)
             neg_f_minus_cf = target_neg_f_minus_cf[target_neg_f_minus_cf < 0]
             num_sample1 = neg_f_minus_cf.numel()
-            if num_sample1 > 0:
-                cf_loss1 = -neg_f_minus_cf.mean()
-                cf_loss = cf_loss + cf_loss1
-                if loss_record is not None:
-                    loss_record.add_loss("counterfactual loss", cf_loss1.detach().cpu().item() * num_sample1, num_sample1)
 
             # 对于做错的时刻，f_minus_cf应该小于0，惩罚大于0的部分
             target_pos_f_minus_cf = torch.masked_select(f_minus_cf, mask4wrong)
             pos_f_minus_cf = target_pos_f_minus_cf[target_pos_f_minus_cf > 0]
             num_sample2 = pos_f_minus_cf.numel()
-            if num_sample2 > 0:
-                cf_loss2 = pos_f_minus_cf.mean()
-                cf_loss = cf_loss + cf_loss2
-                if loss_record is not None:
-                    loss_record.add_loss("counterfactual loss", cf_loss2.detach().cpu().item() * num_sample2, num_sample2)
 
-            if (num_sample1 + num_sample2) > 0:
+            num_sample = num_sample1 + num_sample2
+            if num_sample > 0:
+                cf_loss = torch.cat((-neg_f_minus_cf, pos_f_minus_cf)).mean()
+                if loss_record is not None:
+                    loss_record.add_loss("counterfactual loss", cf_loss.detach().cpu().item() * num_sample, num_sample)
                 loss = loss + cf_loss * w_counter_fact
 
         return loss

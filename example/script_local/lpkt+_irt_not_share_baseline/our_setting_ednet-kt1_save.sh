@@ -5,7 +5,6 @@ data_type="only_question"
 
 
 {
-  # baseline
   # weight_decay: 0.0001, dim: 64, dropout: 0.15
   for fold in 0 1 2 3 4
   do

@@ -6,7 +6,8 @@
   fold=0
 
   dropouts='0.1 0.2'
-  weight_decays='0.001 0.0001 0.00001'
+#  weight_decays='0.0001 0.00001'
+  weight_decays='0.001'
   nums_rnn_layer=(2 3)
   dims_question=(64 128)
   for weight_decay in ${weight_decays}

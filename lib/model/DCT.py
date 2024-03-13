@@ -283,6 +283,9 @@ class DCT(nn.Module):
 
         return predict_score
 
+    def get_predict_score_seq_len_minus1(self, batch):
+        return self.forward(batch)
+
     def get_predict_loss(self, batch, loss_record=None):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
         dim_correct = encoder_config["dim_correct"]

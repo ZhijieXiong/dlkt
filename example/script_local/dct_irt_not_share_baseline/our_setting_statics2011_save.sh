@@ -5,7 +5,6 @@ data_type="single_concept"
 folds=(0 1 2 3 4)
 
 {
-  # baseline
   # weight_decay: 0.0001, num_rnn_layer: 2, dim_question: 32, dim_latent: 20, dropout: 0.05
   for fold in "${folds[@]}"
   do
@@ -21,7 +20,6 @@ folds=(0 1 2 3 4)
       --train_batch_size 64 --evaluate_batch_size 256 \
       --enable_clip_grad False --grad_clipped 10.0 \
       --num_concept 27 --num_question 1223 \
-      --multi_stage True --test_theory "irt" --user_weight_init False --que_weight_init False \
       --dim_question 32 --dim_correct 64 --dim_latent 20 --rnn_type "gru" --num_rnn_layer 2 --dropout 0.05 --que_user_share_proj False \
       --multi_stage True --test_theory "irt" \
       --w_que_diff_pred 0 --w_que_disc_pred 0 --w_user_ability_pred 0 --w_penalty_neg 0 --w_learning 0 --w_counter_fact 0 --w_q_table 0 \

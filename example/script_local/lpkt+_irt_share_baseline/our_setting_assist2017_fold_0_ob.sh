@@ -6,7 +6,7 @@ data_type="single_concept"
 fold=0
 
 
-#{
+{
   weight_decays='0.0001 0.00001'
   dropouts='0.1 0.2'
   dims=(32 64)
@@ -35,4 +35,4 @@ fold=0
       done
     done
   done
-#} >> F:/code/myProjects/dlkt/example/result_local/lpkt+_irt_share_baseline_our_setting_assist2017_fold_0_ob.txt
+} >> F:/code/myProjects/dlkt/example/result_local/lpkt+_irt_share_baseline_our_setting_assist2017_fold_0_ob.txt

@@ -5,8 +5,7 @@ data_type="only_question"
 folds=(0 1 2 3 4)
 
 {
-  # baseline
-  # weight_decay: 0.0001, num_rnn_layer: 2, dim_question: 64, dim_latent: 64, dropout: 0.05
+  # weight_decay: 0.0001, num_rnn_layer: 3, dim_question: 64, dropout: 0.1
   for fold in "${folds[@]}"
   do
     echo -e "fold: ${fold}"
@@ -21,8 +20,7 @@ folds=(0 1 2 3 4)
       --train_batch_size 64 --evaluate_batch_size 256 \
       --enable_clip_grad False --grad_clipped 10.0 \
       --num_concept 188 --num_question 11858 \
-      --multi_stage True --test_theory "irt" --user_weight_init False --que_weight_init False \
-      --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 2 --dropout 0.05 --que_user_share_proj True \
+      --dim_question 64 --dim_correct 64 --dim_latent 64 --rnn_type "gru" --num_rnn_layer 3 --dropout 0.1 --que_user_share_proj True \
       --multi_stage True --test_theory "irt" \
       --w_que_diff_pred 0 --w_que_disc_pred 0 --w_user_ability_pred 0 --w_penalty_neg 0 --w_learning 0 --w_counter_fact 0 --w_q_table 0 \
       --save_model True --debug_mode False --use_cpu False --seed 0

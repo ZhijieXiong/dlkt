@@ -1,4 +1,6 @@
 import json
+import os.path
+
 import numpy as np
 from collections import defaultdict
 from sklearn.metrics import roc_auc_score, accuracy_score, mean_absolute_error, mean_squared_error
@@ -170,8 +172,11 @@ class Evaluator:
 
         # evaluate_bias(result_all_batch, 3)
 
-        result4statics = {}
         statics_path = fine_grain_config["statics_path"]
+        if not os.path.exists(statics_path):
+            return
+
+        result4statics = {}
         with open(statics_path, "r") as f:
             statics_train = json.load(f)
 

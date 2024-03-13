@@ -5,8 +5,7 @@ data_type="single_concept"
 
 
 {
-  # baseline
-  # weight_decay: 0.00001, dim: 48, dropout: 0.15
+  # weight_decay: 0.00001, dim: 32, dropout: 0.2
   for fold in 0 1 2 3 4
   do
     echo -e "fold: ${fold}"
@@ -21,7 +20,7 @@ data_type="single_concept"
       --train_batch_size 64 --evaluate_batch_size 512 \
       --enable_clip_grad False --grad_clipped 10.0 \
       --num_concept 27 --num_question 1223 --ablation_set 1 \
-      --dim_question 48 --dim_latent 48 --dim_correct 50 --dropout 0.15 --que_user_share_proj True \
+      --dim_question 32 --dim_latent 32 --dim_correct 32 --dropout 0.2 --que_user_share_proj True \
       --multi_stage True --test_theory "irt" \
       --w_que_diff_pred 0 --w_que_disc_pred 0 --w_user_ability_pred 0 --w_penalty_neg 0 --w_learning 0 --w_counter_fact 0 --w_q_table 0 \
       --save_model True --debug_mode False --use_cpu False --seed 0

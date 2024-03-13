@@ -5,7 +5,6 @@ data_type="single_concept"
 
 
 {
-  # baseline
   # weight_decay: 0.00001, dim: 48, dropout: 0.15
   for fold in 0 1 2 3 4
   do

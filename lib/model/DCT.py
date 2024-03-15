@@ -4,6 +4,34 @@ from .util import *
 from .loss_util import binary_entropy
 
 
+class MLP4Proj(nn.Module):
+    def __init__(self, num_layer, dim_in, dim_out, dropout):
+        super().__init__()
+
+        if num_layer == 1:
+            self.net = nn.Linear(dim_in, dim_out)
+        elif num_layer == 2:
+            self.net = nn.Sequential(
+                nn.Linear(dim_in, dim_in),
+                nn.Dropout(dropout),
+                nn.ReLU(),
+                nn.Linear(dim_in, dim_out)
+            )
+        else:
+            self.net = nn.Sequential(
+                nn.Linear(dim_in, dim_in),
+                nn.Dropout(dropout),
+                nn.ReLU(),
+                nn.Linear(dim_in, dim_in),
+                nn.Dropout(dropout),
+                nn.ReLU(),
+                nn.Linear(dim_in, dim_out)
+            )
+
+    def forward(self, x):
+        return self.net(x)
+
+
 class DCT(nn.Module):
     model_name = "DCT"
 
@@ -21,9 +49,11 @@ class DCT(nn.Module):
         rnn_type = encoder_config["rnn_type"]
         num_rnn_layer = encoder_config["num_rnn_layer"]
         que_user_share_proj = encoder_config["que_user_share_proj"]
+        num_mlp_layer = encoder_config["num_mlp_layer"]
         dropout = encoder_config["dropout"]
 
         self.embed_question = nn.Embedding(num_question, dim_question)
+        torch.nn.init.xavier_uniform_(self.embed_question.weight)
         dim_rnn_output = dim_question if que_user_share_proj else dim_latent
         dim_rrn_input = dim_question + dim_correct
         if rnn_type == "rnn":
@@ -32,24 +62,11 @@ class DCT(nn.Module):
             self.encoder_layer = nn.LSTM(dim_rrn_input, dim_rnn_output, batch_first=True, num_layers=num_rnn_layer)
         else:
             self.encoder_layer = nn.GRU(dim_rrn_input, dim_rnn_output, batch_first=True, num_layers=num_rnn_layer)
-        self.que2difficulty = nn.Linear(dim_question, num_concept)
-        self.latent2ability = self.que2difficulty if que_user_share_proj else nn.Linear(dim_latent, num_concept)
-        self.que2discrimination = nn.Linear(dim_question, 1)
+        self.que2difficulty = MLP4Proj(num_mlp_layer, dim_question, num_concept, dropout)
+        self.latent2ability = self.que2difficulty if que_user_share_proj else \
+            MLP4Proj(num_mlp_layer, dim_latent, num_concept, dropout)
+        self.que2discrimination = MLP4Proj(num_mlp_layer, dim_question, 1, dropout)
         self.dropout = nn.Dropout(dropout)
-
-        self.init_weight()
-
-    def init_weight(self):
-        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
-        que_user_share_proj = encoder_config["que_user_share_proj"]
-
-        if not que_user_share_proj:
-            torch.nn.init.xavier_uniform_(self.latent2ability.weight)
-
-        torch.nn.init.xavier_uniform_(self.que2difficulty.weight)
-        torch.nn.init.xavier_uniform_(self.embed_question.weight)
-
-        torch.nn.init.xavier_uniform_(self.que2discrimination.weight)
 
     def predict_score(self, latent, question_emb, question_seq):
         test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
@@ -57,12 +74,13 @@ class DCT(nn.Module):
             user_ability = self.latent2ability(self.dropout(latent))
             que_difficulty = self.que2difficulty(self.dropout(question_emb))
             concept_related = self.objects["data"]["Q_table_tensor"][question_seq]
-            y = (user_ability + que_difficulty) * concept_related
+            y = (user_ability - que_difficulty) * concept_related
         else:
             user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
             que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
             que_discrimination = torch.sigmoid(self.que2discrimination(self.dropout(question_emb))) * 10
-            y = (que_discrimination * (user_ability - que_difficulty)) * que_difficulty
+            y = (que_discrimination * (user_ability - que_difficulty)) * \
+                que_difficulty / torch.sum(que_difficulty, dim=1, keepdim=True)
         predict_score = torch.sigmoid(torch.sum(y, dim=-1))
 
         return predict_score
@@ -104,8 +122,9 @@ class DCT(nn.Module):
 
         return predict_loss
 
-    def get_q_table_loss(self, target_question, question_ids, related_concept_ids, unrelated_concept_ids):
+    def get_q_table_loss(self, target_question, question_ids, related_concept_ids, unrelated_concept_ids, t=0.5):
         # 根据数据集提供的Q table约束que2difficulty的学习
+        # 一方面每道习题标注的知识点要比未标注的大；另一方面限制未标注的知识点小于一个阈值，如0.5
         test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
 
         question_emb = self.embed_question(target_question)
@@ -117,9 +136,15 @@ class DCT(nn.Module):
         unrelated_diff = que_difficulty[question_ids, unrelated_concept_ids]
 
         minus_diff = unrelated_diff - related_diff
-        to_punish = minus_diff[minus_diff > 0]
-        num_sample = to_punish.numel()
+        to_punish1 = minus_diff[minus_diff > 0]
+        num_sample1 = to_punish1.numel()
+
+        to_punish2 = unrelated_diff[unrelated_diff > t] - t
+        num_sample2 = to_punish2.numel()
+
+        num_sample = num_sample1 + num_sample2
         if num_sample > 0:
+            to_punish = torch.cat((to_punish1, to_punish2))
             return to_punish.mean(), num_sample
         else:
             return 0, 0
@@ -188,7 +213,7 @@ class DCT(nn.Module):
         if test_theory == "rasch":
             user_ability = self.latent2ability(self.dropout(latent))
             que_difficulty = self.que2difficulty(self.dropout(question_emb[:, 1:]))
-            inter_func_in = user_ability + que_difficulty
+            inter_func_in = user_ability - que_difficulty
         else:
             user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
             que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, 1:])))
@@ -354,14 +379,15 @@ class DCT(nn.Module):
             concept_related = self.objects["data"]["Q_table_tensor"][question_seq[:, 1:]]
             user_ability = self.latent2ability(self.dropout(latent))
             que_difficulty = self.que2difficulty(self.dropout(question_emb[:, 1:]))
-            inter_func_in = user_ability + que_difficulty
+            inter_func_in = user_ability - que_difficulty
             y = inter_func_in * concept_related
         else:
             user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
             que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, 1:])))
             inter_func_in = user_ability - que_difficulty
             que_discrimination = torch.sigmoid(self.que2discrimination(self.dropout(question_emb[:, 1:]))) * 10
-            y = (que_discrimination * inter_func_in) * que_difficulty
+            y = (que_discrimination * inter_func_in) * \
+                que_difficulty / torch.sum(que_difficulty, dim=1, keepdim=True)
 
         predict_score = torch.sigmoid(torch.sum(y, dim=-1))
         predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])

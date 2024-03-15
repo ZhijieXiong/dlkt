@@ -75,12 +75,13 @@ class LPKTPlus(nn.Module):
             user_ability = self.latent2ability(self.dropout(latent))
             que_difficulty = self.que2difficulty(self.dropout(question_emb))
             concept_related = self.objects["data"]["Q_table_tensor"][question_seq]
-            y = (user_ability + que_difficulty) * concept_related
+            y = (user_ability - que_difficulty) * concept_related
         else:
             user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
             que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
             que_discrimination = torch.sigmoid(self.que2discrimination(self.dropout(question_emb))) * 10
-            y = (que_discrimination * (user_ability - que_difficulty)) * que_difficulty / torch.sum(que_difficulty, dim=1, keepdim=True)
+            y = (que_discrimination * (user_ability - que_difficulty)) * \
+                que_difficulty / torch.sum(que_difficulty, dim=1, keepdim=True)
         predict_score = torch.sigmoid(torch.sum(y, dim=-1))
 
         return predict_score
@@ -217,7 +218,7 @@ class LPKTPlus(nn.Module):
                 user_ability = self.latent2ability(self.dropout(h))
                 que_difficulty = self.que2difficulty(self.dropout(question_emb[:, t + 1]))
                 user_ability_all[:, t + 1] = user_ability
-                interaction_func_in = user_ability + que_difficulty
+                interaction_func_in = user_ability - que_difficulty
             else:
                 user_ability = torch.sigmoid(self.latent2ability(self.dropout(h)))
                 que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, t + 1])))
@@ -503,7 +504,7 @@ class LPKTPlus(nn.Module):
                 user_ability = self.latent2ability(self.dropout(h))
                 que_difficulty = self.que2difficulty(self.dropout(question_emb[:, t + 1]))
                 user_ability_all[:, t + 1] = user_ability
-                interaction_func_in = user_ability + que_difficulty
+                interaction_func_in = user_ability - que_difficulty
                 inter_func_in_all[:, t + 1] = interaction_func_in
                 concept_related = self.objects["data"]["Q_table_tensor"][batch["question_seq"][:, t + 1]]
                 y = interaction_func_in * concept_related
@@ -515,7 +516,8 @@ class LPKTPlus(nn.Module):
                 interaction_func_in = user_ability - que_difficulty
                 inter_func_in_all[:, t + 1] = interaction_func_in
                 # y = (que_discrimination * interaction_func_in) * que_difficulty
-                y = que_discrimination * interaction_func_in * que_difficulty / torch.sum(que_difficulty, dim=1, keepdim=True)
+                y = que_discrimination * interaction_func_in * \
+                    que_difficulty / torch.sum(que_difficulty, dim=1, keepdim=True)
             predict_score = torch.sigmoid(torch.sum(y, dim=-1))
             predict_score_all[:, t + 1] = predict_score
 

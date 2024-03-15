@@ -7,20 +7,17 @@ from lib.util.parse import parse_data_type
 from lib.util.data import read_preprocessed_file
 from lib.dataset.split_seq import dataset_truncate2one_seq
 from lib.dataset.split_dataset import n_fold_split2
+from lib.data_processor.util import process4CL4kt_assist2009
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="assist2009",
-                        choices=("assist2009", "statics2011"))
+    parser.add_argument("--dataset_name", type=str, default="algebra2006", choices=("assist2009", "algebra2005", "algebra2006", "slepemapy"))
     args = parser.parse_args()
     params = vars(args)
 
     params["setting_name"] = "cl4kt_setting"
-    if params["dataset_name"] in ["statics2011"]:
-        params["data_type"] = "only_question"
-    else:
-        params["data_type"] = "single_concept"
+    params["data_type"] = "single_concept"
     params["max_seq_len"] = 100
     params["min_seq_len"] = 5
     params["n_fold"] = 5
@@ -42,6 +39,12 @@ if __name__ == "__main__":
     parse_data_type(params["dataset_name"], params["data_type"])
     data_uniformed_path = objects["file_manager"].get_preprocessed_path(params["dataset_name"], params["data_type"])
     data_uniformed = read_preprocessed_file(data_uniformed_path)
+
+    if params["dataset_name"] == "assist2009":
+        concept_id2name = objects["file_manager"].get_concept_id2name("assist2009")
+        concept_id_map = objects["file_manager"].get_concept_id_map("assist2009", "single_concept")
+        data_uniformed = process4CL4kt_assist2009(data_uniformed, concept_id2name, concept_id_map)
+
     dataset_truncated = dataset_truncate2one_seq(data_uniformed,
                                                  params["min_seq_len"],
                                                  params["max_seq_len"],

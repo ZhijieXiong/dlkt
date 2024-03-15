@@ -4,7 +4,7 @@ import re
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--file_path", type=str, default=r"F:\code\myProjects\dlkt\example\result_local\lpkt+_irt_share_baseline\our_setting_statics2011_save.txt")
+    parser.add_argument("--file_path", type=str, default=r"F:\code\myProjects\dlkt\example\result_server\lpkt\our_setting_xes3g5m_save.txt")
     parser.add_argument("--key_words", type=str, default="test performance by best valid epoch is main metric")
     parser.add_argument("--n", help="隔几个做一次平均", type=int, default=5)
     args = parser.parse_args()

@@ -64,7 +64,7 @@ class KTDataset4Aug(Dataset):
         if "age_seq" in item_data2aug.keys():
             del item_data2aug["age_seq"]
         if aug_type in ["random_aug", "informative_aug"]:
-            random_select_aug_len = dataset_config_this["kt4aug"][aug_type]["random_select_aug_len"]
+            random_select_aug_len = dataset_config_this["kt4aug"][aug_type].get("random_select_aug_len", False)
             seq_len = item_data2aug["seq_len"]
             if random_select_aug_len and seq_len > 10:
                 seq_len = random.randint(10, seq_len)

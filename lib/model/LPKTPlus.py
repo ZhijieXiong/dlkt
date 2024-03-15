@@ -80,7 +80,7 @@ class LPKTPlus(nn.Module):
             user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
             que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
             que_discrimination = torch.sigmoid(self.que2discrimination(self.dropout(question_emb))) * 10
-            y = (que_discrimination * (user_ability - que_difficulty)) * que_difficulty
+            y = (que_discrimination * (user_ability - que_difficulty)) * que_difficulty / torch.sum(que_difficulty, dim=1, keepdim=True)
         predict_score = torch.sigmoid(torch.sum(y, dim=-1))
 
         return predict_score
@@ -514,7 +514,8 @@ class LPKTPlus(nn.Module):
                 user_ability_all[:, t + 1] = user_ability
                 interaction_func_in = user_ability - que_difficulty
                 inter_func_in_all[:, t + 1] = interaction_func_in
-                y = (que_discrimination * interaction_func_in) * que_difficulty
+                # y = (que_discrimination * interaction_func_in) * que_difficulty
+                y = que_discrimination * interaction_func_in * que_difficulty / torch.sum(que_difficulty, dim=1, keepdim=True)
             predict_score = torch.sigmoid(torch.sum(y, dim=-1))
             predict_score_all[:, t + 1] = predict_score
 

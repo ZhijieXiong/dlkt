@@ -4,7 +4,7 @@ from torch.nn.init import xavier_uniform_
 from torch.nn.init import constant_
 import numpy as np
 
-from .attention import attention_CL4KT as individual_attention
+from .attention import attention_CL4KT
 
 
 class CL4KTTransformerLayer(Module):
@@ -93,13 +93,13 @@ class MultiHeadAttentionWithIndividualFeatures(Module):
 
         xavier_uniform_(self.k_linear.weight)
         xavier_uniform_(self.v_linear.weight)
-        if key_query_same is False:
+        if not key_query_same:
             xavier_uniform_(self.q_linear.weight)
 
         if self.proj_bias:
             constant_(self.k_linear.bias, 0.0)
             constant_(self.v_linear.bias, 0.0)
-            if self.kq_same is False:
+            if not key_query_same:
                 constant_(self.q_linear.bias, 0.0)
             constant_(self.out_proj.bias, 0.0)
 
@@ -108,7 +108,6 @@ class MultiHeadAttentionWithIndividualFeatures(Module):
         dim_model = encoder_config["dim_model"]
         num_head = encoder_config["num_head"]
         key_query_same = encoder_config["key_query_same"]
-        dropout = encoder_config["dropout"]
         dim_head = dim_model // num_head
 
         batch_size = q.size(0)
@@ -126,8 +125,8 @@ class MultiHeadAttentionWithIndividualFeatures(Module):
         v = v.transpose(1, 2)
 
         # calculate attention using function we will define next
-        scores, attn_scores = individual_attention(
-            q, k, v, dim_head, mask, dropout, self.params["device"], self.gammas, zero_pad
+        scores, attn_scores = attention_CL4KT(
+            q, k, v, dim_head, mask, self.dropout, self.params["device"], self.gammas, zero_pad
         )
 
         # concatenate heads and put through final linear layer

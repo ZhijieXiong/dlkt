@@ -3,9 +3,11 @@ from copy import deepcopy
 
 def datasets_useful_cols(datasets_merged=None):
     result = {
-        "assist2009": ["order_id", "user_id", "problem_id", "correct", "skill_id", "school_id", "skill_name"],
+        "assist2009": ["order_id", "user_id", "problem_id", "correct", "skill_id", "school_id", "skill_name",
+                       'attempt_count', 'hint_count', "ms_first_response", "overlap_time"],
         "assist2009-full": ["order_id", "user_id", "problem_id", "correct", "list_skill_ids"],
-        "assist2012": ["problem_id", "user_id", "end_time", "correct", "skill_id", "overlap_time", "school_id", "skill"],
+        "assist2012": ["problem_id", "user_id", "end_time", "correct", "skill_id", "overlap_time", "school_id", "skill",
+                       'attempt_count', 'hint_count', "ms_first_response"],
         "assist2017": ["studentId", "MiddleSchoolId", "problemId", "skill", "timeTaken", "startTime", "correct"],
         "slepemapy": ["user", "item_asked", "item_answered", "context_name", "type", "time", "response_time",
                       "ip_country", "locations_asked"],
@@ -38,7 +40,11 @@ def datasets_renamed(datasets_merged=None):
         "assist2009": {
             "problem_id": "question_id",
             "skill_id": "concept_id",
-            "skill_name": "concept_name"
+            "skill_name": "concept_name",
+            "attempt_count": "num_attempt",
+            "hint_count": "num_hint",
+            "ms_first_response": "use_time_first_attempt",
+            "overlap_time": "use_time"
         },
         "assist2009-full": {
             "problem_id": "question_id",
@@ -49,7 +55,10 @@ def datasets_renamed(datasets_merged=None):
             "skill_id": "concept_id",
             "end_time": "timestamp",
             "overlap_time": "use_time",
-            "skill": "concept_name"
+            "skill": "concept_name",
+            "attempt_count": "num_attempt",
+            "hint_count": "num_hint",
+            "ms_first_response": "use_time_first_attempt",
         },
         "assist2015": {
             "sequence_id": "question_id"

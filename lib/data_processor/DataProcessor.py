@@ -94,6 +94,11 @@ class DataProcessor:
         df.dropna(subset=["question_id", "concept_id"], inplace=True)
         df["question_id"] = df["question_id"].map(int)
         df["concept_id"] = df["concept_id"].map(int)
+        # LBKT需要使用到一些边信息，
+        # 该数据集中use_time_first_attempt, num_hint, num_attempt都没有nan，有4684条数据use_time_first_attempt <= 0
+        df[df['use_time_first_attempt'] <= 0]["use_time_first_attempt"] = 0
+        df["use_time_first_attempt"] = df["use_time_first_attempt"].map(lambda t: min(max(1, int(t) // 1000), 60 * 60))
+        df["use_time"] = df["use_time"].map(lambda t: min(max(1, int(t) // 1000), 60 * 60))
 
         # 获取concept name和concept 原始id的对应并保存
         concept_names = list(pd.unique(df.dropna(subset=["concept_name"])["concept_name"]))

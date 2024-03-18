@@ -72,6 +72,15 @@ def multi_concept2single_concept4assist2009(df):
     return df
 
 
+def process4lbkt(df):
+    """
+    LBKT需要使用到一些边信息，再这里处理
+    :param df:
+    :return:
+    """
+    pass
+
+
 def preprocess_assist(dataset_name, df):
     """
     需要返回的值：预处理后的数据、Q table、id映射

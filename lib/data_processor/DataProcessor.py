@@ -1,4 +1,5 @@
 import os
+import math
 import re
 import time
 import datetime
@@ -75,6 +76,8 @@ class DataProcessor:
             self.load_process_statics2011()
         elif dataset_name == "slepemapy":
             self.load_process_slepemapy()
+        elif dataset_name == "junyi2015":
+            self.load_process_junyi2015()
         else:
             raise NotImplementedError()
 
@@ -94,11 +97,9 @@ class DataProcessor:
         df.dropna(subset=["question_id", "concept_id"], inplace=True)
         df["question_id"] = df["question_id"].map(int)
         df["concept_id"] = df["concept_id"].map(int)
-        # LBKT需要使用到一些边信息，
         # 该数据集中use_time_first_attempt, num_hint, num_attempt都没有nan，有4684条数据use_time_first_attempt <= 0
-        df[df['use_time_first_attempt'] <= 0]["use_time_first_attempt"] = 0
-        df["use_time_first_attempt"] = df["use_time_first_attempt"].map(lambda t: min(max(1, int(t) // 1000), 60 * 60))
-        df["use_time"] = df["use_time"].map(lambda t: min(max(1, int(t) // 1000), 60 * 60))
+        df["use_time_first_attempt"] = df["use_time_first_attempt"].map(lambda t: min(max(0, math.ceil(t / 1000)), 60 * 60))
+        df["use_time"] = df["use_time"].map(lambda t: min(max(0, math.ceil(t / 1000)), 60 * 60))
 
         # 获取concept name和concept 原始id的对应并保存
         concept_names = list(pd.unique(df.dropna(subset=["concept_name"])["concept_name"]))
@@ -180,7 +181,11 @@ class DataProcessor:
         concept_id2name_map.to_csv(concept_id2name_map_path, index=False)
 
         df["correct"] = df["correct"].astype('int8')
-        df["use_time"] = df["use_time"].map(lambda t: min(max(1, int(t) // 1000), 60 * 60))
+        # 该数据集中use_time_first_attempt, num_hint, num_attempt都没有nan，有1条数据use_time_first_attempt <= 0
+        df["use_time"] = df["use_time"].map(lambda t: min(max(0, math.ceil(t / 1000)), 60 * 60))
+        df["use_time_first_attempt"] = df["use_time_first_attempt"].map(
+            lambda t: min(max(0, math.ceil(t / 1000)), 60 * 60)
+        )
         df["timestamp"] = df["timestamp"].map(time_str2timestamp)
         df["question_id"] = df["question_id"].map(int)
         df["concept_id"] = df["concept_id"].map(int)
@@ -1038,11 +1043,73 @@ class DataProcessor:
         #
         # self.process_raw_is_single_concept(df, df_multi_concept, c_id_is_num=False)
 
+    def load_process_junyi2015(self):
+        dataset_name = "junyi2015"
+        data_dir = self.params["preprocess_config"]["data_path"]
+        data_path = os.path.join(data_dir, "junyi_ProblemLog_original.csv")
+        metadata_question_path = os.path.join(data_dir, "junyi_Exercise_table.csv")
+        df_cols = ["user_id", "exercise", "correct", "time_done", "time_taken", "time_taken_attempts", "count_hints", "count_attempts"]
+        df_rename_map = {
+            "exercise": "question_name",
+            "time_done": "timestamp",
+            "time_taken": "use_time",
+            "time_taken_attempts": "use_time_first",
+            "count_hints": "num_hint",
+            "count_attempts": "num_attempt"
+        }
+        meta_question_cols = ["name", "topic"]
+        meta_question_rename_map = {
+            "name": "question_name",
+            "topic": "concept_name",
+        }
+        self.data_raw = load_raw.load_csv(data_path, df_cols, df_rename_map)
+        self.statics_raw = self.get_basic_info(self.data_raw)
+
+        metadata_question = load_raw.load_csv(metadata_question_path, meta_question_cols, meta_question_rename_map)
+        metadata_question.dropna(subset=["question_name", "concept_name"], inplace=True)
+        metadata_question["question_id"] = range(len(metadata_question))
+        concept_name2id = pd.unique(metadata_question["concept_name"])
+        concept_id_map = {c_name: i for i, c_name in enumerate(concept_name2id)}
+        metadata_question["concept_id"] = metadata_question["concept_name"].map(concept_id_map)
+
+        df = deepcopy(self.data_raw)
+        df = df.merge(metadata_question, how="left")
+        # 有nan的列：use_time_first
+        df.dropna(subset=["question_id", "concept_id"], inplace=True)
+        df["use_time_first"] = df["use_time_first"].fillna(0)
+        df["use_time_first"] = df["use_time_first"].map(lambda time_str: list(map(int, str(time_str).split("&")))[0])
+        df["correct"] = df["correct"].map(int)
+
+        # 获取concept name和concept 原始id的对应并保存
+        preprocessed_dir = self.objects["file_manager"].get_preprocessed_dir(dataset_name)
+        concept_id2name_map_path = os.path.join(preprocessed_dir, f"concept_id2name_map.csv")
+        concept_name2id.to_csv(concept_id2name_map_path, index=False)
+
+        df = df[["user_id", "question_id", "concept_id", "correct", "timestamp", "use_time", "use_time_first", "num_hint", "num_attempt"]]
+        self.data_preprocessed["single_concept"] = df
+
+        question_id_map = deepcopy(metadata_question[["question_name", "question_id"]])
+        question_id_map.rename({"question_name": "question_id", "question_id": "question_mapped_id"})
+        concept_id_map = deepcopy(concept_name2id)
+        concept_id_map.rename({"concept_name": "concept_id", "concept_id": "concept_mapped_id"})
+
+        num_question = len(question_id_map)
+        num_concept = len(concept_id_map)
+        Q_table = np.zeros((num_question, num_concept), dtype=int)
+        for row in metadata_question.iterrows():
+            q_id = row["question_id"]
+            c_id = row["concept_id"]
+            Q_table[q_id, c_id] = 1
+        self.Q_table["single_concept"] = Q_table
+        self.statics_preprocessed["single_concept"] = self.get_basic_info(df)
+        self.question_id_map["single_concept"] = question_id_map
+        self.concept_id_map["single_concept"] = concept_id_map
+
     def uniform_data(self):
         dataset_name = self.params["preprocess_config"]["dataset_name"]
         if dataset_name == "assist2009":
             self.uniform_assist2009()
-        elif dataset_name in ["assist2012", "assist2017", "slepemapy"]:
+        elif dataset_name in ["assist2012", "assist2017", "slepemapy", "junyi2015"]:
             self.uniform_assist2012()
         elif dataset_name == "assist2015":
             self.uniform_assist2015()
@@ -1077,7 +1144,11 @@ class DataProcessor:
         info_name_table = {
             "question_seq": "question_id",
             "concept_seq": "concept_id",
-            "correct_seq": "correct"
+            "correct_seq": "correct",
+            "use_time_seq": "use_time",
+            "use_time_first_seq": "use_time_first_attempt",
+            "num_hint_seq": "num_hint",
+            "num_attempt_seq": "num_attempt"
         }
 
         # only_question
@@ -1154,12 +1225,15 @@ class DataProcessor:
             "concept_seq": "concept_id",
             "correct_seq": "correct",
             "time_seq": "timestamp",
-            "use_time_seq": "use_time"
+            "use_time_seq": "use_time",
+            "use_time_first_seq": "use_time_first_attempt",
+            "num_hint_seq": "num_hint",
+            "num_attempt_seq": "num_attempt"
         }
 
         # single_concept
         id_keys = list(set(df.columns) - set(info_name_table.values()) - {"concept_name"})
-        dataset_seq_keys = CONSTANT.datasets_seq_keys()["assist2012"]
+        dataset_seq_keys = CONSTANT.datasets_seq_keys()[dataset_name]
         seqs = []
         for user_id in pd.unique(df["user_id"]):
             user_data = df[df["user_id"] == user_id]

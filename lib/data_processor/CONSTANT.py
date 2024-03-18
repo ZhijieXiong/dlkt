@@ -123,9 +123,9 @@ def datasets_renamed(datasets_merged=None):
 
 def datasets_seq_keys(datasets_merged=None):
     result = {
-        "assist2009": ["question_seq", "concept_seq", "correct_seq"],
+        "assist2009": ["question_seq", "concept_seq", "correct_seq", "use_time_seq", "use_time_first_seq", "num_hint_seq", "num_attempt_seq"],
         "assist2009-full": ["question_seq", "concept_seq", "correct_seq"],
-        "assist2012": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],
+        "assist2012": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq", "use_time_first_seq", "num_hint_seq", "num_attempt_seq"],
         "assist2015": ["question_seq", "correct_seq"],
         "assist2017": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],
         "edi2020-task1": ["question_seq", "concept_seq", "correct_seq", "time_seq", "age_seq"],
@@ -134,7 +134,8 @@ def datasets_seq_keys(datasets_merged=None):
         "slepemapy": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],
         "statics2011": ["question_seq", "concept_seq", "correct_seq", "time_seq"],
         "ednet-kt1": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],
-        "algebra2005": ["question_seq", "concept_seq", "correct_seq", "time_seq"]
+        "algebra2005": ["question_seq", "concept_seq", "correct_seq", "time_seq"],
+        "junyi2015": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq", "use_time_first_seq", "num_hint_seq", "num_attempt_seq"]
     }
     result["algebra2006"] = result["algebra2005"]
     result["algebra2008"] = result["algebra2005"]

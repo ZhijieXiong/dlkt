@@ -34,7 +34,9 @@ class FileManager:
         "algebra2006": "lab/dataset_raw/kdd_cup2010",
         "algebra2008": "lab/dataset_raw/kdd_cup2010",
         "bridge2algebra2006": "lab/dataset_raw/kdd_cup2010",
-        "bridge2algebra2008": "lab/dataset_raw/kdd_cup2010"
+        "bridge2algebra2008": "lab/dataset_raw/kdd_cup2010",
+        "junyi2015": "lab/dataset_raw/junyi2015",
+        "poj": "lab/dataset_raw/junyi2015/poj_log.csv"
     }
 
     data_preprocessed_dir_in_lab = {
@@ -56,6 +58,7 @@ class FileManager:
         "statics2011": "lab/dataset_preprocessed/statics2011",
         "ednet-kt1": "lab/dataset_preprocessed/ednet-kt1",
         "junyi2015": "lab/dataset_preprocessed/junyi2015",
+        "poj": "lab/dataset_preprocessed/poj",
         "slepemapy": "lab/dataset_preprocessed/slepemapy",
         "xes3g5m": "lab/dataset_preprocessed/xes3g5m",
         "aaai2023": "lab/dataset_preprocessed/aaai2023",
@@ -101,6 +104,7 @@ class FileManager:
             os.path.join(self.root_dir, "lab", "dataset_raw", "xes3g5m"),
             os.path.join(self.root_dir, "lab", "dataset_raw", "aaai2023"),
             os.path.join(self.root_dir, "lab", "dataset_raw", "kdd_cup2010"),
+            os.path.join(self.root_dir, "lab", "dataset_raw", "poj"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "assist2009"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "assist2009-full"),
@@ -128,6 +132,7 @@ class FileManager:
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "algebra2008"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "bridge2algebra2006"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "bridge2algebra2008"),
+            os.path.join(self.root_dir, "lab", "dataset_preprocessed", "poj"),
             os.path.join(self.root_dir, "lab", "settings"),
             os.path.join(self.root_dir, "lab", "saved_models"),
         ]

@@ -8,7 +8,9 @@ from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
 from lib.model.DCT import DCT
+from lib.model.DCT import DCTv2
 from lib.trainer.CognitionTracingTrainer import CognitionTracingTrainer
+from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 
 if __name__ == "__main__":
@@ -23,7 +25,7 @@ if __name__ == "__main__":
     parser.add_argument("--test_file_name", type=str, default="assist2017_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0)
+    parser.add_argument("--weight_decay", type=float, default=0.00001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
@@ -59,9 +61,9 @@ if __name__ == "__main__":
     parser.add_argument("--rnn_type", type=str, default="gru",
                         choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=2)
-    parser.add_argument("--que_user_share_proj", type=str2bool, default=True)
-    parser.add_argument("--num_mlp_layer", type=int, default=3)
-    parser.add_argument("--dropout", type=float, default=0.05)
+    parser.add_argument("--que_user_share_proj", type=str2bool, default=False)
+    parser.add_argument("--num_mlp_layer", type=int, default=2)
+    parser.add_argument("--dropout", type=float, default=0.1)
     # 训练策略以及测试理论
     parser.add_argument("--multi_stage", type=str2bool, default=False)
     parser.add_argument("--test_theory", type=str, default='irt', choices=("irt", "rasch"))
@@ -109,12 +111,16 @@ if __name__ == "__main__":
     dataloader_test = DataLoader(dataset_test, batch_size=params["evaluate_batch_size"], shuffle=False)
 
     global_objects["data_loaders"] = {}
+    global_objects["models"] = {}
+
     global_objects["data_loaders"]["train_loader"] = dataloader_train
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = DCT(global_params, global_objects).to(global_params["device"])
-    global_objects["models"] = {}
-    global_objects["models"]["kt_model"] = model
-    trainer = CognitionTracingTrainer(global_params, global_objects)
+    # global_objects["models"]["kt_model"] = DCT(global_params, global_objects).to(global_params["device"])
+    # trainer = CognitionTracingTrainer(global_params, global_objects)
+
+    global_objects["models"]["kt_model"] = DCTv2(global_params, global_objects).to(global_params["device"])
+    trainer = KnowledgeTracingTrainer(global_params, global_objects)
+
     trainer.train()

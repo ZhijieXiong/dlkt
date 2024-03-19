@@ -8,7 +8,8 @@ def datasets_useful_cols(datasets_merged=None):
         "assist2009-full": ["order_id", "user_id", "problem_id", "correct", "list_skill_ids"],
         "assist2012": ["problem_id", "user_id", "end_time", "correct", "skill_id", "overlap_time", "school_id", "skill",
                        'attempt_count', 'hint_count', "ms_first_response"],
-        "assist2017": ["studentId", "MiddleSchoolId", "problemId", "skill", "timeTaken", "startTime", "correct"],
+        "assist2017": ["studentId", "MiddleSchoolId", "problemId", "skill", "timeTaken", "startTime", "correct",
+                       "hintCount", "attemptCount"],
         "slepemapy": ["user", "item_asked", "item_answered", "context_name", "type", "time", "response_time",
                       "ip_country", "locations_asked"],
         "statics2011": ["Anon Student Id", "Problem Hierarchy", "Problem Name", "Step Name", "First Attempt", "First Transaction Time"]
@@ -69,7 +70,9 @@ def datasets_renamed(datasets_merged=None):
             "studentId": "user_id",
             "MiddleSchoolId": "school_id",
             "timeTaken": "use_time",
-            "startTime": "timestamp"
+            "startTime": "timestamp",
+            "attemptCount": "num_attempt",
+            "hintCount": "num_hint",
         },
         "SLP": {
             "student_id": "user_id",
@@ -127,7 +130,7 @@ def datasets_seq_keys(datasets_merged=None):
         "assist2009-full": ["question_seq", "concept_seq", "correct_seq"],
         "assist2012": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq", "use_time_first_seq", "num_hint_seq", "num_attempt_seq"],
         "assist2015": ["question_seq", "correct_seq"],
-        "assist2017": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],
+        "assist2017": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq", "num_hint_seq", "num_attempt_seq"],
         "edi2020-task1": ["question_seq", "concept_seq", "correct_seq", "time_seq", "age_seq"],
         "edi2020-task34": ["question_seq", "concept_seq", "correct_seq", "time_seq", "age_seq"],
         "SLP": ["question_seq", "concept_seq", "correct_seq", "interaction_type_seq"],

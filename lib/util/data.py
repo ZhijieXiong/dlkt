@@ -26,6 +26,17 @@ def write2file(data, data_path):
             seq_keys.append(key)
         else:
             id_keys.append(key)
+
+    # 不知道为什么，有的数据集到这的时候，数据变成float类型了（比如junyi2015，如果预处理部分数据，就是int，但是如果全量数据，就是float）
+    id_keys_ = set(id_keys).intersection({"user_id", "school_id", "premium_pupil", "gender", "seq_len", "campus", "dataset_type"})
+    seq_keys_ = set(seq_keys).intersection({"question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq",
+                                            "use_time_first_seq", "num_hint_seq", "num_attempt_seq", "age_seq"})
+    for item_data in data:
+        for k in id_keys_:
+            item_data[k] = int(item_data[k])
+        for k in seq_keys_:
+            item_data[k] = list(map(int, item_data[k]))
+
     with open(data_path, "w") as f:
         first_line = ",".join(id_keys) + ";" + ",".join(seq_keys) + "\n"
         f.write(first_line)
@@ -53,7 +64,11 @@ def read_preprocessed_file(data_path):
         for i, line_str in enumerate(all_lines):
             if i % num_key == 0:
                 item_data = {}
-            line_content = list(map(int, line_str.strip().split(",")))
+            first_item = line_str[:50]
+            if first_item.find(".") == -1:
+                line_content = list(map(int, line_str.strip().split(",")))
+            else:
+                line_content = list(map(float, line_str.strip().split(",")))
             if len(line_content) == 1:
                 # 说明是序列级别的特征，即user id、seq len、segment index等等
                 item_data[keys[int(i % num_key)]] = line_content[0]

@@ -16,7 +16,8 @@ from lib.dataset.split_seq import dataset_truncate2multi_seq
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="assist2012", choices=("assist2009", "assist2012"))
+    parser.add_argument("--dataset_name", type=str, default="assist2017",
+                        choices=("assist2009", "assist2012", "junyi2015", "assist2017"))
     args = parser.parse_args()
     params = vars(args)
 
@@ -40,28 +41,38 @@ if __name__ == "__main__":
     parse_data_type(params["dataset_name"], params["data_type"])
     data_uniformed_path = objects["file_manager"].get_preprocessed_path(params["dataset_name"], params["data_type"])
     data_uniformed = read_preprocessed_file(data_uniformed_path)
+    if params["dataset_name"] == "junyi2015":
+        # 只取长度最长的1000条序列
+        seq_lens = list(map(lambda x: x["seq_len"], data_uniformed))
+        max_indices = np.argpartition(np.array(seq_lens), -1000)[-1000:]
+        data_uniformed_ = []
+        for i in max_indices:
+            data_uniformed_.append(data_uniformed[i])
+        data_uniformed = data_uniformed_
     data_uniformed = drop_qc(data_uniformed, num2drop=10)
 
-    # 丢弃use_time_first为0的数据（官方代码是如此处理的）
-    id_keys, seq_keys = get_keys_from_uniform(data_uniformed)
-    data_dropped = []
-    num_drop_interactions = 0
-    for item_data in data_uniformed:
-        item_data_new = {}
-        for k in id_keys:
-            item_data_new[k] = item_data[k]
-        for k in seq_keys:
-            item_data_new[k] = []
-        for i in range(item_data["seq_len"]):
-            use_time_first = item_data["use_time_first_seq"][i]
-            if use_time_first == 0:
-                num_drop_interactions += 1
-                continue
+    if params["dataset_name"] != "assist2017":
+        # 丢弃use_time_first为0的数据（官方代码是如此处理的）
+        id_keys, seq_keys = get_keys_from_uniform(data_uniformed)
+        data_dropped = []
+        num_dropped = 0
+        for item_data in data_uniformed:
+            item_data_new = {}
+            for k in id_keys:
+                item_data_new[k] = item_data[k]
             for k in seq_keys:
-                item_data_new[k].append(item_data[k][i])
-        item_data_new["seq_len"] = len(item_data_new["question_seq"])
-        data_dropped.append(item_data_new)
-    data_uniformed = data_dropped
+                item_data_new[k] = []
+            for i in range(item_data["seq_len"]):
+                use_time_first = item_data["use_time_first_seq"][i]
+                if use_time_first == 0:
+                    num_dropped += 1
+                    continue
+                for k in seq_keys:
+                    item_data_new[k].append(item_data[k][i])
+            item_data_new["seq_len"] = len(item_data_new["question_seq"])
+            data_dropped.append(item_data_new)
+        print(f"num of interaction dropped: {num_dropped}")
+        data_uniformed = data_dropped
 
     # 生成time、hint和attempt factor
     use_time_dict = {}
@@ -70,7 +81,12 @@ if __name__ == "__main__":
     for item_data in data_uniformed:
         for i in range(item_data["seq_len"]):
             q_id = item_data["question_seq"][i]
-            use_time_first = item_data["use_time_first_seq"][i]
+            if params["dataset_name"] == "assist2017":
+                # 论文并没有使用这个数据集，但是因为该数据集中有hint和attempt数据以及时间数据，所以也一起处理了
+                # 不过该数据集use_time_first_attempt不好提取，所以使用use_time代替
+                use_time_first = item_data["use_time_seq"][i]
+            else:
+                use_time_first = item_data["use_time_first_seq"][i]
             num_attempt = item_data["num_attempt_seq"][i]
             num_hint = item_data["num_hint_seq"][i]
 
@@ -96,7 +112,10 @@ if __name__ == "__main__":
             num_attempt_mean = num_attempt_mean_dict[q_id]
             num_hint_mean = num_hint_mean_dict[q_id]
 
-            use_time_first = item_data["use_time_first_seq"][i]
+            if params["dataset_name"] == "assist2017":
+                use_time_first = item_data["use_time_seq"][i]
+            else:
+                use_time_first = item_data["use_time_first_seq"][i]
             time_factor = norm(use_time_mean, use_time_std).cdf(np.log(use_time_first))
             time_factor_seq.append(time_factor)
 
@@ -108,11 +127,8 @@ if __name__ == "__main__":
             hint_factor = 1 - poisson(num_hint_mean).cdf(num_hint - 1)
             hint_factor_seq.append(hint_factor)
         item_data["time_factor_seq"] = time_factor_seq
-        del item_data["use_time_first_seq"]
         item_data["attempt_factor_seq"] = attempt_factor_seq
-        del item_data["num_attempt_seq"]
         item_data["hint_factor_seq"] = hint_factor_seq
-        del item_data["num_hint_seq"]
 
     # 改该论文的实验是先随机划分学生为训练集、验证集和测试集，然后再切割序列
     random.shuffle(data_uniformed)

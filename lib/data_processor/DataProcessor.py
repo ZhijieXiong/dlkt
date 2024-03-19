@@ -99,7 +99,7 @@ class DataProcessor:
         df["concept_id"] = df["concept_id"].map(int)
         # 该数据集中use_time_first_attempt, num_hint, num_attempt都没有nan，有4684条数据use_time_first_attempt <= 0
         df["use_time_first_attempt"] = df["use_time_first_attempt"].map(lambda t: min(max(0, math.ceil(t / 1000)), 60 * 60))
-        df["use_time"] = df["use_time"].map(lambda t: min(max(0, math.ceil(t / 1000)), 60 * 60))
+        df["use_time"] = df["use_time"].map(lambda t: min(max(1, math.ceil(t / 1000)), 60 * 60))
 
         # 获取concept name和concept 原始id的对应并保存
         concept_names = list(pd.unique(df.dropna(subset=["concept_name"])["concept_name"]))
@@ -182,7 +182,7 @@ class DataProcessor:
 
         df["correct"] = df["correct"].astype('int8')
         # 该数据集中use_time_first_attempt, num_hint, num_attempt都没有nan，有1条数据use_time_first_attempt <= 0
-        df["use_time"] = df["use_time"].map(lambda t: min(max(0, math.ceil(t / 1000)), 60 * 60))
+        df["use_time"] = df["use_time"].map(lambda t: min(max(1, math.ceil(t / 1000)), 60 * 60))
         df["use_time_first_attempt"] = df["use_time_first_attempt"].map(
             lambda t: min(max(0, math.ceil(t / 1000)), 60 * 60)
         )
@@ -1053,7 +1053,7 @@ class DataProcessor:
             "exercise": "question_name",
             "time_done": "timestamp",
             "time_taken": "use_time",
-            "time_taken_attempts": "use_time_first",
+            "time_taken_attempts": "use_time_first_attempt",
             "count_hints": "num_hint",
             "count_attempts": "num_attempt"
         }
@@ -1076,16 +1076,22 @@ class DataProcessor:
         df = df.merge(metadata_question, how="left")
         # 有nan的列：use_time_first
         df.dropna(subset=["question_id", "concept_id"], inplace=True)
-        df["use_time_first"] = df["use_time_first"].fillna(0)
-        df["use_time_first"] = df["use_time_first"].map(lambda time_str: list(map(int, str(time_str).split("&")))[0])
+        df["use_time_first_attempt"] = df["use_time_first_attempt"].fillna(0)
+        df["use_time_first_attempt"] = df["use_time_first_attempt"].map(lambda time_str: list(map(int, str(time_str).split("&")))[0])
+        df["timestamp"] = df["timestamp"].map(lambda x: int(x / 1000000))
         df["correct"] = df["correct"].map(int)
 
         # 获取concept name和concept 原始id的对应并保存
+        concept_name2id = pd.DataFrame({
+            "concept_id": concept_id_map.values(),
+            "concept_name": concept_id_map.keys()
+        })
         preprocessed_dir = self.objects["file_manager"].get_preprocessed_dir(dataset_name)
         concept_id2name_map_path = os.path.join(preprocessed_dir, f"concept_id2name_map.csv")
         concept_name2id.to_csv(concept_id2name_map_path, index=False)
 
-        df = df[["user_id", "question_id", "concept_id", "correct", "timestamp", "use_time", "use_time_first", "num_hint", "num_attempt"]]
+        df = df[["user_id", "question_id", "concept_id", "correct", "timestamp", "use_time", "use_time_first_attempt",
+                 "num_hint", "num_attempt"]]
         self.data_preprocessed["single_concept"] = df
 
         question_id_map = deepcopy(metadata_question[["question_name", "question_id"]])
@@ -1097,8 +1103,8 @@ class DataProcessor:
         num_concept = len(concept_id_map)
         Q_table = np.zeros((num_question, num_concept), dtype=int)
         for row in metadata_question.iterrows():
-            q_id = row["question_id"]
-            c_id = row["concept_id"]
+            q_id = row[1]["question_id"]
+            c_id = row[1]["concept_id"]
             Q_table[q_id, c_id] = 1
         self.Q_table["single_concept"] = Q_table
         self.statics_preprocessed["single_concept"] = self.get_basic_info(df)

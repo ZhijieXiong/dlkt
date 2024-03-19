@@ -58,7 +58,7 @@ class LPKT(nn.Module):
         num_concept = encoder_config["num_concept"]
         dim_correct = encoder_config["dim_correct"]
         dim_k = encoder_config["dim_k"]
-        ablation_set = encoder_config["ablation_set"]
+        ablation_set = encoder_config.get("ablation_set", 1)
         q_matrix = self.objects["LPKT"]["q_matrix"]
 
         batch_size, seq_len = question_seq.size(0), question_seq.size(1)
@@ -125,6 +125,9 @@ class LPKT(nn.Module):
         predict_score = torch.masked_select(predict_score[:, 1:], mask_bool_seq[:, 1:])
 
         return predict_score
+
+    def get_predict_score_seq_len_minus1(self, batch):
+        return self.forward(batch)[:, 1:]
 
     def get_predict_loss(self, batch, loss_record=None):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)

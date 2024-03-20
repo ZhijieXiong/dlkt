@@ -4,33 +4,34 @@
 
 ## Seq Info
 
-|    dataset name    | question id | concept id | correct | timestamp | use time | age  |
-| :----------------: | :---------: | :--------: | :-----: | :-------: | :------: | :--: |
-|     assist2009     |      T      |     T      |    T    |           |          |      |
-|  assist2009-full   |      T      |     T      |    T    |           |          |      |
-|     assist2012     |      T      |     T      |    T    |     T     |    T     |      |
-|     assist2015     |      T      |            |    T    |           |          |      |
-|     assist2017     |      T      |     T      |    T    |     T     |    T     |      |
-|     ednet-kt1      |      T      |     T      |    T    |     T     |    T     |      |
-|   edi2020-task1    |      T      |     T      |    T    |     T     |          |  T   |
-|   edi2020-task34   |      T      |     T      |    T    |     T     |          |  T   |
-|      edi2022       |             |            |         |           |          |      |
-|    algebra2005     |      T      |     T      |    T    |     T     |          |      |
-|    algebra2006     |      T      |     T      |    T    |     T     |          |      |
-|    algebra2008     |      T      |     T      |    T    |     T     |          |      |
-| bridge2algebra2006 |      T      |     T      |    T    |     T     |          |      |
-| bridge2algebra2008 |      T      |     T      |    T    |     T     |          |      |
-|     junyi2015      |             |            |         |           |          |      |
-|      xes3g5m       |      T      |     T      |    T    |     T     |          |      |
-|    statics2011     |      T      |            |    T    |     T     |          |      |
-|     slepemapy      |      T      |     T      |    T    |     T     |    T     |      |
-|      SLP-bio       |      T      |     T      |    T    |           |          |      |
-|      SLP-chi       |      T      |     T      |    T    |           |          |      |
-|      SLP-eng       |      T      |     T      |    T    |           |          |      |
-|      SLP-geo       |      T      |     T      |    T    |           |          |      |
-|      SLP-his       |      T      |     T      |    T    |           |          |      |
-|      SLP-mat       |      T      |     T      |    T    |           |          |      |
-|      SLP-mat       |      T      |     T      |    T    |           |          |      |
+|    dataset name    | question id | concept id | correct | timestamp | use time | age  | hint | attempt |
+| :----------------: | :---------: | :--------: | :-----: | :-------: | :------: | :--: | :--: | :-----: |
+|     assist2009     |      T      |     T      |    T    |           |          |      |  T   |    T    |
+|  assist2009-full   |      T      |     T      |    T    |           |          |      |      |         |
+|     assist2012     |      T      |     T      |    T    |     T     |    T     |      |  T   |    T    |
+|     assist2015     |      T      |            |    T    |           |          |      |      |         |
+|     assist2017     |      T      |     T      |    T    |     T     |    T     |      |  T   |    T    |
+|     ednet-kt1      |      T      |     T      |    T    |     T     |    T     |      |      |         |
+|   edi2020-task1    |      T      |     T      |    T    |     T     |          |  T   |      |         |
+|   edi2020-task34   |      T      |     T      |    T    |     T     |          |  T   |      |         |
+|   edi2022-task1    |             |            |         |           |          |      |      |         |
+|    algebra2005     |      T      |     T      |    T    |     T     |          |      |      |         |
+|    algebra2006     |      T      |     T      |    T    |     T     |          |      |      |         |
+|    algebra2008     |      T      |     T      |    T    |     T     |          |      |      |         |
+| bridge2algebra2006 |      T      |     T      |    T    |     T     |          |      |      |         |
+| bridge2algebra2008 |      T      |     T      |    T    |     T     |          |      |      |         |
+|     junyi2015      |      T      |     T      |    T    |     T     |    T     |      |  T   |    T    |
+|      xes3g5m       |      T      |     T      |    T    |     T     |          |      |      |         |
+|    statics2011     |      T      |            |    T    |     T     |          |      |      |         |
+|     slepemapy      |      T      |     T      |    T    |     T     |    T     |      |      |         |
+|      SLP-bio       |      T      |     T      |    T    |           |          |      |      |         |
+|      SLP-chi       |      T      |     T      |    T    |           |          |      |      |         |
+|      SLP-eng       |      T      |     T      |    T    |           |          |      |      |         |
+|      SLP-geo       |      T      |     T      |    T    |           |          |      |      |         |
+|      SLP-his       |      T      |     T      |    T    |           |          |      |      |         |
+|      SLP-mat       |      T      |     T      |    T    |           |          |      |      |         |
+|      SLP-mat       |      T      |     T      |    T    |           |          |      |      |         |
+|        poj         |             |            |         |           |          |      |      |         |
 
 ## Side Info
 
@@ -48,6 +49,11 @@
 |    SLP-geo     |     T     |            |   T    |               |   T    |
 |    SLP-his     |     T     |            |   T    |               |   T    |
 |    SLP-mat     |     T     |            |   T    |               |   T    |
+
+## Text Info
+
+- with text of concept: 
+- with text of quextion: 
 
 ## Statics Info
 
@@ -73,7 +79,7 @@
 |    algebra2008     |   8918054    |   3310    |   1828   |  1259272  |
 | bridge2algebra2006 |   3679199    |   1146    |   564    |  207856   |
 | bridge2algebra2008 |   20012498   |   6043    |   2302   |  566964   |
-|     junyi2015      |              |           |          |           |
+|     junyi2015      |   25925992   |  247606   |    --    |    --     |
 |      xes3g5m       |      --      |    --     |    --    |    --     |
 |    statics2011     |    194947    |    333    |    27    |    --     |
 |     slepemapy      |   1182065    |   18563   |   246    |    --     |
@@ -103,6 +109,7 @@
 |    SLP-his     |    296711    |   1610    |    22    |   1251    |
 |    SLP-mat     |    242722    |   1499    |    44    |   1127    |
 |    SLP-phy     |    107288    |    664    |    54    |   1915    |
+|   junyi2015    |   25925987   |  247606   |    39    |    722    |
 
 ### after preprocessing (for multi concept datasets)
 

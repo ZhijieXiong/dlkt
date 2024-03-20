@@ -5,7 +5,7 @@
   data_type="single_concept"
   fold=0
 
-  dropouts='0.1 0.2 0.3'
+  dropouts='0.1 0.2'
   weight_decays='0.0001 0.00001 0.000001 0'
   nums_rnn_layer=(1 2 3)
   nums_mlp_layer=(1 2 3)

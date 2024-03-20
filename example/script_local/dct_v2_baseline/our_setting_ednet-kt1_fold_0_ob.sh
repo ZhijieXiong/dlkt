@@ -42,4 +42,4 @@
     done
   done
 
-}} >> F:/code/myProjects/dlkt/example/result_local/dct_v2_baseline_our_setting_ednet-kt1_fold_0_ob.txt
+} >> F:/code/myProjects/dlkt/example/result_local/dct_v2_baseline_our_setting_ednet-kt1_fold_0_ob.txt

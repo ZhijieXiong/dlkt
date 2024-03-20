@@ -16,7 +16,7 @@ from lib.dataset.split_seq import dataset_truncate2multi_seq
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="assist2017",
+    parser.add_argument("--dataset_name", type=str, default="junyi2015",
                         choices=("assist2009", "assist2012", "junyi2015", "assist2017"))
     args = parser.parse_args()
     params = vars(args)
@@ -30,7 +30,6 @@ if __name__ == "__main__":
     params["min_seq_len"] = 10
 
     objects = {"file_manager": FileManager(config.FILE_MANAGER_ROOT)}
-
     params["lab_setting"] = {
         "name": params["setting_name"],
         "max_seq_len": params["max_seq_len"],
@@ -52,7 +51,7 @@ if __name__ == "__main__":
     data_uniformed = drop_qc(data_uniformed, num2drop=10)
 
     if params["dataset_name"] != "assist2017":
-        # 丢弃use_time_first为0的数据（官方代码是如此处理的）
+        # 丢弃use_time_first小于0的数据（官方代码是如此处理的），在数据预处理阶段就已经把小于0的变成0了，所以只需要剔除为0的交互就行
         id_keys, seq_keys = get_keys_from_uniform(data_uniformed)
         data_dropped = []
         num_dropped = 0
@@ -116,6 +115,8 @@ if __name__ == "__main__":
                 use_time_first = item_data["use_time_seq"][i]
             else:
                 use_time_first = item_data["use_time_first_seq"][i]
+            if use_time_first <= 0:
+                print("error")
             time_factor = norm(use_time_mean, use_time_std).cdf(np.log(use_time_first))
             time_factor_seq.append(time_factor)
 

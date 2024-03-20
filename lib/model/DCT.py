@@ -29,14 +29,11 @@ class MLP4ProjV2(nn.Module):
                 nn.Dropout(dropout),
                 nn.Linear(dim_middle, dim_out)
             )
-        if num_layer > 1:
-            self.residual = nn.Sequential(
-                nn.Linear(dim_in, dim_out),
-                nn.ReLU()
-            )
+        if num_layer > 2:
+            self.residual = nn.Linear(dim_in, dim_out)
 
     def forward(self, x):
-        return self.mlp(x) if (self.num_layer == 1) else torch.relu(self.mlp(x) + self.residual(x))
+        return self.mlp(x) if (self.num_layer <= 2) else torch.relu(self.mlp(x) + self.residual(x))
 
 
 class DCTv2(nn.Module):
@@ -79,8 +76,7 @@ class DCTv2(nn.Module):
         user_ability = torch.sigmoid(latent)
         que_diff = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
         que_disc = torch.sigmoid(self.que2discrimination(self.dropout(question_emb))) * 10
-        qc_relation = que_diff / torch.sum(que_diff, dim=1, keepdim=True)
-        y = (que_disc * (user_ability - que_diff)) * qc_relation
+        y = (que_disc * (user_ability - que_diff)) * que_diff / torch.sum(que_diff, dim=1, keepdim=True)
         predict_score = torch.sigmoid(torch.sum(y, dim=-1))
 
         return predict_score
@@ -128,8 +124,7 @@ class DCTv2(nn.Module):
         que_diff = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, 1:])))
         inter_func_in = user_ability - que_diff
         que_disc = torch.sigmoid(self.que2discrimination(self.dropout(question_emb[:, 1:]))) * 10
-        qc_relation = que_diff / torch.sum(que_diff, dim=1, keepdim=True)
-        y = (que_disc * inter_func_in) * qc_relation
+        y = (que_disc * inter_func_in) * que_diff / torch.sum(que_diff, dim=1, keepdim=True)
 
         predict_score = torch.sigmoid(torch.sum(y, dim=-1))
         predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])

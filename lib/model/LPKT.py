@@ -58,7 +58,7 @@ class LPKT(nn.Module):
         num_concept = encoder_config["num_concept"]
         dim_correct = encoder_config["dim_correct"]
         dim_k = encoder_config["dim_k"]
-        ablation_set = encoder_config.get("ablation_set", 1)
+        ablation_set = encoder_config["ablation_set"]
         q_matrix = self.objects["LPKT"]["q_matrix"]
 
         batch_size, seq_len = question_seq.size(0), question_seq.size(1)

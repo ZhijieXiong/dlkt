@@ -1077,7 +1077,10 @@ class DataProcessor:
         # 有nan的列：use_time_first
         df.dropna(subset=["question_id", "concept_id"], inplace=True)
         df["use_time_first_attempt"] = df["use_time_first_attempt"].fillna(0)
-        df["use_time_first_attempt"] = df["use_time_first_attempt"].map(lambda time_str: list(map(int, str(time_str).split("&")))[0])
+        df["use_time_first_attempt"] = df["use_time_first_attempt"].map(
+            lambda time_str: min(max(0, math.ceil(list(map(int, str(time_str).split("&")))[0] / 1000)), 60 * 60)
+        )
+        df["use_time"] = df["use_time"].map(lambda t: 0 if (t <= 0) else t)
         df["timestamp"] = df["timestamp"].map(lambda x: int(x / 1000000))
         df["correct"] = df["correct"].map(int)
 

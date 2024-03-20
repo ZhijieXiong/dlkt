@@ -132,7 +132,7 @@ class KTDataset(Dataset):
             del dataset_converted["question_seq_mask"]
 
         for k in dataset_converted.keys():
-            if k not in ["weight_seq"]:
+            if k not in ["weight_seq", "hint_factor_seq", "attempt_factor_seq", "time_factor_seq"]:
                 dataset_converted[k] = torch.tensor(dataset_converted[k]).long().to(self.params["device"])
             else:
                 dataset_converted[k] = torch.tensor(dataset_converted[k]).float().to(self.params["device"])

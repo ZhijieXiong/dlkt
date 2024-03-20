@@ -32,6 +32,7 @@ example4cognitive_diagnosis/result_local
 /.DS_Store
 /freeze.yml
 /requirements.txt
+/keys.py
 
 
 # future to open

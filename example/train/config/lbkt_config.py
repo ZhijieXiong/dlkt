@@ -49,7 +49,7 @@ def lbkt_general_config(local_params, global_params, global_objects):
         f"model params\n    "
         f"num_concept: {num_concept}, num_question: {num_question}, num_correct: {num_correct}, \n    "
         f"dim_question: {dim_question}, dim_correct: {dim_correct}, dim_h: {dim_h}, dim_factor: {dim_factor}, "
-        f"dropout: {dropout}, r: {r}, d: {d}, k:{k}, b:{b}"
+        f"dropout: {dropout}, q_gamma: {q_gamma}, r: {r}, d: {d}, k:{k}, b:{b}"
     )
 
     if local_params["save_model"]:

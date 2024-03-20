@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 
-bash F:/code/myProjects/dlkt/example/script_local/dct_irt_not_share_baseline/our_setting_edi2020-task1_fold_0_ob.sh
-bash F:/code/myProjects/dlkt/example/script_local/dct_irt_not_share_baseline/our_setting_xes3g5m_fold_0_ob.sh
+bash F:/code/myProjects/dlkt/example/script_local/lbkt/lbkt_setting_assist2009.sh
+bash F:/code/myProjects/dlkt/example/script_local/lbkt/lbkt_setting_assist2017.sh
+bash F:/code/myProjects/dlkt/example/script_local/lbkt/lbkt_setting_assist2012.sh

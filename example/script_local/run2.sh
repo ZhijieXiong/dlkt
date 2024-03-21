@@ -32,3 +32,4 @@ python F:/code/myProjects/dlkt/example/prepare_dataset/our_setting_new.py --data
 python F:/code/myProjects/dlkt/example/prepare_dataset/our_setting_new.py --dataset_name "junyi2015"
 
 python F:/code/myProjects/dlkt/example/prepare_dataset/lbkt_setting.py --dataset_name "junyi2015"
+bash F:/code/myProjects/dlkt/example/script_local/our_setting_new.sh

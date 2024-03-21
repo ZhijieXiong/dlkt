@@ -8,7 +8,6 @@ import numpy as np
 
 from copy import deepcopy
 
-
 from . import CONSTANT
 from . import load_raw
 from . import util
@@ -16,6 +15,10 @@ from . import preprocess_raw
 from ..util import parse as parse_util
 from ..util import data as data_util
 
+
+# 常用语句
+# 查看是否有nan：df["col"].isnull().any()
+# 查看num hint和num attempt是否有小于0的值：(df["num_hint"] < 0).sum(), (df["num_attempt"] < 0).sum()
 
 class DataProcessor:
     def __init__(self, params, objects):
@@ -98,8 +101,14 @@ class DataProcessor:
         df["question_id"] = df["question_id"].map(int)
         df["concept_id"] = df["concept_id"].map(int)
         # 该数据集中use_time_first_attempt, num_hint, num_attempt都没有nan，有4684条数据use_time_first_attempt <= 0
-        df["use_time_first_attempt"] = df["use_time_first_attempt"].map(lambda t: min(max(0, math.ceil(t / 1000)), 60 * 60))
+        df["use_time_first_attempt"] = df["use_time_first_attempt"].map(
+            lambda t: min(max(0, math.ceil(t / 1000)), 60 * 60))
         df["use_time"] = df["use_time"].map(lambda t: min(max(1, math.ceil(t / 1000)), 60 * 60))
+        # 关于num attempt和num hint，有脏数据，如attempt的数量大于100，或者为0（官网对attempt count的定义是Number of student attempts on this problem，
+        # 没说是从第一次做开始就计数，还是做错了一次后开始计数，我们按照LBKT的设定，假设可以为0）
+        # num attempt和num hint都无nan，且都>=0
+        df["num_attempt"] = df["num_attempt"].map(lambda n: n if (n < 100) else 99)
+        df["num_hint"] = df["num_hint"].map(lambda n: n if (n < 100) else 99)
 
         # 获取concept name和concept 原始id的对应并保存
         concept_names = list(pd.unique(df.dropna(subset=["concept_name"])["concept_name"]))
@@ -186,6 +195,8 @@ class DataProcessor:
         df["use_time_first_attempt"] = df["use_time_first_attempt"].map(
             lambda t: min(max(0, math.ceil(t / 1000)), 60 * 60)
         )
+        df["num_attempt"] = df["num_attempt"].map(lambda n: n if (n < 100) else 99)
+        df["num_hint"] = df["num_hint"].map(lambda n: n if (n < 100) else 99)
         df["timestamp"] = df["timestamp"].map(time_str2timestamp)
         df["question_id"] = df["question_id"].map(int)
         df["concept_id"] = df["concept_id"].map(int)
@@ -232,6 +243,8 @@ class DataProcessor:
         # skill字段有noskill值，过滤掉
         df = deepcopy(self.data_raw[self.data_raw["concept_id"] != "noskill"])
         df["use_time"] = df["use_time"].map(lambda t: min(max(1, int(t)), 60 * 60))
+        df["num_attempt"] = df["num_attempt"].map(lambda n: n if (n < 100) else 99)
+        df["num_hint"] = df["num_hint"].map(lambda n: n if (n < 100) else 99)
         skill_id_map = {}
         skill_names = pd.unique(df["concept_id"])
         for i, skill in enumerate(skill_names):
@@ -258,7 +271,8 @@ class DataProcessor:
         # assist2017的习题id经过了两次映射
         qc_pairs_reverse = {v: int(k.split(",")[0]) for k, v in question_concept_pairs.items()}
         self.question_id_map["single_concept"] = result_preprocessed["single_concept"]["question_id_map"]
-        self.question_id_map["single_concept"]["question_id"] = self.question_id_map["single_concept"]["question_id"].map(qc_pairs_reverse)
+        self.question_id_map["single_concept"]["question_id"] = self.question_id_map["single_concept"][
+            "question_id"].map(qc_pairs_reverse)
         self.concept_id_map["single_concept"] = result_preprocessed["single_concept"]["concept_id_map"]
 
     def load_process_edi2020_task1(self):
@@ -400,7 +414,8 @@ class DataProcessor:
         df = df.merge(df_question_concept, how="left", on=["question_id"])
         df.dropna(subset=["question_id", "concept_id"], inplace=True)
         self.data_preprocessed["single_concept"] = df[
-            ["user_id", "question_id", "concept_id", "correct", "age", "timestamp", "gender", "premium_pupil", "dataset_type"]
+            ["user_id", "question_id", "concept_id", "correct", "age", "timestamp", "gender", "premium_pupil",
+             "dataset_type"]
         ]
         self.statics_preprocessed["single_concept"] = (
             DataProcessor.get_basic_info(self.data_preprocessed["single_concept"])
@@ -765,11 +780,17 @@ class DataProcessor:
         data["Problem Name"] = data["Problem Name"].apply(lambda x: x.strip().replace("_", "####").replace(",", "@@@@"))
         data["Step Name"] = data["Step Name"].apply(lambda x: x.strip().replace("_", "####").replace(",", "@@@@"))
         data["question_id"] = data.apply(lambda x: f"{x['Problem Name']}----{x['Step Name']}", axis=1)
-        data = data[["user_id", "question_id", "concept_id", "correct", "timestamp"]]
+        data = data[["user_id", "question_id", "concept_id", "correct", "timestamp", "num_hint", "use_time"]]
         self.data_raw = data
         self.statics_raw = self.get_basic_info(self.data_raw)
 
         df = deepcopy(self.data_raw)
+        # num_hint无nan，无<0的值
+        df["num_hint"] = df["num_hint"].fillna(0)
+        df["num_hint"] = df["num_hint"].map(lambda n: n if (0 <= n < 100) else 99)
+        # use_time有nan，有4368个未知值，无<0的值，0表示未知
+        df["use_time"] = df["use_time"].fillna(0)
+        df["use_time"] = df["use_time"].map(lambda t: min(max(1, math.ceil(float(t))), 60 * 60) if (t != ".") else 0)
         df.dropna(subset=["user_id", "question_id", "concept_id", "timestamp", "correct"], inplace=True)
         df = df[df["correct"].isin([0, 1])]
         df["timestamp"] = df["timestamp"].map(time_str2timestamp)
@@ -852,13 +873,15 @@ class DataProcessor:
             return float(item_str)
 
         df["full_score"] = df["full_score"].map(map_full_score)
-        df["score_"] = df["score"] / df["full_score"]
-        df["correct"] = df["score_"] > 0.5
+        df["correct_float"] = df["score"] / df["full_score"]
+        df["correct"] = df["correct_float"] > 0.5
         df["correct"] = df["correct"].map(int)
+        df["correct_float"] = df["correct_float"].map(lambda s: float("{:.2f}".format(s)))
+
         df.rename(columns={"live_on_campus": "campus"}, inplace=True)
         self.data_preprocessed["single_concept"] = df[
-            ["user_id", "question_id", "concept_id", "correct", "gender",
-             "campus", "school_id", "timestamp", "order", "interaction_type"]
+            ["user_id", "question_id", "concept_id", "correct", "gender", "campus", "school_id", "timestamp", "order",
+             "interaction_type", "correct_float"]
         ]
         self.statics_preprocessed["single_concept"] = (
             DataProcessor.get_basic_info(self.data_preprocessed["single_concept"])
@@ -884,6 +907,12 @@ class DataProcessor:
         self.statics_raw = self.get_basic_info(self.data_raw)
 
         df = deepcopy(self.data_raw)
+        # num_hint无nan，无<0的值
+        df["num_hint"] = df["num_hint"].fillna(0)
+        df["num_hint"] = df["num_hint"].map(lambda n: n if (0 <= n < 100) else 99)
+        # use_time无nan，有4368个未知值，无<0的值，0表示未知
+        df["use_time"] = df["use_time"].fillna(0)
+        df["use_time"] = df["use_time"].map(lambda t: min(max(1, math.ceil(float(t))), 60 * 60) if (t != ".") else 0)
 
         def replace_text(text):
             text = text.replace("_", "####").replace(",", "@@@@")
@@ -932,8 +961,11 @@ class DataProcessor:
         user_ids = pd.unique(df["user_id"])
         df["user_id"] = df["user_id"].map({u_id: i for i, u_id in enumerate(user_ids)})
 
-        self.data_preprocessed["single_concept"] = df[["user_id", "timestamp", "concept_id", "correct", "question_id"]]
-        self.statics_preprocessed["single_concept"] = DataProcessor.get_basic_info(self.data_preprocessed["single_concept"])
+        self.data_preprocessed["single_concept"] = df[
+            ["user_id", "timestamp", "concept_id", "correct", "question_id", "num_hint", "use_time"]
+        ]
+        self.statics_preprocessed["single_concept"] = DataProcessor.get_basic_info(
+            self.data_preprocessed["single_concept"])
 
         # Q table
         df_new = pd.DataFrame({
@@ -1048,7 +1080,8 @@ class DataProcessor:
         data_dir = self.params["preprocess_config"]["data_path"]
         data_path = os.path.join(data_dir, "junyi_ProblemLog_original.csv")
         metadata_question_path = os.path.join(data_dir, "junyi_Exercise_table.csv")
-        df_cols = ["user_id", "exercise", "correct", "time_done", "time_taken", "time_taken_attempts", "count_hints", "count_attempts"]
+        df_cols = ["user_id", "exercise", "correct", "time_done", "time_taken", "time_taken_attempts", "count_hints",
+                   "count_attempts", "suggested", "review_mode"]
         df_rename_map = {
             "exercise": "question_name",
             "time_done": "timestamp",
@@ -1073,16 +1106,31 @@ class DataProcessor:
         metadata_question["concept_id"] = metadata_question["concept_name"].map(concept_id_map)
 
         df = deepcopy(self.data_raw)
+        df.dropna(subset=["question_name"], inplace=True)
         df = df.merge(metadata_question, how="left")
         # 有nan的列：use_time_first
-        df.dropna(subset=["question_id", "concept_id"], inplace=True)
         df["use_time_first_attempt"] = df["use_time_first_attempt"].fillna(0)
         df["use_time_first_attempt"] = df["use_time_first_attempt"].map(
             lambda time_str: min(max(0, math.ceil(list(map(int, str(time_str).split("&")))[0] / 1000)), 60 * 60)
         )
-        df["use_time"] = df["use_time"].map(lambda t: 0 if (t <= 0) else t)
+        df["use_time"] = df["use_time"].map(lambda t: 1 if (t <= 0) else t)
         df["timestamp"] = df["timestamp"].map(lambda x: int(x / 1000000))
+        df["num_attempt"] = df["num_attempt"].map(lambda n: n if (n < 100) else 99)
+        df["num_hint"] = df["num_hint"].map(lambda n: n if (n < 100) else 99)
         df["correct"] = df["correct"].map(int)
+
+        # review mode（是否为复习已掌握的习题）和suggested（是否为系统建议的习题）都没有nan
+        def get_mode(row_):
+            if (not row_["suggested"]) and (not row_["review_mode"]):
+                return 0
+            elif row_["suggested"]:
+                return 1
+            elif row_["review_mode"]:
+                return 2
+            else:
+                return 3
+
+        df["question_mode"] = df.apply(get_mode, axis=1)
 
         # 获取concept name和concept 原始id的对应并保存
         concept_name2id = pd.DataFrame({
@@ -1094,7 +1142,7 @@ class DataProcessor:
         concept_name2id.to_csv(concept_id2name_map_path, index=False)
 
         df = df[["user_id", "question_id", "concept_id", "correct", "timestamp", "use_time", "use_time_first_attempt",
-                 "num_hint", "num_attempt"]]
+                 "num_hint", "num_attempt", "question_mode"]]
         self.data_preprocessed["single_concept"] = df
 
         question_id_map = deepcopy(metadata_question[["question_name", "question_id"]])
@@ -1111,6 +1159,9 @@ class DataProcessor:
             Q_table[q_id, c_id] = 1
         self.Q_table["single_concept"] = Q_table
         self.statics_preprocessed["single_concept"] = self.get_basic_info(df)
+        # 这个数据集的习题和知识点数量不是统计处理的，而是直接从junyi_Exercise_table这里面获取的
+        self.statics_preprocessed["single_concept"]["num_concept"] = num_concept
+        self.statics_preprocessed["single_concept"]["num_question"] = num_question
         self.question_id_map["single_concept"] = question_id_map
         self.concept_id_map["single_concept"] = concept_id_map
 
@@ -1237,7 +1288,8 @@ class DataProcessor:
             "use_time_seq": "use_time",
             "use_time_first_seq": "use_time_first_attempt",
             "num_hint_seq": "num_hint",
-            "num_attempt_seq": "num_attempt"
+            "num_attempt_seq": "num_attempt",
+            "question_mode_seq": "question_mode"
         }
 
         # single_concept
@@ -1322,7 +1374,9 @@ class DataProcessor:
             "question_seq": "question_id",
             "concept_seq": "concept_id",
             "correct_seq": "correct",
-            "interaction_type_seq": "interaction_type"
+            "time_seq": "timestamp",
+            "question_mode_seq": "interaction_type",
+            "correct_float_seq": "correct_float"
         }
 
         # single_concept
@@ -1348,7 +1402,9 @@ class DataProcessor:
             "question_seq": "question_id",
             "concept_seq": "concept_id",
             "correct_seq": "correct",
-            "time_seq": "timestamp"
+            "use_time_seq": "use_time",
+            "time_seq": "timestamp",
+            "num_hint_seq": "num_hint"
         }
 
         id_keys = list(set(df.columns) - set(info_name_table.values()))
@@ -1382,7 +1438,8 @@ class DataProcessor:
         # single_concept
         # 习题id重映射
         question_ids = list(pd.unique(df_single_concept["question_id"]))
-        df_single_concept["question_id"] = df_single_concept["question_id"].map({q_id: i for i, q_id in enumerate(question_ids)})
+        df_single_concept["question_id"] = df_single_concept["question_id"].map(
+            {q_id: i for i, q_id in enumerate(question_ids)})
         self.question_id_map["single_concept"] = pd.DataFrame({
             "question_id": question_ids,
             "question_id_map": range(len(question_ids))
@@ -1390,7 +1447,8 @@ class DataProcessor:
 
         # 知识点id重映射
         concept_ids = list(pd.unique(df_single_concept["concept_id"]))
-        df_single_concept["concept_id"] = df_single_concept["concept_id"].map({c_id: i for i, c_id in enumerate(concept_ids)})
+        df_single_concept["concept_id"] = df_single_concept["concept_id"].map(
+            {c_id: i for i, c_id in enumerate(concept_ids)})
         self.concept_id_map["single_concept"] = pd.DataFrame({
             "concept_id": concept_ids,
             "concept_id_map": range(len(concept_ids))
@@ -1511,7 +1569,9 @@ class DataProcessor:
             "question_seq": "question_id",
             "concept_seq": "concept_id",
             "correct_seq": "correct",
-            "time_seq": "timestamp"
+            "time_seq": "timestamp",
+            "use_time_seq": "use_time",
+            "num_hint_seq": "num_hint"
         }
         order_key_table = {
             "ednet-kt1": ["timestamp"],

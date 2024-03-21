@@ -15,12 +15,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="lbkt_setting")
-    parser.add_argument("--dataset_name", type=str, default="assist2009")
-    parser.add_argument("--data_type", type=str, default="only_question",
+    parser.add_argument("--dataset_name", type=str, default="junyi2015")
+    parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2009_train.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2009_test.txt")
+    parser.add_argument("--train_file_name", type=str, default="junyi2015_train.txt")
+    parser.add_argument("--valid_file_name", type=str, default="junyi2015_valid.txt")
+    parser.add_argument("--test_file_name", type=str, default="junyi2015_test.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
     parser.add_argument("--weight_decay", type=float, default=0.000001)
@@ -51,8 +51,8 @@ if __name__ == "__main__":
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=123)
-    parser.add_argument("--num_question", type=int, default=17751)
+    parser.add_argument("--num_concept", type=int, default=40)
+    parser.add_argument("--num_question", type=int, default=817)
     parser.add_argument("--num_correct", type=int, default=2)
     parser.add_argument("--dim_question", type=int, default=128)
     parser.add_argument("--dim_correct", type=int, default=50)

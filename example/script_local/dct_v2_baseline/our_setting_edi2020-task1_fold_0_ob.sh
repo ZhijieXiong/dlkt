@@ -6,7 +6,8 @@
   fold=0
 
   dropouts='0.1 0.2'
-  weight_decays='0.00001 0.000001 0'
+  # 0.00001
+  weight_decays='0.000001 0'
   nums_rnn_layer=(2 3)
   nums_mlp_layer=(2 3)
   dims_question=(128 256)
@@ -26,7 +27,7 @@
               --train_file_name "${dataset_name}_train_fold_${fold}.txt" --valid_file_name "${dataset_name}_valid_fold_${fold}.txt" --test_file_name "${dataset_name}_test_fold_${fold}.txt" \
               --optimizer_type "adam" --weight_decay "${weight_decay}" --momentum 0.9 \
               --train_strategy "valid_test" --num_epoch 200 \
-              --use_early_stop True --epoch_early_stop 15 --use_last_average False --epoch_last_average 5 \
+              --use_early_stop True --epoch_early_stop 10 --use_last_average False --epoch_last_average 5 \
               --main_metric "AUC" --use_multi_metrics False \
               --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
               --train_batch_size 64 --evaluate_batch_size 256 \

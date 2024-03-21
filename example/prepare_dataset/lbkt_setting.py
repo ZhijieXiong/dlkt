@@ -16,7 +16,7 @@ from lib.dataset.split_seq import dataset_truncate2multi_seq
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="junyi2015",
+    parser.add_argument("--dataset_name", type=str, default="assist2009",
                         choices=("assist2009", "assist2012", "junyi2015", "assist2017"))
     args = parser.parse_args()
     params = vars(args)
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     data_uniformed = drop_qc(data_uniformed, num2drop=10)
 
     if params["dataset_name"] != "assist2017":
-        # 丢弃use_time_first小于0的数据（官方代码是如此处理的），在数据预处理阶段就已经把小于0的变成0了，所以只需要剔除为0的交互就行
+        # 丢弃use_time_first小于0的数据（官方代码是如此处理的）
         id_keys, seq_keys = get_keys_from_uniform(data_uniformed)
         data_dropped = []
         num_dropped = 0
@@ -63,7 +63,7 @@ if __name__ == "__main__":
                 item_data_new[k] = []
             for i in range(item_data["seq_len"]):
                 use_time_first = item_data["use_time_first_seq"][i]
-                if use_time_first == 0:
+                if use_time_first <= 0:
                     num_dropped += 1
                     continue
                 for k in seq_keys:
@@ -115,9 +115,8 @@ if __name__ == "__main__":
                 use_time_first = item_data["use_time_seq"][i]
             else:
                 use_time_first = item_data["use_time_first_seq"][i]
-            if use_time_first <= 0:
-                print("error")
-            time_factor = norm(use_time_mean, use_time_std).cdf(np.log(use_time_first))
+
+            time_factor = 1 if (use_time_std == 0) else norm(use_time_mean, use_time_std).cdf(np.log(use_time_first))
             time_factor_seq.append(time_factor)
 
             num_attempt = item_data["num_attempt_seq"][i]
@@ -127,6 +126,13 @@ if __name__ == "__main__":
             num_hint = item_data["num_hint_seq"][i]
             hint_factor = 1 - poisson(num_hint_mean).cdf(num_hint - 1)
             hint_factor_seq.append(hint_factor)
+
+            if (use_time_first <= 0) or (str(time_factor) == "nan"):
+                print(f"time error: {use_time_first}, {time_factor}")
+            if str(attempt_factor) == "nan":
+                print(f"time error: {num_attempt}, {attempt_factor}")
+            if str(hint_factor) == "nan":
+                print(f"time error: {num_hint}, {hint_factor}")
         item_data["time_factor_seq"] = time_factor_seq
         item_data["attempt_factor_seq"] = attempt_factor_seq
         item_data["hint_factor_seq"] = hint_factor_seq

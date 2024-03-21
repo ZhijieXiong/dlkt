@@ -1,9 +1,12 @@
 import argparse
+import json
 from tqdm import tqdm
 from parse import *
 
-from utils import prepare_data, construct_prompt
+from utils import prepare_data, construct_prompt, show_sample
 from PythonExecutor import PythonExecutor
+from api import llm_api, api_with_func_call
+from eval import math_equal
 
 
 if __name__ == "__main__":
@@ -49,4 +52,78 @@ if __name__ == "__main__":
         gt_cot, gt_ans = parse_ground_truth(example, params["data_name"])
         full_prompt = construct_prompt(params, example)
 
-    print("")
+        # call LLM, return list
+        if "tora" in params["prompt_type"]:
+            results = api_with_func_call(
+                engine=params["model_name_or_path"],
+                prompt=full_prompt,
+                max_tokens=params["max_tokens_per_call"],
+                temperature=params["temperature"],
+                n=params["n_sampling"],
+                top_p=params["top_p"],
+                executor=executor,
+            )
+        else:
+            stop_tokens = ["</s>", "---", "```output"]
+            if args.prompt_type in ['cot']:
+                stop_tokens.append("\n\n")
+            # use your own API like OpenAI API
+            results = llm_api(
+                engine=params["model_name_or_path"],
+                prompt=full_prompt,
+                max_tokens=params["max_tokens_per_call"],
+                temperature=params["temperature"],
+                n=params["n_sampling"],
+                top_p=params["top_p"],
+                stop=stop_tokens,
+            )
+
+        # deal with error
+        if results == ['error']:
+            print(">>> Error API call")
+            continue
+
+        print("Get {} results".format(len(results)))
+        # get prediction
+        predictions = []
+        reports = []
+        for r in results:
+            pred, report = run_execute(executor, r, args.prompt_type, execute=True)
+            predictions.append(pred)
+            reports.append(report)
+        print("Executed {} results".format(len(predictions)))
+
+        scores = [math_equal(p, gt_ans, timeout=True) for p in predictions]
+
+        is_correct = scores[0]
+        if is_correct:
+            correct += 1
+        else:
+            wrong += 1
+
+        sample = {'idx': idx, 'question': example['question'], 'gt_cot': gt_cot, 'gt': gt_ans,
+                  'pred': predictions, 'score': scores}
+
+        if args.prompt_type == "cot":
+            sample.update({'code': results})
+        elif "tora" in args.prompt_type or "pal" in args.prompt_type:
+            sample.update({'report': reports, 'code': results})
+        # add remain fields
+        for key in ['level', 'type', 'unit', 'solution_type', 'choices', 'solution', 'ques_type', 'ans_type', 'answer_type', 'dataset', 'subfield', 'filed', 'theorem', 'answer']:
+            if key in example:
+                sample[key] = example[key]
+
+        print(idx)
+        show_sample(sample)
+        if correct + wrong > 0:
+            print("Avg Acc:", correct / (correct + wrong))
+        print()
+
+        try:
+            writer.write(json.dumps(sample) + '\n')
+            writer.flush()
+        except:
+            print(">>> Error writing to file")
+            continue
+
+    writer.close()

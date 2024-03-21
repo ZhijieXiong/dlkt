@@ -4,6 +4,14 @@ import random
 from datetime import datetime
 
 
+KEY_MAP = {
+    "gt": "Ground Truth",
+    "pred": "Prediction",
+    "gt_cot": "Reference CoT",
+    "score": "Score",
+}
+
+
 def load_jsonl(file):
     with open(file, "r", encoding="utf-8") as f:
         for line in f:
@@ -110,3 +118,49 @@ def construct_prompt(params, example):
         raise NotImplementedError(params["prompt_type"])
 
     return full_prompt
+
+
+def extract_program(result: str, last_only=True):
+    """
+    extract the program after "```python", and before "```"
+    """
+    program = ""
+    start = False
+    for line in result.split("\n"):
+        if line.startswith("```python"):
+            if last_only:
+                # only extract the last program
+                program = ""
+            else:
+                program += "\n# ========\n"
+            start = True
+        elif line.startswith("```"):
+            start = False
+        elif start:
+            program += line + "\n"
+    return program
+
+
+def show_sample(sample, print_all_predict=False):
+    print("==" * 20)
+    for key in ["idx", "type", "level", "dataset"]:
+        if key in sample:
+            # capitalize
+            print("{}: {}".format(key[0].upper() + key[1:], sample[key]))
+    print("Question:", repr(sample['question']))
+    if 'code' in sample:
+        if print_all_predict:
+            for code in sample['code']:
+                print('-' * 20)
+                print("code:", code)
+            print("Execution:", sample['report'])
+        else:
+            print("Solution:\n", sample['code'][0])
+            print("Execution:", sample['report'][0])
+    if 'pred' in sample:
+        print("Prediction:", repr(sample['pred'][0]))
+    for key in ["gt", "score", "unit", "gt_cot"]:
+        if key in sample:
+            _key = KEY_MAP.get(key, key)
+            print("{}: {}".format(_key, repr(sample[key])))
+    print()

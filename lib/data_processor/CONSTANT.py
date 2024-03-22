@@ -145,9 +145,8 @@ def datasets_seq_keys(datasets_merged=None):
         "SLP": ["question_seq", "concept_seq", "correct_seq", "time_seq", "question_mode_seq", "correct_float_seq"],
         "slepemapy": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],
         "statics2011": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq", "num_hint_seq"],
-        "ednet-kt1": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq", "use_time_seq",
-                      "num_hint_seq"],
-        "algebra2005": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq","num_hint_seq"],
+        "ednet-kt1": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],
+        "algebra2005": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq", "num_hint_seq"],
         "junyi2015": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq", "use_time_first_seq",
                       "num_hint_seq", "num_attempt_seq", "question_mode_seq"]
     }

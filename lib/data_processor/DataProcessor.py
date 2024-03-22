@@ -1108,6 +1108,7 @@ class DataProcessor:
         df = deepcopy(self.data_raw)
         df.dropna(subset=["question_name"], inplace=True)
         df = df.merge(metadata_question, how="left")
+        df.dropna(subset=["question_id", "concept_id"], inplace=True)
         # 有nan的列：use_time_first
         df["use_time_first_attempt"] = df["use_time_first_attempt"].fillna(0)
         df["use_time_first_attempt"] = df["use_time_first_attempt"].map(

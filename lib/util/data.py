@@ -35,9 +35,15 @@ def write2file(data, data_path):
                                             "question_mode_seq"})
     for item_data in data:
         for k in id_keys_:
-            item_data[k] = int(item_data[k])
+            try:
+                item_data[k] = int(item_data[k])
+            except ValueError:
+                print(f"value of {k} has nan")
         for k in seq_keys_:
-            item_data[k] = list(map(int, item_data[k]))
+            try:
+                item_data[k] = list(map(int, item_data[k]))
+            except ValueError:
+                print(f"value of {k} has nan")
 
     with open(data_path, "w") as f:
         first_line = ",".join(id_keys) + ";" + ",".join(seq_keys) + "\n"

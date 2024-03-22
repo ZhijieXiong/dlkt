@@ -4,7 +4,7 @@ from .util import *
 from .loss_util import binary_entropy
 
 
-class MLP4ProjV2(nn.Module):
+class MLP4Proj(nn.Module):
     def __init__(self, num_layer, dim_in, dim_out, dropout):
         super().__init__()
 
@@ -34,138 +34,6 @@ class MLP4ProjV2(nn.Module):
 
     def forward(self, x):
         return self.mlp(x) if (self.num_layer <= 2) else torch.relu(self.mlp(x) + self.residual(x))
-
-
-class DCTv2(nn.Module):
-    model_name = "DCT"
-
-    def __init__(self, params, objects):
-        super().__init__()
-        self.params = params
-        self.objects = objects
-
-        encoder_config = params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
-        num_question = encoder_config["num_question"]
-        num_concept = encoder_config["num_concept"]
-        dim_question = encoder_config["dim_question"]
-        rnn_type = encoder_config["rnn_type"]
-        num_rnn_layer = encoder_config["num_rnn_layer"]
-        num_mlp_layer = encoder_config["num_mlp_layer"]
-        dropout = encoder_config["dropout"]
-
-        self.embed_question = nn.Embedding(num_question, dim_question)
-        torch.nn.init.xavier_uniform_(self.embed_question.weight)
-
-        dim_rrn_input = dim_question * 2
-        if rnn_type == "rnn":
-            self.encoder_layer = nn.RNN(dim_rrn_input, num_concept, batch_first=True, num_layers=num_rnn_layer)
-        elif rnn_type == "lstm":
-            self.encoder_layer = nn.LSTM(dim_rrn_input, num_concept, batch_first=True, num_layers=num_rnn_layer)
-        else:
-            self.encoder_layer = nn.GRU(dim_rrn_input, num_concept, batch_first=True, num_layers=num_rnn_layer)
-        self.que2difficulty = MLP4ProjV2(num_mlp_layer, dim_question, num_concept, dropout)
-        self.que2discrimination = nn.Sequential(
-            nn.Linear(dim_question, dim_question // 2),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(dim_question // 2, 1),
-        )
-        self.dropout = nn.Dropout(dropout)
-
-    def predict_score(self, latent, question_emb):
-        user_ability = torch.sigmoid(latent)
-        que_diff = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
-        que_disc = torch.sigmoid(self.que2discrimination(self.dropout(question_emb))) * 10
-        y = (que_disc * (user_ability - que_diff)) * que_diff / torch.sum(que_diff, dim=1, keepdim=True)
-        predict_score = torch.sigmoid(torch.sum(y, dim=-1))
-
-        return predict_score
-
-    def forward(self, batch):
-        dim_question = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]["dim_question"]
-        correct_seq = batch["correct_seq"]
-        question_seq = batch["question_seq"]
-        batch_size, seq_len = correct_seq.shape[0], correct_seq.shape[1]
-
-        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_question).reshape(batch_size, -1, dim_question)
-        question_emb = self.embed_question(question_seq)
-        interaction_emb = torch.cat((question_emb[:, :-1], correct_emb[:, :-1]), dim=2)
-
-        self.encoder_layer.flatten_parameters()
-        latent, _ = self.encoder_layer(interaction_emb)
-        predict_score = self.predict_score(latent, question_emb[:, 1:])
-
-        return predict_score
-
-    def get_predict_score(self, batch):
-        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-        predict_score = self.forward(batch)
-        predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
-
-        return predict_score
-
-    def get_predict_loss(self, batch, loss_record=None):
-        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
-        dim_question = encoder_config["dim_question"]
-
-        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-        correct_seq = batch["correct_seq"]
-        question_seq = batch["question_seq"]
-        batch_size, seq_len = correct_seq.shape[0], correct_seq.shape[1]
-
-        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_question).reshape(batch_size, -1, dim_question)
-        question_emb = self.embed_question(question_seq)
-        interaction_emb = torch.cat((question_emb[:, :-1], correct_emb[:, :-1]), dim=2)
-
-        self.encoder_layer.flatten_parameters()
-        latent, _ = self.encoder_layer(interaction_emb)
-
-        user_ability = torch.sigmoid(latent)
-        que_diff = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, 1:])))
-        inter_func_in = user_ability - que_diff
-        que_disc = torch.sigmoid(self.que2discrimination(self.dropout(question_emb[:, 1:]))) * 10
-        y = (que_disc * inter_func_in) * que_diff / torch.sum(que_diff, dim=1, keepdim=True)
-
-        predict_score = torch.sigmoid(torch.sum(y, dim=-1))
-        predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
-
-        loss = 0.
-        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
-        predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
-        if loss_record is not None:
-            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
-            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
-        loss = loss + predict_loss
-
-        return loss
-
-
-class MLP4Proj(nn.Module):
-    def __init__(self, num_layer, dim_in, dim_out, dropout):
-        super().__init__()
-
-        if num_layer == 1:
-            self.net = nn.Linear(dim_in, dim_out)
-        elif num_layer == 2:
-            self.net = nn.Sequential(
-                nn.Linear(dim_in, dim_in),
-                nn.Dropout(dropout),
-                nn.ReLU(),
-                nn.Linear(dim_in, dim_out)
-            )
-        else:
-            self.net = nn.Sequential(
-                nn.Linear(dim_in, dim_in),
-                nn.Dropout(dropout),
-                nn.ReLU(),
-                nn.Linear(dim_in, dim_in),
-                nn.Dropout(dropout),
-                nn.ReLU(),
-                nn.Linear(dim_in, dim_out)
-            )
-
-    def forward(self, x):
-        return self.net(x)
 
 
 class DCT(nn.Module):

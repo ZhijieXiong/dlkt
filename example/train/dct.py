@@ -8,9 +8,7 @@ from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
 from lib.model.DCT import DCT
-from lib.model.DCT import DCTv2
 from lib.trainer.CognitionTracingTrainer import CognitionTracingTrainer
-from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 
 if __name__ == "__main__":
@@ -117,10 +115,7 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    # global_objects["models"]["kt_model"] = DCT(global_params, global_objects).to(global_params["device"])
-    # trainer = CognitionTracingTrainer(global_params, global_objects)
-
-    global_objects["models"]["kt_model"] = DCTv2(global_params, global_objects).to(global_params["device"])
-    trainer = KnowledgeTracingTrainer(global_params, global_objects)
+    global_objects["models"]["kt_model"] = DCT(global_params, global_objects).to(global_params["device"])
+    trainer = CognitionTracingTrainer(global_params, global_objects)
 
     trainer.train()

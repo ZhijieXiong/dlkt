@@ -30,6 +30,7 @@ def aux_info_qdkt_general_config(local_params, global_params, global_objects):
     num_predict_layer = local_params["num_predict_layer"]
     dim_predict_mid = local_params["dim_predict_mid"]
     activate_type = local_params["activate_type"]
+    weight_aux_emb = local_params["weight_aux_emb"]
 
     # embed layer
     embed_config = global_params["models_config"]["kt_model"]["kt_embed_layer"]
@@ -45,6 +46,7 @@ def aux_info_qdkt_general_config(local_params, global_params, global_objects):
     encoder_config["dim_latent"] = dim_latent
     encoder_config["rnn_type"] = rnn_type
     encoder_config["num_rnn_layer"] = num_rnn_layer
+    encoder_config["weight_aux_emb"] = weight_aux_emb
 
     # predict layer
     predict_layer_config = global_params["models_config"]["kt_model"]["predict_layer"]
@@ -61,7 +63,7 @@ def aux_info_qdkt_general_config(local_params, global_params, global_objects):
         f"num_concept: {num_concept}, num_question: {num_question}, num_correct: 2\n    "
         f"dim_question: {dim_question}, dim_latent: {dim_latent}, rnn_type: {rnn_type}, num_rnn_layer: {num_rnn_layer}, "
         f"dropout: {dropout},  num_predict_layer: {num_predict_layer}, dim_predict_mid: {dim_predict_mid}, "
-        f"activate_type: {activate_type}"
+        f"activate_type: {activate_type}, weight_aux_emb: {weight_aux_emb}"
     )
 
     if local_params["save_model"]:

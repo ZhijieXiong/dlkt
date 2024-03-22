@@ -1,12 +1,9 @@
+import torch
+
 from .util import *
 from .Module.KTEmbedLayer import KTEmbedLayer
 from .Module.PredictorLayer import PredictorLayer
-
-
-HAS_TIME = ["assist2012", "assist2017", "junyi2015", "slepemapy", "ednet-kt1", "edi2020-task1", "edi2020-task34",
-            "algebra2005", "bridge2algebra2006", "xes3g5m", "statics2011"]
-HAS_USE_TIME = ["assist2012", "assist2009", "assist2017", "junyi2015", "slepemapy", "ednet-kt1"]
-HAS_COUNT = ["assist2012", "assist2009", "assist2017", "junyi2015"]
+from ..CONSTANT import HAS_TIME, HAS_USE_TIME, HAS_NUM_HINT, HAS_NUM_ATTEMPT
 
 
 # class AuxInfoLPKT(nn.Module):
@@ -87,28 +84,27 @@ class AuxInfoQDKT(nn.Module):
 
         self.has_time = dataset_name in HAS_TIME
         self.has_use_time = dataset_name in HAS_USE_TIME
-        self.has_count = dataset_name in HAS_COUNT
-        self.has_use_time_and_count = dataset_name in set(HAS_USE_TIME).intersection(set(HAS_COUNT))
+        self.has_num_hint = dataset_name in HAS_NUM_HINT
+        self.has_num_attempt = dataset_name in HAS_NUM_ATTEMPT
 
         # 输入embedding融合层（在前端就处理好，每种辅助信息的toke表不超过100）
         if self.has_time:
             self.embed_interval_time = nn.Embedding(100, dim_question)
         if self.has_use_time:
             self.embed_use_time = nn.Embedding(100, dim_question)
-        if self.has_count:
+        if self.has_num_hint:
             self.embed_num_hint = nn.Embedding(100, dim_question)
+        if self.has_num_attempt:
             self.embed_num_attempt = nn.Embedding(100, dim_question)
         # 融合question、concept、correct
-        self.fuse_layer1 = nn.Linear(dim_question * 3, dim_question)
+        self.fuse_q_c_c = nn.Linear(dim_question * 3, dim_question)
         # 融合use time、num hint、num attempt
-        self.fuse_layer2 = nn.Linear(dim_question * 3, dim_question)
-        # 融合num hint、num attempt
-        self.fuse_layer3 = nn.Linear(dim_question * 2, dim_question)
+        self.fuse_ut_nh_na = nn.Linear(dim_question * 3, dim_question)
 
         # encode层：RNN
-        if (self.has_use_time or self.has_count) and self.has_time:
+        if (self.has_use_time or self.has_num_hint or self.has_num_attempt) and self.has_time:
             dim_rrn_input = dim_question * 3
-        elif (self.has_use_time or self.has_count) or self.has_time:
+        elif (self.has_use_time or self.has_num_hint or self.has_num_attempt) or self.has_time:
             dim_rrn_input = dim_question * 2
         else:
             dim_rrn_input = dim_question
@@ -152,65 +148,56 @@ class AuxInfoQDKT(nn.Module):
 
     def forward(self, batch):
         data_type = self.params["datasets_config"]["data_type"]
+        dim_question = self.params["models_config"]["kt_model"]["encoder_layer"]["AuxInfoQDKT"]["dim_question"]
+        weight_aux_emb = self.params["models_config"]["kt_model"]["encoder_layer"]["AuxInfoQDKT"]["weight_aux_emb"]
+        batch_size, seq_len = batch["correct_seq"].shape[0], batch["correct_seq"].shape[1]
 
         correct_emb = self.embed_layer.get_emb("correct", batch["correct_seq"])
         if data_type == "only_question":
             qc_emb = self.get_qc_emb4only_question(batch)
         else:
             qc_emb = self.get_qc_emb4single_concept(batch)
-        interaction_emb = self.fuse_layer1(torch.cat((qc_emb, correct_emb), dim=-1))
+        interaction_emb = self.fuse_q_c_c(torch.cat((qc_emb, correct_emb), dim=-1))
 
-        if (self.has_use_time or self.has_count) and self.has_time:
-            if self.has_use_time_and_count:
-                use_time_seq = batch["use_time_seq"]
-                num_hint_seq = batch["num_hint_seq"]
-                num_attempt_seq = batch["num_attempt_seq"]
-
-                use_time_emb = self.embed_use_time(use_time_seq)
-                num_hint_emb = self.embed_num_hint(num_hint_seq)
-                num_attempt_emb = self.embed_num_attempt(num_attempt_seq)
-                emb1 = self.fuse_layer2(torch.cat((use_time_emb, num_hint_emb, num_attempt_emb), dim=-1))
-            elif self.has_use_time:
-                use_time_seq = batch["use_time_seq"]
-                emb1 = self.embed_use_time(use_time_seq)
+        if (self.has_use_time or self.has_num_hint or self.has_num_attempt) and self.has_time:
+            if self.has_use_time:
+                use_time_emb = self.embed_use_time(batch["use_time_seq"])
             else:
-                num_hint_seq = batch["num_hint_seq"]
-                num_attempt_seq = batch["num_attempt_seq"]
+                use_time_emb = torch.zeros(batch_size, seq_len, dim_question).to(self.params["device"])
+            if self.has_num_hint:
+                num_hint_emb = self.embed_num_hint(batch["num_hint_seq"])
+            else:
+                num_hint_emb = torch.zeros(batch_size, seq_len, dim_question).to(self.params["device"])
+            if self.has_num_attempt:
+                num_attempt_emb = self.embed_num_hint(batch["num_attempt_seq"])
+            else:
+                num_attempt_emb = torch.zeros(batch_size, seq_len, dim_question).to(self.params["device"])
 
-                num_hint_emb = self.embed_num_hint(num_hint_seq)
-                num_attempt_emb = self.embed_num_attempt(num_attempt_seq)
-                emb1 = self.fuse_layer3(torch.cat((num_hint_emb, num_attempt_emb), dim=-1))
+            ut_nh_na_emb = torch.cat((use_time_emb, num_hint_emb, num_attempt_emb), dim=-1)
+            ut_nh_na_emb = self.fuse_ut_nh_na(ut_nh_na_emb)
+            interval_time_emb = self.embed_interval_time(batch["interval_time_seq"])
+            encoder_input = torch.cat((interaction_emb, interval_time_emb, ut_nh_na_emb * weight_aux_emb), dim=-1)
 
-            interval_time_seq = batch["interval_time_seq"]
-            interval_time_emb = self.embed_interval_time(interval_time_seq)
-            encoder_input = torch.cat((interaction_emb, emb1, interval_time_emb), dim=-1)
-
-        elif (self.has_use_time or self.has_count) or self.has_time:
+        elif (self.has_use_time or self.has_num_hint or self.has_num_attempt) or self.has_time:
             if self.has_time:
-                interval_time_seq = batch["interval_time_seq"]
-                interval_time_emb = self.embed_interval_time(interval_time_seq)
+                interval_time_emb = self.embed_interval_time(batch["interval_time_seq"])
                 encoder_input = torch.cat((interaction_emb, interval_time_emb), dim=-1)
             else:
-                if self.has_use_time_and_count:
-                    use_time_seq = batch["use_time_seq"]
-                    num_hint_seq = batch["num_hint_seq"]
-                    num_attempt_seq = batch["num_attempt_seq"]
-
-                    use_time_emb = self.embed_use_time(use_time_seq)
-                    num_hint_emb = self.embed_num_hint(num_hint_seq)
-                    num_attempt_emb = self.embed_num_attempt(num_attempt_seq)
-                    emb1 = self.fuse_layer2(torch.cat((use_time_emb, num_hint_emb, num_attempt_emb), dim=-1))
-                elif self.has_use_time:
-                    use_time_seq = batch["use_time_seq"]
-                    emb1 = self.embed_use_time(use_time_seq)
+                if self.has_use_time:
+                    use_time_emb = self.embed_use_time(batch["use_time_seq"])
                 else:
-                    num_hint_seq = batch["num_hint_seq"]
-                    num_attempt_seq = batch["num_attempt_seq"]
-
-                    num_hint_emb = self.embed_num_hint(num_hint_seq)
-                    num_attempt_emb = self.embed_num_attempt(num_attempt_seq)
-                    emb1 = self.fuse_layer3(torch.cat((num_hint_emb, num_attempt_emb), dim=-1))
-                encoder_input = torch.cat((interaction_emb, emb1), dim=-1)
+                    use_time_emb = torch.zeros(batch_size, seq_len, dim_question).to(self.params["device"])
+                if self.has_num_hint:
+                    num_hint_emb = self.embed_num_hint(batch["num_hint_seq"])
+                else:
+                    num_hint_emb = torch.zeros(batch_size, seq_len, dim_question).to(self.params["device"])
+                if self.has_num_attempt:
+                    num_attempt_emb = self.embed_num_hint(batch["num_attempt_seq"])
+                else:
+                    num_attempt_emb = torch.zeros(batch_size, seq_len, dim_question).to(self.params["device"])
+                ut_nh_na_emb = torch.cat((use_time_emb, num_hint_emb, num_attempt_emb), dim=-1)
+                ut_nh_na_emb = self.fuse_ut_nh_na(ut_nh_na_emb)
+                encoder_input = torch.cat((interaction_emb, ut_nh_na_emb * weight_aux_emb), dim=-1)
 
         else:
             encoder_input = interaction_emb

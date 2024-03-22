@@ -9,7 +9,7 @@ from lib.util.data import *
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="algebra2005",
+    parser.add_argument("--dataset_name", type=str, default="junyi2015",
                         choices=("assist2009", "assist2009-full", "assist2012", "assist2015", "assist2017",
                                  "algebra2005", "algebra2006", "algebra2008",
                                  "bridge2algebra2006", "bridge2algebra2008",
@@ -26,12 +26,14 @@ if __name__ == "__main__":
         "data_path": objects["file_manager"].get_dataset_raw_path(params["dataset_name"])
     }
 
+    print(f"processing {params['dataset_name']} ...")
     data_processor = DataProcessor(params, objects)
     data_uniformed = data_processor.process_data()
     Q_table = data_processor.Q_table
     data_statics_raw = data_processor.statics_raw
     data_statics_preprocessed = data_processor.statics_preprocessed
 
+    print(f"saving data of {params['dataset_name']} ...")
     objects["file_manager"].save_data_statics_raw(data_statics_raw, params["dataset_name"])
     dataset_name = params["dataset_name"]
     for k in data_uniformed:
@@ -46,3 +48,4 @@ if __name__ == "__main__":
 
     all_id_maps = data_processor.get_all_id_maps()
     objects["file_manager"].save_data_id_map(all_id_maps, dataset_name)
+    print(f"finsh processing and saving successfully")

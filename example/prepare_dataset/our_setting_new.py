@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     params["setting_name"] = "our_setting_new"
     if params["dataset_name"] in ["assist2012", "assist2017", "edi2020-task34", "edi2020-task1", "statics2011",
-                                  "slepemapy", "junyi2015"]:
+                                  "slepemapy", "junyi2015", "SLP-his", "SLP-phy"]:
         params["data_type"] = "single_concept"
     else:
         params["data_type"] = "only_question"

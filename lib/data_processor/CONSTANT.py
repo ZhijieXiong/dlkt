@@ -13,7 +13,7 @@ def datasets_useful_cols(datasets_merged=None):
         "slepemapy": ["user", "item_asked", "item_answered", "context_name", "type", "time", "response_time",
                       "ip_country", "locations_asked"],
         "statics2011": ["Anon Student Id", "Problem Hierarchy", "Problem Name", "Step Name", "First Attempt",
-                        "First Transaction Time", "Hints", "Step Duration (sec)"]
+                        "First Transaction Time", "Hints"]
     }
     algebra2005 = ["Anon Student Id", "Problem Name", "Step Name", "First Transaction Time", "Correct First Attempt",
                    "Hints", "Step Duration (sec)"]
@@ -85,7 +85,6 @@ def datasets_renamed(datasets_merged=None):
             "Anon Student Id": "user_id",
             "Problem Hierarchy": "concept_id",
             "First Transaction Time": "timestamp",
-            "Step Duration (sec)": "use_time",
             "First Attempt": "correct",
             "Hints": "num_hint"
         },
@@ -144,7 +143,7 @@ def datasets_seq_keys(datasets_merged=None):
         "edi2020-task34": ["question_seq", "concept_seq", "correct_seq", "time_seq", "age_seq"],
         "SLP": ["question_seq", "concept_seq", "correct_seq", "time_seq", "question_mode_seq", "correct_float_seq"],
         "slepemapy": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],
-        "statics2011": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq", "num_hint_seq"],
+        "statics2011": ["question_seq", "concept_seq", "correct_seq", "time_seq", "num_hint_seq"],
         "ednet-kt1": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],
         "algebra2005": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq", "num_hint_seq"],
         "junyi2015": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq", "use_time_first_seq",

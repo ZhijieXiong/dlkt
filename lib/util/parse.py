@@ -244,10 +244,35 @@ def get_high_dis_qc(data_uniformed, params, objects):
     return concepts_high_distinction, questions_high_distinction
 
 
-def get_concept_mastery(Q_table):
-    def concept_mastery(x):
-        return round(1 / (1 + math.exp(-(x - 2))), 4)
+def get_statics4lbkt(data_uniformed, use_use_time_first=True):
+    use_time_dict = {}
+    num_attempt_dict = {}
+    num_hint_dict = {}
+    for item_data in data_uniformed:
+        for i in range(item_data["seq_len"]):
+            q_id = item_data["question_seq"][i]
+            if not use_use_time_first:
+                # 有些数据集没有use_time_first_attempt，所以使用use_time代替
+                use_time_first = item_data["use_time_seq"][i]
+            else:
+                use_time_first = item_data["use_time_first_seq"][i]
+            num_attempt = item_data["num_attempt_seq"][i]
+            num_hint = item_data["num_hint_seq"][i]
 
-    num_concept = Q_table.shape[1]
-    num_max_concept = int(max(Q_table.sum(axis=1)))
-    pass
+            if use_time_first > 0:
+                use_time_dict.setdefault(q_id, [])
+                use_time_dict[q_id].append(use_time_first)
+
+            if num_attempt >= 0:
+                num_attempt_dict.setdefault(q_id, [])
+                num_attempt_dict[q_id].append(num_attempt)
+
+            if num_hint >= 0:
+                num_hint_dict.setdefault(q_id, [])
+                num_hint_dict[q_id].append(num_hint)
+    use_time_mean_dict = {k: np.mean(v) for k, v in use_time_dict.items()}
+    use_time_std_dict = {k: np.var(v) for k, v in use_time_dict.items()}
+    num_attempt_mean_dict = {k: np.mean(v) for k, v in num_attempt_dict.items()}
+    num_hint_mean_dict = {k: np.mean(v) for k, v in num_hint_dict.items()}
+
+    return use_time_mean_dict, use_time_std_dict, num_attempt_mean_dict, num_hint_mean_dict

@@ -6,7 +6,7 @@
   fold=0
 
   dropouts='0.1'
-  weights_decay='0.0001 0.00001 0.000001'
+  weights_decay='0.0001 0.00001 0.000001 0'
   dims_question=(64 128)
   dims_latent=(64 128)
   nums_predict_layer=(2 3)

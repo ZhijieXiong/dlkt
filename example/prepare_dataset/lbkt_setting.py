@@ -9,10 +9,9 @@ from scipy.stats import poisson
 import config
 
 from lib.util.FileManager import FileManager
-from lib.util.parse import parse_data_type, get_keys_from_uniform
+from lib.util.parse import parse_data_type, get_keys_from_uniform, get_statics4lbkt
 from lib.util.data import read_preprocessed_file, drop_qc, write2file
 from lib.dataset.split_seq import dataset_truncate2multi_seq
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -69,37 +68,16 @@ if __name__ == "__main__":
                 for k in seq_keys:
                     item_data_new[k].append(item_data[k][i])
             item_data_new["seq_len"] = len(item_data_new["question_seq"])
-            data_dropped.append(item_data_new)
+            if item_data_new["seq_len"] > 1:
+                data_dropped.append(item_data_new)
         print(f"num of interaction dropped: {num_dropped}")
         data_uniformed = data_dropped
 
     # 生成time、hint和attempt factor
-    use_time_dict = {}
-    num_attempt_dict = {}
-    num_hint_dict = {}
-    for item_data in data_uniformed:
-        for i in range(item_data["seq_len"]):
-            q_id = item_data["question_seq"][i]
-            if params["dataset_name"] == "assist2017":
-                # 论文并没有使用这个数据集，但是因为该数据集中有hint和attempt数据以及时间数据，所以也一起处理了
-                # 不过该数据集use_time_first_attempt不好提取，所以使用use_time代替
-                use_time_first = item_data["use_time_seq"][i]
-            else:
-                use_time_first = item_data["use_time_first_seq"][i]
-            num_attempt = item_data["num_attempt_seq"][i]
-            num_hint = item_data["num_hint_seq"][i]
-
-            use_time_dict.setdefault(q_id, [])
-            num_attempt_dict.setdefault(q_id, [])
-            num_hint_dict.setdefault(q_id, [])
-
-            use_time_dict[q_id].append(use_time_first)
-            num_attempt_dict[q_id].append(num_attempt)
-            num_hint_dict[q_id].append(num_hint)
-    use_time_mean_dict = {k: np.mean(v) for k, v in use_time_dict.items()}
-    use_time_std_dict = {k: np.var(v) for k, v in use_time_dict.items()}
-    num_attempt_mean_dict = {k: np.mean(v) for k, v in num_attempt_dict.items()}
-    num_hint_mean_dict = {k: np.mean(v) for k, v in num_hint_dict.items()}
+    use_time_mean_dict, use_time_std_dict, num_attempt_mean_dict, num_hint_mean_dict = \
+        get_statics4lbkt(
+            data_uniformed, use_time_first=params["dataset_name"] in ["assist2009", "assist2012", "junyi2015"]
+        )
     for item_data in data_uniformed:
         time_factor_seq = []
         attempt_factor_seq = []
@@ -146,9 +124,12 @@ if __name__ == "__main__":
     data_valid = data_uniformed[n1:n2]
     data_test = data_uniformed[n2:]
 
-    dataset_train = dataset_truncate2multi_seq(data_train, params["min_seq_len"], params["max_seq_len"], single_concept=True)
-    dataset_valid = dataset_truncate2multi_seq(data_valid, params["min_seq_len"], params["max_seq_len"], single_concept=True)
-    dataset_test = dataset_truncate2multi_seq(data_test, params["min_seq_len"], params["max_seq_len"], single_concept=True)
+    dataset_train = dataset_truncate2multi_seq(data_train, params["min_seq_len"], params["max_seq_len"],
+                                               single_concept=True)
+    dataset_valid = dataset_truncate2multi_seq(data_valid, params["min_seq_len"], params["max_seq_len"],
+                                               single_concept=True)
+    dataset_test = dataset_truncate2multi_seq(data_test, params["min_seq_len"], params["max_seq_len"],
+                                              single_concept=True)
     setting_dir = objects["file_manager"].get_setting_dir(params["lab_setting"]["name"])
     write2file(dataset_train, os.path.join(setting_dir, f"{params['dataset_name']}_train.txt"))
     write2file(dataset_valid, os.path.join(setting_dir, f"{params['dataset_name']}_valid.txt"))

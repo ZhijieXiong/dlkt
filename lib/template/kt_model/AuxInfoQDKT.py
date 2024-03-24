@@ -23,7 +23,7 @@ MODEL_PARAMS = {
           "dim_predict_in": 64,
           "dim_predict_mid": 128,
           "dim_predict_out": 123,
-          "activate_type": "sigmoid"
+          "activate_type": "relu"
         },
         "product": {
 

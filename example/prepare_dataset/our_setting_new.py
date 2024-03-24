@@ -12,7 +12,7 @@ from lib.dataset.split_dataset import n_fold_split2
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="junyi2015",
+    parser.add_argument("--dataset_name", type=str, default="statics2011",
                         choices=("assist2009", "assist2012", "assist2017", "edi2020-task1", "edi2020-task34",
                                  "ednet-kt1", "xes3g5m", "algebra2005", "bridge2algebra2006", "statics2011",
                                  "slepemapy", "junyi2015", "SLP-his", "SLP-phy"))

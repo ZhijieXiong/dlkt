@@ -1,35 +1,11 @@
 #!/usr/bin/env bash
 
-python F:/code/myProjects/dlkt/example/preprocess.py --dataset_name "statics2011"
-python F:/code/myProjects/dlkt/example/preprocess.py --dataset_name "SLP-bio"
-python F:/code/myProjects/dlkt/example/preprocess.py --dataset_name "SLP-chi"
-python F:/code/myProjects/dlkt/example/preprocess.py --dataset_name "SLP-eng"
-python F:/code/myProjects/dlkt/example/preprocess.py --dataset_name "SLP-geo"
-python F:/code/myProjects/dlkt/example/preprocess.py --dataset_name "SLP-phy"
-python F:/code/myProjects/dlkt/example/preprocess.py --dataset_name "SLP-his"
-python F:/code/myProjects/dlkt/example/preprocess.py --dataset_name "SLP-mat"
-python F:/code/myProjects/dlkt/example/preprocess.py --dataset_name "algebra2005"
-python F:/code/myProjects/dlkt/example/preprocess.py --dataset_name "algebra2006"
-python F:/code/myProjects/dlkt/example/preprocess.py --dataset_name "algebra2008"
-python F:/code/myProjects/dlkt/example/preprocess.py --dataset_name "bridge2algebra2006"
-python F:/code/myProjects/dlkt/example/preprocess.py --dataset_name "bridge2algebra2008"
-python F:/code/myProjects/dlkt/example/preprocess.py --dataset_name "junyi2015"
-
-
-python F:/code/myProjects/dlkt/example/prepare_dataset/our_setting_new.py --dataset_name "assist2009"
-python F:/code/myProjects/dlkt/example/prepare_dataset/our_setting_new.py --dataset_name "assist2012"
-python F:/code/myProjects/dlkt/example/prepare_dataset/our_setting_new.py --dataset_name "assist2017"
-python F:/code/myProjects/dlkt/example/prepare_dataset/our_setting_new.py --dataset_name "edi2020-task1"
-python F:/code/myProjects/dlkt/example/prepare_dataset/our_setting_new.py --dataset_name "edi2020-task34"
-python F:/code/myProjects/dlkt/example/prepare_dataset/our_setting_new.py --dataset_name "SLP-his"
-python F:/code/myProjects/dlkt/example/prepare_dataset/our_setting_new.py --dataset_name "SLP-phy"
-python F:/code/myProjects/dlkt/example/prepare_dataset/our_setting_new.py --dataset_name "ednet-kt1"
-python F:/code/myProjects/dlkt/example/prepare_dataset/our_setting_new.py --dataset_name "statics2011"
-python F:/code/myProjects/dlkt/example/prepare_dataset/our_setting_new.py --dataset_name "algebra2005"
-python F:/code/myProjects/dlkt/example/prepare_dataset/our_setting_new.py --dataset_name "bridge2algebra2006"
-python F:/code/myProjects/dlkt/example/prepare_dataset/our_setting_new.py --dataset_name "slepemapy"
-python F:/code/myProjects/dlkt/example/prepare_dataset/our_setting_new.py --dataset_name "xes3g5m"
-python F:/code/myProjects/dlkt/example/prepare_dataset/our_setting_new.py --dataset_name "junyi2015"
-
-python F:/code/myProjects/dlkt/example/prepare_dataset/lbkt_setting.py --dataset_name "junyi2015"
-bash F:/code/myProjects/dlkt/example/script_local/our_setting_new.sh
+bash F:/code/myProjects/dlkt/example/script_local/our_setting_new/aux-info-qdkt/assist2009_fold_0_ob.sh
+bash F:/code/myProjects/dlkt/example/script_local/our_setting_new/aux-info-qdkt/assist2012_fold_0_ob.sh
+bash F:/code/myProjects/dlkt/example/script_local/our_setting_new/aux-info-qdkt/assist2017_fold_0_ob.sh
+bash F:/code/myProjects/dlkt/example/script_local/our_setting_new/aux-info-qdkt/edi2020-task1_fold_0_ob.sh
+bash F:/code/myProjects/dlkt/example/script_local/our_setting_new/aux-info-qdkt/edi2020-task34_fold_0_ob.sh
+bash F:/code/myProjects/dlkt/example/script_local/our_setting_new/aux-info-qdkt/ednet-kt1_fold_0_ob.sh
+bash F:/code/myProjects/dlkt/example/script_local/our_setting_new/aux-info-qdkt/slepemapy_fold_0_ob.sh
+bash F:/code/myProjects/dlkt/example/script_local/our_setting_new/aux-info-qdkt/statics2011_fold_0_ob.sh
+bash F:/code/myProjects/dlkt/example/script_local/our_setting_new/aux-info-qdkt/xes3g5m_fold_0_ob.sh

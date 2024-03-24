@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 {
-  dataset_name="assist2017"
+  dataset_name="edi2020-task34"
   data_type="single_concept"
   fold=0
 
@@ -10,7 +10,7 @@
   dims_question=(64 128)
   dims_latent=(64 128)
   nums_predict_layer=(2 3)
-  weights_aux_emb='0.3 0.5'
+  weights_aux_emb='0.5'
   for weight_decay in ${weights_decay}
   do
     for weight_aux_emb in ${weights_aux_emb}
@@ -34,7 +34,7 @@
                 --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type MultiStepLR --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
                 --train_batch_size 64 --evaluate_batch_size 256 \
                 --enable_clip_grad False --grad_clipped 10.0 \
-                --num_concept 101 --num_question 2803 \
+                --num_concept 53 --num_question 948 \
                 --weight_aux_emb "${weight_aux_emb}" --dim_question "${dim_question}" --dim_latent "${dim_latent}" --rnn_type "gru" --num_rnn_layer 1 --dropout "${dropout}" \
                 --num_predict_layer "${num_predict_layer}" --dim_predict_mid 128 --activate_type "relu" \
                 --save_model False --debug_mode False --use_cpu False --seed 0
@@ -44,4 +44,4 @@
       done
     done
   done
-} >> F:/code/myProjects/dlkt/example/result_local/aux-info-qdkt_our_setting_new_assist2017_fold_0_ob.txt
+} >> F:/code/myProjects/dlkt/example/result_local/aux-info-qdkt_our_setting_new_edi2020-task34_fold_0_ob.txt

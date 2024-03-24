@@ -6,11 +6,11 @@
   fold=0
 
   dropouts='0.1 0.2 0.3'
-  weights_decay='0.0001 0.00001 0.000001'
+  weights_decay='0.0001 0.00001 0.000001 0'
   dims_question=(64 128)
   dims_latent=(64 128)
   nums_predict_layer=(2 3)
-  weights_aux_emb='0.3 0.5 0.7 1'
+  weights_aux_emb='0.1 0.3 0.5 0.7 1'
   for weight_decay in ${weights_decay}
   do
     for weight_aux_emb in ${weights_aux_emb}

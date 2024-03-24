@@ -23,8 +23,7 @@ HAS_TIME = ["assist2012", "assist2017", "junyi2015", "slepemapy", "ednet-kt1", "
             "algebra2005", "algebra2006", "algebra2008", "bridge2algebra2006", "bridge2algebra2008", "xes3g5m",
             "statics2011"]
 HAS_USE_TIME = ["assist2012", "assist2009", "assist2017", "junyi2015", "slepemapy", "ednet-kt1", "algebra2005",
-                "bridge2algebra2006", "statics2011", "SLP-chi", "SLP-his", "SLP-mat", "SLP-geo", "SLP-eng", "SLP-phy",
-                "SLP-bio"]
+                "bridge2algebra2006", "SLP-chi", "SLP-his", "SLP-mat", "SLP-geo", "SLP-eng", "SLP-phy", "SLP-bio"]
 HAS_NUM_HINT = ["assist2012", "assist2009", "assist2017", "junyi2015", "algebra2005", "bridge2algebra2006", "statics2011"]
 HAS_NUM_ATTEMPT = ["assist2012", "assist2009", "assist2017", "junyi2015"]
 HAS_AGE = ["edi2020-task1", "edi2020-task34"]

@@ -910,9 +910,6 @@ class DataProcessor:
         # num_hint无nan，无<0的值
         df["num_hint"] = df["num_hint"].fillna(0)
         df["num_hint"] = df["num_hint"].map(lambda n: n if (0 <= n < 100) else 99)
-        # use_time无nan，有4368个未知值，无<0的值，0表示未知
-        df["use_time"] = df["use_time"].fillna(0)
-        df["use_time"] = df["use_time"].map(lambda t: min(max(1, math.ceil(float(t))), 60 * 60) if (t != ".") else 0)
 
         def replace_text(text):
             text = text.replace("_", "####").replace(",", "@@@@")
@@ -962,7 +959,7 @@ class DataProcessor:
         df["user_id"] = df["user_id"].map({u_id: i for i, u_id in enumerate(user_ids)})
 
         self.data_preprocessed["single_concept"] = df[
-            ["user_id", "timestamp", "concept_id", "correct", "question_id", "num_hint", "use_time"]
+            ["user_id", "timestamp", "concept_id", "correct", "question_id", "num_hint"]
         ]
         self.statics_preprocessed["single_concept"] = DataProcessor.get_basic_info(
             self.data_preprocessed["single_concept"])
@@ -1403,7 +1400,6 @@ class DataProcessor:
             "question_seq": "question_id",
             "concept_seq": "concept_id",
             "correct_seq": "correct",
-            "use_time_seq": "use_time",
             "time_seq": "timestamp",
             "num_hint_seq": "num_hint"
         }

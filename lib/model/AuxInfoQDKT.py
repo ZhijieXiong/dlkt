@@ -1,5 +1,3 @@
-import torch
-
 from .util import *
 from .Module.KTEmbedLayer import KTEmbedLayer
 from .Module.PredictorLayer import PredictorLayer

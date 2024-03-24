@@ -163,4 +163,3 @@ def show_sample(sample, print_all_predict=False):
         if key in sample:
             _key = KEY_MAP.get(key, key)
             print("{}: {}".format(_key, repr(sample[key])))
-    print()

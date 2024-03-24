@@ -22,7 +22,7 @@
 | bridge2algebra2008 |      T      |     T      |    T    |     T     |          |      |      |         |
 |     junyi2015      |      T      |     T      |    T    |     T     |    T     |      |  T   |    T    |
 |      xes3g5m       |      T      |     T      |    T    |     T     |          |      |      |         |
-|    statics2011     |      T      |            |    T    |     T     |          |      |      |         |
+|    statics2011     |      T      |     T      |    T    |     T     |          |      |      |         |
 |     slepemapy      |      T      |     T      |    T    |     T     |    T     |      |      |         |
 |      SLP-bio       |      T      |     T      |    T    |           |          |      |      |         |
 |      SLP-chi       |      T      |     T      |    T    |           |          |      |      |         |
@@ -109,7 +109,7 @@
 |    SLP-his     |    296711    |   1610    |    22    |   1251    |
 |    SLP-mat     |    242722    |   1499    |    44    |   1127    |
 |    SLP-phy     |    107288    |    664    |    54    |   1915    |
-|   junyi2015    |   25925987   |  247606   |    39    |    722    |
+|   junyi2015    |   25925987   |  247606   |    40    |    817    |
 
 ### after preprocessing (for multi concept datasets)
 

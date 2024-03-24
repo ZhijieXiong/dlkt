@@ -1,8 +1,12 @@
-from keys import openai_key as OPENAI_KEY
-
 from xes3g5m_process import *
-
 from openai import OpenAI
+import os
+import json
+import inspect
+
+with open(os.path.join(os.path.dirname(inspect.getfile(inspect.currentframe())), "../../keys.json"), "r") as f:
+    KEYS = json.load(f)
+OPENAI_KEY = KEYS["openai_key_from_lwd2hzhp"]
 
 
 def demo():

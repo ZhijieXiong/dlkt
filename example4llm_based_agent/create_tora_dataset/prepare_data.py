@@ -1,6 +1,5 @@
 import argparse
 import json
-from tqdm import tqdm
 from parse import *
 
 from utils import prepare_data, construct_prompt, show_sample
@@ -12,29 +11,32 @@ from eval import math_equal
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
+    # 数据位置参数
     parser.add_argument("--data_dir", type=str,
                         default="/Users/dream/Desktop/code/projects/dlkt/lab/math_dataset/dataset_raw")
     parser.add_argument("--data_name", type=str, default="gsm8k")
     parser.add_argument("--split", type=str, default="test")
     parser.add_argument("--prompt_dir", type=str,
                         default="/Users/dream/Desktop/code/projects/dlkt/prompt_template/tora")
-
-    parser.add_argument("--model_name_or_path", type=str, default="gpt-4")
     parser.add_argument("--output_dir", type=str,
                         default="/Users/dream/Desktop/code/projects/dlkt/lab/math_dataset/tora")
-    parser.add_argument("--prompt_type", type=str, default="tora")
 
-    parser.add_argument("--num_test_sample", type=int, default=-1, help="-1 for full data")
+    # tora参数
+    parser.add_argument("--prompt_type", type=str, default="tora")
+    parser.add_argument("--num_test_sample", type=int, default=10, help="-1 for full data")
+    parser.add_argument("--use_train_prompt_format", action="store_true")
     parser.add_argument("--seed", type=int, default=0)
 
+    # api参数
+    parser.add_argument("--model_name_or_path", type=str, default="gpt-3.5-turbo")
     parser.add_argument("--temperature", type=float, default=0)
     parser.add_argument("--n_sampling", type=int, default=1)
     parser.add_argument("--top_p", type=float, default=1)
     parser.add_argument("--max_tokens_per_call", type=int, default=1024)
-    parser.add_argument("--use_train_prompt_format", action="store_true")
-    args = parser.parse_args()
 
+    args = parser.parse_args()
     params = vars(args)
+
     examples, processed_samples, out_file_path = prepare_data(params)
 
     # init python executor
@@ -46,16 +48,17 @@ if __name__ == "__main__":
     writer = open(out_file_path, 'w')
     correct, wrong = 0, 0
 
-    for example in tqdm(examples, total=len(examples)):
+    for example in examples:
         idx = example['idx']
         example['question'] = parse_question(example, params["data_name"])
+        # gt_cot是数据集中的推理过程，gt_ans是从gt_cot中提取的答案，即标签
         gt_cot, gt_ans = parse_ground_truth(example, params["data_name"])
         full_prompt = construct_prompt(params, example)
 
-        # call LLM, return list
+        # results的element是chatgpt的输出（不包含prompt），内容是python程序（可能有）和用box包含的答案，数量为params["n_sampling"]
         if "tora" in params["prompt_type"]:
             results = api_with_func_call(
-                engine=params["model_name_or_path"],
+                model_name=params["model_name_or_path"],
                 prompt=full_prompt,
                 max_tokens=params["max_tokens_per_call"],
                 temperature=params["temperature"],
@@ -69,7 +72,7 @@ if __name__ == "__main__":
                 stop_tokens.append("\n\n")
             # use your own API like OpenAI API
             results = llm_api(
-                engine=params["model_name_or_path"],
+                model_name=params["model_name_or_path"],
                 prompt=full_prompt,
                 max_tokens=params["max_tokens_per_call"],
                 temperature=params["temperature"],
@@ -83,41 +86,42 @@ if __name__ == "__main__":
             print(">>> Error API call")
             continue
 
-        print("Get {} results".format(len(results)))
         # get prediction
         predictions = []
         reports = []
         for r in results:
-            pred, report = run_execute(executor, r, args.prompt_type, execute=True)
+            pred, report = run_execute(executor, r, params["prompt_type"], execute=True)
             predictions.append(pred)
             reports.append(report)
-        print("Executed {} results".format(len(predictions)))
 
         scores = [math_equal(p, gt_ans, timeout=True) for p in predictions]
-
-        is_correct = scores[0]
-        if is_correct:
+        if scores[0]:
             correct += 1
         else:
             wrong += 1
 
-        sample = {'idx': idx, 'question': example['question'], 'gt_cot': gt_cot, 'gt': gt_ans,
-                  'pred': predictions, 'score': scores}
+        sample = {
+            'idx': idx,
+            'question': example['question'],
+            'gt_cot': gt_cot,
+            'gt': gt_ans,
+            'pred': predictions,
+            'score': scores
+        }
 
-        if args.prompt_type == "cot":
+        if params["prompt_type"] == "cot":
             sample.update({'code': results})
-        elif "tora" in args.prompt_type or "pal" in args.prompt_type:
+        elif "tora" in params["prompt_type"] or "pal" in params["prompt_type"]:
             sample.update({'report': reports, 'code': results})
-        # add remain fields
+
         for key in ['level', 'type', 'unit', 'solution_type', 'choices', 'solution', 'ques_type', 'ans_type', 'answer_type', 'dataset', 'subfield', 'filed', 'theorem', 'answer']:
             if key in example:
                 sample[key] = example[key]
 
-        print(idx)
         show_sample(sample)
         if correct + wrong > 0:
-            print("Avg Acc:", correct / (correct + wrong))
-        print()
+            print(f"Average accuracy of chatgpt currently: {correct / (correct + wrong)}")
+        print("==" * 20)
 
         try:
             writer.write(json.dumps(sample) + '\n')

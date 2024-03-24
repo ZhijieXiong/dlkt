@@ -1,9 +1,14 @@
 from tenacity import retry, wait_random_exponential, stop_after_attempt
+from xes3g5m_process import *
 import requests
 import tiktoken
+import os
+import json
+import inspect
 
-from xes3g5m_process import *
-from keys import jiujiuai_api_key
+with open(os.path.join(os.path.dirname(inspect.getfile(inspect.currentframe())), "../../keys.json"), "r") as f:
+    KEYS = json.load(f)
+API_KEY = KEYS["jiujiuai_api_key"]
 
 # cl100k_base: gpt-4, gpt-3.5-turbo, text-embedding-ada-002
 # p50k_base: Codex models, text-davinci-002, text-davinci-003
@@ -17,7 +22,7 @@ def call_chatgpt(chatgpt_messages, max_tokens=4000, model="gpt-3.5-turbo"):
     headers = {
         "Content-Type": "application/json",
         # "Authorization": "Bearer sk-XHx1xQu7iM5kmgYVFd08Ce8f3e5a4dEa8c2c00Bf62225244"
-        "Authorization": jiujiuai_api_key
+        "Authorization": API_KEY
     }
 
     data = {
@@ -39,7 +44,7 @@ def call_chatgpt_vision(chatgpt_messages, max_tokens=4000):
     headers = {
         "Content-Type": "application/json",
         # "Authorization": "Bearer sk-XHx1xQu7iM5kmgYVFd08Ce8f3e5a4dEa8c2c00Bf62225244"
-        "Authorization": jiujiuai_api_key
+        "Authorization": API_KEY
     }
 
     data = {
@@ -61,7 +66,7 @@ def call_chatgpt_embedding(text, max_tokens=8000):
     headers = {
         "Content-Type": "application/json",
         # "Authorization": "Bearer sk-XHx1xQu7iM5kmgYVFd08Ce8f3e5a4dEa8c2c00Bf62225244"
-        "Authorization": jiujiuai_api_key
+        "Authorization": API_KEY
     }
 
     data = {

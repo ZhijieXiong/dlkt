@@ -15,19 +15,19 @@ This algorithm library was developed inspired by `pyKT` (the code repository cor
 
 - The Comparison with `pyKT`
 
-|                                                              | DLKT  | pyKT  |
-| ------------------------------------------------------------ | ----- | ----- |
+|                           Content                            | DLKT  | pyKT  |
+| :----------------------------------------------------------: | ----- | ----- |
 | Arbitrary Experimental Settings (Data Processing, Dataset  Partitioning, ...) | True  | False |
 | Mainstream Knowledge Tracing Model (DKT, DKVMN, AKT, LPKT, ...) | True  | True  |
-| Knowledge Tracing Model  Training Based on Concepts          | True  | True  |
-| Knowledge Tracing Model Training Based on Questions          | True  | True  |
-| Knowledge Tracing Model  Evaluating Based on Concepts        | True  | True  |
-| Knowledge Tracing Model  Evaluating Based on Questions       | True  | True  |
-| Fine-grained Metrics (Cold Start, Long Tail, ...)            | True  | False |
+|     Knowledge Tracing Model  Training Based on Concepts      | True  | True  |
+|     Knowledge Tracing Model Training Based on Questions      | True  | True  |
+|    Knowledge Tracing Model  Evaluating Based on Concepts     | True  | True  |
+|    Knowledge Tracing Model  Evaluating Based on Questions    | True  | True  |
+|      Fine-grained Metrics (Cold Start, Long Tail, ...)       | True  | False |
 | Knowledge Tracing Model Training Similar to Sequential Recommendation System | True  | False |
-| Cognitive Diagnosis Task                                     | True  | False |
+|                   Cognitive Diagnosis Task                   | True  | False |
 |                                                              |       |       |
-| Wandb                                                        | False | True  |
+|                            Wandb                             | False | True  |
 
 # Experiement Results
 
@@ -90,24 +90,9 @@ This algorithm library was developed inspired by `pyKT` (the code repository cor
 
 # Referrence
 
-[papers](md_doc/MODELS.md)
+- [paper](md_doc/MODELS.md)
 
-[datasets](md_doc/KT_DATASETS.md)
-
-1. https://github.com/pykt-team/pykt-toolkit
-2. https://github.com/bigdata-ustc/EduKTM
-3. https://github.com/bigdata-ustc/EduData
-4. https://github.com/arghosh/AKT
-5. https://github.com/xiaopengguo/ATKT
-6. https://github.com/shshen-closer/DIMKT
-7. https://github.com/UpstageAI/cl4kt
-8. https://github.com/yxonic/DTransformer
-9. https://github.com/garyzhao/ME-ADA
-10. https://github.com/RuihongQiu/DuoRec
-11. https://github.com/salesforce/ICLRec
-12. https://github.com/YChen1993/CoSeRec
-13. https://github.com/rlqja1107/MELT
-14. https://github.com/QinHsiu/MCLRec
+- [dataset](md_doc/KT_DATASETS.md)
 
 # Quick-Start
 

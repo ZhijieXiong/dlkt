@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--target_file_path", type=str,
                         help="用于从数据中提取信息，如每道习题出现的频率（长尾问题），准确率（偏差问题）",
-                        default=r"F:\code\myProjects\dlkt\lab\settings\pykt_question_setting\assist2009_test.txt")
+                        default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new\assist2009_train_fold_0.txt")
     # 数据集信息
     parser.add_argument("--preprocessed_dir", type=str, default=r"F:\code\myProjects\dlkt\lab\dataset_preprocessed")
     parser.add_argument("--dataset_name", type=str, default="assist2009")
@@ -92,7 +92,10 @@ if __name__ == "__main__":
     parser.add_argument("--num_concept", type=int, default=123)
     parser.add_argument("--num_question", type=int, default=17751)
     # 划分知识点和习题频率为低中高所用的参数，用于研究长尾问题
-    parser.add_argument("--use_absolute4fre", type=str2bool, default=False)
+    parser.add_argument("--use_absolute4fre", type=str2bool, default=False,
+                        help="划分时使用绝对值还是相对值，绝对值就是频次阈值是固定值，如大于100，小于10"
+                             "使用相对值就是频次阈值根据数据集决定，如出现频次最多的20%习题"
+                             "下面前4个参数就是对应use_absolute4fre为True，后面4个就是对应use_absolute4fre为False")
     parser.add_argument("--concept_fre_low_middle", type=int, default=100)
     parser.add_argument("--concept_fre_middle_high", type=int, default=1000)
     parser.add_argument("--question_fre_low_middle", type=int, default=5)
@@ -102,10 +105,10 @@ if __name__ == "__main__":
     parser.add_argument("--concept_fre_percent_lowest", type=float, default=0.2)
     parser.add_argument("--concept_fre_percent_highest", type=float, default=0.8)
     # 划分知识点和习题正确率为低中高所用的参数，用于研究偏差问题
-    parser.add_argument("--use_absolute4acc", type=str2bool, default=True)
-    parser.add_argument("--concept_acc_low_middle", type=int, default=20, help="单位%")
+    parser.add_argument("--use_absolute4acc", type=str2bool, default=True, help="同use_absolute4fre")
+    parser.add_argument("--concept_acc_low_middle", type=int, default=35, help="单位%")
     parser.add_argument("--concept_acc_middle_high", type=int, default=80, help="单位%")
-    parser.add_argument("--question_acc_low_middle", type=int, default=20, help="单位%")
+    parser.add_argument("--question_acc_low_middle", type=int, default=35, help="单位%")
     parser.add_argument("--question_acc_middle_high", type=int, default=80, help="单位%")
     parser.add_argument("--question_acc_percent_lowest", type=float, default=0.2)
     parser.add_argument("--question_acc_percent_highest", type=float, default=0.8)

@@ -19,7 +19,7 @@ folds=(0 1 2 3 4)
       --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type "MultiStepLR" --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
       --train_batch_size 64 --evaluate_batch_size 256 \
       --enable_clip_grad False --grad_clipped 10.0 \
-      --num_concept 101 --num_question 2803 \
+      --num_concept 53 --num_question 948 \
       --dim_question 96 --dim_correct 96 --dim_latent 96 --rnn_type "gru" --num_rnn_layer 3 --num_mlp_layer 2 --dropout 0.1 --que_user_share_proj False \
       --multi_stage True --test_theory "irt" \
       --w_que_diff_pred 0 --w_que_disc_pred 0 --w_user_ability_pred 0 --w_penalty_neg 0 --w_learning 0 --w_counter_fact 0 --w_q_table 0 \

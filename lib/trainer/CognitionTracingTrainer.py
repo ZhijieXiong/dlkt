@@ -47,6 +47,9 @@ class CognitionTracingTrainer(KnowledgeTracingTrainer):
 
                 self.question_concept.append((related_c_ids, unrelated_c_ids))
 
+    def pretrain_question_embed(self):
+        pass
+
     def multi_stage_train(self, batch, batch_question=None):
         grad_clip_config = self.params["grad_clip_config"]["kt_model"]
         optimizer = self.objects["optimizers"]["kt_model"]

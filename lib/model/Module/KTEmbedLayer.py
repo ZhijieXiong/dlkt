@@ -10,8 +10,8 @@ class KTEmbedLayer(nn.Module):
         self.objects = objects
 
         emb_config = self.params["models_config"]["kt_model"]["kt_embed_layer"]
-        use_LLM_emb4question = params["use_LLM_emb4question"]
-        use_LLM_emb4concept = params["use_LLM_emb4concept"]
+        use_LLM_emb4question = params.get("use_LLM_emb4question", False)
+        use_LLM_emb4concept = params.get("use_LLM_emb4concept", False)
         self.emb_dict = {}
         for k, v in emb_config.items():
             if k == "concept":

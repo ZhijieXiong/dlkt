@@ -94,9 +94,24 @@ def evaluate_bias(seq_biased_point):
                                seq_biased_point["high_acc_but_wrong"]["predict_score"]
     seq_biased_predict_label = seq_biased_point["low_acc_but_right"]["predict_label"] + \
                                seq_biased_point["high_acc_but_wrong"]["predict_label"]
+
+    if len(seq_biased_label) == 0:
+        return {
+            "num_sample": 0,
+            "AUC": -1.,
+            "ACC": -1.,
+            "RMSE": -1.,
+            "MAE": -1.
+        }
+
+    try:
+        AUC = roc_auc_score(y_true=seq_biased_label, y_score=seq_biased_predict_score)
+    except ValueError:
+        AUC = -1.
+
     result = {
         "num_sample": len(seq_biased_label),
-        "AUC": roc_auc_score(y_true=seq_biased_label, y_score=seq_biased_predict_score),
+        "AUC": AUC,
         "ACC": accuracy_score(y_true=seq_biased_label, y_pred=seq_biased_predict_label),
         "RMSE": mean_squared_error(y_true=seq_biased_label, y_pred=seq_biased_predict_score),
         "MAE": mean_absolute_error(y_true=seq_biased_label, y_pred=seq_biased_predict_score)
@@ -132,9 +147,23 @@ def evaluate_double_bias(seq_biased_point, statics_train):
             double_biased_predict_score.append(p_score)
             double_biased_predict_label.append(p_label)
 
+    if len(double_biased_label) == 0:
+        return {
+            "num_sample": 0,
+            "AUC": -1.,
+            "ACC": -1.,
+            "RMSE": -1.,
+            "MAE": -1.
+        }
+
+    try:
+        AUC = roc_auc_score(y_true=double_biased_label, y_score=double_biased_predict_score)
+    except ValueError:
+        AUC = -1.
+
     return {
         "num_sample": len(double_biased_label),
-        "AUC": roc_auc_score(y_true=double_biased_label, y_score=double_biased_predict_score),
+        "AUC": AUC,
         "ACC": accuracy_score(y_true=double_biased_label, y_pred=double_biased_predict_label),
         "RMSE": mean_squared_error(y_true=double_biased_label, y_pred=double_biased_predict_score),
         "MAE": mean_absolute_error(y_true=double_biased_label, y_pred=double_biased_predict_score)

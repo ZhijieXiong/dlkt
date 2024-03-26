@@ -28,14 +28,17 @@ def get_performance(item_list, item_pg_all):
     if len(ground_truth) == 0:
         return {
             "num_sample": 0,
-            "AUC": 0.,
-            "ACC": 0.,
-            "RMSE": 0.,
-            "MAE": 0.
+            "AUC": -1.,
+            "ACC": -1.,
+            "RMSE": -1.,
+            "MAE": -1.
         }
 
-    AUC = roc_auc_score(y_true=ground_truth, y_score=predict_score)
     predict_label = [1 if p >= 0.5 else 0 for p in predict_score]
+    try:
+        AUC = roc_auc_score(y_true=ground_truth, y_score=predict_score)
+    except ValueError:
+        AUC = -1.
     ACC = accuracy_score(y_true=ground_truth, y_pred=predict_label)
     MAE = mean_absolute_error(y_true=ground_truth, y_pred=predict_score)
     RMSE = mean_squared_error(y_true=ground_truth, y_pred=predict_score) ** 0.5
@@ -71,8 +74,20 @@ def get_performance_qc(question_list, concept_list, qc_pg_all):
         predict_score += p_list
         ground_truth += g_list
 
-    AUC = roc_auc_score(y_true=ground_truth, y_score=predict_score)
+    if len(ground_truth) == 0:
+        return {
+            "num_sample": 0,
+            "AUC": -1.,
+            "ACC": -1.,
+            "RMSE": -1.,
+            "MAE": -1.
+        }
+
     predict_label = [1 if p >= 0.5 else 0 for p in predict_score]
+    try:
+        AUC = roc_auc_score(y_true=ground_truth, y_score=predict_score)
+    except ValueError:
+        AUC = -1.
     ACC = accuracy_score(y_true=ground_truth, y_pred=predict_label)
     MAE = mean_absolute_error(y_true=ground_truth, y_pred=predict_score)
     RMSE = mean_squared_error(y_true=ground_truth, y_pred=predict_score) ** 0.5

@@ -164,6 +164,9 @@ class QIKT(nn.Module):
 
         return predict_score
 
+    def get_predict_score_seq_len_minus1(self, batch):
+        return self.forward(batch)[0]
+
     def get_predict_loss(self, batch, loss_record=None):
         loss_wight = self.params["loss_config"]
         use_irt = self.params["models_config"]["kt_model"]["encoder_layer"]["QIKT"]["use_irt"]

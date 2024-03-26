@@ -118,6 +118,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
 
+    print(f"prepare save_statics for `{params['dataset_name']}` ...")
+
     data = read_preprocessed_file(params["target_file_path"])
     # Q table，并解析Q table并得到相关数据
     preprocessed_dir = params["preprocessed_dir"]
@@ -207,3 +209,13 @@ if __name__ == "__main__":
 
     with open(statics_info_file_path, "w") as f:
         json.dump(save_statics, f)
+
+    for k, v in save_statics.items():
+        if k.startswith("question"):
+            num_item = params["num_question"]
+        elif k.startswith("concept"):
+            num_item = params["num_concept"]
+        else:
+            continue
+
+        print(f"{k:20}, num of item: {len(v):<8}, percent of all item: {len(v) / num_item * 100:.4}%")

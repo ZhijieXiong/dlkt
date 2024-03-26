@@ -136,8 +136,6 @@ class KnowledgeTracingTrainer:
             if best_epoch == current_epoch:
                 if save_model:
                     save_model_dir = self.params["save_model_dir"]
-                    model_path = os.path.join(save_model_dir, "kt_model.pth")
-                    torch.save(model, model_path)
                     model_weight_path = os.path.join(save_model_dir, "saved.ckt")
                     torch.save({"best_valid": model.state_dict()}, model_weight_path)
 

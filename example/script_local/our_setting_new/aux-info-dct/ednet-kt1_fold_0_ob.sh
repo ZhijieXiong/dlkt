@@ -5,13 +5,23 @@
   data_type="only_question"
   fold=0
 
-  dropouts='0.1'
-  weights_decay='0.0001 0.00001 0.000001 0'
-  dims_question=(64 128)
-  dims_latent=(64 128)
-  nums_rnn_layer=(1 2 3)
-  nums_mlp_layer=(1 2 3)
-  weights_aux_emb='0.5'
+  # 第1阶段粗调
+  # weight_decay: 0.00001, weight_aux_emb: 0.5, dim_question: 64, dim_latent: 128, num_rnn_layer: 3, num_mlp_layer: 1, dropout: 0.1
+#  dropouts='0.1'
+#  weights_decay='0.0001 0.00001 0.000001 0'
+#  dims_question=(64 128)
+#  dims_latent=(64 128)
+#  nums_rnn_layer=(1 2 3)
+#  nums_mlp_layer=(1 2 3)
+#  weights_aux_emb='0.5'
+  # 第2阶段微调
+  dropouts='0.1 0.2 0.3'
+  weights_decay='0.00001'
+  dims_question=(64)
+  dims_latent=(128)
+  nums_rnn_layer=(3)
+  nums_mlp_layer=(1)
+  weights_aux_emb='0.1 0.3 0.5 0.7 1'
   for weight_decay in ${weights_decay}
   do
     for weight_aux_emb in ${weights_aux_emb}
@@ -48,4 +58,4 @@
       done
     done
   done
-} >> F:/code/myProjects/dlkt/example/result_local/aux-info-dct_not-share_our_setting_new_ednet-kt1_fold_0_ob.txt
+} >> F:/code/myProjects/dlkt/example/result_local/aux-info-dct_not-share_our_setting_new_ednet-kt1_fold_0_ob2.txt

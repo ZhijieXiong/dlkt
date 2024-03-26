@@ -11,8 +11,7 @@
   dims_latent=(64 128)
   nums_predict_layer=(2 3)
   weights_aux_emb='0.1 0.3 0.5 0.7 1'
-  # 1
-  nums_rnn_layer=(2 3)
+  nums_rnn_layer=(1 2 3)
   for weight_decay in ${weights_decay}
   do
     for weight_aux_emb in ${weights_aux_emb}

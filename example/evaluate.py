@@ -1,11 +1,10 @@
 import argparse
-import os
-import torch
 
 from torch.utils.data import DataLoader
 
 from evaluate_config import evaluate_general_config
 
+from lib.util.load_model import load_kt_model
 from lib.dataset.KTDataset import KTDataset
 from lib.dataset.KTDataset_cpu2device import KTDataset_cpu2device
 from lib.evaluator.Evaluator import Evaluator
@@ -16,27 +15,37 @@ from lib.util.data import load_json
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    # 基本配置
+    # device配置
+    parser.add_argument("--debug_mode", type=str2bool, default=False)
+    parser.add_argument("--use_cpu", type=str2bool, default=False)
+
+    # 加载模型参数配置
     parser.add_argument("--save_model_dir", type=str, help="绝对路径",
-                        default=r"F:\code\myProjects\dlkt\lab\saved_models\save\LPKT\2024-03-13@19-46-09@@LPKT@@seed_0@@our_setting@@xes3g5m_train_fold_0")
-    parser.add_argument("--save_model_name", type=str, help="文件名", default="kt_model.pth")
-    parser.add_argument("--setting_name", type=str, default="our_setting")
-    parser.add_argument("--dataset_name", type=str, default="xes3g5m")
+                        default=r"F:\code\myProjects\dlkt\lab\saved_models\2024-03-25@14-48-52@@DKT@@seed_0@@our_setting_new@@assist2009_train_fold_0")
+    parser.add_argument("--save_model_name", type=str, help="文件名", default="saved.ckt")
+    parser.add_argument("--model_name_in_ckt", type=str, help="文件名", default="best_valid")
+    # 测试配置
+    parser.add_argument("--setting_name", type=str, default="our_setting_new")
+    parser.add_argument("--dataset_name", type=str, default="assist2009")
     parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--test_file_name", type=str, help="文件名", default="xes3g5m_test_fold_0.txt")
-    parser.add_argument("--base_type", type=str, default="concept", choices=("concept", "question"))
+    parser.add_argument("--test_file_name", type=str, help="文件名", default="assist2009_test_fold_0.txt")
+    parser.add_argument("--base_type", type=str, default="concept", choices=("concept", "question"),
+                        help="如果是multi concept数据集训练，并且想使用由PYKT提出的基于习题的测试，请设置为question，其它情况都为concept")
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
 
     # ---------------------------- 细粒度配置（不适用于base_type为question的evaluate）----------------------------------------
     # 长尾问题（注意不同训练集的长尾统计信息不一样）
-    parser.add_argument("--statics_file_path", type=str, help="绝对路径",
-                        default=r"")
+    parser.add_argument("--statics_file_path", type=str, help="prepare4fine_trained_evaluate.py生成的文件绝对路径",
+                        default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new\assist2009_train_fold_0_statics.json")
     # 冷启动问题
     parser.add_argument("--max_seq_len", type=int, default=200)
-    parser.add_argument("--seq_len_absolute", type=str,
+    parser.add_argument("--seq_len_absolute", type=str, help="[0, 10, 200]表示测试模型对位于序列0~10区间的点的性能以及10~200区间点的性能",
                         default="[0, 10, 100, 200]")
-    # ---------------------------- 细粒度配置（不适用于base_type为question的evaluate）----------------------------------------
+    # 偏差问题（习题偏差和学生偏差，测试模型对于正确率高（低）的序列中高（低）正确率习题的预测能力），需要配合statics_file_path使用
+    parser.add_argument("--previous_seq_len4bias", type=int, default=5)
+    parser.add_argument("--seq_most_accuracy4bias", type=float, default=0.4)
+    # -------------------------------------------------------------------------------------------------------------------
 
     # 是否将head question的知识迁移到zero shot question
     parser.add_argument("--transfer_head2zero", type=str2bool, default=False)
@@ -74,13 +83,14 @@ if __name__ == "__main__":
             global_params["datasets_config"]["test"]["kt4dimkt"]["num_concept_difficulty"] = params["num_concept_diff"]
         dataset_test = KTDataset(global_params, global_objects)
     dataloader_test = DataLoader(dataset_test, batch_size=params["evaluate_batch_size"], shuffle=False)
-    save_model_path = os.path.join(params["save_model_dir"], params["save_model_name"])
-    model = torch.load(save_model_path).to(global_params["device"])
 
     global_objects["models"] = {}
     global_objects["data_loaders"] = {}
+    model = load_kt_model(global_params, global_objects,
+                          params["save_model_dir"], params["save_model_name"], params["model_name_in_ckt"])
     global_objects["models"]["kt_model"] = model
     global_objects["data_loaders"]["test_loader"] = dataloader_test
+
     evaluator = Evaluator(global_params, global_objects)
     if params["base_type"] == "question":
         evaluator.evaluate_base_question4multi_concept()

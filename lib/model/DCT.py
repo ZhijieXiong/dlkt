@@ -72,6 +72,16 @@ class DCT(nn.Module):
         self.que2discrimination = MLP4Proj(num_mlp_layer, dim_question, 1, dropout)
         self.dropout = nn.Dropout(dropout)
 
+    def get_question_diff(self, batch_question):
+        test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
+        question_emb = self.embed_question(batch_question)
+        if test_theory == "rasch":
+            que_difficulty = self.que2difficulty(self.dropout(question_emb))
+        else:
+            que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
+
+        return que_difficulty
+
     def predict_score(self, latent, question_emb, question_seq):
         test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
         if test_theory == "rasch":
@@ -81,10 +91,17 @@ class DCT(nn.Module):
             y = (user_ability - que_difficulty) * concept_related
         else:
             user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
-            que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
             que_discrimination = torch.sigmoid(self.que2discrimination(self.dropout(question_emb))) * 10
+
+            # que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
+            # y = (que_discrimination * (user_ability - que_difficulty)) * \
+            #     que_difficulty / torch.sum(que_difficulty, dim=1, keepdim=True)
+
+            que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
+            que_diff_mask = torch.ones_like(que_difficulty).float().to(self.params["device"])
+            que_diff_mask[que_difficulty < 0.05] = 0
             y = (que_discrimination * (user_ability - que_difficulty)) * \
-                que_difficulty / torch.sum(que_difficulty, dim=1, keepdim=True)
+                que_difficulty * que_diff_mask / torch.sum(que_difficulty, dim=1, keepdim=True)
         predict_score = torch.sigmoid(torch.sum(y, dim=-1))
 
         return predict_score
@@ -126,9 +143,9 @@ class DCT(nn.Module):
 
         return predict_loss
 
-    def get_q_table_loss(self, target_question, question_ids, related_concept_ids, unrelated_concept_ids, t=0.5):
+    def get_q_table_loss(self, target_question, question_ids, related_concept_ids, unrelated_concept_ids, t=0.2):
         # 根据数据集提供的Q table约束que2difficulty的学习
-        # 一方面每道习题标注的知识点要比未标注的大；另一方面限制未标注的知识点小于一个阈值，如0.5
+        # 一方面每道习题标注的知识点要比未标注的大；另一方面限制未标注的知识点小于一个阈值，如0.2
         test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
 
         question_emb = self.embed_question(target_question)
@@ -387,11 +404,19 @@ class DCT(nn.Module):
             y = inter_func_in * concept_related
         else:
             user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
-            que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, 1:])))
-            inter_func_in = user_ability - que_difficulty
             que_discrimination = torch.sigmoid(self.que2discrimination(self.dropout(question_emb[:, 1:]))) * 10
+            que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, 1:])))
+
+            # inter_func_in = user_ability - que_difficulty
+            # y = (que_discrimination * inter_func_in) * \
+            #     que_difficulty / torch.sum(que_difficulty, dim=1, keepdim=True)
+
+            inter_func_in = user_ability - que_difficulty
+            que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, 1:])))
+            que_diff_mask = torch.ones_like(que_difficulty).float().to(self.params["device"])
+            que_diff_mask[que_difficulty < 0.05] = 0
             y = (que_discrimination * inter_func_in) * \
-                que_difficulty / torch.sum(que_difficulty, dim=1, keepdim=True)
+                que_difficulty * que_diff_mask / torch.sum(que_difficulty, dim=1, keepdim=True)
 
         predict_score = torch.sigmoid(torch.sum(y, dim=-1))
         predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])

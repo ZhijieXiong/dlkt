@@ -11,13 +11,23 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
 
     global_objects["cognition_tracing"] = {}
     global_params["other"]["cognition_tracing"] = {}
-    # 统计习题难度
+
     dataset_train = read_preprocessed_file(os.path.join(
         global_objects["file_manager"].get_setting_dir(global_params["datasets_config"]["train"]["setting_name"]),
         global_params["datasets_config"]["train"]["file_name"]
     ))
     global_objects["cognition_tracing"]["dataset_train"] = dataset_train
-    if (local_params["w_que_diff_pred"] != 0) or (local_params["w_user_ability_pred"] != 0):
+
+    if local_params["test_theory"] == "rasch":
+        w_que_diff_pred = 0
+        w_que_disc_pred = 0
+        w_user_ability_pred = 0
+    else:
+        w_que_diff_pred = local_params.get("w_que_diff_pred", 0)
+        w_que_disc_pred = local_params.get("w_que_disc_pred", 0)
+        w_user_ability_pred = local_params.get("w_user_ability_pred", 0)
+    # 统计习题难度
+    if (w_que_diff_pred != 0) or (w_user_ability_pred != 0):
         global_params["other"]["cognition_tracing"] = {}
         global_params["other"]["cognition_tracing"]["min_fre4diff"] = local_params["min_fre4diff"]
         que_accuracy = cognition_tracing_util.cal_question_diff(dataset_train)
@@ -38,7 +48,7 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
             ).long().to(global_params["device"])
 
     # 统计习题区分度
-    if local_params["w_que_disc_pred"] != 0:
+    if w_que_disc_pred != 0:
         global_params["other"]["cognition_tracing"]["min_fre4disc"] = local_params["min_fre4disc"]
         global_params["other"]["cognition_tracing"]["min_seq_len4disc"] = local_params["min_seq_len4disc"]
         global_params["other"]["cognition_tracing"]["percent_threshold"] = local_params["percent_threshold"]
@@ -52,15 +62,12 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
         ).float().to(global_params["device"])
 
     # 提取学生认知标签和对应mask以及权重
-    if local_params["w_user_ability_pred"] != 0:
+    if w_user_ability_pred != 0:
         cognition_tracing_util.label_user_ability(dataset_train)
 
     # 单阶段还是多阶段；损失权重配置
-    multi_stage = local_params["multi_stage"]
+    multi_stage = local_params.get("multi_stage", False)
     test_theory = local_params["test_theory"]
-    w_que_diff_pred = 0 if (local_params["test_theory"] == "rasch") else local_params["w_que_diff_pred"]
-    w_que_disc_pred = 0 if (local_params["test_theory"] == "rasch") else local_params["w_que_disc_pred"]
-    w_user_ability_pred = 0
     w_penalty_neg = local_params["w_penalty_neg"]
     w_learning = local_params["w_learning"]
     w_counter_fact = local_params["w_counter_fact"]

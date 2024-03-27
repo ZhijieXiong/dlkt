@@ -48,21 +48,27 @@ if __name__ == "__main__":
     parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     # 梯度裁剪
-    parser.add_argument("--enable_clip_grad", type=str2bool, default=True)
-    parser.add_argument("--grad_clipped", type=float, default=100.0)
+    parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
+    parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
     parser.add_argument("--que_user_share_proj", type=str2bool, default=False)
     parser.add_argument("--test_theory", type=str, default="irt", choices=("irt", "rasch"))
+    parser.add_argument("--multi_stage", type=str2bool, default=False)
     parser.add_argument("--num_concept", type=int, default=101)
     parser.add_argument("--num_question", type=int, default=2803)
     parser.add_argument("--dim_question", type=int, default=64)
-    parser.add_argument("--dim_latent", type=int, default=64)
+    parser.add_argument("--dim_latent", type=int, default=128)
     parser.add_argument("--rnn_type", type=str, default="gru",
                         choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=2)
     parser.add_argument("--num_mlp_layer", type=int, default=2)
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--weight_aux_emb", type=float, default=0.5)
+    # 损失权重
+    parser.add_argument("--w_penalty_neg", type=float, default=0)
+    parser.add_argument("--w_learning", type=float, default=0)
+    parser.add_argument("--w_counter_fact", type=float, default=0)
+    parser.add_argument("--w_q_table", type=float, default=0)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

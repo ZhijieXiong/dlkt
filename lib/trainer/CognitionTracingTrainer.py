@@ -23,9 +23,10 @@ class CognitionTracingTrainer(KnowledgeTracingTrainer):
         self.time_record = TimeRecord()
 
         self.question_concept = None
-        self.prepare()
+        self.prepare_question_data()
+        self.pretrain_question_embed()
 
-    def prepare(self):
+    def prepare_question_data(self):
         w_q_table = self.params["loss_config"]["q table loss"]
         if w_q_table != 0:
             question2concept = self.objects["data"]["question2concept"]
@@ -48,7 +49,36 @@ class CognitionTracingTrainer(KnowledgeTracingTrainer):
                 self.question_concept.append((related_c_ids, unrelated_c_ids))
 
     def pretrain_question_embed(self):
-        pass
+        optimizer = self.objects["optimizers"]["kt_model"]
+        model = self.objects["models"]["kt_model"]
+        optimizer.zero_grad()
+
+        num_question = len(self.objects["data"]["question2concept"])
+        que_dataset = QueDataset(list(range(num_question)), self.params["device"])
+        que_dataloader = DataLoader(que_dataset, batch_size=64, shuffle=True)
+        Q_table = self.objects["data"]["Q_table_tensor"]
+        for epoch in range(1, 50):
+            model.train()
+            for batch_question in que_dataloader:
+                optimizer.zero_grad()
+                mask1 = Q_table[batch_question].bool()
+                mask2 = (1-Q_table[batch_question]).bool()
+
+                que_diff_predict = model.get_question_diff(batch_question)
+                que_diff_predict1 = torch.masked_select(que_diff_predict, mask1)
+                que_diff_predict2 = torch.masked_select(que_diff_predict, mask2)
+
+                que_diff_label = Q_table[batch_question] * 0.5 + 0.05
+                que_diff_label[que_diff_label > 0.5] = 0.5
+                que_diff_label1 = torch.ones_like(que_diff_predict1).float().to(self.params["device"]) * 0.5
+                que_diff_label2 = torch.zeros_like(que_diff_predict2).float().to(self.params["device"]) + 0.05
+
+                loss1 = torch.nn.functional.mse_loss(que_diff_predict1, que_diff_label1)
+                loss2 = torch.nn.functional.mse_loss(que_diff_predict2, que_diff_label2)
+                loss = (loss1 + loss2) / 2
+
+                loss.backward()
+                optimizer.step()
 
     def multi_stage_train(self, batch, batch_question=None):
         grad_clip_config = self.params["grad_clip_config"]["kt_model"]

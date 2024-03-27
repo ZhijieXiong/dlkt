@@ -1,19 +1,17 @@
 #!/usr/bin/env bash
 
 {
-  dataset_name="slepemapy"
-  data_type="single_concept"
+  dataset_name="ednet-kt1"
+  data_type="only_question"
   fold=0
 
-  # 1阶段
-  dropouts='0.1'
-  weights_decay='0.0001 0.00001 0.000001 0'
-  dims_question=(64 128)
-  dims_latent=(64 128)
-  nums_predict_layer=(2 3)
-  weights_aux_emb='0.5'
-  # 1
-  nums_rnn_layer=(2 3)
+  dropouts='0.1 0.2 0.3'
+  weights_decay='0.001 0.0001 0.00001'
+  dims_question=(64)
+  dims_latent=(128)
+  nums_rnn_layer=(3)
+  nums_predict_layer=(2)
+  weights_aux_emb='0.1 0.3 0.5 0.7 1'
   for weight_decay in ${weights_decay}
   do
     for weight_aux_emb in ${weights_aux_emb}
@@ -39,9 +37,10 @@
                   --learning_rate 0.001 --enable_lr_schedule False --lr_schedule_type MultiStepLR --lr_schedule_step 10 --lr_schedule_milestones "[5]" --lr_schedule_gamma 0.5 \
                   --train_batch_size 64 --evaluate_batch_size 256 \
                   --enable_clip_grad False --grad_clipped 10.0 \
-                  --num_concept 246 --num_question 5730 \
+                  --num_concept 188 --num_question 11858 \
                   --weight_aux_emb "${weight_aux_emb}" --dim_question "${dim_question}" --dim_latent "${dim_latent}" --rnn_type "gru" --num_rnn_layer "${num_rnn_layer}" --dropout "${dropout}" \
                   --num_predict_layer "${num_predict_layer}" --dim_predict_mid 128 --activate_type "relu" \
+                  --pretrain_aux_emb_path "F:\code\myProjects\dlkt\lab\saved_models\save\our_setting_new\AuxInfoQDKT\no_pretrain_aux_emb\2024-03-26@14-55-23@@AuxInfoQDKT@@seed_0@@our_setting_new@@assist2017_train_fold_0\saved.ckt" \
                   --save_model False --debug_mode False --use_cpu False --seed 0
               done
             done
@@ -50,4 +49,4 @@
       done
     done
   done
-} >> F:/code/myProjects/dlkt/example/result_local/aux-info-qdkt_our_setting_new_slepemapy_fold_0_ob.txt
+} >> F:/code/myProjects/dlkt/example/result_local/aux-info-qdkt-w-pretrain-aux-emb_our_setting_new_ednet-kt1_fold_0_ob.txt

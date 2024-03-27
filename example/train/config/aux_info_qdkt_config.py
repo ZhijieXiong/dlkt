@@ -1,3 +1,5 @@
+import os.path
+
 from ._config import *
 from ._cl_config import *
 
@@ -31,6 +33,8 @@ def aux_info_qdkt_general_config(local_params, global_params, global_objects):
     dim_predict_mid = local_params["dim_predict_mid"]
     activate_type = local_params["activate_type"]
     weight_aux_emb = local_params["weight_aux_emb"]
+    pretrain_aux_emb_path = local_params.get("pretrain_aux_emb_path", "")
+    use_pretrain_aux_emb = os.path.exists(pretrain_aux_emb_path)
 
     # embed layer
     embed_config = global_params["models_config"]["kt_model"]["kt_embed_layer"]
@@ -38,6 +42,8 @@ def aux_info_qdkt_general_config(local_params, global_params, global_objects):
     embed_config["question"] = [num_question, dim_question]
     embed_config["correct"] = [2, dim_question]
     embed_config["use_LLM_emb"] = False
+    embed_config["use_pretrain_aux_emb"] = use_pretrain_aux_emb
+    embed_config["pretrain_aux_emb_path"] = pretrain_aux_emb_path
 
     # encoder layer
     encoder_config = global_params["models_config"]["kt_model"]["encoder_layer"]["AuxInfoQDKT"]
@@ -63,7 +69,9 @@ def aux_info_qdkt_general_config(local_params, global_params, global_objects):
         f"num_concept: {num_concept}, num_question: {num_question}, num_correct: 2\n    "
         f"dim_question: {dim_question}, dim_latent: {dim_latent}, rnn_type: {rnn_type}, num_rnn_layer: {num_rnn_layer}, "
         f"dropout: {dropout},  num_predict_layer: {num_predict_layer}, dim_predict_mid: {dim_predict_mid}, "
-        f"activate_type: {activate_type}, weight_aux_emb: {weight_aux_emb}"
+        f"activate_type: {activate_type}, weight_aux_emb: {weight_aux_emb}\n    "
+        f"use_pretrain_aux_emb: {use_pretrain_aux_emb}"
+        f"{'' if not use_pretrain_aux_emb else f', pretrain_aux_emb_path: {pretrain_aux_emb_path}'}"
     )
 
     if local_params["save_model"]:

@@ -1,4 +1,5 @@
 from ._config import *
+from ._cognition_tracing_config import *
 from lib.template.kt_model.AuxInfoDCT import MODEL_PARAMS as AuxInfoDCT_PARAMS
 
 
@@ -41,15 +42,10 @@ def aux_info_dct_general_config(local_params, global_params, global_objects):
     encoder_config["num_mlp_layer"] = num_mlp_layer
     encoder_config["dropout"] = dropout
 
-    # 认知追踪配置
-    global_params["other"]["cognition_tracing"] = {}
-    test_theory = local_params["test_theory"]
-    global_params["other"]["cognition_tracing"]["test_theory"] = test_theory
-
     global_objects["logger"].info(
           f"model params\n    "
           f"num_concept: {num_concept}, num_question: {num_question}\n    "
-          f"weight_aux_emb: {weight_aux_emb}, que_user_share_proj: {que_user_share_proj}, test_theory: {test_theory}, "
+          f"weight_aux_emb: {weight_aux_emb}, que_user_share_proj: {que_user_share_proj}, "
           f"dim_question: {dim_question}, dim_latent: {dim_latent}, rnn type: {rnn_type}, "
           f"num of rnn layer: {num_rnn_layer}, num_mlp_layer: {num_mlp_layer}, dropout: {dropout}"
     )
@@ -68,6 +64,7 @@ def aux_info_dct_config(local_params):
     global_objects = {}
     general_config(local_params, global_params, global_objects)
     aux_info_dct_general_config(local_params, global_params, global_objects)
+    cognition_tracing_general_config(local_params, global_params, global_objects)
 
     if local_params["save_model"]:
         save_params(global_params, global_objects)

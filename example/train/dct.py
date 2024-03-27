@@ -14,7 +14,7 @@ from lib.trainer.CognitionTracingTrainer import CognitionTracingTrainer
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
-    parser.add_argument("--setting_name", type=str, default="our_setting")
+    parser.add_argument("--setting_name", type=str, default="our_setting_new")
     parser.add_argument("--dataset_name", type=str, default="assist2017")
     parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
@@ -53,12 +53,12 @@ if __name__ == "__main__":
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=101)
     parser.add_argument("--num_question", type=int, default=2803)
-    parser.add_argument("--dim_question", type=int, default=64)
-    parser.add_argument("--dim_latent", type=int, default=64)
-    parser.add_argument("--dim_correct", type=int, default=64)
+    parser.add_argument("--dim_question", type=int, default=96)
+    parser.add_argument("--dim_latent", type=int, default=96)
+    parser.add_argument("--dim_correct", type=int, default=96)
     parser.add_argument("--rnn_type", type=str, default="gru",
                         choices=("rnn", "lstm", "gru"))
-    parser.add_argument("--num_rnn_layer", type=int, default=2)
+    parser.add_argument("--num_rnn_layer", type=int, default=3)
     parser.add_argument("--que_user_share_proj", type=str2bool, default=False)
     parser.add_argument("--num_mlp_layer", type=int, default=2)
     parser.add_argument("--dropout", type=float, default=0.1)
@@ -74,13 +74,13 @@ if __name__ == "__main__":
     # 损失权重
     parser.add_argument("--w_que_diff_pred", type=float, default=0)
     parser.add_argument("--w_que_disc_pred", type=float, default=0)
-    parser.add_argument("--w_penalty_neg", type=float, default=0)
     parser.add_argument("--w_user_ability_pred", type=float, default=0)
-    parser.add_argument("--w_learning", type=float, default=0)
-    parser.add_argument("--w_counter_fact", type=float, default=0)
-    parser.add_argument("--w_q_table", type=float, default=0)
+    parser.add_argument("--w_penalty_neg", type=float, default=0.1)
+    parser.add_argument("--w_learning", type=float, default=0.1)
+    parser.add_argument("--w_counter_fact", type=float, default=0.1)
+    parser.add_argument("--w_q_table", type=float, default=0.1)
     # 其它
-    parser.add_argument("--save_model", type=str2bool, default=False)
+    parser.add_argument("--save_model", type=str2bool, default=True)
     parser.add_argument("--debug_mode", type=str2bool, default=False)
     parser.add_argument("--use_cpu", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)

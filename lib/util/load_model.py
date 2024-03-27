@@ -65,6 +65,13 @@ def load_kt_model(global_params, global_objects, save_model_dir, ckt_name="saved
         }
         q_matrix = global_objects["LPKT"]["q_matrix"]
         q_matrix[q_matrix > 1] = 1
+    if kt_model_name == "LBKT":
+        q_gamma = saved_params["models_config"]["kt_model"]["encoder_layer"]["LBKT"]["q_gamma"]
+        global_objects["LBKT"] = {
+            "q_matrix": torch.from_numpy(global_objects["data"]["Q_table"]).float().to(global_params["device"]) + q_gamma
+        }
+        q_matrix = global_objects["LBKT"]["q_matrix"]
+        q_matrix[q_matrix > 1] = 1
     model_class = model_table[kt_model_name]
     model = model_class(global_params, global_objects).to(global_params["device"])
     saved_ckt = torch.load(ckt_path)

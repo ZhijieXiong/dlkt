@@ -106,19 +106,20 @@ def lbkt_general_config(local_params, global_params, global_objects):
 
     global_params["models_config"] = {}
     global_params["models_config"]["kt_model"] = deepcopy(LBKT_MODEL_PARAMS)
-    encoder_layer_config = global_params["models_config"]["kt_model"]["encoder_layer"]["LBKT"]
-    encoder_layer_config["num_concept"] = num_concept
-    encoder_layer_config["num_question"] = num_question
-    encoder_layer_config["num_correct"] = num_correct
-    encoder_layer_config["dim_question"] = dim_question
-    encoder_layer_config["dim_correct"] = dim_correct
-    encoder_layer_config["dropout"] = dropout
-    encoder_layer_config["dim_h"] = dim_h
-    encoder_layer_config["dim_factor"] = dim_factor
-    encoder_layer_config["r"] = r
-    encoder_layer_config["d"] = d
-    encoder_layer_config["k"] = k
-    encoder_layer_config["b"] = b
+    encoder_config = global_params["models_config"]["kt_model"]["encoder_layer"]["LBKT"]
+    encoder_config["num_concept"] = num_concept
+    encoder_config["num_question"] = num_question
+    encoder_config["num_correct"] = num_correct
+    encoder_config["dim_question"] = dim_question
+    encoder_config["dim_correct"] = dim_correct
+    encoder_config["dropout"] = dropout
+    encoder_config["dim_h"] = dim_h
+    encoder_config["dim_factor"] = dim_factor
+    encoder_config["r"] = r
+    encoder_config["d"] = d
+    encoder_config["k"] = k
+    encoder_config["b"] = b
+    encoder_config["q_gamma"] = q_gamma
 
     # q matrix
     global_objects["LBKT"] = {}

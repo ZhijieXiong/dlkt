@@ -18,4 +18,4 @@ BASH_DIR="qikt"
 BASH_FILE="our_setting_algebra2005_fold_0_ob.sh"
 
 echo "file: ${BASH_DIR}/${BASH_FILE}"
-startdocker -P /ghome/xiongzj -c "bash /ghome/xiongzj/code/dlkt/example/script_cluster/${BASH_DIR}/${BASH_FILE}" bit:5000/chenxh_py3.8_torch_1.8_cu11.1
+startdocker -P /ghome/xiongzj -D /gdata/xiongzj -c "bash /ghome/xiongzj/code/dlkt/example/script_cluster/${BASH_DIR}/${BASH_FILE}" bit:5000/chenxh_py3.8_torch_1.8_cu11.1

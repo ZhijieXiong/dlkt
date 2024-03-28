@@ -17,4 +17,4 @@ echo "CUDA_VISIBLE_DEVICES:"$CUDA_VISIBLE_DEVICES
 BASH_DIR="dct_irt_share"
 BASH_FILE="single_stage_our_setting_statics2011_fold_0_ob1~ob4.sh"
 echo "file: ${BASH_DIR}/${BASH_FILE}"
-startdocker -P /ghome/xiongzj -c "bash /ghome/xiongzj/code/dlkt/example/script_cluster/${BASH_DIR}/${BASH_FILE}" bit:5000/chenxh_py3.8_torch_1.8_cu11.1
+startdocker -P /ghome/xiongzj -D /gdata/xiongzj -c "bash /ghome/xiongzj/code/dlkt/example/script_cluster/${BASH_DIR}/${BASH_FILE}" bit:5000/chenxh_py3.8_torch_1.8_cu11.1

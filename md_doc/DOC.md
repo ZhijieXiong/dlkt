@@ -14,8 +14,9 @@
 - `single_concept` 对于单知识点数据集，即习题序列和知识点序列一一对应；对于多知识点数据集，将多知识点组合视为新知识点，则数据集转换为单知识点数据集
 - `only_question` 只有习题序列，对于无知识点或者无习题数据集，都将其视为习题序列
 - 为什么要处理为多种数据格式？
-  - 有些方法默认习题和知识点是一一对应的，如`AKT`、`DIMKT`，这些方法需要处理为`multi_concept`或者`single_concept`
-  - 有些方法对于多知识点习题，是将其多个对应知识点的embedding取平均，然后和习题embedding一起送入encoder，如`IEKT`、`LPKT`、`AKT`（论文`table 6`汇报的结果），这些方法就需要处理为`only_question`数据格式
+  - 有些方法（原论文提供的代码）默认习题和知识点是一一对应的，如`AKT`、`DIMKT`，这些方法需要处理为`multi_concept`或者`single_concept`
+  - 有些方法对于多知识点习题，是将其多个对应知识点的embedding取平均，然后和习题embedding一起送入encoder，如`IEKT`和`AKT table 6`，或者直接基于习题进行训练和预测，如`LPKT`和`LBKT`，这些方法就需要处理为`only_question`数据格式
+  - 有些方法在预处理时将`multi_concept`数据转换为`single_concept`，如`CL4KT`
 
 ## 2、数据集信息
 
@@ -262,10 +263,16 @@
 - 细粒度测试包括
   1. 基于序列长度评估
   2. 基于习题和知识点频率评估
-  3. 基于习题和知识点正确率评估。按以下步骤进行评估
+  3. 基于习题和知识点正确率评估
+  4. 基于偏差评估
+     - 首先从测试集中划分出有偏差（seq bias和double bias）的子集，然后测试模型在这个子集上的效果
+     - seq bias：找出context seq accuracy（即历史正确率，如前20个时刻的做题正确率）高，但是做错习题的时刻，或者context seq accuracy低，但是做对的时刻
+     - double bias：在seq bias（分为low acc but do right和high acc but do wrong）的基础上，结合训练集习题的信息（哪些习题正确率高，哪些低），在low acc but do right找出低正确率的习题，以及在high acc but do wrong中找出高正确率的习题
+  5. 基于习题偏差进行平衡采样后的评估：来自论文`Do We Fully Understand Students' Knowledge States? Identifying and Mitigating Answer Bias in Knowledge Tracing`
 - 按照以下步骤进行细粒度评估
   1. 运行`example/prepare4fine_trained_evaluate.py`生成细粒度测试所需要的文件`[train_data_name]_statics.json`
   2. 运行`example/evaluate.py`进行模型评估
+  3. 如果没有第一步，则只能进行（1）基于序列长度评估和（2）基于seq bias评估
 
 # 四、其它
 
@@ -283,115 +290,56 @@
 - 假设一份训练日志如下，是同一参数的模型在同一数据集（5折）下跑出来的结果，想计算在5折上测试集的平均结果，则设置参数
 
   - `file_path` 日志路径
-  - `key_words` `"test performance by best valid epoch is main metric"`
+  - `key_words` `"test performance by best valid epoch is main metric"`，用于定位从哪一行解析数据。设为该值则是计算5折下测试集（根据验证集选出来的最佳模型）性能平均值
   - `n` 5
 
   ```
   fold: 0
-  basic setting
-      device: cuda, seed: 0
   ...
-  model params
-      num of concept: 265, num of question: 53091, dim of e: 128, dim of k: 128, dim of correct emb: 50, dropout: 0.2
-  
-  train, seq: 18202, sample: 1707155, accuracy: 0.6962
-  valid, seq: 4550, sample: 421796, accuracy: 0.7002
-  test, seq: 5688, sample: 523566, accuracy: 0.6913
-  2024-01-26 14:19:46 epoch 1   , ...
-  ...
-  2024-01-26 15:02:09 epoch 14  , ...
-  best valid epoch: 4   , best test epoch: 4
   train performance by best valid epoch is main metric: 0.82957  , AUC: 0.82957  , ACC: 0.78909  , RMSE: 0.38264  , MAE: 0.30218  , 
   valid performance by best valid epoch is main metric: 0.78778  , AUC: 0.78778  , ACC: 0.76575  , RMSE: 0.4016   , MAE: 0.31836  , 
   test performance by best valid epoch is main metric: 0.78986  , AUC: 0.78986  , ACC: 0.76307  , RMSE: 0.40327  , MAE: 0.32076  , 
-  ----------------------------------------------------------------------------------------------------
-  train performance by best train epoch is main metric: 0.89888  , AUC: 0.89888  , ACC: 0.83917  , RMSE: 0.3373   , MAE: 0.24221  , 
-  test performance by best test epoch is main metric: 0.78986  , AUC: 0.78986  , ACC: 0.76307  , RMSE: 0.40327  , MAE: 0.32076  , 
   
   fold: 1
-  basic setting
-      device: cuda, seed: 0
   ...
-  model params
-      num of concept: 265, num of question: 53091, dim of e: 128, dim of k: 128, dim of correct emb: 50, dropout: 0.2
-  
-  train, seq: 18202, sample: 1704329, accuracy: 0.6952
-  valid, seq: 4550, sample: 419658, accuracy: 0.6925
-  test, seq: 5688, sample: 528530, accuracy: 0.7006
-  2024-01-26 14:19:46 epoch 1   , ...
-  ...
-  2024-01-26 15:02:09 epoch 14  , ...
-  best valid epoch: 4   , best test epoch: 4
   train performance by best valid epoch is main metric: 0.83059  , AUC: 0.83059  , ACC: 0.78958  , RMSE: 0.38226  , MAE: 0.30111  , 
   valid performance by best valid epoch is main metric: 0.78966  , AUC: 0.78966  , ACC: 0.7634   , RMSE: 0.40328  , MAE: 0.32049  , 
   test performance by best valid epoch is main metric: 0.78705  , AUC: 0.78705  , ACC: 0.7653   , RMSE: 0.40204  , MAE: 0.31846  , 
-  ----------------------------------------------------------------------------------------------------
-  train performance by best train epoch is main metric: 0.90126  , AUC: 0.90126  , ACC: 0.8404   , RMSE: 0.33573  , MAE: 0.23832  , 
-  test performance by best test epoch is main metric: 0.78705  , AUC: 0.78705  , ACC: 0.7653   , RMSE: 0.40204  , MAE: 0.31846  , 
+  
   
   fold: 2
-  basic setting
-      device: cuda, seed: 0
   ...
-  model params
-      num of concept: 265, num of question: 53091, dim of e: 128, dim of k: 128, dim of correct emb: 50, dropout: 0.2
-  
-  train, seq: 18202, sample: 1700994, accuracy: 0.6962
-  valid, seq: 4550, sample: 419658, accuracy: 0.6925
-  test, seq: 5688, sample: 531865, accuracy: 0.6975
-  2024-01-26 14:19:46 epoch 1   , ...
-  ...
-  2024-01-26 15:02:09 epoch 14  , ...
-  best valid epoch: 4   , best test epoch: 4
   train performance by best valid epoch is main metric: 0.82985  , AUC: 0.82985  , ACC: 0.78979  , RMSE: 0.38258  , MAE: 0.30337  , 
   valid performance by best valid epoch is main metric: 0.79009  , AUC: 0.79009  , ACC: 0.76466  , RMSE: 0.40252  , MAE: 0.32118  , 
   test performance by best valid epoch is main metric: 0.79002  , AUC: 0.79002  , ACC: 0.76625  , RMSE: 0.40116  , MAE: 0.31912  , 
-  ----------------------------------------------------------------------------------------------------
-  train performance by best train epoch is main metric: 0.89959  , AUC: 0.89959  , ACC: 0.83784  , RMSE: 0.33843  , MAE: 0.24319  , 
-  test performance by best test epoch is main metric: 0.79002  , AUC: 0.79002  , ACC: 0.76625  , RMSE: 0.40116  , MAE: 0.31912  , 
+  
   
   fold: 3
-  basic setting
-      device: cuda, seed: 0
   ...
-  model params
-      num of concept: 265, num of question: 53091, dim of e: 128, dim of k: 128, dim of correct emb: 50, dropout: 0.2
-  
-  train, seq: 18202, sample: 1695457, accuracy: 0.6966
-  valid, seq: 4550, sample: 419658, accuracy: 0.6925
-  test, seq: 5688, sample: 537402, accuracy: 0.696
-  2024-01-26 14:19:46 epoch 1   , ...
-  ...
-  2024-01-26 15:02:09 epoch 14  , ...
-  best valid epoch: 4   , best test epoch: 4
   train performance by best valid epoch is main metric: 0.82923  , AUC: 0.82923  , ACC: 0.78908  , RMSE: 0.38311  , MAE: 0.30516  , 
   valid performance by best valid epoch is main metric: 0.7895   , AUC: 0.7895   , ACC: 0.76412  , RMSE: 0.40272  , MAE: 0.32309  , 
   test performance by best valid epoch is main metric: 0.78946  , AUC: 0.78946  , ACC: 0.76614  , RMSE: 0.40156  , MAE: 0.32135  , 
-  ----------------------------------------------------------------------------------------------------
-  train performance by best train epoch is main metric: 0.89618  , AUC: 0.89618  , ACC: 0.83512  , RMSE: 0.3406   , MAE: 0.24216  , 
-  test performance by best test epoch is main metric: 0.78946  , AUC: 0.78946  , ACC: 0.76614  , RMSE: 0.40156  , MAE: 0.32135  , 
+  
   
   fold: 4
-  basic setting
-      device: cuda, seed: 0
   ...
-  model params
-      num of concept: 265, num of question: 53091, dim of e: 128, dim of k: 128, dim of correct emb: 50, dropout: 0.2
-  
-  train, seq: 18202, sample: 1701705, accuracy: 0.6973
-  valid, seq: 4550, sample: 419658, accuracy: 0.6925
-  test, seq: 5688, sample: 531154, accuracy: 0.6938
-  2024-01-26 14:19:46 epoch 1   , ...
-  ...
-  2024-01-26 15:02:09 epoch 13  , ...
-  best valid epoch: 3   , best test epoch: 3
   train performance by best valid epoch is main metric: 0.82341  , AUC: 0.82341  , ACC: 0.78603  , RMSE: 0.38598  , MAE: 0.31031  , 
   valid performance by best valid epoch is main metric: 0.78841  , AUC: 0.78841  , ACC: 0.76316  , RMSE: 0.40364  , MAE: 0.32645  , 
-  test performance by best valid epoch is main metric: 0.78818  , AUC: 0.78818  , ACC: 0.76245  , RMSE: 0.40349  , MAE: 0.32623  , 
-  ----------------------------------------------------------------------------------------------------
-  train performance by best train epoch is main metric: 0.88779  , AUC: 0.88779  , ACC: 0.83077  , RMSE: 0.34583  , MAE: 0.25411  , 
-  test performance by best test epoch is main metric: 0.78818  , AUC: 0.78818  , ACC: 0.76245  , RMSE: 0.40349  , MAE: 0.32623  , 
+  test performance by best valid epoch is main metric: 0.78818  , AUC: 0.78818  , ACC: 0.76245  , RMSE: 0.40349  , MAE: 0.32623  ,  
   ```
 
 # 五、加入自己的数据和模型
 
+## 1、添加自己的数据
+
+- 必须的文件：` data_multi_concept.txt `，`data_single_concept.txt`，`data_only_question.txt`中任意一种格式，并有相对应的`Q_table_[data_type].npy`文件
+- 将处理好的数据和文件放到`dataset_preprocessed/[your_dataset_name]/`文件夹下即可
+
+## 2、添加自己的模型
+
+- 第一步：写模型代码，放到`lib/model/`下
+- 第二步：写模型参数配置模版，放到`lib/template/kt_model/`下
+- 第三步：写训练配置代码，放到`example/train/config/`下
+- 第四步：写训练启动代码，放到`example/train`下
+- 第五步：修改`lib/util/load_model`，添加相对应的内容
+- 可参考代码：建议参考`AuxInfoQDKT`模型，该模型使用的标准知识追踪数据集和训练器

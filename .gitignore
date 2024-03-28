@@ -12,6 +12,9 @@ example/server_models/
 example/result_cluster
 example/result_server
 example/result_local
+example/script_cluster
+example/script_local
+example/script_server
 example4cognitive_diagnosis/cluster_models/
 example4cognitive_diagnosis/server_models/
 example4cognitive_diagnosis/result_cluster

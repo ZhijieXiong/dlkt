@@ -1,11 +1,11 @@
 import torch
 import torch.nn as nn
 
-from .BaseTrainer4ME_ADA import BaseTrainer4ME_ADA
+from .KnowledgeTracingTrainer import KnowledgeTracingTrainer
 from ..util.basic import *
 
 
-class InstanceCLTrainer(BaseTrainer4ME_ADA):
+class InstanceCLTrainer(KnowledgeTracingTrainer):
     def __init__(self, params, objects):
         super(InstanceCLTrainer, self).__init__(params, objects)
 
@@ -23,15 +23,11 @@ class InstanceCLTrainer(BaseTrainer4ME_ADA):
 
         weight_cl_loss = self.params["loss_config"]["cl loss"]
         instance_cl_params = self.params["other"]["instance_cl"]
-        use_adv_aug = instance_cl_params["use_adv_aug"]
         latent_type4cl = instance_cl_params["latent_type4cl"]
         multi_stage = instance_cl_params["multi_stage"]
 
         for epoch in range(1, num_epoch + 1):
             self.do_online_sim()
-            if use_adv_aug:
-                self.do_max_entropy_aug()
-
             train_loader.dataset.set_use_aug()
 
             model.train()
@@ -51,7 +47,7 @@ class InstanceCLTrainer(BaseTrainer4ME_ADA):
 
                     optimizer.zero_grad()
                     if latent_type4cl in ["mean_pool", "last_time"]:
-                        cl_loss = model.get_instance_cl_loss(batch, instance_cl_params, self.dataset_adv_generated)
+                        cl_loss = model.get_instance_cl_loss(batch, instance_cl_params)
                     elif latent_type4cl == "all_time":
                         cl_loss = model.get_instance_cl_loss_all_interaction(batch, instance_cl_params)
                     else:
@@ -67,7 +63,7 @@ class InstanceCLTrainer(BaseTrainer4ME_ADA):
                     loss = 0.
 
                     if latent_type4cl in ["mean_pool", "last_time"]:
-                        cl_loss = model.get_instance_cl_loss(batch, instance_cl_params, self.dataset_adv_generated)
+                        cl_loss = model.get_instance_cl_loss(batch, instance_cl_params)
                     elif latent_type4cl == "all_time":
                         cl_loss = model.get_instance_cl_loss_all_interaction(batch, instance_cl_params)
                     else:

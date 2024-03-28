@@ -65,15 +65,9 @@ if __name__ == "__main__":
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
     # 对比学习
-    parser.add_argument("--cl_space", type=str, default="latent", choices=("latent", "output"))
     parser.add_argument("--temp", type=float, default=0.05)
     parser.add_argument("--weight_cl_loss", type=float, default=0.01)
     parser.add_argument("--multi_stage", type=str2bool, default=True, help="单阶段还是多阶段训练")
-    # cl_space output：挑选高区分度习题的参数
-    parser.add_argument("--num2drop_question4dis", type=int, default=15)
-    parser.add_argument("--num2drop_concept4dis", type=int, default=100)
-    parser.add_argument("--min_seq_len4dis", type=int, default=15)
-    parser.add_argument("--dis_threshold", type=float, default=0.3)
     # cl使用的latent
     parser.add_argument("--latent_type4cl", type=str, default="all_time",
                         choices=("last_time", "all_time", "mean_pool"))
@@ -108,14 +102,6 @@ if __name__ == "__main__":
     # 是否生成hard neg
     parser.add_argument("--use_hard_neg", type=str2bool, default=False)
     parser.add_argument("--hard_neg_prob", type=float, default=1)
-    # 最大熵数据增强参数
-    parser.add_argument("--use_adv_aug", type=str2bool, default=False)
-    parser.add_argument("--epoch_interval_generate", type=int, default=1)
-    parser.add_argument("--loop_adv", type=int, default=3)
-    parser.add_argument("--epoch_generate", type=int, default=40)
-    parser.add_argument("--adv_learning_rate", type=float, default=20.0)
-    parser.add_argument("--eta", type=float, default=5.0)
-    parser.add_argument("--gamma", type=float, default=1.0)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

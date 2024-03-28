@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
-bash F:/code/myProjects/dlkt/example/script_local/our_setting_new/aux-info-qdkt/w-pretrain-aux-emb/ednet-kt1_fold_0_ob.sh
-bash F:/code/myProjects/dlkt/example/script_local/our_setting_new/aux-info-qdkt/w-pretrain-aux-emb/statics2011_fold_0_ob.sh
-
+bash F:/code/myProjects/dlkt/example/script_local/our_setting_new/qdkt/xes3g5m_save.sh
+bash F:/code/myProjects/dlkt/example/script_local/our_setting_new/akt/xes3g5m_save.sh
+bash F:/code/myProjects/dlkt/example/script_local/our_setting_new/aux-info-dct/no-mask-no-pretrain-que-no-pretrain-aux-no-aux-loss/xes3g5m_fold_0_ob.sh
+bash F:/code/myProjects/dlkt/example/script_local/our_setting_new/aux-info-dct/no-mask-no-pretrain-que-no-pretrain-aux-no-aux-loss/edi2020-task1_fold_0_ob.sh

@@ -2,10 +2,10 @@ MODEL_PARAMS = {
     "kt_embed_layer": {
         # 都是[num_emb, dim_emb]的格式，除了use LLM emb
         "concept": [],
-        "question": [],
-        "use_LLM_emb": True
+        "question": []
     },
     "encoder_layer": {
+        "type": "qDKT",
         "qDKT": {
             "dim_concept": 64,
             "dim_question": 64,

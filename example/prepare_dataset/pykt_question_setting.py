@@ -11,15 +11,15 @@ from lib.dataset.split_dataset import n_fold_split1
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="xes3g5m",
-                        choices=("assist2009", "algebra2005", "bridge2algebra2006",
-                                 "statics2011", "edi2020-task34", "xes3g5m"))
+    parser.add_argument("--dataset_name", type=str, default="ednet-kt1",
+                        choices=("assist2009", "algebra2005", "bridge2algebra2006", "ednet-kt1",
+                                 "statics2011", "edi2020-task34", "xes3g5m", "assist2017"))
     args = parser.parse_args()
     params = vars(args)
 
     params["setting_name"] = "pykt_question_setting"
     # 直接在习题级别上训练
-    if params["dataset_name"] in ["statics2011", "edi2020-task34"]:
+    if params["dataset_name"] in ["statics2011", "edi2020-task34", "assist2017"]:
         params["data_type"] = "single_concept"
     else:
         params["data_type"] = "only_question"

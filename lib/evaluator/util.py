@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from sklearn.metrics import roc_auc_score, accuracy_score, mean_absolute_error, mean_squared_error
 
@@ -81,6 +82,32 @@ def get_seq_biased_point(all_batch, previous_seq_len, seq_most_accuracy):
     return result
 
 
+def get_performance_no_error(predict_score, predict_label, true_label):
+    if len(predict_label) == 0:
+        return {
+            "num_sample": 0,
+            "AUC": -1.,
+            "ACC": -1.,
+            "RMSE": -1.,
+            "MAE": -1.
+        }
+
+    try:
+        AUC = roc_auc_score(y_true=true_label, y_score=predict_score)
+    except ValueError:
+        AUC = -1.
+
+    result = {
+        "num_sample": len(true_label),
+        "AUC": AUC,
+        "ACC": accuracy_score(y_true=true_label, y_pred=predict_label),
+        "RMSE": mean_squared_error(y_true=true_label, y_pred=predict_score),
+        "MAE": mean_absolute_error(y_true=true_label, y_pred=predict_score)
+    }
+
+    return result
+
+
 def evaluate_bias(seq_biased_point):
     """
     评估数据集中存在序列偏差的点
@@ -95,29 +122,7 @@ def evaluate_bias(seq_biased_point):
     seq_biased_predict_label = seq_biased_point["low_acc_but_right"]["predict_label"] + \
                                seq_biased_point["high_acc_but_wrong"]["predict_label"]
 
-    if len(seq_biased_label) == 0:
-        return {
-            "num_sample": 0,
-            "AUC": -1.,
-            "ACC": -1.,
-            "RMSE": -1.,
-            "MAE": -1.
-        }
-
-    try:
-        AUC = roc_auc_score(y_true=seq_biased_label, y_score=seq_biased_predict_score)
-    except ValueError:
-        AUC = -1.
-
-    result = {
-        "num_sample": len(seq_biased_label),
-        "AUC": AUC,
-        "ACC": accuracy_score(y_true=seq_biased_label, y_pred=seq_biased_predict_label),
-        "RMSE": mean_squared_error(y_true=seq_biased_label, y_pred=seq_biased_predict_score),
-        "MAE": mean_absolute_error(y_true=seq_biased_label, y_pred=seq_biased_predict_score)
-    }
-
-    return result
+    return get_performance_no_error(seq_biased_predict_score, seq_biased_predict_label, seq_biased_label)
 
 
 def evaluate_double_bias(seq_biased_point, statics_train):
@@ -147,24 +152,36 @@ def evaluate_double_bias(seq_biased_point, statics_train):
             double_biased_predict_score.append(p_score)
             double_biased_predict_label.append(p_label)
 
-    if len(double_biased_label) == 0:
-        return {
-            "num_sample": 0,
-            "AUC": -1.,
-            "ACC": -1.,
-            "RMSE": -1.,
-            "MAE": -1.
-        }
+    return get_performance_no_error(double_biased_predict_score, double_biased_predict_label, double_biased_label)
 
-    try:
-        AUC = roc_auc_score(y_true=double_biased_label, y_score=double_biased_predict_score)
-    except ValueError:
-        AUC = -1.
 
-    return {
-        "num_sample": len(double_biased_label),
-        "AUC": AUC,
-        "ACC": accuracy_score(y_true=double_biased_label, y_pred=double_biased_predict_label),
-        "RMSE": mean_squared_error(y_true=double_biased_label, y_pred=double_biased_predict_score),
-        "MAE": mean_absolute_error(y_true=double_biased_label, y_pred=double_biased_predict_score)
-    }
+def evaluate_core(predict_score, ground_truth, question_ids, allow_replace=True):
+    question_ids_ = np.unique(question_ids)
+    predict_score_balanced = []
+    ground_truth_balanced = []
+
+    for q_id in question_ids_:
+        predict_score4q_id = predict_score[question_ids == q_id]
+        ground_truth4q_id = ground_truth[question_ids == q_id]
+        num_right = np.sum(ground_truth4q_id == 1)
+        num_wrong = np.sum(ground_truth4q_id == 0)
+
+        if num_right == 0 or num_wrong == 0:
+            continue
+
+        # 从label为1和0的测试数据中随机选相同数量（官方提供的代码上来看，是允许重复选取的）
+        if allow_replace:
+            num_balance = (num_wrong + num_right) // 2
+        else:
+            num_balance = min(num_wrong, num_right)
+        index_right = np.random.choice(np.where(ground_truth4q_id == 1)[0], num_balance, replace=allow_replace)
+        index_wrong = np.random.choice(np.where(ground_truth4q_id == 0)[0], num_balance, replace=allow_replace)
+        index_balanced = list(index_right) + list(index_wrong)
+        predict_score_balanced.append(predict_score4q_id[index_balanced])
+        ground_truth_balanced.append(ground_truth4q_id[index_balanced])
+
+    predict_score_balanced = np.concatenate(predict_score_balanced)
+    ground_truth_balanced = np.concatenate(ground_truth_balanced)
+    predict_label_balanced = [0 if p < 0.5 else 1 for p in predict_score_balanced]
+
+    return get_performance_no_error(predict_score_balanced, predict_label_balanced, ground_truth_balanced)

@@ -24,6 +24,7 @@ from ..model.SAKT import SAKT
 from ..model.SAINT import SAINT
 from ..model.qDKT import qDKT
 from ..model.QIKT import QIKT
+from ..model.qDKT_CORE import qDKT_CORE
 
 
 model_table = {
@@ -48,6 +49,7 @@ model_table = {
     "SAINT": SAINT,
     "qDKT": qDKT,
     "QIKT": QIKT,
+    "qDKT_CORE": qDKT_CORE
 }
 
 
@@ -56,6 +58,9 @@ def load_kt_model(global_params, global_objects, save_model_dir, ckt_name="saved
     saved_params = load_json(params_path)
     global_params["models_config"] = str_dict2params(saved_params["models_config"])
     global_params["other"] = str_dict2params(saved_params["other"])
+    # global_params["LLM_emb_init"] = str_dict2params(saved_params["LLM_emb_init"])
+    global_params["use_LLM_emb4question"] = eval(saved_params.get("use_LLM_emb4question", False))
+    global_params["use_LLM_emb4concept"] = eval(saved_params.get("use_LLM_emb4concept", False))
 
     ckt_path = os.path.join(save_model_dir, ckt_name)
     kt_model_name = os.path.basename(save_model_dir).split("@@")[1]

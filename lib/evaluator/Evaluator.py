@@ -1,7 +1,6 @@
 import json
 import os.path
 
-import numpy as np
 from collections import defaultdict
 
 from .util import *
@@ -24,32 +23,9 @@ def get_performance(item_list, item_pg_all):
         g_list = list(map(lambda x: x[1], item_pg_all[item]))
         predict_score += p_list
         ground_truth += g_list
-
-    if len(ground_truth) == 0:
-        return {
-            "num_sample": 0,
-            "AUC": -1.,
-            "ACC": -1.,
-            "RMSE": -1.,
-            "MAE": -1.
-        }
-
     predict_label = [1 if p >= 0.5 else 0 for p in predict_score]
-    try:
-        AUC = roc_auc_score(y_true=ground_truth, y_score=predict_score)
-    except ValueError:
-        AUC = -1.
-    ACC = accuracy_score(y_true=ground_truth, y_pred=predict_label)
-    MAE = mean_absolute_error(y_true=ground_truth, y_pred=predict_score)
-    RMSE = mean_squared_error(y_true=ground_truth, y_pred=predict_score) ** 0.5
 
-    return {
-        "num_sample": len(predict_score),
-        "AUC": AUC,
-        "ACC": ACC,
-        "RMSE": RMSE,
-        "MAE": MAE
-    }
+    return get_performance_no_error(predict_score, predict_label, ground_truth)
 
 
 def get_performance_qc(question_list, concept_list, qc_pg_all):
@@ -73,32 +49,9 @@ def get_performance_qc(question_list, concept_list, qc_pg_all):
         g_list = list(map(lambda x: x[1], qc_pg_all[qc_id]))
         predict_score += p_list
         ground_truth += g_list
-
-    if len(ground_truth) == 0:
-        return {
-            "num_sample": 0,
-            "AUC": -1.,
-            "ACC": -1.,
-            "RMSE": -1.,
-            "MAE": -1.
-        }
-
     predict_label = [1 if p >= 0.5 else 0 for p in predict_score]
-    try:
-        AUC = roc_auc_score(y_true=ground_truth, y_score=predict_score)
-    except ValueError:
-        AUC = -1.
-    ACC = accuracy_score(y_true=ground_truth, y_pred=predict_label)
-    MAE = mean_absolute_error(y_true=ground_truth, y_pred=predict_score)
-    RMSE = mean_squared_error(y_true=ground_truth, y_pred=predict_score) ** 0.5
 
-    return {
-        "num_sample": len(predict_score),
-        "AUC": AUC,
-        "ACC": ACC,
-        "RMSE": RMSE,
-        "MAE": MAE
-    }
+    return get_performance_no_error(predict_score, predict_label, ground_truth)
 
 
 class Evaluator:
@@ -118,10 +71,12 @@ class Evaluator:
         data_loader = self.objects["data_loaders"]["test_loader"]
         model.eval()
         with torch.no_grad():
+            # 下面4个是用mask select后的格式，即(all_item)
             predict_score_all = []
             ground_truth_all = []
             question_all = []
             concept_all = []
+            # result_all_batch是batch格式，即(num_batch * batch_size, seq_len)
             result_all_batch = []
             if use_transfer and hasattr(model, "set_emb4zero"):
                 model.set_emb4zero()
@@ -171,10 +126,26 @@ class Evaluator:
             f"overall performance is AUC: {AUC:<9.5}, ACC: {ACC:<9.5}, RMSE: {MAE:<9.5}, MAE: {RMSE:<9.5}\n"
         )
 
+        # CORE evaluate (question bias)
+        core_evaluation1 = evaluate_core(predict_score_all, ground_truth_all, np.concatenate(question_all, axis=0), True)
+        self.objects["logger"].info(
+            f"evaluation of CORE (allow replace)"
+        )
+        self.print_performance(
+            f"seq biased point: num of sample is {core_evaluation1['num_sample']:<9}, performance is ", core_evaluation1
+        )
+        core_evaluation2 = evaluate_core(predict_score_all, ground_truth_all, np.concatenate(question_all, axis=0), False)
+        self.objects["logger"].info(
+            f"evaluation of CORE (disallow replace)"
+        )
+        self.print_performance(
+            f"seq biased point: num of sample is {core_evaluation2['num_sample']:<9}, performance is ", core_evaluation2
+        )
+
         # performance by seq len
         if hasattr(model, "get_predict_score_seq_len_minus1"):
             label_dis4len, score_dis4len, indices4len = evaluate4seq_len(all_label_dis, all_score_dis, seq_len_absolute)
-            self.objects["logger"].info("split by seq length")
+            self.objects["logger"].info("\nsplit by seq length")
             for i in range(len(label_dis4len)):
                 if len(label_dis4len[i]) == 0:
                     continue

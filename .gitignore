@@ -10,6 +10,7 @@ paper/
 example/cluster_models/
 example/server_models/
 some_trick
+prompt_template
 example/result_cluster
 example/result_server
 example/result_local

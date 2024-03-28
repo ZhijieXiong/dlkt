@@ -52,8 +52,8 @@
 
 ## Text Info
 
-- with text of concept: 
-- with text of quextion: 
+- with text of concept: `xes3g5m` `assist2009` `assist2012` `assist2017`
+- with text of quextion:  `xes3g5m`
 
 ## Statics Info
 

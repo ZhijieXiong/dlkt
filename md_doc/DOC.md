@@ -20,8 +20,10 @@
 
 ## 2、数据集信息
 
-- 单知识点数据集：`assist2012` `assist2017` `edi2020` `SLP` `slepemapy` `statics2011`
+- 单知识点数据集：`assist2012` `assist2017` `edi2020` `SLP` `slepemapy` `statics2011` `junyi2015`
 
+  - `SLP`是一系列数据集，包括`SLP-[mat|his|geo|bio|eng|phy|chi]`
+  - `edi2020`是一系列数据集，包括`edi2020-task[1|34]`
   - `edi2020`和`statics2011`是层级知识点，且最低一级都是单知识点。只使用最细粒度的知识点，所以算单知识点数据集
   - 单知识点数据只会生成预处理数据：`data_single_concept.txt`
 
@@ -34,7 +36,7 @@
   - 对于多知识点数据集，会生成3种预处理数据：`data_multi_concept.txt`、`data_single_concept.txt`和`data_only_question.txt`
 
   - 注意：`xes3g5m`的知识点是层级的，但是最细粒度的知识点是多个的，所以当成多知识点数据集处理。`xes3g5m`的一个例子
-  
+
     ```
     习题1035
     在question metadata中对应的kc_routes为
@@ -56,7 +58,7 @@
       '运算求解'
     ]
     ```
-  
+
 - 无知识点/习题数据集：`assist2015`
 
   - 无知识点/习题数据只会生成预处理数据：`data_only_question.txt`

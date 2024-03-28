@@ -105,14 +105,6 @@ if __name__ == "__main__":
     parser.add_argument("--use_online_sim", type=str2bool, default=True)
     parser.add_argument("--use_warm_up4online_sim", type=str2bool, default=True)
     parser.add_argument("--epoch_warm_up4online_sim", type=float, default=4)
-    # ME-ADA参数
-    parser.add_argument("--use_adv_aug", type=str2bool, default=False)
-    parser.add_argument("--epoch_interval_generate", type=int, default=1)
-    parser.add_argument("--loop_adv", type=int, default=3)
-    parser.add_argument("--epoch_generate", type=int, default=40)
-    parser.add_argument("--adv_learning_rate", type=float, default=20.0)
-    parser.add_argument("--eta", type=float, default=5.0)
-    parser.add_argument("--gamma", type=float, default=1.0)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

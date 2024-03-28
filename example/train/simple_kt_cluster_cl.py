@@ -91,14 +91,6 @@ if __name__ == "__main__":
                              "info aug: ['mask', 'crop', 'replace', 'insert']")
     parser.add_argument("--offline_sim_type", type=str, default="order",
                         choices=("order",))
-    # max entropy adv aug参数
-    parser.add_argument("--use_adv_aug", type=str2bool, default=False)
-    parser.add_argument("--epoch_interval_generate", type=int, default=1)
-    parser.add_argument("--loop_adv", type=int, default=3)
-    parser.add_argument("--epoch_generate", type=int, default=200)
-    parser.add_argument("--adv_learning_rate", type=float, default=10.0)
-    parser.add_argument("--eta", type=float, default=20.0)
-    parser.add_argument("--gamma", type=float, default=10.0)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

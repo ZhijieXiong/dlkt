@@ -64,6 +64,8 @@ if __name__ == "__main__":
     parser.add_argument("--num_mlp_layer", type=int, default=2)
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--weight_aux_emb", type=float, default=0.5)
+    # 数据增强
+    # 对比学习
     # 损失权重
     parser.add_argument("--w_penalty_neg", type=float, default=0)
     parser.add_argument("--w_learning", type=float, default=0)

@@ -1,2 +1,0 @@
-将 dct_irt_share_single_stage_our_setting_*.txt 的文件重命名为 single_stage_our_setting_*.txt
-ls dct_irt_share_single_stage_our_setting_*.txt | sed -r 'p;s/(.*)dct_irt_share_single_stage_our_setting_(.*)\.txt/mv & \1single_stage_our_setting_\2.txt/' | bash

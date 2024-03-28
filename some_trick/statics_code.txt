@@ -1,4 +1,0 @@
-统计代码量
-cloc set_up.py
-cloc example/*.py
-cloc lib/*.py lib/*/*.py lib/*/*/*.py example/*.py example/*/*.py example/*/*/*.py

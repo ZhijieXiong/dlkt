@@ -4,34 +4,33 @@
 
 ## Seq Info
 
-|    dataset name    | question id | concept id | correct | timestamp | use time | age  | hint | attempt |
-| :----------------: | :---------: | :--------: | :-----: | :-------: | :------: | :--: | :--: | :-----: |
-|     assist2009     |      T      |     T      |    T    |           |          |      |  T   |    T    |
-|  assist2009-full   |      T      |     T      |    T    |           |          |      |      |         |
-|     assist2012     |      T      |     T      |    T    |     T     |    T     |      |  T   |    T    |
-|     assist2015     |      T      |            |    T    |           |          |      |      |         |
-|     assist2017     |      T      |     T      |    T    |     T     |    T     |      |  T   |    T    |
-|     ednet-kt1      |      T      |     T      |    T    |     T     |    T     |      |      |         |
-|   edi2020-task1    |      T      |     T      |    T    |     T     |          |  T   |      |         |
-|   edi2020-task34   |      T      |     T      |    T    |     T     |          |  T   |      |         |
-|   edi2022-task1    |             |            |         |           |          |      |      |         |
-|    algebra2005     |      T      |     T      |    T    |     T     |          |      |      |         |
-|    algebra2006     |      T      |     T      |    T    |     T     |          |      |      |         |
-|    algebra2008     |      T      |     T      |    T    |     T     |          |      |      |         |
-| bridge2algebra2006 |      T      |     T      |    T    |     T     |          |      |      |         |
-| bridge2algebra2008 |      T      |     T      |    T    |     T     |          |      |      |         |
-|     junyi2015      |      T      |     T      |    T    |     T     |    T     |      |  T   |    T    |
-|      xes3g5m       |      T      |     T      |    T    |     T     |          |      |      |         |
-|    statics2011     |      T      |     T      |    T    |     T     |          |      |      |         |
-|     slepemapy      |      T      |     T      |    T    |     T     |    T     |      |      |         |
-|      SLP-bio       |      T      |     T      |    T    |           |          |      |      |         |
-|      SLP-chi       |      T      |     T      |    T    |           |          |      |      |         |
-|      SLP-eng       |      T      |     T      |    T    |           |          |      |      |         |
-|      SLP-geo       |      T      |     T      |    T    |           |          |      |      |         |
-|      SLP-his       |      T      |     T      |    T    |           |          |      |      |         |
-|      SLP-mat       |      T      |     T      |    T    |           |          |      |      |         |
-|      SLP-mat       |      T      |     T      |    T    |           |          |      |      |         |
-|        poj         |             |            |         |           |          |      |      |         |
+|    dataset name    | question id | concept id | correct | timestamp | use time | age  | hint | attempt | error type |
+| :----------------: | :---------: | :--------: | :-----: | :-------: | :------: | :--: | :--: | :-----: | :--------: |
+|     assist2009     |      T      |     T      |    T    |           |          |      |  T   |    T    |            |
+|  assist2009-full   |      T      |     T      |    T    |           |          |      |      |         |            |
+|     assist2012     |      T      |     T      |    T    |     T     |    T     |      |  T   |    T    |            |
+|     assist2015     |      T      |            |    T    |           |          |      |      |         |            |
+|     assist2017     |      T      |     T      |    T    |     T     |    T     |      |  T   |    T    |            |
+|     ednet-kt1      |      T      |     T      |    T    |     T     |    T     |      |      |         |            |
+|   edi2020-task1    |      T      |     T      |    T    |     T     |          |  T   |      |         |            |
+|   edi2020-task34   |      T      |     T      |    T    |     T     |          |  T   |      |         |            |
+|        poj         |      T      |            |    T    |     T     |          |      |      |         |     T      |
+|    algebra2005     |      T      |     T      |    T    |     T     |          |      |      |         |            |
+|    algebra2006     |      T      |     T      |    T    |     T     |          |      |      |         |            |
+|    algebra2008     |      T      |     T      |    T    |     T     |          |      |      |         |            |
+| bridge2algebra2006 |      T      |     T      |    T    |     T     |          |      |      |         |            |
+| bridge2algebra2008 |      T      |     T      |    T    |     T     |          |      |      |         |            |
+|     junyi2015      |      T      |     T      |    T    |     T     |    T     |      |  T   |    T    |            |
+|      xes3g5m       |      T      |     T      |    T    |     T     |          |      |      |         |            |
+|    statics2011     |      T      |     T      |    T    |     T     |          |      |      |         |            |
+|     slepemapy      |      T      |     T      |    T    |     T     |    T     |      |      |         |            |
+|      SLP-bio       |      T      |     T      |    T    |           |          |      |      |         |            |
+|      SLP-chi       |      T      |     T      |    T    |           |          |      |      |         |            |
+|      SLP-eng       |      T      |     T      |    T    |           |          |      |      |         |            |
+|      SLP-geo       |      T      |     T      |    T    |           |          |      |      |         |            |
+|      SLP-his       |      T      |     T      |    T    |           |          |      |      |         |            |
+|      SLP-mat       |      T      |     T      |    T    |           |          |      |      |         |            |
+|      SLP-mat       |      T      |     T      |    T    |           |          |      |      |         |            |
 
 ## Side Info
 
@@ -73,7 +72,7 @@
 |     ednet-kt1      |      --      |    --     |    --    |    --     |
 |   edi2020-task1    |   19834813   |  118971   |   282    |   27613   |
 |   edi2020-task34   |      --      |    --     |    --    |    --     |
-|   edi2022-task1    |              |           |          |           |
+|        poj         |    996240    |   22916   |    --    |   2750    |
 |    algebra2005     |    809694    |    574    |   436    |  210710   |
 |    algebra2006     |   2270384    |   1338    |   1703   |  580531   |
 |    algebra2008     |   8918054    |   3310    |   1828   |  1259272  |
@@ -110,6 +109,7 @@
 |    SLP-mat     |    242722    |   1499    |    44    |   1127    |
 |    SLP-phy     |    107288    |    664    |    54    |   1915    |
 |   junyi2015    |   25925987   |  247606   |    40    |    817    |
+|      poj       |    996240    |   22916   |    --    |   2750    |
 
 ### after preprocessing (for multi concept datasets)
 

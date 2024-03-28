@@ -29,14 +29,13 @@ class FileManager:
         "statics2011": "lab/dataset_raw/statics2011/AllData_student_step_2011F.csv",
         "ednet-kt1": "lab/dataset_raw/ednet-kt1",
         "xes3g5m": "lab/dataset_raw/xes3g5m",
-        "aaai2023": "lab/dataset_raw/aaai2023",
         "algebra2005": "lab/dataset_raw/kdd_cup2010",
         "algebra2006": "lab/dataset_raw/kdd_cup2010",
         "algebra2008": "lab/dataset_raw/kdd_cup2010",
         "bridge2algebra2006": "lab/dataset_raw/kdd_cup2010",
         "bridge2algebra2008": "lab/dataset_raw/kdd_cup2010",
         "junyi2015": "lab/dataset_raw/junyi2015",
-        "poj": "lab/dataset_raw/junyi2015/poj_log.csv"
+        "poj": "lab/dataset_raw/poj/poj_log.csv"
     }
 
     data_preprocessed_dir_in_lab = {
@@ -61,7 +60,6 @@ class FileManager:
         "poj": "lab/dataset_preprocessed/poj",
         "slepemapy": "lab/dataset_preprocessed/slepemapy",
         "xes3g5m": "lab/dataset_preprocessed/xes3g5m",
-        "aaai2023": "lab/dataset_preprocessed/aaai2023",
         "algebra2005": "lab/dataset_preprocessed/algebra2005",
         "algebra2006": "lab/dataset_preprocessed/algebra2006",
         "algebra2008": "lab/dataset_preprocessed/algebra2008",
@@ -102,7 +100,6 @@ class FileManager:
             os.path.join(self.root_dir, "lab", "dataset_raw", "SLP"),
             os.path.join(self.root_dir, "lab", "dataset_raw", "slepemapy"),
             os.path.join(self.root_dir, "lab", "dataset_raw", "xes3g5m"),
-            os.path.join(self.root_dir, "lab", "dataset_raw", "aaai2023"),
             os.path.join(self.root_dir, "lab", "dataset_raw", "kdd_cup2010"),
             os.path.join(self.root_dir, "lab", "dataset_raw", "poj"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed"),
@@ -126,7 +123,6 @@ class FileManager:
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "SLP-phy"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "slepemapy"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "xes3g5m"),
-            os.path.join(self.root_dir, "lab", "dataset_preprocessed", "aaai2023"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "algebra2005"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "algebra2006"),
             os.path.join(self.root_dir, "lab", "dataset_preprocessed", "algebra2008"),

@@ -99,6 +99,12 @@ def datasets_renamed(datasets_merged=None):
             "type": "question_type",
             "ip_country": "country_id",
             "context_name": "concept_id"
+        },
+        "poj": {
+            "User": "user_id",
+            "Submit Time": "timestamp",
+            "Problem": "question_id",
+            "Result": "correct"
         }
     }
     algebra2005 = {
@@ -136,7 +142,7 @@ def datasets_seq_keys(datasets_merged=None):
         "assist2009-full": ["question_seq", "concept_seq", "correct_seq"],
         "assist2012": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq", "use_time_first_seq",
                        "num_hint_seq", "num_attempt_seq"],
-        "assist2015": ["question_seq", "correct_seq"],
+        "assist2015": ["question_seq", "correct_seq", "correct_float_seq"],
         "assist2017": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq", "num_hint_seq",
                        "num_attempt_seq"],
         "edi2020-task1": ["question_seq", "concept_seq", "correct_seq", "time_seq", "age_seq"],
@@ -147,7 +153,8 @@ def datasets_seq_keys(datasets_merged=None):
         "ednet-kt1": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq"],
         "algebra2005": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq", "num_hint_seq"],
         "junyi2015": ["question_seq", "concept_seq", "correct_seq", "time_seq", "use_time_seq", "use_time_first_seq",
-                      "num_hint_seq", "num_attempt_seq", "question_mode_seq"]
+                      "num_hint_seq", "num_attempt_seq", "question_mode_seq"],
+        "poj": ["question_seq", "correct_seq", "error_type_seq", "time_seq"],
     }
     result["algebra2006"] = result["algebra2005"]
     result["algebra2008"] = result["algebra2005"]

@@ -61,6 +61,8 @@ class DataProcessor:
             self.load_process_assist2012()
         elif dataset_name == "assist2015":
             self.load_process_assist2015()
+        elif dataset_name == "poj":
+            self.load_process_poj()
         elif dataset_name == "assist2017":
             self.load_process_assist2017()
         elif dataset_name == "edi2020-task1":
@@ -218,13 +220,51 @@ class DataProcessor:
 
         df = deepcopy(self.data_raw)
         # 常规处理，先丢弃correct不为0或1的数据（可能为小数）
-        df = df[(df["correct"] == 0) | (df["correct"] == 1)]
+        # df = df[(df["correct"] == 0) | (df["correct"] == 1)]
+        # 保留为小数分数的记录，大于0.5，correct为1
+        df["correct_float"] = deepcopy(df["correct"])
+        df["correct"] = df["correct"].map(lambda s: 0 if s <= 0.5 else 1)
         df["correct"] = df["correct"].map(int)
         df["question_id"] = df["question_id"].map(int)
         question_ids = pd.unique(df["question_id"])
-        df["question_id"] = df["question_id"].map({c_id: i for i, c_id in enumerate(question_ids)})
+        df["question_id"] = df["question_id"].map({q_id: i for i, q_id in enumerate(question_ids)})
         self.data_preprocessed["only_question"] = df
         self.statics_preprocessed["only_question"] = DataProcessor.get_basic_info(df)
+
+        question_info = pd.DataFrame({
+            "question_id": question_ids,
+            "question_mapped_id": range(len(question_ids))
+        })
+        self.question_id_map["only_question"] = question_info
+
+    def load_process_poj(self):
+        def time_str2timestamp(time_str):
+            if len(time_str) != 19:
+                time_str = re.search(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", time_str).group()
+            return int(time.mktime(time.strptime(time_str[:19], "%Y-%m-%d %H:%M:%S")))
+
+        data_path = self.params["preprocess_config"]["data_path"]
+        dataset_name = "poj"
+        rename_cols = CONSTANT.datasets_renamed()[dataset_name]
+        self.data_raw = load_raw.load_csv(data_path, rename_dict=rename_cols)
+        self.statics_raw = self.get_basic_info(self.data_raw)
+
+        df = deepcopy(self.data_raw)
+        # 该数据集是编程习题，只有Accepted表示做对，其它或多或少都有错误；且数据集中没有nan
+        df["error_type"] = deepcopy(df["correct"])
+        df["correct"] = df["correct"].map(lambda s: 1 if s == "Accepted" else 0)
+        df["correct"] = df["correct"].map(int)
+        df["question_id"] = df["question_id"].map(int)
+        question_ids = pd.unique(df["question_id"])
+        df["question_id"] = df["question_id"].map({q_id: i for i, q_id in enumerate(question_ids)})
+        user_ids = pd.unique(df["user_id"])
+        df["user_id"] = df["user_id"].map({u_id: i for i, u_id in enumerate(user_ids)})
+        error_types = pd.unique(df["error_type"])
+        df["error_type"] = df["error_type"].map({type_id: i for i, type_id in enumerate(error_types)})
+        df["timestamp"] = df["timestamp"].map(time_str2timestamp)
+        self.data_preprocessed["only_question"] = df
+        self.statics_preprocessed["only_question"] = DataProcessor.get_basic_info(df)
+        self.statics_preprocessed["only_question"]["num_error_type"] = len(error_types)
 
         question_info = pd.DataFrame({
             "question_id": question_ids,
@@ -1171,6 +1211,8 @@ class DataProcessor:
             self.uniform_assist2012()
         elif dataset_name == "assist2015":
             self.uniform_assist2015()
+        elif dataset_name == "poj":
+            self.uniform_poj()
         elif dataset_name in ["edi2020-task1", "edi2020-task34"]:
             self.uniform_edi2020()
         elif dataset_name == "xes3g5m":
@@ -1311,7 +1353,8 @@ class DataProcessor:
         df = deepcopy(self.data_preprocessed["only_question"])
         info_name_table = {
             "question_seq": "question_id",
-            "correct_seq": "correct"
+            "correct_seq": "correct",
+            "correct_float_seq": "correct_float"
         }
         id_keys = list(set(df.columns) - set(info_name_table.values()))
         dataset_seq_keys = CONSTANT.datasets_seq_keys()["assist2015"]
@@ -1319,6 +1362,30 @@ class DataProcessor:
         for user_id in pd.unique(df["user_id"]):
             user_data = df[df["user_id"] == user_id]
             user_data = user_data.sort_values(by=["log_id"])
+            object_data = {info_name: [] for info_name in dataset_seq_keys}
+            for k in id_keys:
+                object_data[k] = user_data.iloc[0][k]
+            for i, (_, row_data) in enumerate(user_data.iterrows()):
+                for info_name in dataset_seq_keys:
+                    object_data[info_name].append(row_data[info_name_table[info_name]])
+            object_data["seq_len"] = len(object_data["correct_seq"])
+            seqs.append(object_data)
+        self.data_uniformed["only_question"] = list(filter(lambda item: 2 <= item["seq_len"], seqs))
+
+    def uniform_poj(self):
+        df = deepcopy(self.data_preprocessed["only_question"])
+        info_name_table = {
+            "question_seq": "question_id",
+            "correct_seq": "correct",
+            "time_seq": "timestamp",
+            "error_type_seq": "error_type"
+        }
+        id_keys = list(set(df.columns) - set(info_name_table.values()))
+        dataset_seq_keys = CONSTANT.datasets_seq_keys()["poj"]
+        seqs = []
+        for user_id in pd.unique(df["user_id"]):
+            user_data = df[df["user_id"] == user_id]
+            user_data = user_data.sort_values(by=["timestamp"])
             object_data = {info_name: [] for info_name in dataset_seq_keys}
             for k in id_keys:
                 object_data[k] = user_data.iloc[0][k]

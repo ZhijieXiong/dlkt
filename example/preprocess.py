@@ -9,7 +9,7 @@ from lib.util.data import *
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="statics2011",
+    parser.add_argument("--dataset_name", type=str, default="poj",
                         choices=("assist2009", "assist2009-full", "assist2012", "assist2015", "assist2017",
                                  "algebra2005", "algebra2006", "algebra2008",
                                  "bridge2algebra2006", "bridge2algebra2008",
@@ -40,7 +40,7 @@ if __name__ == "__main__":
         data_path = objects["file_manager"].get_preprocessed_path(dataset_name, k)
         write2file(data_uniformed[k], data_path)
         if k == "only_question":
-            if dataset_name in ["assist2015"]:
+            if dataset_name in ["assist2015", "poj"]:
                 objects["file_manager"].save_data_statics_processed(data_statics_preprocessed[k], dataset_name, k)
             continue
         objects["file_manager"].save_data_statics_processed(data_statics_preprocessed[k], dataset_name, k)

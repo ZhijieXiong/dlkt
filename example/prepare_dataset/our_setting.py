@@ -13,18 +13,20 @@ from lib.dataset.split_dataset import n_fold_split2
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_name", type=str, default="junyi2015",
-                        choices=("assist2009", "assist2012", "assist2017", "edi2020-task1", "edi2020-task34", "ednet-kt1", "xes3g5m",
-                                 "algebra2005", "bridge2algebra2006", "statics2011", "slepemapy", "junyi2015"))
+                        choices=("assist2009", "assist2012", "assist2017", "edi2020-task1", "edi2020-task34",
+                                 "ednet-kt1", "xes3g5m", "algebra2005", "bridge2algebra2006", "statics2011",
+                                 "slepemapy", "junyi2015", "SLP-his", "SLP-phy"))
     args = parser.parse_args()
     params = vars(args)
 
     params["setting_name"] = "our_setting"
-    if params["dataset_name"] in ["assist2012", "assist2017", "edi2020-task34", "edi2020-task1", "statics2011", "slepemapy", "junyi2015"]:
+    if params["dataset_name"] in ["assist2012", "assist2017", "edi2020-task34", "edi2020-task1", "statics2011",
+                                  "slepemapy", "junyi2015", "SLP-his", "SLP-phy"]:
         params["data_type"] = "single_concept"
     else:
         params["data_type"] = "only_question"
     params["max_seq_len"] = 200
-    params["min_seq_len"] = 10
+    params["min_seq_len"] = 3
     params["n_fold"] = 5
     params["valid_radio"] = 0.2
 

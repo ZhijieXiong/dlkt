@@ -55,7 +55,7 @@ class CognitionTracingTrainer(KnowledgeTracingTrainer):
 
         num_question = len(self.objects["data"]["question2concept"])
         que_dataset = QueDataset(list(range(num_question)), self.params["device"])
-        que_dataloader = DataLoader(que_dataset, batch_size=64, shuffle=True)
+        que_dataloader = DataLoader(que_dataset, batch_size=128, shuffle=True)
         Q_table = self.objects["data"]["Q_table_tensor"]
         for epoch in range(1, 50):
             model.train()

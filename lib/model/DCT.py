@@ -2,6 +2,7 @@ import torch.nn.init
 
 from .util import *
 from .loss_util import binary_entropy
+from .Module.KTEmbedLayer import KTEmbedLayer
 
 
 class MLP4Proj(nn.Module):
@@ -58,8 +59,10 @@ class DCT(nn.Module):
 
         self.embed_question = nn.Embedding(num_question, dim_question)
         torch.nn.init.xavier_uniform_(self.embed_question.weight)
+        self.embed_concept = nn.Embedding(num_concept, dim_question)
+        torch.nn.init.xavier_uniform_(self.embed_concept.weight)
         dim_rnn_output = dim_question if que_user_share_proj else dim_latent
-        dim_rrn_input = dim_question + dim_correct
+        dim_rrn_input = dim_question * 2 + dim_correct
         if rnn_type == "rnn":
             self.encoder_layer = nn.RNN(dim_rrn_input, dim_rnn_output, batch_first=True, num_layers=num_rnn_layer)
         elif rnn_type == "lstm":
@@ -71,6 +74,21 @@ class DCT(nn.Module):
             MLP4Proj(num_mlp_layer, dim_latent, num_concept, dropout)
         self.que2discrimination = MLP4Proj(num_mlp_layer, dim_question, 1, dropout)
         self.dropout = nn.Dropout(dropout)
+
+    def get_concept_emb(self, batch):
+        data_type = self.params["datasets_config"]["data_type"]
+        if data_type == "only_question":
+            concept_emb = KTEmbedLayer.concept_fused_emb(
+                self.embed_concept,
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                batch["question_seq"],
+                fusion_type="mean"
+            )
+        else:
+            concept_emb = self.embed_concept(batch["concept_seq"])
+
+        return concept_emb
 
     def get_question_diff(self, batch_question):
         test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
@@ -114,7 +132,8 @@ class DCT(nn.Module):
 
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
         question_emb = self.embed_question(question_seq)
-        interaction_emb = torch.cat((question_emb[:, :-1], correct_emb[:, :-1]), dim=2)
+        concept_emb = self.get_concept_emb(batch)
+        interaction_emb = torch.cat((question_emb[:, :-1], concept_emb[:, :-1], correct_emb[:, :-1]), dim=2)
 
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(interaction_emb)
@@ -183,7 +202,8 @@ class DCT(nn.Module):
 
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
         question_emb = self.embed_question(question_seq)
-        interaction_emb = torch.cat((question_emb, correct_emb), dim=2)
+        concept_emb = self.get_concept_emb(batch)
+        interaction_emb = torch.cat((question_emb, concept_emb, correct_emb), dim=2)
 
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(interaction_emb)
@@ -226,7 +246,8 @@ class DCT(nn.Module):
 
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
         question_emb = self.embed_question(question_seq)
-        interaction_emb = torch.cat((question_emb[:, :-1], correct_emb[:, :-1]), dim=2)
+        concept_emb = self.get_concept_emb(batch)
+        interaction_emb = torch.cat((question_emb[:, :-1], concept_emb[:, :-1], correct_emb[:, :-1]), dim=2)
 
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(interaction_emb)
@@ -284,7 +305,8 @@ class DCT(nn.Module):
 
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
         question_emb = self.embed_question(question_seq)
-        interaction_emb = torch.cat((question_emb, correct_emb), dim=2)
+        concept_emb = self.get_concept_emb(batch)
+        interaction_emb = torch.cat((question_emb, concept_emb, correct_emb), dim=2)
 
         cf_user_ability = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
         latent = torch.zeros(batch_size, seq_len, dim_latent).to(self.params["device"])
@@ -368,7 +390,8 @@ class DCT(nn.Module):
 
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
         question_emb = self.embed_question(question_seq)
-        interaction_emb = torch.cat((question_emb[:, :-1], correct_emb[:, :-1]), dim=2)
+        concept_emb = self.get_concept_emb(batch)
+        interaction_emb = torch.cat((question_emb[:, :-1], concept_emb[:, :-1], correct_emb[:, :-1]), dim=2)
 
         # cf: counterfactual
         cf_user_ability = torch.zeros(batch_size, seq_len - 1, num_concept).to(self.params["device"])

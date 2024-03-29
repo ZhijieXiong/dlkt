@@ -33,8 +33,6 @@ This algorithm library was developed inspired by `pyKT` (the code repository cor
 
 ## pyKT settings (Knowledge Tracing)
 
-- All scripts for this experiment are in the `example\script_local\pykt_repo` directory.
-
 - To view the complete experimental record, please click [here](https://docs.qq.com/sheet/DREdTc3lVQWJkdFJw?tab=BB08J2).
 
 - All reproduction results are based on adjusting parameters at 1 fold (**Parameter adjustment is performed under the `example/prepare_datset/our_setting` experimental setting. We use the parameters of `our_setting` directly under `pykt_question_setting`, so the reproduction results are somewhat different from the results reported in the paper.**), and then taking the average of 5 folds (in order to reduce randomness, the random seeds of all experiments are fixed to 0). The values in parentheses are the results reported in the paper. The metric in the table is `AUC`.

@@ -77,6 +77,10 @@ def load_kt_model(global_params, global_objects, save_model_dir, ckt_name="saved
         }
         q_matrix = global_objects["LBKT"]["q_matrix"]
         q_matrix[q_matrix > 1] = 1
+    if kt_model_name == "AuxInfoDCT" or kt_model_name == "AuxInfoQDKT":
+        # 聚合时间信息
+        global_params["datasets_config"]["test"]["type"] = "kt4lpkt_plus"
+        global_params["datasets_config"]["test"]["kt4lpkt_plus"] = {}
     model_class = model_table[kt_model_name]
     model = model_class(global_params, global_objects).to(global_params["device"])
     saved_ckt = torch.load(ckt_path)

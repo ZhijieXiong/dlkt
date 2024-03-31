@@ -65,6 +65,9 @@ if __name__ == "__main__":
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
     parser.add_argument("--weight_aux_emb", type=float, default=1)
+    # 辅助的一致性损失函数以及对应的数据增强
+    parser.add_argument("--weight_unbias_loss", type=float, default=0)
+    parser.add_argument("--num_item2unbias", type=int, default=20)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

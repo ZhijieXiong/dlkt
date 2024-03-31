@@ -90,7 +90,7 @@ def cal_diff(D, k, min_count2drop):
     return {k_id: corrects[k_id] / float(counts[k_id]) for k_id in corrects}
 
 
-def cal_concept_difficulty(data_uniformed, params, objects):
+def cal_concept_acc(data_uniformed, params, objects):
     num_min_concept = params["num_min_concept"]
     num_concept = params["num_concept"]
     data_type = params["data_type"]

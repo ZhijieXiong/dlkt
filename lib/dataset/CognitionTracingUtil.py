@@ -134,25 +134,3 @@ class CognitionTracingUtil:
             res[q_id] = H_question_diff[q_id] - L_question_diff[q_id]
 
         return res
-
-    def get_user_proj_weight_init_value(self, concept_accuracy):
-        def concept_inti_mastery(acc):
-            return math.exp(10 * (acc - 1))
-
-        def get_weight_init_value(y):
-            return math.log(y / (1 - y))
-
-        concept_init_value = {}
-        num_concept = len(concept_accuracy)
-        dim_emb = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT+"]["dim_latent"]
-        min_acc = min(set(concept_accuracy.values()) - {-1})
-        unknown_init = concept_inti_mastery(min_acc)
-        for c_id, c_acc in concept_accuracy.items():
-            concept_init_value[c_id] = concept_inti_mastery(c_acc) if c_acc != -1 else unknown_init
-
-        result = torch.ones(num_concept, dim_emb).float().to(self.params["device"])
-        for c_id, init_v in concept_init_value.items():
-            x = get_weight_init_value(init_v) / dim_emb
-            result[c_id, :] = x * 10
-
-        self.objects["cognition_tracing"]["user_proj_weight_init_value"] = result

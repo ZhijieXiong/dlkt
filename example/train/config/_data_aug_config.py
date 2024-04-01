@@ -157,6 +157,6 @@ def unbiased_aug_general_config(local_params, global_params, global_objects):
 
     global_objects["logger"].info(
         "unbiased params\n    "
-        "weight_unbias_loss: {weight_unbias_loss}, num_item2unbias: {num_item2unbias}, use_virtual_emb4question: "
+        f"weight_unbias_loss: {weight_unbias_loss}, num_item2unbias: {num_item2unbias}, use_virtual_emb4question: "
         f"{use_virtual_emb4question}, use_virtual_emb4aux: {use_virtual_emb4aux}"
     )

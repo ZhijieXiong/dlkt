@@ -292,7 +292,7 @@ class AuxInfoDCT(nn.Module):
         elif (self.has_use_time or self.has_num_hint or self.has_num_attempt) or self.has_time:
             if self.has_time:
                 interval_time_emb = self.embed_interval_time(batch["interval_time_seq"])
-                encoder_input = torch.cat((interaction_emb, interval_time_emb), dim=-1)
+                encoder_input = torch.cat((interaction_emb, interval_time_emb[:, :-1]), dim=-1)
             else:
                 if self.has_use_time:
                     use_time_emb = self.embed_use_time(batch["use_time_seq"])

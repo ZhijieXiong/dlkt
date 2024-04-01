@@ -56,7 +56,7 @@ class KTDataset4UnbiasedAug(Dataset):
                             interval_time_idx = idx
                             break
                     item_data["interval_time_seq"].append(interval_time_idx)
-                    item_data["interval_time_seq"] += [0] * (max_seq_len - seq_len)
+                item_data["interval_time_seq"] += [0] * (max_seq_len - seq_len)
                 del item_data["time_seq"]
             seq_keys = set(seq_keys) - {"time_seq"}
             seq_keys.add("interval_time_seq")

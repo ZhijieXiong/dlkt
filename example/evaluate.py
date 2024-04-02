@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     # 加载模型参数配置
     parser.add_argument("--save_model_dir", type=str, help="绝对路径",
-                        default=r"F:\code\myProjects\dlkt\lab\saved_models\save\our_setting_new\AuxInfoDCT_no_concept_emb_IRT_not_share\with_mask_no_pretrain_no_aux_loss\2024-03-31@22-00-35@@AuxInfoDCT@@seed_0@@our_setting_new@@assist2009_train_fold_0")
+                        default=r"F:\code\myProjects\dlkt\lab\saved_models\save\our_setting_new\ob\2024-04-02@10-15-48@@AuxInfoDCT@@seed_0@@our_setting_new@@assist2009_train_fold_0")
     parser.add_argument("--save_model_name", type=str, help="文件名", default="saved.ckt")
     parser.add_argument("--model_name_in_ckt", type=str, help="文件名", default="best_valid")
     # 测试配置

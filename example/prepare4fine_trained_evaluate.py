@@ -158,6 +158,7 @@ if __name__ == "__main__":
 
     save_statics = {
         "acc_overall": basic_statics["acc_overall"],
+        "question_acc": basic_statics["question_acc"],
         "question_low_fre": extract_subset(basic_statics["question_fre"],
                                            question_fre_low_middle,
                                            None, False),
@@ -188,6 +189,7 @@ if __name__ == "__main__":
 
     # 知识点
     if params["data_type"] != "only_question":
+        save_statics["concept_acc"] = basic_statics["concept_acc"]
         save_statics["concept_low_fre"] = extract_subset(basic_statics["concept_fre"],
                                                          concept_fre_low_middle,
                                                          None, False)

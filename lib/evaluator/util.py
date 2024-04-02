@@ -35,6 +35,32 @@ def evaluate4seq_len(label_dis, score_dis, split_len):
     return label_dis4len, score_dis4len, indices4len
 
 
+def get_performance_no_error(predict_score, predict_label, true_label):
+    if len(predict_label) == 0:
+        return {
+            "num_sample": 0,
+            "AUC": -1.,
+            "ACC": -1.,
+            "RMSE": -1.,
+            "MAE": -1.
+        }
+
+    try:
+        AUC = roc_auc_score(y_true=true_label, y_score=predict_score)
+    except ValueError:
+        AUC = -1.
+
+    result = {
+        "num_sample": len(true_label),
+        "AUC": AUC,
+        "ACC": accuracy_score(y_true=true_label, y_pred=predict_label),
+        "RMSE": mean_squared_error(y_true=true_label, y_pred=predict_score),
+        "MAE": mean_absolute_error(y_true=true_label, y_pred=predict_score)
+    }
+
+    return result
+
+
 def get_seq_biased_point(all_batch, previous_seq_len, seq_most_accuracy):
     """
     返回每条序列中满足以下条件的点：\n
@@ -82,28 +108,44 @@ def get_seq_biased_point(all_batch, previous_seq_len, seq_most_accuracy):
     return result
 
 
-def get_performance_no_error(predict_score, predict_label, true_label):
-    if len(predict_label) == 0:
-        return {
-            "num_sample": 0,
-            "AUC": -1.,
-            "ACC": -1.,
-            "RMSE": -1.,
-            "MAE": -1.
-        }
-
-    try:
-        AUC = roc_auc_score(y_true=true_label, y_score=predict_score)
-    except ValueError:
-        AUC = -1.
-
+def get_question_biased_point(all_batch, statics_train, most_accuracy):
+    """
+    返回满足以下条件的点：该习题是高正确率习题，但是做错，或者，该习题是低正确率习题，但是做对\n
+    :param all_batch:
+    :param statics_train:
+    :param most_accuracy:
+    :return:
+    """
     result = {
-        "num_sample": len(true_label),
-        "AUC": AUC,
-        "ACC": accuracy_score(y_true=true_label, y_pred=predict_label),
-        "RMSE": mean_squared_error(y_true=true_label, y_pred=predict_score),
-        "MAE": mean_absolute_error(y_true=true_label, y_pred=predict_score)
+        "high_acc_but_wrong": {
+            "question": [],
+            "predict_score": [],
+            "predict_label": []
+        },
+        "low_acc_but_right": {
+            "question": [],
+            "predict_score": [],
+            "predict_label": []
+        }
     }
+
+    for batch in all_batch:
+        zip_iter = zip(batch["question_seqs"], batch["label_seqs"], batch["predict_score_seqs"], batch["mask_seqs"])
+        for question_seq, label_seq, predict_score_seq, mask_seq in zip_iter:
+            for i, m in enumerate(mask_seq):
+                if m == 0:
+                    break
+                q_id = question_seq[i]
+                q_acc_statics = statics_train["question_acc"][q_id]
+                label = label_seq[i]
+                if (q_acc_statics > (1 - most_accuracy)) and (label == 0):
+                    result["high_acc_but_wrong"]["question"].append(q_id)
+                    result["high_acc_but_wrong"]["predict_score"].append(predict_score_seq[i])
+                    result["high_acc_but_wrong"]["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
+                if (q_acc_statics < most_accuracy) and (label == 1):
+                    result["high_acc_but_wrong"]["question"].append(q_id)
+                    result["high_acc_but_wrong"]["predict_score"].append(predict_score_seq[i])
+                    result["high_acc_but_wrong"]["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
 
     return result
 
@@ -114,7 +156,6 @@ def evaluate_bias(seq_biased_point):
     :param seq_biased_point:
     :return:
     """
-    # todo: 如果seq_biased_label全为0或者全为1，则不能计算AUC，这个还未处理
     seq_biased_label = [1] * len(seq_biased_point["low_acc_but_right"]["predict_score"]) + \
                        [0] * len(seq_biased_point["high_acc_but_wrong"]["predict_score"])
     seq_biased_predict_score = seq_biased_point["low_acc_but_right"]["predict_score"] + \

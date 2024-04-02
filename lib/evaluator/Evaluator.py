@@ -183,6 +183,26 @@ class Evaluator:
         result4statics = {}
         with open(statics_path, "r") as f:
             statics_train = json.load(f)
+        question_acc_dict = {}
+        for q_id, q_acc in statics_train["question_acc"].items():
+            question_acc_dict[int(q_id)] = q_acc
+        statics_train["question_acc"] = question_acc_dict
+        if "concept_acc" in statics_train.keys():
+            concept_acc_dict = {}
+            for c_id, c_acc in statics_train["concept_acc"].items():
+                concept_acc_dict[int(c_id)] = c_acc
+            statics_train["concept_acc"] = concept_acc_dict
+
+        most_accuracy4bias = fine_grain_config["seq_most_accuracy4bias"]
+        question_biased_point = get_question_biased_point(result_all_batch, statics_train, most_accuracy4bias)
+        result4question_biased_bias = evaluate_double_bias(question_biased_point, statics_train)
+        self.objects["logger"].info(
+            f"\nperformance of question bias point"
+        )
+        self.print_performance(
+            f"double biased point: num of sample is {result4question_biased_bias['num_sample']:<9}, performance is ",
+            result4question_biased_bias
+        )
 
         if hasattr(model, "get_predict_score_seq_len_minus1"):
             previous_seq_len4bias = fine_grain_config["previous_seq_len4bias"]

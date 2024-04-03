@@ -71,6 +71,7 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
     multi_stage = local_params.get("multi_stage", False)
     test_theory = local_params["test_theory"]
     use_pretrain = local_params["use_pretrain"]
+    epoch_pretrain = local_params["epoch_pretrain"]
     w_learning = local_params.get("w_learning", 0)
     w_counter_fact = local_params.get("w_counter_fact", 0)
     w_penalty_neg = local_params.get("w_penalty_neg", 0)
@@ -95,6 +96,7 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
     global_params["other"]["cognition_tracing"]["multi_stage"] = multi_stage
     global_params["other"]["cognition_tracing"]["test_theory"] = test_theory
     global_params["other"]["cognition_tracing"]["use_pretrain"] = use_pretrain
+    global_params["other"]["cognition_tracing"]["epoch_pretrain"] = epoch_pretrain
     if w_que_diff_pred != 0:
         global_params["loss_config"]["que diff pred loss"] = w_que_diff_pred
     if w_que_disc_pred != 0:
@@ -115,5 +117,5 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
         f"    w_que_diff_pred: {w_que_diff_pred}, w_que_disc_pred: {w_que_disc_pred}, w_user_ability_pred: {w_user_ability_pred}, "
         f"w_penalty_neg: {w_penalty_neg}, w_learning: {w_learning}, w_counter_fact: {w_counter_fact}, w_q_table: {w_q_table}\n"
         f"other params:\n"
-        f"    multi_stage: {multi_stage}, test_theory: {test_theory}, use_pretrain: {use_pretrain}"
+        f"    multi_stage: {multi_stage}, test_theory: {test_theory}, use_pretrain: {use_pretrain}, epoch_pretrain: {epoch_pretrain}"
     )

@@ -89,7 +89,7 @@ def unbiased_aug_general_config(local_params, global_params, global_objects):
     num_item2unbias = local_params["num_item2unbias"]
     use_virtual_emb4question = local_params["use_virtual_emb4question"]
     use_virtual_emb4aux = local_params["use_virtual_emb4aux"]
-    weight_unbias_loss = local_params["weight_unbias_loss"]
+    w_cl_loss = local_params["w_cl_loss"]
     dataset_name = local_params["dataset_name"]
     Q_table_single_concept = global_objects["file_manager"].get_q_table(dataset_name, "single_concept")
     question2concept_single_concept = question2concept_from_Q(Q_table_single_concept)
@@ -99,7 +99,7 @@ def unbiased_aug_general_config(local_params, global_params, global_objects):
     dataset_config = global_params["datasets_config"]["train"]
     dataset_config["kt4aug"] = {
         "type": "unbiased_aug",
-        "num_aug": 1 if (weight_unbias_loss != 0) else 0,
+        "num_aug": 1 if (w_cl_loss != 0) else 0,
         "unbiased_aug": {
             "use_virtual_emb4question": use_virtual_emb4question,
             "use_virtual_emb4aux": use_virtual_emb4aux,
@@ -152,11 +152,8 @@ def unbiased_aug_general_config(local_params, global_params, global_objects):
         "most_question": most_question
     }
 
-    if weight_unbias_loss != 0:
-        global_params["loss_config"]["unbias loss"] = weight_unbias_loss
-
     global_objects["logger"].info(
-        "unbiased params\n    "
-        f"weight_unbias_loss: {weight_unbias_loss}, num_item2unbias: {num_item2unbias}, use_virtual_emb4question: "
-        f"{use_virtual_emb4question}, use_virtual_emb4aux: {use_virtual_emb4aux}"
+        "data aug params\n    "
+        f"num_item2unbias: {num_item2unbias}, use_virtual_emb4question: {use_virtual_emb4question}, "
+        f"use_virtual_emb4aux: {use_virtual_emb4aux}"
     )

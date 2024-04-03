@@ -138,6 +138,8 @@ def get_question_biased_point(all_batch, statics_train, most_accuracy):
                 q_id = question_seq[i]
                 q_acc_statics = statics_train["question_acc"][q_id]
                 label = label_seq[i]
+                if q_acc_statics < 0:
+                    continue
                 if (q_acc_statics > (1 - most_accuracy)) and (label == 0):
                     result["high_acc_but_wrong"]["question"].append(q_id)
                     result["high_acc_but_wrong"]["predict_score"].append(predict_score_seq[i])
@@ -166,11 +168,12 @@ def evaluate_bias(seq_biased_point):
     return get_performance_no_error(seq_biased_predict_score, seq_biased_predict_label, seq_biased_label)
 
 
-def evaluate_double_bias(seq_biased_point, statics_train):
+def evaluate_double_bias(seq_biased_point, statics_train, most_accuracy):
     """
     评估数据集中存在序列偏差和习题偏差问题的点
     :param seq_biased_point:
     :param statics_train:
+    :param most_accuracy:
     :return:
     """
     # todo: 如果seq_biased_label全为0或者全为1，则不能计算AUC，这个还未处理
@@ -180,7 +183,10 @@ def evaluate_double_bias(seq_biased_point, statics_train):
     for q_id, p_score, p_label in zip(seq_biased_point["low_acc_but_right"]["question"],
                                       seq_biased_point["low_acc_but_right"]["predict_score"],
                                       seq_biased_point["low_acc_but_right"]["predict_label"]):
-        if q_id in statics_train["question_low_acc"]:
+        q_acc_statics = statics_train["question_acc"][q_id]
+        if q_acc_statics < 0:
+            continue
+        if q_acc_statics < most_accuracy:
             double_biased_label.append(1)
             double_biased_predict_score.append(p_score)
             double_biased_predict_label.append(p_label)
@@ -188,7 +194,10 @@ def evaluate_double_bias(seq_biased_point, statics_train):
     for q_id, p_score, p_label in zip(seq_biased_point["high_acc_but_wrong"]["question"],
                                       seq_biased_point["high_acc_but_wrong"]["predict_score"],
                                       seq_biased_point["high_acc_but_wrong"]["predict_label"]):
-        if q_id in statics_train["question_high_acc"]:
+        q_acc_statics = statics_train["question_acc"][q_id]
+        if q_acc_statics < 0:
+            continue
+        if q_acc_statics > (1 - most_accuracy):
             double_biased_label.append(0)
             double_biased_predict_score.append(p_score)
             double_biased_predict_label.append(p_label)

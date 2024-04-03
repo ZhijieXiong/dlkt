@@ -56,12 +56,12 @@ class CognitionTracingTrainer(KnowledgeTracingTrainer):
                 self.question_concept.append((related_c_ids, unrelated_c_ids))
 
     def pretrain_encoder(self):
+        epoch_pretrain = self.params["other"]["cognition_tracing"]["epoch_pretrain"]
         optimizer = self.objects["optimizers"]["kt_model"]
         model = self.objects["models"]["kt_model"]
         optimizer.zero_grad()
-
         user_ability_target = self.objects["cognition_tracing"]["user_ability_init"]
-        for epoch in range(1, 30):
+        for epoch in range(1, epoch_pretrain+1):
             model.train()
             user_ability_init = model.get_user_ability_init()
             loss = torch.nn.functional.mse_loss(user_ability_init, user_ability_target)
@@ -69,6 +69,7 @@ class CognitionTracingTrainer(KnowledgeTracingTrainer):
             optimizer.step()
 
     def pretrain_question_embed(self):
+        epoch_pretrain = self.params["other"]["cognition_tracing"]["epoch_pretrain"]
         optimizer = self.objects["optimizers"]["kt_model"]
         model = self.objects["models"]["kt_model"]
         optimizer.zero_grad()
@@ -77,7 +78,7 @@ class CognitionTracingTrainer(KnowledgeTracingTrainer):
         que_dataset = QueDataset(list(range(num_question)), self.params["device"])
         que_dataloader = DataLoader(que_dataset, batch_size=128, shuffle=True)
         Q_table = self.objects["data"]["Q_table_tensor"]
-        for epoch in range(1, 30):
+        for epoch in range(1, epoch_pretrain+1):
             model.train()
             for batch_question in que_dataloader:
                 optimizer.zero_grad()
@@ -111,7 +112,7 @@ class CognitionTracingTrainer(KnowledgeTracingTrainer):
         w_penalty_neg = self.params["loss_config"].get("penalty neg loss", 0)
         w_learning = self.params["loss_config"].get("learning loss", 0)
         w_counter_fact = self.params["loss_config"].get("counterfactual loss", 0)
-        w_unbias_loss = self.params["loss_config"].get("w_unbias_loss", 0)
+        w_cl_loss = self.params["loss_config"].get("cl loss", 0)
 
         optimizer.zero_grad()
         predict_loss = model.get_predict_loss(batch, self.loss_record)
@@ -195,12 +196,12 @@ class CognitionTracingTrainer(KnowledgeTracingTrainer):
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
                 optimizer.step()
 
-        if w_unbias_loss != 0:
+        if w_cl_loss != 0:
             batch_size = batch["mask_seq"].shape[0]
             optimizer.zero_grad()
             unbias_loss = model.get_unbias_loss(batch)
             self.loss_record.add_loss("counterfactual loss", unbias_loss.detach().cpu().item() * batch_size, batch_size)
-            unbias_loss = unbias_loss * w_unbias_loss
+            unbias_loss = unbias_loss * w_cl_loss
             unbias_loss.backward()
             if grad_clip_config["use_clip"]:
                 nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])

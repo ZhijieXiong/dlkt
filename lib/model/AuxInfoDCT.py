@@ -169,7 +169,7 @@ class AuxInfoDCT(nn.Module):
 
         return predict_score
 
-    def forward(self, batch):
+    def get_latent(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AuxInfoDCT"]
         dim_question = encoder_config["dim_question"]
         weight_aux_emb = encoder_config["weight_aux_emb"]
@@ -231,6 +231,13 @@ class AuxInfoDCT(nn.Module):
 
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(encoder_input)
+
+        return latent
+
+    def forward(self, batch):
+        question_seq = batch["question_seq"]
+        question_emb = self.embed_question(question_seq)
+        latent = self.get_latent(batch)
         predict_score = self.predict_score(latent[:, :-1], question_emb[:, 1:], question_seq[:, 1:])
 
         return predict_score
@@ -255,7 +262,7 @@ class AuxInfoDCT(nn.Module):
         multi_stage = self.params["other"]["cognition_tracing"]["multi_stage"]
         test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
         w_penalty_neg = self.params["loss_config"].get("penalty neg loss", 0)
-        w_unbias_loss = self.params["loss_config"].get("unbias loss", 0)
+        w_cl_loss = self.params["loss_config"].get("cl loss", 0)
         data_type = self.params["datasets_config"]["data_type"]
 
         batch_size, seq_len = correct_seq.shape[0], correct_seq.shape[1]
@@ -378,11 +385,11 @@ class AuxInfoDCT(nn.Module):
                                              num_sample)
                     loss = loss + penalty_neg_loss * w_penalty_neg
 
-        if (not multi_stage) and (w_unbias_loss != 0):
+        if (not multi_stage) and (w_cl_loss != 0):
             unbias_loss = self.get_unbias_loss(batch)
             if loss_record is not None:
-                loss_record.add_loss("unbias loss", unbias_loss.detach().cpu().item() * batch_size, batch_size)
-            loss = loss + unbias_loss * w_unbias_loss
+                loss_record.add_loss("cl loss", unbias_loss.detach().cpu().item() * batch_size, batch_size)
+            loss = loss + unbias_loss * w_cl_loss
 
         return loss
 
@@ -472,41 +479,45 @@ class AuxInfoDCT(nn.Module):
                 return 0, 0
 
     def get_unbias_loss(self, batch):
-        batch1 = {
+        batch_original = {
             "question_seq": batch["question_seq"],
             "correct_seq": batch["correct_seq"],
             "mask_seq": batch["mask_seq"]
         }
-        batch2 = {
+        batch_aug = {
             "question_seq": batch["question_seq_aug_0"],
             "correct_seq": batch["correct_seq_aug_0"],
             "mask_seq": batch["mask_seq_aug_0"]
         }
         if "interval_time_seq" in batch.keys():
-            batch1["interval_time_seq"] = batch["interval_time_seq"]
-            batch2["interval_time_seq"] = batch["interval_time_seq_aug_0"]
+            batch_original["interval_time_seq"] = batch["interval_time_seq"]
+            batch_aug["interval_time_seq"] = batch["interval_time_seq_aug_0"]
         if "use_time_seq" in batch.keys():
-            batch1["use_time_seq"] = batch["use_time_seq"]
-            batch2["use_time_seq"] = batch["use_time_seq_aug_0"]
+            batch_original["use_time_seq"] = batch["use_time_seq"]
+            batch_aug["use_time_seq"] = batch["use_time_seq_aug_0"]
         if "use_time_first_seq" in batch.keys():
-            batch1["use_time_first_seq"] = batch["use_time_first_seq"]
-            batch2["use_time_first_seq"] = batch["use_time_first_seq_aug_0"]
+            batch_original["use_time_first_seq"] = batch["use_time_first_seq"]
+            batch_aug["use_time_first_seq"] = batch["use_time_first_seq_aug_0"]
         if "num_hint_seq" in batch.keys():
-            batch1["num_hint_seq"] = batch["num_hint_seq"]
-            batch2["num_hint_seq"] = batch["num_hint_seq_aug_0"]
+            batch_original["num_hint_seq"] = batch["num_hint_seq"]
+            batch_aug["num_hint_seq"] = batch["num_hint_seq_aug_0"]
         if "num_attempt_seq" in batch.keys():
-            batch1["num_attempt_seq"] = batch["num_attempt_seq"]
-            batch2["num_attempt_seq"] = batch["num_attempt_seq_aug_0"]
+            batch_original["num_attempt_seq"] = batch["num_attempt_seq"]
+            batch_aug["num_attempt_seq"] = batch["num_attempt_seq_aug_0"]
 
         batch_size = batch["mask_seq"].shape[0]
         first_index = torch.arange(batch_size).long().to(self.params["device"])
 
-        predict_score1 = self.forward(batch1)
-        predict_score1 = predict_score1[first_index, batch["seq_len_original"] - 2]
+        latent_original = self.get_latent(batch_original)
+        latent_original = latent_original[first_index, batch["seq_len_original"] - 1]
 
-        predict_score2 = self.forward(batch2)
-        predict_score2 = predict_score2[first_index, batch["seq_len_aug_0"] - 2]
+        latent_aug = self.get_latent(batch_aug)
+        latent_aug = latent_aug[first_index, batch["seq_len_aug_0"] - 1]
 
-        unbias_loss = torch.nn.functional.mse_loss(predict_score1, predict_score2)
+        temp = self.params["other"]["instance_cl"]["temp"]
+        cos_sim = torch.cosine_similarity(latent_original.unsqueeze(1), latent_aug.unsqueeze(0), dim=-1) / temp
+        batch_size = cos_sim.size(0)
+        labels = torch.arange(batch_size).long().to(self.params["device"])
+        cl_loss = nn.functional.cross_entropy(cos_sim, labels)
 
-        return unbias_loss
+        return cl_loss

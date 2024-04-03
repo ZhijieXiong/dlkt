@@ -195,9 +195,9 @@ class Evaluator:
 
         most_accuracy4bias = fine_grain_config["seq_most_accuracy4bias"]
         question_biased_point = get_question_biased_point(result_all_batch, statics_train, most_accuracy4bias)
-        result4question_biased_bias = evaluate_double_bias(question_biased_point, statics_train)
+        result4question_biased_bias = evaluate_bias(question_biased_point)
         self.objects["logger"].info(
-            f"\nperformance of question bias point"
+            f"\nperformance of question bias point, param is most_accuracy4bias: {most_accuracy4bias}"
         )
         self.print_performance(
             f"double biased point: num of sample is {result4question_biased_bias['num_sample']:<9}, performance is ",
@@ -208,7 +208,7 @@ class Evaluator:
             previous_seq_len4bias = fine_grain_config["previous_seq_len4bias"]
             seq_most_accuracy4bias = fine_grain_config["seq_most_accuracy4bias"]
             seq_biased_point = get_seq_biased_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
-            result4double_bias = evaluate_double_bias(seq_biased_point, statics_train)
+            result4double_bias = evaluate_double_bias(seq_biased_point, statics_train, seq_most_accuracy4bias)
             self.objects["logger"].info(
                 f"\nperformance of double bias (seq and question bias) point, param is previous_seq_len4bias: "
                 f"{previous_seq_len4bias}, seq_most_accuracy4bias: {seq_most_accuracy4bias}"

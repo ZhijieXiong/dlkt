@@ -258,9 +258,25 @@
 
 ## 1、基本介绍
 
+- 测试代码：`example/evaluate.py`
+- 参数说明
+  - `save_model_dir` 保存模型参数文件和checkpoint的目录地址
+  - `save_model_name` checkpoint文件名
+  - `model_name_in_ckt` 如果没有修改lib里Trainer的代码，则对于"valid_test"模式训练的模型来说，默认是"best_valid"
+  - `base_type` 如果选择"concept"，则是常规的测试，即序列每个时刻算一个样本；如果选择"question"，则请看本小节第2部分“基于习题第测试”
+  - `statics_file_path` 由`example/prepare4fine_trained_evaluate.py`代码生成，是进行一些细粒度指标测试必须的信息，如果该文件没有，则不能进行"Long Tail"、"Question Bias"、"Double Bias"的细粒度测试
+  - `max_seq_len` 序列固定的最大长度，和`test_file_name`的数据保持一致
+  - `seq_len_absolute` 如"[0, 10, 100, 200]"表示测试模型在"[0, 10]"、"[10, 100]"、"[100, 200]"这三个长度区间上的性能
+  - `previous_seq_len4bias` 控制Seq Bias测试的强度，即"Context Seq"的长度，该值越大，Bias越大
+  - `seq_most_accuracy4bias` 控制Question Bias和Seq Bias测试的强度，即"Context Seq"正确率和"Question"在训练集中的正确率，该值越小，Bias越小
+  - `transfer_head2zero` 默认False即可
+  - `is_dimkt` 如果是DIMKT，需要习题和知识点难度index的信息
+  - `train_diff_file_path` DIMKT训练时生成的文件
+  - `num_question_diff` 和 `num_concept_diff` 和训练时保持一致，防止出现越界错误
+
 ## 2、基于习题的测试
 
-- 由`PYKT`提出，用于测试多知识点数据集在`multi_concept`设置下的性能
+- 由`pyKT`提出，用于测试多知识点数据集在`multi_concept`设置下的性能，具体请看论文
 
 ## 3、细粒度测试
 
@@ -272,10 +288,13 @@
   3. 基于习题和知识点正确率评估（数据偏差）
      - 首先根据训练集统计习题和知识点的正确率，在测试集上根据频率将习题和知识点划分低正确率、中等正确率和高正确率，然后评估模型在不同正确率水平习题和知识点上的性能
   4. 基于偏差评估
-     - 首先从测试集中划分出有偏差（seq bias和double bias）的子集，然后测试模型在这个子集上的效果
+     - 首先从测试集中划分出有偏差（seq bias、question bias和double bias）的子集，然后测试模型在这个子集上的效果
      - seq bias：找出context seq accuracy（即历史正确率，如前20个时刻的做题正确率）高，但是做错习题的时刻，或者context seq accuracy低，但是做对的时刻
-     - double bias：在seq bias（分为low acc but do right和high acc but do wrong）的基础上，结合训练集习题的信息（哪些习题正确率高，哪些低），在low acc but do right找出低正确率的习题，以及在high acc but do wrong中找出高正确率的习题
-  5. 基于习题偏差进行平衡采样后的评估：来自论文`Do We Fully Understand Students' Knowledge States? Identifying and Mitigating Answer Bias in Knowledge Tracing`
+     - question bias：类似seq bias，根据训练集统计信息，找出高正确率但是做错的习题（任意学生），或者低正确率但是做对的习题（任意学生）
+     - double bias：在seq bias（分为low acc but do right和high acc but do wrong）的基础上，结合训练集习题的信息（各习题的正确率），在low acc but do right找出低正确率的习题，以及在high acc but do wrong中找出高正确率的习题
+  5. 基于习题偏差进行平衡采样后的评估
+     - 来自论文`Do We Fully Understand Students' Knowledge States? Identifying and Mitigating Answer Bias in Knowledge Tracing`
+     - 官方代码实现的是有重复的采样，我们有重复和无重复都实现了
 - 按照以下步骤进行细粒度评估
   1. 运行`example/prepare4fine_trained_evaluate.py`生成细粒度测试所需要的文件`[train_data_name]_statics.json`
   2. 运行`example/evaluate.py`进行模型评估

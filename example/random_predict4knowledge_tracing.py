@@ -1,5 +1,7 @@
 import argparse
 import os
+import logging
+import sys
 
 from torch.utils.data import DataLoader
 
@@ -21,6 +23,11 @@ def config(local_params):
     # 配置文件管理器和日志
     file_manager = FileManager(FILE_MANAGER_ROOT)
     global_objects["file_manager"] = file_manager
+    global_objects["logger"] = logging.getLogger("evaluate_log")
+    global_objects["logger"].setLevel(4)
+    ch = logging.StreamHandler(stream=sys.stdout)
+    ch.setLevel(logging.DEBUG)
+    global_objects["logger"].addHandler(ch)
 
     # 数据集加载
     setting_name = local_params["setting_name"]
@@ -120,16 +127,16 @@ if __name__ == "__main__":
     parser.add_argument("--test_file_name", type=str, help="文件名", default="assist2009_test_fold_0.txt")
 
     # 参数配置
-    parser.add_argument("--max_context_seq_len", type=int, default=20)
-    parser.add_argument("--weight_context", type=float, default=0.2)
-    parser.add_argument("--weight_concept", type=float, default=0.2)
+    parser.add_argument("--max_context_seq_len", type=int, default=40)
+    parser.add_argument("--weight_context", type=float, default=0.4)
+    parser.add_argument("--weight_concept", type=float, default=0.4)
 
     # 随机种子
     parser.add_argument("--seed", type=int, default=0)
 
     # ------------------------------------------- 细粒度指标配置 ----------------------------------------------------------
     # 是否进行细粒度测试
-    parser.add_argument("--use_fine_grained_evaluation", type=str2bool, default=False)
+    parser.add_argument("--use_fine_grained_evaluation", type=str2bool, default=True)
     # 长尾问题（注意不同训练集的长尾统计信息不一样）
     parser.add_argument("--statics_file_path", type=str, help="prepare4fine_trained_evaluate.py生成的文件绝对路径",
                         default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new\assist2009_train_fold_0_statics.json")
@@ -138,8 +145,8 @@ if __name__ == "__main__":
     parser.add_argument("--seq_len_absolute", type=str, help="[0, 10, 200]表示测试模型对位于序列0~10区间的点的性能以及10~200区间点的性能",
                         default="[0, 10, 100, 200]")
     # 偏差问题（习题偏差和学生偏差，测试模型对于正确率高（低）的序列中高（低）正确率习题的预测能力），需要配合statics_file_path使用
-    parser.add_argument("--previous_seq_len4bias", type=int, default=40)
-    parser.add_argument("--seq_most_accuracy4bias", type=float, default=0.2)
+    parser.add_argument("--previous_seq_len4bias", type=int, default=20)
+    parser.add_argument("--seq_most_accuracy4bias", type=float, default=0.4)
 
     # 习题偏差问题（论文：Do We Fully Understand Students’ Knowledge States? Identifying and Mitigating Answer Bias in Knowledge Tracing提出）
     # 该测试无需配置
@@ -149,6 +156,7 @@ if __name__ == "__main__":
     set_seed(params["seed"])
 
     global_params_, global_objects_ = config(params)
+    global_params_["device"] = "cpu"
 
     model = RandomKTPredictor(global_params_, global_objects_)
     model.evaluate_valid()

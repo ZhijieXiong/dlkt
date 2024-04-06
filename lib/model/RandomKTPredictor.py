@@ -1,5 +1,6 @@
 import random
 
+import torch
 from sklearn.metrics import roc_auc_score, accuracy_score, mean_absolute_error, mean_squared_error
 
 from ..util.statics import cal_frequency, cal_accuracy
@@ -152,5 +153,25 @@ class RandomKTPredictor:
         for q_seq, c_seq, m_seq in zip(question_seq, correct_seq, mask_seq):
             predict_score += self.random_predict(q_seq, c_seq, m_seq)
 
+        return torch.tensor(predict_score).to(self.params["device"])
+
     def get_predict_score_seq_len_minus1(self, batch):
+        question_seq = batch["question_seq"].detach().cpu().numpy().tolist()
+        correct_seq = batch["correct_seq"].detach().cpu().numpy().tolist()
+        mask_seq = batch["mask_seq"].detach().cpu().numpy().tolist()
+
+        predict_score_batch = []
+        max_seq_len = len(question_seq[0])
+        for q_seq, c_seq, m_seq in zip(question_seq, correct_seq, mask_seq):
+            predict_score = self.random_predict(q_seq, c_seq, m_seq)
+            seq_len = len(predict_score)
+            predict_score += [0] * (max_seq_len - seq_len - 1)
+            predict_score_batch.append(predict_score)
+
+        return torch.tensor(predict_score_batch).to(self.params["device"])
+
+    def train(self):
+        pass
+
+    def eval(self):
         pass

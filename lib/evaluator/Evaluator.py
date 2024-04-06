@@ -60,7 +60,7 @@ class Evaluator:
         self.objects = objects
 
     def evaluate(self):
-        use_transfer = self.params["transfer_head2zero"]["use_transfer"]
+        use_transfer = self.params.get("transfer_head2zero", {"use_transfer": False})
         fine_grain_config = self.params["evaluate"]["fine_grain"]
         max_seq_len = fine_grain_config["max_seq_len"]
         seq_len_absolute = fine_grain_config["seq_len_absolute"]
@@ -175,6 +175,16 @@ class Evaluator:
                 f"seq biased point: num of sample is {result4bias['num_sample']:<9}, performance is ", result4bias
             )
 
+            seq_easy_point = get_seq_easy_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
+            result4easy = evaluate_easy(seq_easy_point)
+            self.objects["logger"].info(
+                f"\nperformance of seq easy point, param is previous_seq_len4easy: {previous_seq_len4bias}, "
+                f"seq_most_accuracy4easy: {seq_most_accuracy4bias}"
+            )
+            self.print_performance(
+                f"seq easy point: num of sample is {result4easy['num_sample']:<9}, performance is ", result4easy
+            )
+
         # 不同频率知识点/习题的性能
         statics_path = fine_grain_config["statics_path"]
         if not os.path.exists(statics_path):
@@ -200,8 +210,18 @@ class Evaluator:
             f"\nperformance of question bias point, param is most_accuracy4bias: {most_accuracy4bias}"
         )
         self.print_performance(
-            f"double biased point: num of sample is {result4question_biased_bias['num_sample']:<9}, performance is ",
+            f"question biased point: num of sample is {result4question_biased_bias['num_sample']:<9}, performance is ",
             result4question_biased_bias
+        )
+
+        question_easy_point = get_question_easy_point(result_all_batch, statics_train, most_accuracy4bias)
+        result4question_easy = evaluate_easy(question_easy_point)
+        self.objects["logger"].info(
+            f"\nperformance of question easy point, param is most_accuracy4easy: {most_accuracy4bias}"
+        )
+        self.print_performance(
+            f"question easy point: num of sample is {result4question_easy['num_sample']:<9}, performance is ",
+            result4question_easy
         )
 
         if hasattr(model, "get_predict_score_seq_len_minus1"):
@@ -216,6 +236,17 @@ class Evaluator:
             self.print_performance(
                 f"double biased point: num of sample is {result4double_bias['num_sample']:<9}, performance is ",
                 result4double_bias
+            )
+
+            seq_easy_point = get_seq_easy_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
+            result4double_easy = evaluate_double_easy(seq_easy_point, statics_train, seq_most_accuracy4bias)
+            self.objects["logger"].info(
+                f"\nperformance of double easy (seq and question easy) point, param is previous_seq_len4easy: "
+                f"{previous_seq_len4bias}, seq_most_accuracy4easy: {seq_most_accuracy4bias}"
+            )
+            self.print_performance(
+                f"double easy point: num of sample is {result4double_easy['num_sample']:<9}, performance is ",
+                result4double_easy
             )
 
         question_all = np.concatenate(question_all, axis=0)

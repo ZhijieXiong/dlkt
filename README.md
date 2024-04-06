@@ -29,6 +29,10 @@ This algorithm library was developed inspired by `pyKT` (the code repository cor
 |                                                              |       |       |
 |                            Wandb                             | False | True  |
 
+- Data process pipline
+
+<div align=center><img src="./resources/kt_data_pipline.png" /></div>
+
 # Experiement Results
 
 ## pyKT settings (Knowledge Tracing)

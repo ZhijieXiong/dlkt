@@ -16,13 +16,13 @@ if __name__ == "__main__":
 
     # 数据位置参数
     parser.add_argument("--data_dir", type=str,
-                        default="/Users/dream/Desktop/code/projects/dlkt/lab/math_dataset/dataset_raw")
+                        default="/Users/dream/myProjects/dlkt/lab/math_dataset/dataset_raw")
     parser.add_argument("--data_name", type=str, default="gsm8k")
     parser.add_argument("--split", type=str, default="test")
     parser.add_argument("--prompt_dir", type=str,
-                        default="/Users/dream/Desktop/code/projects/dlkt/prompt_template/tora")
+                        default="/Users/dream/myProjects/dlkt/prompt_template/tora")
     parser.add_argument("--output_dir", type=str,
-                        default="/Users/dream/Desktop/code/projects/dlkt/lab/math_dataset/tora")
+                        default="/Users/dream/myProjects/dlkt/lab/math_dataset/tora")
 
     # tora参数
     parser.add_argument("--prompt_type", type=str, default="tora")

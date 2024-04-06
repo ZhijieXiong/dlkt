@@ -120,7 +120,7 @@ class RandomKTPredictor:
 
         AUC = roc_auc_score(y_true=ground_truth, y_score=predict_score)
         ACC = accuracy_score(y_true=ground_truth, y_pred=predict_label)
-        RMSE = mean_squared_error(y_true=ground_truth, y_pred=predict_score)
+        RMSE = mean_squared_error(y_true=ground_truth, y_pred=predict_score) ** 0.5
         MAE = mean_absolute_error(y_true=ground_truth, y_pred=predict_score)
 
         print(f"valid performance is AUC: {AUC:<9.5}, ACC: {ACC:<9.5}, RMSE: {RMSE:<9.5}, MAE: {MAE:<9.5}")
@@ -139,7 +139,7 @@ class RandomKTPredictor:
 
         AUC = roc_auc_score(y_true=ground_truth, y_score=predict_score)
         ACC = accuracy_score(y_true=ground_truth, y_pred=predict_label)
-        RMSE = mean_squared_error(y_true=ground_truth, y_pred=predict_score)
+        RMSE = mean_squared_error(y_true=ground_truth, y_pred=predict_score) ** 0.5
         MAE = mean_absolute_error(y_true=ground_truth, y_pred=predict_score)
 
         print(f"test performance is AUC: {AUC:<9.5}, ACC: {ACC:<9.5}, RMSE: {RMSE:<9.5}, MAE: {MAE:<9.5}")

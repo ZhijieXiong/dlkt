@@ -54,7 +54,7 @@ def get_performance_no_error(predict_score, predict_label, true_label):
         "num_sample": len(true_label),
         "AUC": AUC,
         "ACC": accuracy_score(y_true=true_label, y_pred=predict_label),
-        "RMSE": mean_squared_error(y_true=true_label, y_pred=predict_score),
+        "RMSE": mean_squared_error(y_true=true_label, y_pred=predict_score) ** 0.5,
         "MAE": mean_absolute_error(y_true=true_label, y_pred=predict_score)
     }
 

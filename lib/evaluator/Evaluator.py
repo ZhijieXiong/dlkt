@@ -123,7 +123,7 @@ class Evaluator:
 
         # overall performance
         self.objects["logger"].info(
-            f"overall performance is AUC: {AUC:<9.5}, ACC: {ACC:<9.5}, RMSE: {MAE:<9.5}, MAE: {RMSE:<9.5}\n"
+            f"overall performance is AUC: {AUC:<9.5}, ACC: {ACC:<9.5}, RMSE: {RMSE:<9.5}, MAE: {MAE:<9.5}\n"
         )
 
         # CORE evaluate (question bias)

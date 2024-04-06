@@ -65,6 +65,8 @@ if __name__ == "__main__":
     # 训练策略以及测试理论
     parser.add_argument("--multi_stage", type=str2bool, default=False)
     parser.add_argument("--test_theory", type=str, default='irt', choices=("irt", "rasch"))
+    parser.add_argument("--use_pretrain", type=str2bool, default=False)
+    parser.add_argument("--epoch_pretrain", type=int, default=20)
     # 生成伪标签的参数
     parser.add_argument("--min_fre4diff", type=int, default=20)
     parser.add_argument("--min_fre4disc", type=int, default=20)

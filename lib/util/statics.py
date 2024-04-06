@@ -21,8 +21,15 @@ def cal_frequency(data_uniformed, num_item, target="question"):
 
 
 def cal_accuracy(data_uniformed, num_item, target="question"):
+    """
+    未出现的正确率记为-1
+    :param data_uniformed:
+    :param num_item:
+    :param target:
+    :return:
+    """
     target_seq = "concept_seq" if target == "concept" else "question_seq"
-    item_difficulty = {i: -1 for i in range(num_item)}
+    item_acc_dict = {i: -1 for i in range(num_item)}
 
     count = {i: 0 for i in range(num_item)}
     correct = {i: 0 for i in range(num_item)}
@@ -34,9 +41,9 @@ def cal_accuracy(data_uniformed, num_item, target="question"):
 
     for item_id in range(num_item):
         if count[item_id] != 0:
-            item_difficulty[item_id] = correct[item_id] / count[item_id]
+            item_acc_dict[item_id] = correct[item_id] / count[item_id]
 
-    return item_difficulty
+    return item_acc_dict
 
 
 def cal_acc_overall(data_uniformed):

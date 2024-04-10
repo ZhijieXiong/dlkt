@@ -259,9 +259,21 @@ def get_seq_easy_point(all_batch, previous_seq_len, seq_most_accuracy):
             "predict_label": []
         }
     }
+    non_seq_easy = {
+        "predict_score": [],
+        "predict_label": [],
+        "ground_truth": []
+    }
     for batch in all_batch:
         zip_iter = zip(batch["question_seqs"], batch["label_seqs"], batch["predict_score_seqs"], batch["mask_seqs"])
         for question_seq, label_seq, predict_score_seq, mask_seq in zip_iter:
+            for i, m in enumerate(mask_seq[:previous_seq_len]):
+                if m == 0:
+                    break
+                non_seq_easy["predict_score"].append(predict_score_seq[i])
+                non_seq_easy["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
+                non_seq_easy["ground_truth"].append(label_seq[i])
+
             for i, m in enumerate(mask_seq[previous_seq_len:]):
                 i += previous_seq_len
                 if m == 0:
@@ -279,9 +291,11 @@ def get_seq_easy_point(all_batch, previous_seq_len, seq_most_accuracy):
                     result["high_acc_and_right"]["predict_score"].append(predict_score_seq[i])
                     result["high_acc_and_right"]["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
                 else:
-                    pass
+                    non_seq_easy["predict_score"].append(predict_score_seq[i])
+                    non_seq_easy["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
+                    non_seq_easy["ground_truth"].append(label_seq[i])
 
-    return result
+    return result, non_seq_easy
 
 
 def get_question_easy_point(all_batch, statics_train, most_accuracy):
@@ -304,7 +318,11 @@ def get_question_easy_point(all_batch, statics_train, most_accuracy):
             "predict_label": []
         }
     }
-
+    non_question_easy = {
+        "predict_score": [],
+        "predict_label": [],
+        "ground_truth": []
+    }
     for batch in all_batch:
         zip_iter = zip(batch["question_seqs"], batch["label_seqs"], batch["predict_score_seqs"], batch["mask_seqs"])
         for question_seq, label_seq, predict_score_seq, mask_seq in zip_iter:
@@ -314,18 +332,21 @@ def get_question_easy_point(all_batch, statics_train, most_accuracy):
                 q_id = question_seq[i]
                 q_acc_statics = statics_train["question_acc"][q_id]
                 label = label_seq[i]
-                if q_acc_statics < 0:
-                    continue
-                if (q_acc_statics > (1 - most_accuracy)) and (label == 1):
+                if (q_acc_statics >= 0) and (q_acc_statics > (1 - most_accuracy)) and (label == 1):
                     result["high_acc_and_right"]["question"].append(q_id)
                     result["high_acc_and_right"]["predict_score"].append(predict_score_seq[i])
                     result["high_acc_and_right"]["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
-                if (q_acc_statics < most_accuracy) and (label == 0):
+                    continue
+                if (q_acc_statics >= 0) and (q_acc_statics < most_accuracy) and (label == 0):
                     result["low_acc_and_wrong"]["question"].append(q_id)
                     result["low_acc_and_wrong"]["predict_score"].append(predict_score_seq[i])
                     result["low_acc_and_wrong"]["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
+                    continue
+                non_question_easy["predict_score"].append(predict_score_seq[i])
+                non_question_easy["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
+                non_question_easy["ground_truth"].append(label)
 
-    return result
+    return result, non_question_easy
 
 
 def evaluate_easy(seq_easy_point):

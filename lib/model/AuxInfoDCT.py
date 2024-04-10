@@ -152,19 +152,28 @@ class AuxInfoDCT(nn.Module):
 
     def predict_score(self, latent, question_emb, question_seq):
         test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
+        use_hard_Q_table = self.params["other"]["cognition_tracing"]["use_hard_Q_table"]
+        Q_table = self.objects["data"]["Q_table_tensor"]
         if test_theory == "rasch":
             user_ability = self.latent2ability(self.dropout(latent))
             que_difficulty = self.que2difficulty(self.dropout(question_emb))
-            y = (user_ability - que_difficulty) * self.objects["data"]["Q_table_tensor"][question_seq]
+            y = (user_ability - que_difficulty) * Q_table[question_seq]
         else:
             user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
             que_discrimination = torch.sigmoid(self.que2discrimination(self.dropout(question_emb))) * 10
             que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
-            # mask掉太小的值
-            que_diff_mask = torch.ones_like(que_difficulty).float().to(self.params["device"])
-            que_diff_mask[que_difficulty < 0.05] = 0
-            y = (que_discrimination * (user_ability - que_difficulty)) * \
-                que_difficulty * que_diff_mask / torch.sum(que_difficulty, dim=1, keepdim=True)
+            if use_hard_Q_table:
+                # 使用原始Q table
+                user_ability_ = user_ability * Q_table[question_seq]
+                que_difficulty_ = que_difficulty * Q_table[question_seq]
+                y = que_discrimination * (user_ability_ - que_difficulty_) / \
+                    torch.sum(Q_table[question_seq], dim=2, keepdim=True)
+            else:
+                # mask掉太小的值
+                que_diff_mask = torch.ones_like(que_difficulty).float().to(self.params["device"])
+                que_diff_mask[que_difficulty < 0.05] = 0
+                y = (que_discrimination * (user_ability - que_difficulty)) * \
+                    que_difficulty * que_diff_mask / torch.sum(que_difficulty, dim=2, keepdim=True)
         predict_score = torch.sigmoid(torch.sum(y, dim=-1))
 
         return predict_score
@@ -261,6 +270,8 @@ class AuxInfoDCT(nn.Module):
         question_seq = batch["question_seq"]
         multi_stage = self.params["other"]["cognition_tracing"]["multi_stage"]
         test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
+        use_hard_Q_table = self.params["other"]["cognition_tracing"]["use_hard_Q_table"]
+        w_learning = self.params["loss_config"].get("learning loss", 0)
         w_penalty_neg = self.params["loss_config"].get("penalty neg loss", 0)
         w_cl_loss = self.params["loss_config"].get("cl loss", 0)
         data_type = self.params["datasets_config"]["data_type"]
@@ -321,8 +332,9 @@ class AuxInfoDCT(nn.Module):
             encoder_input = interaction_emb
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(encoder_input)
+        Q_table = self.objects["data"]["Q_table_tensor"]
         if test_theory == "rasch":
-            concept_related = self.objects["data"]["Q_table_tensor"][question_seq[:, 1:]]
+            concept_related = Q_table[question_seq[:, 1:]]
             user_ability = self.latent2ability(self.dropout(latent))
             que_difficulty = self.que2difficulty(self.dropout(question_emb[:, 1:]))
             inter_func_in = user_ability - que_difficulty
@@ -332,11 +344,19 @@ class AuxInfoDCT(nn.Module):
             que_discrimination = torch.sigmoid(self.que2discrimination(self.dropout(question_emb[:, 1:]))) * 10
             que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, 1:])))
             inter_func_in = user_ability - que_difficulty
-            que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, 1:])))
-            que_diff_mask = torch.ones_like(que_difficulty).float().to(self.params["device"])
-            que_diff_mask[que_difficulty < 0.05] = 0
-            y = (que_discrimination * inter_func_in) * \
-                que_difficulty * que_diff_mask / torch.sum(que_difficulty, dim=1, keepdim=True)
+            if use_hard_Q_table:
+                # 使用原始Q table
+                user_ability_ = user_ability * Q_table[question_seq[:, 1:]]
+                que_difficulty_ = que_difficulty * Q_table[question_seq[:, 1:]]
+                y = que_discrimination * (user_ability_ - que_difficulty_) / \
+                    torch.sum(Q_table[question_seq[:, 1:]], dim=2, keepdim=True)
+            else:
+                # mask掉太小的值
+                que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, 1:])))
+                que_diff_mask = torch.ones_like(que_difficulty).float().to(self.params["device"])
+                que_diff_mask[que_difficulty < 0.05] = 0
+                y = (que_discrimination * inter_func_in) * \
+                    que_difficulty * que_diff_mask / torch.sum(que_difficulty, dim=2, keepdim=True)
         predict_score = torch.sigmoid(torch.sum(y, dim=-1))
 
         loss = 0.
@@ -385,6 +405,24 @@ class AuxInfoDCT(nn.Module):
                                              num_sample)
                     loss = loss + penalty_neg_loss * w_penalty_neg
 
+        if (not multi_stage) and (w_learning != 0):
+            # 学习约束：做对了题比不做题学习增长大
+            master_leval = user_ability[:, 1:] - user_ability[:, :-1]
+            mask4master = mask_bool_seq[:, 1:-1].unsqueeze(-1) & \
+                          correct_seq[:, 1:-1].unsqueeze(-1).bool() & \
+                          q2c_mask_table[:, 1:-1].bool()
+            target_neg_master_leval = torch.masked_select(
+                torch.gather(master_leval, 2, q2c_table[:, 1:-1]), mask4master
+            )
+            neg_master_leval = target_neg_master_leval[target_neg_master_leval < 0]
+            num_sample = neg_master_leval.numel()
+            if num_sample > 0:
+                learn_loss = -neg_master_leval.mean()
+                if loss_record is not None:
+                    loss_record.add_loss("learning loss", learn_loss.detach().cpu().item() * num_sample,
+                                         num_sample)
+                loss = loss + learn_loss * w_learning
+
         if (not multi_stage) and (w_cl_loss != 0):
             unbias_loss = self.get_unbias_loss(batch)
             if loss_record is not None:
@@ -393,11 +431,11 @@ class AuxInfoDCT(nn.Module):
 
         return loss
 
-    def get_q_table_loss(self, target_question, question_ids, related_concept_ids, unrelated_concept_ids, t=0.5):
+    def get_q_table_loss(self, target_question, question_ids, related_concept_ids, unrelated_concept_ids):
         # 根据数据集提供的Q table约束que2difficulty的学习
         # 一方面每道习题标注的知识点要比未标注的大；另一方面限制未标注的知识点小于一个阈值，如0.5
         test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
-
+        threshold = self.params["other"]["cognition_tracing"]["q_table_loss_th"]
         question_emb = self.embed_question(target_question)
         if test_theory == "rasch":
             que_difficulty = self.que2difficulty(self.dropout(question_emb))
@@ -410,7 +448,7 @@ class AuxInfoDCT(nn.Module):
         to_punish1 = minus_diff[minus_diff > 0]
         num_sample1 = to_punish1.numel()
 
-        to_punish2 = unrelated_diff[unrelated_diff > t] - t
+        to_punish2 = unrelated_diff[unrelated_diff > threshold] - threshold
         num_sample2 = to_punish2.numel()
 
         num_sample = num_sample1 + num_sample2
@@ -477,6 +515,48 @@ class AuxInfoDCT(nn.Module):
                 return -neg_inter_func_in.mean(), num_sample
             else:
                 return 0, 0
+
+    def get_learn_loss(self, batch):
+        # 学习约束：做对了题比不做题学习增长大
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
+        dim_correct = encoder_config["dim_correct"]
+        test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
+
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        correct_seq = batch["correct_seq"]
+        question_seq = batch["question_seq"]
+        batch_size, seq_len = correct_seq.shape[0], correct_seq.shape[1]
+
+        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
+        question_emb = self.embed_question(question_seq)
+        concept_emb = self.get_concept_emb(batch)
+        interaction_emb = torch.cat((question_emb[:, :-1], concept_emb[:, :-1], correct_emb[:, :-1]), dim=2)
+
+        self.encoder_layer.flatten_parameters()
+        latent, _ = self.encoder_layer(interaction_emb)
+
+        if test_theory == "rasch":
+            user_ability = self.latent2ability(self.dropout(latent))
+        else:
+            user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
+
+        q2c_table = self.objects["data"]["q2c_table"][batch["question_seq"]]
+        q2c_mask_table = self.objects["data"]["q2c_mask_table"][batch["question_seq"]]
+
+        master_leval = user_ability[:, 1:] - user_ability[:, :-1]
+        mask4master = mask_bool_seq[:, 1:].unsqueeze(-1) & \
+                      correct_seq[:, 1:].unsqueeze(-1).bool() & \
+                      q2c_mask_table[:, 1:].bool()
+        target_neg_master_leval = torch.masked_select(
+            torch.gather(master_leval, 2, q2c_table[:, 1:]), mask4master
+        )
+        neg_master_leval = target_neg_master_leval[target_neg_master_leval < 0]
+        num_sample = neg_master_leval.numel()
+        if num_sample > 0:
+            learn_loss = -neg_master_leval.mean()
+            return learn_loss, num_sample
+        else:
+            return 0, 0
 
     def get_unbias_loss(self, batch):
         batch_original = {

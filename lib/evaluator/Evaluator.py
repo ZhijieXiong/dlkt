@@ -60,7 +60,8 @@ class Evaluator:
         self.objects = objects
 
     def evaluate(self):
-        use_transfer = self.params.get("transfer_head2zero", {"use_transfer": False})
+        transfer_head2zero = self.params.get("transfer_head2zero", {"use_transfer": False})
+        use_transfer = transfer_head2zero["use_transfer"]
         fine_grain_config = self.params["evaluate"]["fine_grain"]
         max_seq_len = fine_grain_config["max_seq_len"]
         seq_len_absolute = fine_grain_config["seq_len_absolute"]
@@ -165,6 +166,32 @@ class Evaluator:
         if hasattr(model, "get_predict_score_seq_len_minus1"):
             previous_seq_len4bias = fine_grain_config["previous_seq_len4bias"]
             seq_most_accuracy4bias = fine_grain_config["seq_most_accuracy4bias"]
+
+            # easy and non-easy sample evaluation
+            seq_easy_point, non_seq_easy_point = \
+                get_seq_easy_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
+            result4seq_easy = evaluate_easy(seq_easy_point)
+            result4non_seq_easy = get_performance_no_error(non_seq_easy_point["predict_score"],
+                                                           non_seq_easy_point["predict_label"],
+                                                           non_seq_easy_point["ground_truth"])
+            self.objects["logger"].info(
+                f"\nperformance of seq easy point, param is previous_seq_len4easy: {previous_seq_len4bias}, "
+                f"seq_most_accuracy4easy: {seq_most_accuracy4bias}"
+            )
+            self.print_performance(
+                f"seq easy point: num of sample is {result4seq_easy['num_sample']:<9}, performance is ", result4seq_easy
+            )
+
+            self.objects["logger"].info(
+                f"\nperformance of non seq easy point, param is previous_seq_len4easy: {previous_seq_len4bias}, "
+                f"seq_most_accuracy4easy: {seq_most_accuracy4bias}"
+            )
+            self.print_performance(
+                f"non seq easy point: num of sample is {result4non_seq_easy['num_sample']:<9}, performance is ",
+                result4non_seq_easy
+            )
+
+            # biased evaluation (hard sample evaluation)
             seq_biased_point = get_seq_biased_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
             result4bias = evaluate_bias(seq_biased_point)
             self.objects["logger"].info(
@@ -173,16 +200,6 @@ class Evaluator:
             )
             self.print_performance(
                 f"seq biased point: num of sample is {result4bias['num_sample']:<9}, performance is ", result4bias
-            )
-
-            seq_easy_point = get_seq_easy_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
-            result4easy = evaluate_easy(seq_easy_point)
-            self.objects["logger"].info(
-                f"\nperformance of seq easy point, param is previous_seq_len4easy: {previous_seq_len4bias}, "
-                f"seq_most_accuracy4easy: {seq_most_accuracy4bias}"
-            )
-            self.print_performance(
-                f"seq easy point: num of sample is {result4easy['num_sample']:<9}, performance is ", result4easy
             )
 
         # 不同频率知识点/习题的性能
@@ -205,6 +222,31 @@ class Evaluator:
 
         most_accuracy4bias = fine_grain_config["seq_most_accuracy4bias"]
         question_biased_point = get_question_biased_point(result_all_batch, statics_train, most_accuracy4bias)
+
+        # question easy sample evaluation (easy sample)
+        question_easy_point, non_question_easy_point = \
+            get_question_easy_point(result_all_batch, statics_train, most_accuracy4bias)
+        result4question_easy = evaluate_easy(question_easy_point)
+        result4non_question_easy = get_performance_no_error(non_question_easy_point["predict_score"],
+                                                            non_question_easy_point["predict_label"],
+                                                            non_question_easy_point["ground_truth"])
+        self.objects["logger"].info(
+            f"\nperformance of question easy point, param is most_accuracy4easy: {most_accuracy4bias}"
+        )
+        self.print_performance(
+            f"question easy point: num of sample is {result4question_easy['num_sample']:<9}, performance is ",
+            result4question_easy
+        )
+
+        self.objects["logger"].info(
+            f"\nperformance of non question easy point, param is most_accuracy4easy: {most_accuracy4bias}"
+        )
+        self.print_performance(
+            f"non question easy point: num of sample is {result4non_question_easy['num_sample']:<9}, performance is ",
+            result4non_question_easy
+        )
+
+        # question biased evaluation (hard sample)
         result4question_biased_bias = evaluate_bias(question_biased_point)
         self.objects["logger"].info(
             f"\nperformance of question bias point, param is most_accuracy4bias: {most_accuracy4bias}"
@@ -214,19 +256,24 @@ class Evaluator:
             result4question_biased_bias
         )
 
-        question_easy_point = get_question_easy_point(result_all_batch, statics_train, most_accuracy4bias)
-        result4question_easy = evaluate_easy(question_easy_point)
-        self.objects["logger"].info(
-            f"\nperformance of question easy point, param is most_accuracy4easy: {most_accuracy4bias}"
-        )
-        self.print_performance(
-            f"question easy point: num of sample is {result4question_easy['num_sample']:<9}, performance is ",
-            result4question_easy
-        )
-
         if hasattr(model, "get_predict_score_seq_len_minus1"):
             previous_seq_len4bias = fine_grain_config["previous_seq_len4bias"]
             seq_most_accuracy4bias = fine_grain_config["seq_most_accuracy4bias"]
+
+            # double easy sample evaluation (most easy sample)
+            seq_easy_point, non_seq_easy_point = \
+                get_seq_easy_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
+            result4double_easy = evaluate_double_easy(seq_easy_point, statics_train, seq_most_accuracy4bias)
+            self.objects["logger"].info(
+                f"\nperformance of double easy (seq and question easy) point, param is previous_seq_len4easy: "
+                f"{previous_seq_len4bias}, seq_most_accuracy4easy: {seq_most_accuracy4bias}"
+            )
+            self.print_performance(
+                f"double easy point: num of sample is {result4double_easy['num_sample']:<9}, performance is ",
+                result4double_easy
+            )
+
+            # double biased evaluation (most hard sample)
             seq_biased_point = get_seq_biased_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
             result4double_bias = evaluate_double_bias(seq_biased_point, statics_train, seq_most_accuracy4bias)
             self.objects["logger"].info(
@@ -236,17 +283,6 @@ class Evaluator:
             self.print_performance(
                 f"double biased point: num of sample is {result4double_bias['num_sample']:<9}, performance is ",
                 result4double_bias
-            )
-
-            seq_easy_point = get_seq_easy_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
-            result4double_easy = evaluate_double_easy(seq_easy_point, statics_train, seq_most_accuracy4bias)
-            self.objects["logger"].info(
-                f"\nperformance of double easy (seq and question easy) point, param is previous_seq_len4easy: "
-                f"{previous_seq_len4bias}, seq_most_accuracy4easy: {seq_most_accuracy4bias}"
-            )
-            self.print_performance(
-                f"double easy point: num of sample is {result4double_easy['num_sample']:<9}, performance is ",
-                result4double_easy
             )
 
         question_all = np.concatenate(question_all, axis=0)

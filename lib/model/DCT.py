@@ -47,7 +47,6 @@ class DCT(nn.Module):
         num_question = encoder_config["num_question"]
         num_concept = encoder_config["num_concept"]
         dim_question = encoder_config["dim_question"]
-        dim_correct = encoder_config["dim_correct"]
         dim_latent = encoder_config["dim_latent"]
         rnn_type = encoder_config["rnn_type"]
         num_rnn_layer = encoder_config["num_rnn_layer"]
@@ -56,7 +55,7 @@ class DCT(nn.Module):
 
         self.embed_question = nn.Embedding(num_question, dim_question)
         torch.nn.init.xavier_uniform_(self.embed_question.weight)
-        dim_rrn_input = dim_question + dim_correct
+        dim_rrn_input = dim_question * 2
         if rnn_type == "rnn":
             self.encoder_layer = nn.RNN(dim_rrn_input, dim_latent, batch_first=True, num_layers=num_rnn_layer)
         elif rnn_type == "lstm":
@@ -101,12 +100,12 @@ class DCT(nn.Module):
         return predict_score
 
     def forward(self, batch):
-        dim_correct = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]["dim_correct"]
+        dim_question = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]["dim_question"]
         correct_seq = batch["correct_seq"]
         question_seq = batch["question_seq"]
         batch_size, seq_len = correct_seq.shape[0], correct_seq.shape[1]
 
-        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
+        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_question).reshape(batch_size, -1, dim_question)
         question_emb = self.embed_question(question_seq)
         interaction_emb = torch.cat((question_emb[:, :-1], correct_emb[:, :-1]), dim=2)
 
@@ -163,14 +162,14 @@ class DCT(nn.Module):
     def get_learn_loss(self, batch):
         # 学习约束：做对了题比不做题学习增长大
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
-        dim_correct = encoder_config["dim_correct"]
+        dim_question = encoder_config["dim_question"]
 
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         correct_seq = batch["correct_seq"]
         question_seq = batch["question_seq"]
         batch_size, seq_len = correct_seq.shape[0], correct_seq.shape[1]
 
-        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
+        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_question).reshape(batch_size, -1, dim_question)
         question_emb = self.embed_question(question_seq)
         interaction_emb = torch.cat((question_emb, correct_emb), dim=2)
 
@@ -201,7 +200,7 @@ class DCT(nn.Module):
         # 对于做对的题，惩罚user_ability - que_difficulty小于0的值（只惩罚考察的知识点）
         # 如果是单知识点数据集，那么对于做错的题，惩罚user_ability - que_difficulty大于0的值（只惩罚考察的知识点）
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
-        dim_correct = encoder_config["dim_correct"]
+        dim_question = encoder_config["dim_question"]
         data_type = self.params["datasets_config"]["data_type"]
 
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
@@ -209,7 +208,7 @@ class DCT(nn.Module):
         question_seq = batch["question_seq"]
         batch_size, seq_len = correct_seq.shape[0], correct_seq.shape[1]
 
-        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
+        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_question).reshape(batch_size, -1, dim_question)
         question_emb = self.embed_question(question_seq)
         interaction_emb = torch.cat((question_emb[:, :-1], correct_emb[:, :-1]), dim=2)
 
@@ -251,7 +250,7 @@ class DCT(nn.Module):
     def get_counter_fact_loss(self, batch):
         # 反事实约束：做对一道题比做错一道题的学习增长大
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
-        dim_correct = encoder_config["dim_correct"]
+        dim_question = encoder_config["dim_question"]
         num_concept = encoder_config["num_concept"]
         dim_latent = encoder_config["dim_latent"]
         num_rnn_layer = encoder_config["num_rnn_layer"]
@@ -261,13 +260,13 @@ class DCT(nn.Module):
         question_seq = batch["question_seq"]
         batch_size, seq_len = correct_seq.shape[0], correct_seq.shape[1]
 
-        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
+        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_question).reshape(batch_size, -1, dim_question)
         question_emb = self.embed_question(question_seq)
         interaction_emb = torch.cat((question_emb, correct_emb), dim=2)
 
         cf_user_ability = torch.zeros(batch_size, seq_len, num_concept).to(self.params["device"])
         latent = torch.zeros(batch_size, seq_len, dim_latent).to(self.params["device"])
-        cf_correct_emb = (1 - correct_seq).reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, seq_len, -1)
+        cf_correct_emb = (1 - correct_seq).reshape(-1, 1).repeat(1, dim_question).reshape(batch_size, seq_len, -1)
         cf_interaction_emb = torch.cat((question_emb, cf_correct_emb), dim=2)
 
         # torch中rnn的hidden state初始值为0
@@ -326,7 +325,7 @@ class DCT(nn.Module):
 
     def get_predict_loss(self, batch, loss_record=None):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
-        dim_correct = encoder_config["dim_correct"]
+        dim_question = encoder_config["dim_question"]
         num_concept = encoder_config["num_concept"]
         dim_latent = encoder_config["dim_latent"]
         num_rnn_layer = encoder_config["num_rnn_layer"]
@@ -342,7 +341,7 @@ class DCT(nn.Module):
         question_seq = batch["question_seq"]
         batch_size, seq_len = correct_seq.shape[0], correct_seq.shape[1]
 
-        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
+        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_question).reshape(batch_size, -1, dim_question)
         question_emb = self.embed_question(question_seq)
         interaction_emb = torch.cat((question_emb[:, :-1], correct_emb[:, :-1]), dim=2)
 
@@ -351,7 +350,7 @@ class DCT(nn.Module):
         if (not multi_stage) and (w_counter_fact != 0):
             # 如果使用反事实约束，为了获取RNN每个时刻的hidden state，只能这么写
             latent = torch.zeros(batch_size, seq_len - 1, dim_latent).to(self.params["device"])
-            cf_correct_emb = (1 - correct_seq).reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, seq_len, -1)
+            cf_correct_emb = (1 - correct_seq).reshape(-1, 1).repeat(1, dim_question).reshape(batch_size, seq_len, -1)
             cf_interaction_emb = torch.cat((question_emb, cf_correct_emb), dim=2)
             # GRU 官方代码初始化h为0向量
             rnn_h_current = torch.zeros(

@@ -55,7 +55,6 @@ if __name__ == "__main__":
     parser.add_argument("--num_question", type=int, default=17751)
     parser.add_argument("--dim_question", type=int, default=96)
     parser.add_argument("--dim_latent", type=int, default=96)
-    parser.add_argument("--dim_correct", type=int, default=64)
     parser.add_argument("--rnn_type", type=str, default="gru", choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=1)
     parser.add_argument("--num_mlp_layer", type=int, default=3)

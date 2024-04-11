@@ -8,7 +8,6 @@ MODEL_PARAMS = {
             "dim_latent": 64,
             "rnn_type": "gru",
             "num_rnn_layer": 1,
-            "que_user_share_proj": False,
             "num_mlp_layer": 1,
             "dropout": 0.1
         },

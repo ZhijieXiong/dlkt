@@ -12,7 +12,6 @@ def dct_general_config(local_params, global_params, global_objects):
     num_concept = local_params["num_concept"]
     num_question = local_params["num_question"]
     dim_question = local_params["dim_question"]
-    dim_correct = local_params["dim_correct"]
     dim_latent = local_params["dim_latent"]
     rnn_type = local_params["rnn_type"]
     num_rnn_layer = local_params["num_rnn_layer"]
@@ -24,7 +23,6 @@ def dct_general_config(local_params, global_params, global_objects):
     encoder_config["num_concept"] = num_concept
     encoder_config["num_question"] = num_question
     encoder_config["dim_question"] = dim_question
-    encoder_config["dim_correct"] = dim_correct
     encoder_config["dim_latent"] = dim_latent
     encoder_config["rnn_type"] = rnn_type
     encoder_config["num_rnn_layer"] = num_rnn_layer
@@ -34,8 +32,8 @@ def dct_general_config(local_params, global_params, global_objects):
     global_objects["logger"].info(
           f"model params\n    "
           f"num_concept: {num_concept}, num_question: {num_question}\n    "
-          f"dim_question: {dim_question}, dim_correct: {dim_correct}, dim_latent: {dim_latent}, rnn type: {rnn_type}, "
-          f"num of rnn layer: {num_rnn_layer}, num_mlp_layer: {num_mlp_layer}, dropout: {dropout}"
+          f"dim_question: {dim_question}, dim_latent: {dim_latent}, rnn_type: {rnn_type}, "
+          f"num_rnn_layer: {num_rnn_layer}, num_mlp_layer: {num_mlp_layer}, dropout: {dropout}"
     )
 
     if local_params["save_model"]:

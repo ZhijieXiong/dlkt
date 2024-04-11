@@ -166,7 +166,7 @@ class AuxInfoDCT(nn.Module):
 
         return predict_score
 
-    def get_latent(self, batch):
+    def get_latent(self, batch, correct_noise_strength=0.):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AuxInfoDCT"]
         dim_question = encoder_config["dim_question"]
         weight_aux_emb = encoder_config["weight_aux_emb"]
@@ -176,6 +176,12 @@ class AuxInfoDCT(nn.Module):
 
         question_emb = self.embed_question(question_seq)
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_question).reshape(batch_size, -1, dim_question)
+        if 0 < correct_noise_strength < 0.5:
+            noise = torch.rand(batch_size, seq_len, dim_question).to(self.params["device"]) * correct_noise_strength
+            noise_mask = torch.ones_like(noise).float().to(self.params["device"])
+            noise_mask[correct_seq == 1] = -1
+            noise = noise * noise_mask
+            correct_emb = correct_emb + noise
         interaction_emb = torch.cat((question_emb, correct_emb), dim=2)
 
         if (self.has_use_time or self.has_num_hint or self.has_num_attempt) and self.has_time:
@@ -512,43 +518,16 @@ class AuxInfoDCT(nn.Module):
             return 0, 0
 
     def get_unbias_loss(self, batch):
-        batch_original = {
-            "question_seq": batch["question_seq"],
-            "correct_seq": batch["correct_seq"],
-            "mask_seq": batch["mask_seq"]
-        }
-        batch_aug = {
-            "question_seq": batch["question_seq_aug_0"],
-            "correct_seq": batch["correct_seq_aug_0"],
-            "mask_seq": batch["mask_seq_aug_0"]
-        }
-        if "interval_time_seq" in batch.keys():
-            batch_original["interval_time_seq"] = batch["interval_time_seq"]
-            batch_aug["interval_time_seq"] = batch["interval_time_seq_aug_0"]
-        if "use_time_seq" in batch.keys():
-            batch_original["use_time_seq"] = batch["use_time_seq"]
-            batch_aug["use_time_seq"] = batch["use_time_seq_aug_0"]
-        if "use_time_first_seq" in batch.keys():
-            batch_original["use_time_first_seq"] = batch["use_time_first_seq"]
-            batch_aug["use_time_first_seq"] = batch["use_time_first_seq_aug_0"]
-        if "num_hint_seq" in batch.keys():
-            batch_original["num_hint_seq"] = batch["num_hint_seq"]
-            batch_aug["num_hint_seq"] = batch["num_hint_seq_aug_0"]
-        if "num_attempt_seq" in batch.keys():
-            batch_original["num_attempt_seq"] = batch["num_attempt_seq"]
-            batch_aug["num_attempt_seq"] = batch["num_attempt_seq_aug_0"]
-
         batch_size = batch["mask_seq"].shape[0]
         first_index = torch.arange(batch_size).long().to(self.params["device"])
 
-        latent_original = self.get_latent(batch_original)
-        latent_original = latent_original[first_index, batch["seq_len_original"] - 1]
-
-        latent_aug = self.get_latent(batch_aug)
-        latent_aug = latent_aug[first_index, batch["seq_len_aug_0"] - 1]
+        latent_aug0 = self.get_latent(batch, correct_noise_strength=0.5)
+        latent_aug0 = latent_aug0[first_index, batch["seq_len"] - 1]
+        latent_aug1 = self.get_latent(batch, correct_noise_strength=0.5)
+        latent_aug1 = latent_aug1[first_index, batch["seq_len"] - 1]
 
         temp = self.params["other"]["instance_cl"]["temp"]
-        cos_sim = torch.cosine_similarity(latent_original.unsqueeze(1), latent_aug.unsqueeze(0), dim=-1) / temp
+        cos_sim = torch.cosine_similarity(latent_aug0.unsqueeze(1), latent_aug1.unsqueeze(0), dim=-1) / temp
         batch_size = cos_sim.size(0)
         labels = torch.arange(batch_size).long().to(self.params["device"])
         cl_loss = nn.functional.cross_entropy(cos_sim, labels)

@@ -61,18 +61,17 @@ class AuxInfoDCT(nn.Module):
         self.has_num_hint = dataset_name in HAS_NUM_HINT
         self.has_num_attempt = dataset_name in HAS_NUM_ATTEMPT
 
-        # 输入embedding融合层（每种辅助信息的toke表不超过100， 在前端就处理好），+2是留出空位给virtual emb
-        # 这里+5000是给virtual question（如果single concept对应的知识点数量为n，则该值为2n）留出空位，目前所有数据集该值都不超过5000
-        self.embed_question = nn.Embedding(num_question + 5000, dim_question)
+        # 输入embedding融合层（每种辅助信息的toke表不超过100， 在前端就处理好）
+        self.embed_question = nn.Embedding(num_question+1, dim_question)
         torch.nn.init.xavier_uniform_(self.embed_question.weight)
         if self.has_time:
-            self.embed_interval_time = nn.Embedding(100 + 2, dim_question)
+            self.embed_interval_time = nn.Embedding(101, dim_question)
         if self.has_use_time:
-            self.embed_use_time = nn.Embedding(100 + 2, dim_question)
+            self.embed_use_time = nn.Embedding(101, dim_question)
         if self.has_num_hint:
-            self.embed_num_hint = nn.Embedding(100 + 2, dim_question)
+            self.embed_num_hint = nn.Embedding(101, dim_question)
         if self.has_num_attempt:
-            self.embed_num_attempt = nn.Embedding(100 + 2, dim_question)
+            self.embed_num_attempt = nn.Embedding(101, dim_question)
         # 融合use time、num hint、num attempt
         self.fuse_ut_nh_na = nn.Linear(dim_question * 3, dim_question)
 

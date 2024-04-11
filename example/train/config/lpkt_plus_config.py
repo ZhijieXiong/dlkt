@@ -8,13 +8,13 @@ from lib.CONSTANT import INTERVAL_TIME4LPKT_PLUS, USE_TIME4LPKT_PLUS
 def lpkt_plus_general_config(local_params, global_params, global_objects):
     # 数据集特殊配置
     global_params["other"] = {"lpkt_plus": {}}
-    global_params["datasets_config"]["train"]["type"] = "kt4lpkt_plus"
-    global_params["datasets_config"]["train"]["lpkt_plus"] = {}
-    global_params["datasets_config"]["test"]["type"] = "kt4lpkt_plus"
-    global_params["datasets_config"]["test"]["kt4lpkt_plus"] = {}
+    global_params["datasets_config"]["train"]["type"] = "kt4aux_info"
+    global_params["datasets_config"]["train"]["kt4aux_info"] = {}
+    global_params["datasets_config"]["test"]["type"] = "kt4aux_info"
+    global_params["datasets_config"]["test"]["kt4aux_info"] = {}
     if local_params["train_strategy"] == "valid_test":
-        global_params["datasets_config"]["valid"]["type"] = "kt4lpkt_plus"
-        global_params["datasets_config"]["valid"]["kt4lpkt_plus"] = {}
+        global_params["datasets_config"]["valid"]["type"] = "kt4aux_info"
+        global_params["datasets_config"]["valid"]["kt4aux_info"] = {}
 
     # 配置模型参数
     num_concept = local_params["num_concept"]

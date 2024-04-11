@@ -7,7 +7,6 @@ from config.lpkt_plus_config import lpkt_plus_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
-from lib.dataset.KTDataset4LPKTPlus import KTDataset4LPKTPlus
 from lib.dataset.KTDataset import KTDataset
 from lib.model.LPKTPlus import LPKTPlus
 from lib.trainer.CognitionTracingTrainer import CognitionTracingTrainer
@@ -114,7 +113,7 @@ if __name__ == "__main__":
 
     train_params = deepcopy(global_params)
     train_params["datasets_config"]["dataset_this"] = "train"
-    dataset_train = KTDataset4LPKTPlus(train_params, global_objects)
+    dataset_train = KTDataset(train_params, global_objects)
     dataloader_train = DataLoader(dataset_train, batch_size=params["train_batch_size"], shuffle=True)
 
     test_params = deepcopy(global_params)

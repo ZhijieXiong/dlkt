@@ -19,14 +19,9 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
     ))
     global_objects["cognition_tracing"]["dataset_train"] = dataset_train
 
-    if local_params["test_theory"] == "rasch":
-        w_que_diff_pred = 0
-        w_que_disc_pred = 0
-        w_user_ability_pred = 0
-    else:
-        w_que_diff_pred = local_params.get("w_que_diff_pred", 0)
-        w_que_disc_pred = local_params.get("w_que_disc_pred", 0)
-        w_user_ability_pred = local_params.get("w_user_ability_pred", 0)
+    w_que_diff_pred = local_params.get("w_que_diff_pred", 0)
+    w_que_disc_pred = local_params.get("w_que_disc_pred", 0)
+    w_user_ability_pred = local_params.get("w_user_ability_pred", 0)
 
     # 统计习题难度
     if (w_que_diff_pred != 0) or (w_user_ability_pred != 0):
@@ -69,7 +64,6 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
 
     # 单阶段还是多阶段；损失权重配置
     multi_stage = local_params.get("multi_stage", False)
-    test_theory = local_params["test_theory"]
     use_hard_Q_table = local_params.get("use_hard_Q_table", False)
     q_table_loss_th = local_params.get("q_table_loss_th", 0.5)
     use_pretrain = local_params["use_pretrain"]
@@ -96,7 +90,6 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
             torch.tensor(user_ability_init).float().to(global_params["device"])
 
     global_params["other"]["cognition_tracing"]["multi_stage"] = multi_stage
-    global_params["other"]["cognition_tracing"]["test_theory"] = test_theory
     global_params["other"]["cognition_tracing"]["use_pretrain"] = use_pretrain
     global_params["other"]["cognition_tracing"]["epoch_pretrain"] = epoch_pretrain
     global_params["other"]["cognition_tracing"]["use_hard_Q_table"] = use_hard_Q_table
@@ -121,6 +114,6 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
         f"    w_que_diff_pred: {w_que_diff_pred}, w_que_disc_pred: {w_que_disc_pred}, w_user_ability_pred: {w_user_ability_pred}, "
         f"w_penalty_neg: {w_penalty_neg}, w_learning: {w_learning}, w_counter_fact: {w_counter_fact}, w_q_table: {w_q_table}\n"
         f"other params:\n"
-        f"    multi_stage: {multi_stage}, test_theory: {test_theory}, use_hard_Q_table: {use_hard_Q_table}, "
-        f"use_pretrain: {use_pretrain}, epoch_pretrain: {epoch_pretrain}, q_table_loss_th: {q_table_loss_th}"
+        f"    multi_stage: {multi_stage}, use_hard_Q_table: {use_hard_Q_table}, use_pretrain: {use_pretrain}, "
+        f"epoch_pretrain: {epoch_pretrain}, q_table_loss_th: {q_table_loss_th}"
     )

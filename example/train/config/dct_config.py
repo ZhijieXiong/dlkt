@@ -1,6 +1,5 @@
 from ._config import *
 from ._cognition_tracing_config import *
-from ._data_aug_config import *
 from lib.template.kt_model.DCT import MODEL_PARAMS as DCT_MODEL_PARAMS
 
 
@@ -17,7 +16,6 @@ def dct_general_config(local_params, global_params, global_objects):
     dim_latent = local_params["dim_latent"]
     rnn_type = local_params["rnn_type"]
     num_rnn_layer = local_params["num_rnn_layer"]
-    que_user_share_proj = local_params["que_user_share_proj"]
     num_mlp_layer = local_params["num_mlp_layer"]
     dropout = local_params["dropout"]
 
@@ -30,7 +28,6 @@ def dct_general_config(local_params, global_params, global_objects):
     encoder_config["dim_latent"] = dim_latent
     encoder_config["rnn_type"] = rnn_type
     encoder_config["num_rnn_layer"] = num_rnn_layer
-    encoder_config["que_user_share_proj"] = que_user_share_proj
     encoder_config["num_mlp_layer"] = num_mlp_layer
     encoder_config["dropout"] = dropout
 
@@ -38,8 +35,7 @@ def dct_general_config(local_params, global_params, global_objects):
           f"model params\n    "
           f"num_concept: {num_concept}, num_question: {num_question}\n    "
           f"dim_question: {dim_question}, dim_correct: {dim_correct}, dim_latent: {dim_latent}, rnn type: {rnn_type}, "
-          f"num of rnn layer: {num_rnn_layer}, que_user_share_proj: {que_user_share_proj}, "
-          f"num_mlp_layer: {num_mlp_layer}, dropout: {dropout}"
+          f"num of rnn layer: {num_rnn_layer}, num_mlp_layer: {num_mlp_layer}, dropout: {dropout}"
     )
 
     if local_params["save_model"]:
@@ -59,20 +55,6 @@ def dct_config(local_params):
     cognition_tracing_general_config(local_params, global_params, global_objects)
 
     if local_params["save_model"]:
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def dct_mex_entropy_aug_config(local_params):
-    global_params = {}
-    global_objects = {}
-    general_config(local_params, global_params, global_objects)
-    dct_general_config(local_params, global_params, global_objects)
-    max_entropy_adv_aug_general_config(local_params, global_params, global_objects)
-    if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@DCT@@", "@@DCT-ME-ADA@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects

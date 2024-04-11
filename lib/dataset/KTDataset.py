@@ -82,7 +82,7 @@ class KTDataset(Dataset):
                     seq_len = item_data["seq_len"]
                     for time_i in range(1, seq_len):
                         interval_time_real = (item_data["time_seq"][time_i] - item_data["time_seq"][time_i - 1]) // 60
-                        if dataset_type == "kt4lpkt_plus":
+                        if dataset_type == "kt4aux_info":
                             interval_time_idx = len(INTERVAL_TIME4LPKT_PLUS)
                             for idx, interval_time_value in enumerate(INTERVAL_TIME4LPKT_PLUS):
                                 if interval_time_real < 0:
@@ -97,7 +97,7 @@ class KTDataset(Dataset):
                     interval_time_seq += [0] * (max_seq_len - seq_len)
                     dataset_converted["interval_time_seq"].append(interval_time_seq)
                 elif k == "use_time_seq":
-                    if dataset_type == "kt4lpkt_plus":
+                    if dataset_type == "kt4aux_info":
                         seq_len = item_data["seq_len"]
                         use_time_seq = []
                         for time_i, use_time in enumerate(item_data["use_time_seq"][:seq_len]):

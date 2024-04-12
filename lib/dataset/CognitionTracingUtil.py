@@ -1,11 +1,8 @@
-import math
-import torch
-
 from copy import deepcopy
 from collections import defaultdict
 
 from ..util.parse import cal_accuracy4data, get_high_low_accuracy_seqs, cal_diff
-from ..CONST import FORGET_POINT, REMAIN_PERCENT
+from ..CONSTANT import FORGET_POINT, REMAIN_PERCENT
 
 
 class CognitionTracingUtil:

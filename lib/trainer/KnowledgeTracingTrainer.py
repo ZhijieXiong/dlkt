@@ -3,11 +3,15 @@ import os
 import torch.nn as nn
 
 from sklearn.metrics import roc_auc_score, accuracy_score, mean_absolute_error, mean_squared_error
+from copy import deepcopy
 
 from .util import *
 from ..util.basic import *
 from .LossRecord import *
 from .TrainRecord import *
+from ..evaluator.util import get_seq_easy_point, get_seq_biased_point, get_performance_no_error, evaluate_easy, \
+    evaluate_bias, evaluate_core
+from ..CONSTANT import MODEL_USE_QC
 
 
 class KnowledgeTracingTrainer:
@@ -103,7 +107,103 @@ class KnowledgeTracingTrainer:
                     f"{self.train_record.get_evaluate_result_str('test', 'test')}\n"
                 )
 
+                data_loader = self.objects["data_loaders"]["test_loader"]
+                model = self.objects["models"]["kt_model"]
+                if model.model_name in MODEL_USE_QC:
+                    self.evaluate_fine_grained(data_loader)
+
         return stop_flag
+
+    def print_performance(self, prefix, performance_dict):
+        self.objects["logger"].info(
+            f"{prefix}"
+            f"AUC: {performance_dict['AUC']:<9.6}, "
+            f"ACC: {performance_dict['ACC']:<9.6}, "
+            f"RMSE: {performance_dict['RMSE']:<9.6}, "
+            f"MAE: {performance_dict['MAE']:<9.6}"
+        )
+
+    def evaluate_fine_grained(self, data_loader):
+        # 只计算不需要依赖训练集信息的细粒度指标
+        model = self.best_model
+        model.eval()
+        has_question_seq = True
+        with torch.no_grad():
+            predict_score_all = []
+            ground_truth_all = []
+            question_all = []
+            result_all_batch = []
+            for batch in data_loader:
+                if "question_seq" not in batch.keys():
+                    has_question_seq = False
+                    break
+                correct_seq = batch["correct_seq"]
+                question_seq = batch["question_seq"]
+                mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+
+                # 用于计算模型在不同序列长度上的效果
+                if hasattr(model, "get_predict_score_seq_len_minus1"):
+                    predict_score_seq_len_minus1 = model.get_predict_score_seq_len_minus1(batch)
+                    result_all_batch.append({
+                        "question_seqs": question_seq[:, 1:].detach().cpu().numpy().tolist(),
+                        "label_seqs": correct_seq[:, 1:].detach().cpu().numpy().tolist(),
+                        "predict_score_seqs": predict_score_seq_len_minus1.detach().cpu().numpy().tolist(),
+                        "mask_seqs": batch["mask_seq"][:, 1:].detach().cpu().numpy().tolist()
+                    })
+
+                predict_score = model.get_predict_score(batch).detach().cpu().numpy()
+                ground_truth = torch.masked_select(correct_seq[:, 1:], mask_bool_seq[:, 1:]).detach().cpu().numpy()
+                predict_score_all.append(predict_score)
+                ground_truth_all.append(ground_truth)
+                question_all.append(torch.masked_select(question_seq[:, 1:], mask_bool_seq[:, 1:]).detach().cpu().numpy())
+
+            predict_score_all = np.concatenate(predict_score_all, axis=0)
+            ground_truth_all = np.concatenate(ground_truth_all, axis=0)
+
+        if not has_question_seq:
+            return
+
+        # CORE evaluate (question bias)
+        self.objects["logger"].info("-"*100)
+        core_evaluation1 = evaluate_core(predict_score_all, ground_truth_all, np.concatenate(question_all, axis=0), True)
+        self.print_performance(
+            f"evaluation of CORE (allow replace): num of sample is {core_evaluation1['num_sample']:<9}, performance is ",
+            core_evaluation1
+        )
+        core_evaluation2 = evaluate_core(predict_score_all, ground_truth_all, np.concatenate(question_all, axis=0), False)
+        self.print_performance(
+            f"evaluation of CORE (disallow replace): num of sample is {core_evaluation2['num_sample']:<9}, performance is ",
+            core_evaluation2
+        )
+        self.objects["logger"].info("-" * 100)
+
+        if hasattr(model, "get_predict_score_seq_len_minus1"):
+            seq_lens = [20, 30, 40]
+            most_acc_list = [0.4, 0.3, 0.2]
+
+            for previous_seq_len4bias, seq_most_accuracy4bias in zip(seq_lens, most_acc_list):
+                self.objects["logger"].info("-" * 100)
+                self.objects["logger"].info(f"seq bias params: ({previous_seq_len4bias}, {seq_most_accuracy4bias})")
+                seq_easy_point, non_seq_easy_point = \
+                    get_seq_easy_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
+                result4seq_easy = evaluate_easy(seq_easy_point)
+                result4non_seq_easy = get_performance_no_error(non_seq_easy_point["predict_score"],
+                                                               non_seq_easy_point["predict_label"],
+                                                               non_seq_easy_point["ground_truth"])
+                self.print_performance(
+                    f"seq easy point: num of sample is {result4seq_easy['num_sample']:<9}, performance is ", result4seq_easy
+                )
+                self.print_performance(
+                    f"non seq easy point: num of sample is {result4non_seq_easy['num_sample']:<9}, performance is ",
+                    result4non_seq_easy
+                )
+
+                seq_biased_point = get_seq_biased_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
+                result4bias = evaluate_bias(seq_biased_point)
+                self.print_performance(
+                    f"seq biased point: num of sample is {result4bias['num_sample']:<9}, performance is ", result4bias
+                )
+                self.objects["logger"].info("-" * 100)
 
     def evaluate(self):
         train_strategy = self.params["train_strategy"]
@@ -134,6 +234,7 @@ class KnowledgeTracingTrainer:
             self.loss_record.clear_loss()
             current_epoch = self.train_record.get_current_epoch()
             if best_epoch == current_epoch:
+                self.best_model = deepcopy(model)
                 if save_model:
                     save_model_dir = self.params["save_model_dir"]
                     model_weight_path = os.path.join(save_model_dir, "saved.ckt")

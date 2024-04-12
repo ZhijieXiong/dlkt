@@ -2,6 +2,14 @@ ONE_HOUR = 60
 ONE_DAY = 60 * 24
 ONE_MONTH = 60 * 24 * 30
 ONE_YEAR = 60 * 24 * 30 * 12
+
+FORGET_POINT = (
+    5, 10, 20, ONE_HOUR, 9 * ONE_HOUR, ONE_DAY, 2 * ONE_DAY, 6 * ONE_DAY, ONE_MONTH
+)
+REMAIN_PERCENT = (
+    0.9, 0.79, 0.58, 0.44, 0.36, 0.33, 0.28, 0.25, 0.21
+)
+
 INTERVAL_TIME4LPKT_PLUS = (
     5, 10, 20, 40,
     ONE_HOUR, ONE_HOUR * 2, ONE_HOUR * 4, ONE_HOUR * 8, ONE_HOUR * 12, ONE_HOUR * 16,
@@ -29,3 +37,5 @@ HAS_NUM_ATTEMPT = ["assist2012", "assist2009", "assist2017", "junyi2015"]
 HAS_AGE = ["edi2020-task1", "edi2020-task34"]
 HAS_CORRECT_FLOAT = ["SLP-chi", "SLP-his", "SLP-mat", "SLP-geo", "SLP-eng", "SLP-phy", "SLP-bio"]
 HAS_QUESTION_MODE = ["junyi2015", "SLP-chi", "SLP-his", "SLP-mat", "SLP-geo", "SLP-eng", "SLP-phy", "SLP-bio"]
+
+MODEL_USE_QC = ["qDKT", "SAINT", "AKT", "LPKT", "DIMKT", "SimpleKT", "AT_DKT", "QIKT", "LBKT", "DCT", "AuxInfoDCT"]

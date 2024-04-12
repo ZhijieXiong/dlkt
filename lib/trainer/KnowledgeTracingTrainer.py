@@ -9,8 +9,7 @@ from .util import *
 from ..util.basic import *
 from .LossRecord import *
 from .TrainRecord import *
-from ..evaluator.util import get_seq_easy_point, get_seq_biased_point, get_performance_no_error, evaluate_easy, \
-    evaluate_bias, evaluate_core
+from ..evaluator.util import get_seq_easy_point, get_seq_biased_point, get_performance_no_error, evaluate_easy, evaluate_bias
 from ..CONSTANT import MODEL_USE_QC
 
 
@@ -129,9 +128,6 @@ class KnowledgeTracingTrainer:
         model.eval()
         has_question_seq = True
         with torch.no_grad():
-            predict_score_all = []
-            ground_truth_all = []
-            question_all = []
             result_all_batch = []
             for batch in data_loader:
                 if "question_seq" not in batch.keys():
@@ -139,9 +135,6 @@ class KnowledgeTracingTrainer:
                     break
                 correct_seq = batch["correct_seq"]
                 question_seq = batch["question_seq"]
-                mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-
-                # 用于计算模型在不同序列长度上的效果
                 if hasattr(model, "get_predict_score_seq_len_minus1"):
                     predict_score_seq_len_minus1 = model.get_predict_score_seq_len_minus1(batch)
                     result_all_batch.append({
@@ -151,31 +144,8 @@ class KnowledgeTracingTrainer:
                         "mask_seqs": batch["mask_seq"][:, 1:].detach().cpu().numpy().tolist()
                     })
 
-                predict_score = model.get_predict_score(batch).detach().cpu().numpy()
-                ground_truth = torch.masked_select(correct_seq[:, 1:], mask_bool_seq[:, 1:]).detach().cpu().numpy()
-                predict_score_all.append(predict_score)
-                ground_truth_all.append(ground_truth)
-                question_all.append(torch.masked_select(question_seq[:, 1:], mask_bool_seq[:, 1:]).detach().cpu().numpy())
-
-            predict_score_all = np.concatenate(predict_score_all, axis=0)
-            ground_truth_all = np.concatenate(ground_truth_all, axis=0)
-
         if not has_question_seq:
             return
-
-        # CORE evaluate (question bias)
-        self.objects["logger"].info("-"*100)
-        core_evaluation1 = evaluate_core(predict_score_all, ground_truth_all, np.concatenate(question_all, axis=0), True)
-        self.print_performance(
-            f"evaluation of CORE (allow replace): num of sample is {core_evaluation1['num_sample']:<9}, performance is ",
-            core_evaluation1
-        )
-        core_evaluation2 = evaluate_core(predict_score_all, ground_truth_all, np.concatenate(question_all, axis=0), False)
-        self.print_performance(
-            f"evaluation of CORE (disallow replace): num of sample is {core_evaluation2['num_sample']:<9}, performance is ",
-            core_evaluation2
-        )
-        self.objects["logger"].info("-" * 100)
 
         if hasattr(model, "get_predict_score_seq_len_minus1"):
             seq_lens = [20, 30, 40]

@@ -27,16 +27,16 @@ def translate_question2english(model_name, question_type, question_text):
         translation_examples = FEW_SHOT_EXAMPLES["translator_xes3g5m-fill-up-question_chinese2english"]
     else:
         raise NotImplementedError()
-    answer = zero_or_few_shot(OPENAI_KEY, model_name, profile_message, translation_examples, question_text, "real")
+    answer = zero_or_few_shot(OPENAI_KEY, model_name, profile_message, translation_examples, question_text, "fake")
     return answer
 
 
 if __name__ == "__main__":
     # 调用api的一些参数，比如"gpt-3.5-turbo", "gpt-4"
-    MODEL_NAME = "gpt-3.5-turbo"
-    NUM_CALL_API = 10
+    MODEL_NAME = "gpt-4"
+    NUM_CALL_API = 30
 
-    # 数据文件的地址
+    # 原始数据文件的地址
     DATA_DIR = r"/Users/dream/myProjects/dlkt/lab/dataset_preprocessed/xes3g5m"
     IMAGE_DIR = r"/Users/dream/myProjects/dlkt/lab/dataset_raw/xes3g5m/metadata/images"
     QUESTION_META_DATA = load_json(f"{DATA_DIR}/question_meta.json")
@@ -44,49 +44,71 @@ if __name__ == "__main__":
     # 保存输出的地址（定了以后不要变更，为了稳定以及节约成本，该脚本会运行多次，如每次翻译n道题，所以需要读取之前已做过的操作）
     OUTPUT_DIR = r"/Users/dream/myProjects/dlkt/lab/math_dataset/xes3g5m"
 
-    # 对数据进行一些预处理
+    # 对数据进行一些预处理（生成三个文件：question_image.json, analysis_image, question_content）
+    question_image_path = os.path.join(OUTPUT_DIR, "question_image.json")
     QUESTION_IMAGE = {}
-    for k, v in QUESTION_META_DATA.items():
-        QUESTION_IMAGE[k] = re.findall(r"question_\d+-image_\d+", v["content"])
+    if os.path.exists(question_image_path):
+        with open(question_image_path, "r") as f:
+            QUESTION_IMAGE = json.load(f)
+    else:
+        for k, v in QUESTION_META_DATA.items():
+            QUESTION_IMAGE[k] = re.findall(r"question_\d+-image_\d+", v["content"])
+        write_json(QUESTION_IMAGE, question_image_path)
 
+    analysis_image_path = os.path.join(OUTPUT_DIR, "analysis_image.json")
     ANALYSIS_IMAGE = {}
-    for k, v in QUESTION_META_DATA.items():
-        ANALYSIS_IMAGE[k] = re.findall(r"analysis_\d+-image_\d+", v["analysis"])
+    if os.path.exists(analysis_image_path):
+        with open(analysis_image_path, "r") as f:
+            ANALYSIS_IMAGE = json.load(f)
+    else:
+        for k, v in QUESTION_META_DATA.items():
+            ANALYSIS_IMAGE[k] = re.findall(r"analysis_\d+-image_\d+", v["analysis"])
+        write_json(ANALYSIS_IMAGE, analysis_image_path)
 
+    question_content_path = os.path.join(OUTPUT_DIR, "question_content.json")
     QUESTION_CONTENT = {}
-    for k, v in QUESTION_META_DATA.items():
-        QUESTION_CONTENT[k] = {
-            "content_only_text": v["content"],
-            "content_with_image_name": v["content"],
-            "analysis_only_text": v["analysis"],
-            "analysis_with_image_name": v["analysis"],
-            "content_images": QUESTION_IMAGE[k],
-            "analysis_images": ANALYSIS_IMAGE[k],
-            "type": v["type"],
-            "answer": v["answer"],
-            "kc_routes": v["kc_routes"]
-        }
-        for image_str in QUESTION_IMAGE[k]:
-            QUESTION_CONTENT[k]["content_only_text"] = QUESTION_CONTENT[k]["content_only_text"].replace(image_str, "")
-            QUESTION_CONTENT[k]["content_with_image_name"] = QUESTION_CONTENT[k]["content_with_image_name"].replace(
-                image_str, f"[%{image_str}%]")
-        QUESTION_CONTENT[k]["content_only_text"] = QUESTION_CONTENT[k]["content_only_text"].strip()
-        QUESTION_CONTENT[k]["content_with_image_name"] = QUESTION_CONTENT[k]["content_with_image_name"].strip()
+    if os.path.exists(question_content_path):
+        with open(question_content_path, "r") as f:
+            QUESTION_CONTENT = json.load(f)
+    else:
+        for k, v in QUESTION_META_DATA.items():
+            QUESTION_CONTENT[k] = {
+                "content_only_text": v["content"],
+                "content_with_image_name": v["content"],
+                "analysis_only_text": v["analysis"],
+                "analysis_with_image_name": v["analysis"],
+                "content_images": QUESTION_IMAGE[k],
+                "analysis_images": ANALYSIS_IMAGE[k],
+                "type": v["type"],
+                "answer": v["answer"],
+                "kc_routes": v["kc_routes"]
+            }
+            for image_str in QUESTION_IMAGE[k]:
+                QUESTION_CONTENT[k]["content_only_text"] = QUESTION_CONTENT[k]["content_only_text"].replace(image_str, "")
+                QUESTION_CONTENT[k]["content_with_image_name"] = QUESTION_CONTENT[k]["content_with_image_name"].replace(
+                    image_str, f"[%{image_str}%]")
+            QUESTION_CONTENT[k]["content_only_text"] = QUESTION_CONTENT[k]["content_only_text"].strip()
+            QUESTION_CONTENT[k]["content_with_image_name"] = QUESTION_CONTENT[k]["content_with_image_name"].strip()
 
-        for image_str in ANALYSIS_IMAGE[k]:
-            QUESTION_CONTENT[k]["analysis_only_text"] = QUESTION_CONTENT[k]["analysis_only_text"].replace(image_str, "")
-            QUESTION_CONTENT[k]["analysis_with_image_name"] = QUESTION_CONTENT[k]["analysis_with_image_name"].replace(
-                image_str, f"[%{image_str}%]")
+            for image_str in ANALYSIS_IMAGE[k]:
+                QUESTION_CONTENT[k]["analysis_only_text"] = QUESTION_CONTENT[k]["analysis_only_text"].replace(image_str, "")
+                QUESTION_CONTENT[k]["analysis_with_image_name"] = QUESTION_CONTENT[k]["analysis_with_image_name"].replace(
+                    image_str, f"[%{image_str}%]")
 
-        QUESTION_CONTENT[k]["analysis_only_text"] = QUESTION_CONTENT[k]["analysis_only_text"].strip()
-        QUESTION_CONTENT[k]["analysis_with_image_name"] = QUESTION_CONTENT[k]["analysis_with_image_name"].strip()
+            QUESTION_CONTENT[k]["analysis_only_text"] = QUESTION_CONTENT[k]["analysis_only_text"].strip()
+            QUESTION_CONTENT[k]["analysis_with_image_name"] = QUESTION_CONTENT[k]["analysis_with_image_name"].strip()
+        write_json(QUESTION_CONTENT, question_content_path)
 
     # 翻译为英文
     question_translation = {}
     question_translation_path = os.path.join(OUTPUT_DIR, "question_translation.json")
     if os.path.exists(question_translation_path):
         with open(question_translation_path, "r") as f:
-            question_translation = json.load(f)
+            question_translation_ = json.load(f)
+            # 排一下序
+            q_ids = sorted(list(map(int, question_translation_.keys())))
+            for q_id in q_ids:
+                question_translation[str(q_id)] = question_translation_[str(q_id)]
     num_translated = 0
     for q_id, q_content in QUESTION_CONTENT.items():
         if num_translated >= NUM_CALL_API:

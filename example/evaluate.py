@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     # 加载模型参数配置
     parser.add_argument("--save_model_dir", type=str, help="绝对路径",
-                        default=r"F:\code\myProjects\dlkt\lab\saved_models\2024-04-08@16-39-06@@AuxInfoDCT@@seed_0@@our_setting_new@@assist2009_train_fold_0")
+                        default=r"F:\code\myProjects\dlkt\lab\saved_models\save\our_setting_new\AuxInfoDCT\edu_loss_with_pretrain\2024-04-17@19-29-22@@AuxInfoDCT@@seed_0@@our_setting_new@@assist2009_train_fold_0")
     parser.add_argument("--save_model_name", type=str, help="文件名", default="saved.ckt")
     parser.add_argument("--model_name_in_ckt", type=str, help="文件名", default="best_valid")
     # 测试配置
@@ -35,21 +35,22 @@ if __name__ == "__main__":
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
 
     # ---------------------------- 细粒度配置（不适用于base_type为question的evaluate）----------------------------------------
-    # 长尾问题（注意不同训练集的长尾统计信息不一样）
-    parser.add_argument("--statics_file_path", type=str, help="prepare4fine_trained_evaluate.py生成的文件绝对路径",
-                        default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new\assist2009_train_fold_0_statics.json")
+    # 由prepare4fine_trained_evaluate.py生成
+    parser.add_argument("--train_statics_common_path", type=str, default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new\assist2009_train_fold_0_statics_common.json")
+    parser.add_argument("--train_statics_special_path", type=str, default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new\assist2009_train_fold_0_statics_special.json")
     # 冷启动问题
     parser.add_argument("--max_seq_len", type=int, default=200)
     parser.add_argument("--seq_len_absolute", type=str, help="[0, 10, 200]表示测试模型对位于序列0~10区间的点的性能以及10~200区间点的性能",
                         default="[0, 10, 100, 200]")
-    # 偏差问题（习题偏差和学生偏差，测试模型对于正确率高（低）的序列中高（低）正确率习题的预测能力），需要配合statics_file_path使用
+    # 偏差问题（习题偏差和学生偏差，测试模型对于正确率高（低）的序列中高（低）正确率习题的预测能力）
+    # 需要[train_file]_statics_common.json文件
     parser.add_argument("--previous_seq_len4bias", type=int, default=40)
     parser.add_argument("--seq_most_accuracy4bias", type=float, default=0.2)
-
     # 习题偏差问题（论文：Do We Fully Understand Students’ Knowledge States? Identifying and Mitigating Answer Bias in Knowledge Tracing提出）
-    # 该测试无需配置
+    # 长尾问题：需要[train_file]_statics_special.json文件
     # -------------------------------------------------------------------------------------------------------------------
 
+    # -----------------------特殊配置：如DIMKT需要统计习题难度信息，AuxInfoDCT需要聚合时间信息-------------------------------------
     # 是否将head question的知识迁移到zero shot question
     parser.add_argument("--transfer_head2zero", type=str2bool, default=False)
     parser.add_argument("--head2tail_transfer_method", type=str, default="mean_pool",
@@ -61,6 +62,10 @@ if __name__ == "__main__":
                         default=r"F:\code\myProjects\dlkt\lab\settings\our_setting\edi2020-task34_train_fold_0_dimkt_diff.json")
     parser.add_argument("--num_question_diff", type=int, default=100)
     parser.add_argument("--num_concept_diff", type=int, default=100)
+
+    # 如果是DCT或者AuxInfoDCT，对时间信息首先需要聚合
+    parser.add_argument("--is_dct", type=str2bool, default=True)
+    # -------------------------------------------------------------------------------------------------------------------
 
     args = parser.parse_args()
     params = vars(args)
@@ -88,6 +93,9 @@ if __name__ == "__main__":
             global_params["datasets_config"]["test"]["kt4dimkt"] = {}
             global_params["datasets_config"]["test"]["kt4dimkt"]["num_question_difficulty"] = params["num_question_diff"]
             global_params["datasets_config"]["test"]["kt4dimkt"]["num_concept_difficulty"] = params["num_concept_diff"]
+        elif params["is_dct"]:
+            global_params["datasets_config"]["test"]["type"] = "kt4aux_info"
+            global_params["datasets_config"]["test"]["kt4aux_info"] = {}
         dataset_test = KTDataset(global_params, global_objects)
     dataloader_test = DataLoader(dataset_test, batch_size=params["evaluate_batch_size"], shuffle=False)
 

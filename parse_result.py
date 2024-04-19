@@ -5,10 +5,10 @@ import re
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--file_path", type=str,
-                        default=r"F:\code\myProjects\dlkt\example\result_local\our_setting_new\random-predictor\assist2009_save2.txt")
-    parser.add_argument("--key_words", type=str, default="double biased point: num of sample is 3805")
+                        default=r"F:\code\myProjects\dlkt\example\result_local\aux-info-dct-no-cl-loss-without-pretrain_our_setting_new_assist2017_save.txt")
+    parser.add_argument("--key_words", type=str, default="test performance by best valid epoch is main metric")
     parser.add_argument("--n", help="隔几个做一次平均", type=int, default=5)
-    parser.add_argument("--first_num", type=int, default=0,
+    parser.add_argument("--first_num", type=int, default=1,
                         help="从第几个小数开始算指标"
                              "如test performance by best valid epoch is main metric: 0.82201  , AUC: 0.82201  , ACC: 0.82917  , RMSE: 0.34999  , MAE: 0.23693  , "
                              "该值为1，因为从第0个不算，从第1个小数开始是指标"

@@ -106,10 +106,22 @@ class KnowledgeTracingTrainer:
                     f"{self.train_record.get_evaluate_result_str('test', 'test')}\n"
                 )
 
-                data_loader = self.objects["data_loaders"]["test_loader"]
+                valid_loader = self.objects["data_loaders"]["valid_loader"]
+                test_loader = self.objects["data_loaders"]["test_loader"]
                 model = self.objects["models"]["kt_model"]
                 if model.model_name in MODEL_USE_QC:
-                    self.evaluate_fine_grained(data_loader)
+                    len1 = len("fine-grained metric of valid data")
+                    self.objects["logger"].info("-" * ((100 - len1) // 2) + "fine-grained metric of valid data" +
+                                                "-" * ((100 - len1) // 2))
+                    self.evaluate_fine_grained(valid_loader)
+                    self.objects["logger"].info("-" * 100)
+
+                    len2 = len("fine-grained metric of test data")
+                    self.objects["logger"].info("-" * ((100 - len2) // 2) + "fine-grained metric of test data" +
+                                                "-" * ((100 - len2) // 2))
+                    self.objects["logger"].info("fine-grained metric of test data")
+                    self.evaluate_fine_grained(test_loader)
+                    self.objects["logger"].info("-" * 100)
 
         return stop_flag
 
@@ -152,7 +164,6 @@ class KnowledgeTracingTrainer:
             most_acc_list = [0.4, 0.3, 0.2]
 
             for previous_seq_len4bias, seq_most_accuracy4bias in zip(seq_lens, most_acc_list):
-                self.objects["logger"].info("-" * 100)
                 self.objects["logger"].info(f"seq bias params: ({previous_seq_len4bias}, {seq_most_accuracy4bias})")
                 seq_easy_point, non_seq_easy_point = \
                     get_seq_easy_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
@@ -173,7 +184,6 @@ class KnowledgeTracingTrainer:
                 self.print_performance(
                     f"seq biased point: num of sample is {result4bias['num_sample']:<9}, performance is ", result4bias
                 )
-                self.objects["logger"].info("-" * 100)
 
     def evaluate(self):
         train_strategy = self.params["train_strategy"]

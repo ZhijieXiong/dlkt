@@ -131,10 +131,15 @@ if __name__ == "__main__":
         Q_table_path = os.path.join(preprocessed_dir, dataset_name, f"Q_table_{data_type}.npy")
     Q_table = np.load(Q_table_path)
     question2concept = question2concept_from_Q(Q_table)
-    statics_info_file_path = params["target_file_path"].replace(".txt", f"_statics.json")
+    save_statics_common_path = params["target_file_path"].replace(".txt", f"_statics_common.json")
+    save_statics_special_path = params["target_file_path"].replace(".txt", f"_statics_special.json")
     basic_statics = dataset_basic_statics(data, data_type, question2concept,
                                           num_question=params["num_question"],
                                           num_concept=params["num_concept"])
+    with open(save_statics_common_path, "w") as f:
+        # 训练集的基本统计信息：习题|知识点出现次数，习题|知识点正确率
+        json.dump(basic_statics, f)
+
     if params["use_absolute4fre"]:
         question_fre_low_middle = params["question_fre_low_middle"]
         question_fre_middle_high = params["question_fre_middle_high"]
@@ -156,9 +161,7 @@ if __name__ == "__main__":
         concept_acc_low_middle = params["concept_acc_percent_lowest"]
         concept_acc_middle_high = params["concept_acc_percent_highest"]
 
-    save_statics = {
-        "acc_overall": basic_statics["acc_overall"],
-        "question_acc": basic_statics["question_acc"],
+    save_statics_special = {
         "question_low_fre": extract_subset(basic_statics["question_fre"],
                                            question_fre_low_middle,
                                            None, False),
@@ -185,34 +188,34 @@ if __name__ == "__main__":
             ))
         ))
     }
-    save_statics['question_low_fre'] = list(set(save_statics['question_low_fre']) - set(save_statics['question_zero_fre']))
+    save_statics_special['question_low_fre'] = list(set(save_statics_special['question_low_fre']) - set(save_statics_special['question_zero_fre']))
 
     # 知识点
     if params["data_type"] != "only_question":
-        save_statics["concept_acc"] = basic_statics["concept_acc"]
-        save_statics["concept_low_fre"] = extract_subset(basic_statics["concept_fre"],
-                                                         concept_fre_low_middle,
-                                                         None, False)
-        save_statics["concept_middle_fre"] = extract_subset(basic_statics["concept_fre"],
-                                                            concept_fre_low_middle,
-                                                            concept_fre_middle_high, False)
-        save_statics["concept_high_fre"] = extract_subset(basic_statics["concept_fre"],
-                                                          None,
-                                                          concept_fre_middle_high, False)
-        save_statics["concept_low_acc"] = extract_subset(basic_statics["concept_acc"],
-                                                         concept_acc_low_middle,
-                                                         None, True)
-        save_statics["concept_middle_acc"] = extract_subset(basic_statics["concept_acc"],
-                                                            concept_acc_low_middle,
-                                                            concept_acc_middle_high, True)
-        save_statics["concept_high_acc"] = extract_subset(basic_statics["concept_acc"],
-                                                          None,
-                                                          concept_acc_middle_high, True)
+        save_statics_special["concept_low_fre"] = extract_subset(basic_statics["concept_fre"],
+                                                                 concept_fre_low_middle,
+                                                                 None, False)
+        save_statics_special["concept_middle_fre"] = extract_subset(basic_statics["concept_fre"],
+                                                                    concept_fre_low_middle,
+                                                                    concept_fre_middle_high, False)
+        save_statics_special["concept_high_fre"] = extract_subset(basic_statics["concept_fre"],
+                                                                  None,
+                                                                  concept_fre_middle_high, False)
+        save_statics_special["concept_low_acc"] = extract_subset(basic_statics["concept_acc"],
+                                                                 concept_acc_low_middle,
+                                                                 None, True)
+        save_statics_special["concept_middle_acc"] = extract_subset(basic_statics["concept_acc"],
+                                                                    concept_acc_low_middle,
+                                                                    concept_acc_middle_high, True)
+        save_statics_special["concept_high_acc"] = extract_subset(basic_statics["concept_acc"],
+                                                                  None,
+                                                                  concept_acc_middle_high, True)
 
-    with open(statics_info_file_path, "w") as f:
-        json.dump(save_statics, f)
+    with open(save_statics_special_path, "w") as f:
+        # 训练集的个性化统计信息：根据习题|知识点出现次数，将习题|知识点分为高|中|低频；根据习题|知识点正确率，将习题|知识点分为高|中|低正确率
+        json.dump(save_statics_special, f)
 
-    for k, v in save_statics.items():
+    for k, v in save_statics_special.items():
         if k.startswith("question"):
             num_item = params["num_question"]
         elif k.startswith("concept"):

@@ -46,7 +46,8 @@ def evaluate_general_config(local_params):
     base_type = local_params["base_type"]
     dataset_name = local_params["dataset_name"]
     data_type = local_params["data_type"]
-    statics_file_path = local_params["statics_file_path"]
+    train_statics_common_path = local_params["train_statics_common_path"]
+    train_statics_special_path = local_params["train_statics_special_path"]
 
     global_params["datasets_config"] = {
         "dataset_this": "test",
@@ -76,7 +77,8 @@ def evaluate_general_config(local_params):
     fine_grain_config = global_params["evaluate"]["fine_grain"]
     fine_grain_config["max_seq_len"] = max_seq_len
     fine_grain_config["seq_len_absolute"] = eval(seq_len_absolute)
-    fine_grain_config["statics_path"] = statics_file_path
+    fine_grain_config["train_statics_common_path"] = train_statics_common_path
+    fine_grain_config["train_statics_special_path"] = train_statics_special_path
     fine_grain_config["previous_seq_len4bias"] = previous_seq_len4bias
     fine_grain_config["seq_most_accuracy4bias"] = seq_most_accuracy4bias
 

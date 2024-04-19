@@ -111,12 +111,8 @@ class AuxInfoDCT(nn.Module):
         return concept_emb
 
     def get_question_diff(self, batch_question):
-        test_theory = self.params["other"]["cognition_tracing"]["test_theory"]
         question_emb = self.embed_question(batch_question)
-        if test_theory == "rasch":
-            que_difficulty = self.que2difficulty(self.dropout(question_emb))
-        else:
-            que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
+        que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
 
         return que_difficulty
 

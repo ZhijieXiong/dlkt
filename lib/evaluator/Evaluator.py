@@ -163,6 +163,7 @@ class Evaluator:
                     f"MAE: {mean_absolute_error(y_true=g, y_pred=p):<9.5}"
                 )
 
+        # 测试集的偏差子集上的性能（简单、中等、困难样本）
         if hasattr(model, "get_predict_score_seq_len_minus1"):
             previous_seq_len4bias = fine_grain_config["previous_seq_len4bias"]
             seq_most_accuracy4bias = fine_grain_config["seq_most_accuracy4bias"]
@@ -203,29 +204,27 @@ class Evaluator:
             )
 
         # 不同频率知识点/习题的性能
-        statics_path = fine_grain_config["statics_path"]
-        if not os.path.exists(statics_path):
+        train_statics_common_path = fine_grain_config["train_statics_common_path"]
+        if not os.path.exists(train_statics_common_path):
             return
 
-        result4statics = {}
-        with open(statics_path, "r") as f:
-            statics_train = json.load(f)
+        with open(train_statics_common_path, "r") as f:
+            train_statics_common = json.load(f)
         question_acc_dict = {}
-        for q_id, q_acc in statics_train["question_acc"].items():
+        for q_id, q_acc in train_statics_common["question_acc"].items():
             question_acc_dict[int(q_id)] = q_acc
-        statics_train["question_acc"] = question_acc_dict
-        if "concept_acc" in statics_train.keys():
+        train_statics_common["question_acc"] = question_acc_dict
+        if "concept_acc" in train_statics_common.keys():
             concept_acc_dict = {}
-            for c_id, c_acc in statics_train["concept_acc"].items():
+            for c_id, c_acc in train_statics_common["concept_acc"].items():
                 concept_acc_dict[int(c_id)] = c_acc
-            statics_train["concept_acc"] = concept_acc_dict
+            train_statics_common["concept_acc"] = concept_acc_dict
 
         most_accuracy4bias = fine_grain_config["seq_most_accuracy4bias"]
-        question_biased_point = get_question_biased_point(result_all_batch, statics_train, most_accuracy4bias)
-
+        question_biased_point = get_question_biased_point(result_all_batch, train_statics_common, most_accuracy4bias)
         # question easy sample evaluation (easy sample)
         question_easy_point, non_question_easy_point = \
-            get_question_easy_point(result_all_batch, statics_train, most_accuracy4bias)
+            get_question_easy_point(result_all_batch, train_statics_common, most_accuracy4bias)
         result4question_easy = evaluate_easy(question_easy_point)
         result4non_question_easy = get_performance_no_error(non_question_easy_point["predict_score"],
                                                             non_question_easy_point["predict_label"],
@@ -263,7 +262,7 @@ class Evaluator:
             # double easy sample evaluation (most easy sample)
             seq_easy_point, non_seq_easy_point = \
                 get_seq_easy_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
-            result4double_easy = evaluate_double_easy(seq_easy_point, statics_train, seq_most_accuracy4bias)
+            result4double_easy = evaluate_double_easy(seq_easy_point, train_statics_common, seq_most_accuracy4bias)
             self.objects["logger"].info(
                 f"\nperformance of double easy (seq and question easy) point, param is previous_seq_len4easy: "
                 f"{previous_seq_len4bias}, seq_most_accuracy4easy: {seq_most_accuracy4bias}"
@@ -275,7 +274,7 @@ class Evaluator:
 
             # double biased evaluation (most hard sample)
             seq_biased_point = get_seq_biased_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
-            result4double_bias = evaluate_double_bias(seq_biased_point, statics_train, seq_most_accuracy4bias)
+            result4double_bias = evaluate_double_bias(seq_biased_point, train_statics_common, seq_most_accuracy4bias)
             self.objects["logger"].info(
                 f"\nperformance of double bias (seq and question bias) point, param is previous_seq_len4bias: "
                 f"{previous_seq_len4bias}, seq_most_accuracy4bias: {seq_most_accuracy4bias}"
@@ -284,6 +283,15 @@ class Evaluator:
                 f"double biased point: num of sample is {result4double_bias['num_sample']:<9}, performance is ",
                 result4double_bias
             )
+
+        # 高|中|低频习题|知识点的性能；高|中|低正确率习题|知识点的性能
+        train_statics_special_path = fine_grain_config["train_statics_special_path"]
+        if not os.path.exists(train_statics_special_path):
+            return
+
+        result4statics = {}
+        with open(train_statics_special_path, "r") as f:
+            train_statics_special = json.load(f)
 
         question_all = np.concatenate(question_all, axis=0)
         all_question_dis = defaultdict(list)
@@ -300,13 +308,13 @@ class Evaluator:
         else:
             self.objects["logger"].info("")
 
-        result4statics['question_zero_fre'] = get_performance(statics_train['question_zero_fre'], all_question_dis)
-        result4statics['question_low_fre'] = get_performance(statics_train['question_low_fre'], all_question_dis)
-        result4statics['question_middle_fre'] = get_performance(statics_train['question_middle_fre'], all_question_dis)
-        result4statics['question_high_fre'] = get_performance(statics_train['question_high_fre'], all_question_dis)
-        result4statics['question_low_acc'] = get_performance(statics_train['question_low_acc'], all_question_dis)
-        result4statics['question_middle_acc'] = get_performance(statics_train['question_middle_acc'], all_question_dis)
-        result4statics['question_high_acc'] = get_performance(statics_train['question_high_acc'], all_question_dis)
+        result4statics['question_zero_fre'] = get_performance(train_statics_special['question_zero_fre'], all_question_dis)
+        result4statics['question_low_fre'] = get_performance(train_statics_special['question_low_fre'], all_question_dis)
+        result4statics['question_middle_fre'] = get_performance(train_statics_special['question_middle_fre'], all_question_dis)
+        result4statics['question_high_fre'] = get_performance(train_statics_special['question_high_fre'], all_question_dis)
+        result4statics['question_low_acc'] = get_performance(train_statics_special['question_low_acc'], all_question_dis)
+        result4statics['question_middle_acc'] = get_performance(train_statics_special['question_middle_acc'], all_question_dis)
+        result4statics['question_high_acc'] = get_performance(train_statics_special['question_high_acc'], all_question_dis)
 
         self.objects["logger"].info(f"evaluation based on question frequency")
         self.print_performance(f"zero shot ({result4statics['question_zero_fre']['num_sample']:<9} samples), ",
@@ -331,12 +339,12 @@ class Evaluator:
             all_concept_dis = defaultdict(list)
             for c_id, p, g in zip(concept_all, predict_score_all, ground_truth_all):
                 all_concept_dis[c_id].append((p, g))
-            result4statics['concept_low_fre'] = get_performance(statics_train['concept_low_fre'], all_concept_dis)
-            result4statics['concept_middle_fre'] = get_performance(statics_train['concept_middle_fre'], all_concept_dis)
-            result4statics['concept_high_fre'] = get_performance(statics_train['concept_high_fre'], all_concept_dis)
-            result4statics['concept_low_acc'] = get_performance(statics_train['concept_low_acc'], all_concept_dis)
-            result4statics['concept_middle_acc'] = get_performance(statics_train['concept_middle_acc'], all_concept_dis)
-            result4statics['concept_high_acc'] = get_performance(statics_train['concept_high_acc'], all_concept_dis)
+            result4statics['concept_low_fre'] = get_performance(train_statics_special['concept_low_fre'], all_concept_dis)
+            result4statics['concept_middle_fre'] = get_performance(train_statics_special['concept_middle_fre'], all_concept_dis)
+            result4statics['concept_high_fre'] = get_performance(train_statics_special['concept_high_fre'], all_concept_dis)
+            result4statics['concept_low_acc'] = get_performance(train_statics_special['concept_low_acc'], all_concept_dis)
+            result4statics['concept_middle_acc'] = get_performance(train_statics_special['concept_middle_acc'], all_concept_dis)
+            result4statics['concept_high_acc'] = get_performance(train_statics_special['concept_high_acc'], all_concept_dis)
 
             self.objects["logger"].info(f"evaluation based on concept frequency")
             self.print_performance(f"low frequency ({result4statics['concept_low_fre']['num_sample']:<9} samples), ",
@@ -358,14 +366,14 @@ class Evaluator:
             all_qc_dis = defaultdict(list)
             for q_id, c_id, p, g in zip(question_all, concept_all, predict_score_all, ground_truth_all):
                 all_qc_dis[f"{q_id}_{c_id}"].append((p, g))
-            result4statics['qc_low_fre'] = get_performance_qc(statics_train['question_low_fre'],
-                                                              statics_train['concept_low_fre'], all_qc_dis)
-            result4statics['qc_high_fre'] = get_performance_qc(statics_train['question_high_fre'],
-                                                               statics_train['concept_high_fre'], all_qc_dis)
-            result4statics['qc_low_acc'] = get_performance_qc(statics_train['question_low_acc'],
-                                                              statics_train['concept_low_acc'], all_qc_dis)
-            result4statics['qc_high_acc'] = get_performance_qc(statics_train['question_high_acc'],
-                                                               statics_train['concept_high_acc'], all_qc_dis)
+            result4statics['qc_low_fre'] = get_performance_qc(train_statics_special['question_low_fre'],
+                                                              train_statics_special['concept_low_fre'], all_qc_dis)
+            result4statics['qc_high_fre'] = get_performance_qc(train_statics_special['question_high_fre'],
+                                                               train_statics_special['concept_high_fre'], all_qc_dis)
+            result4statics['qc_low_acc'] = get_performance_qc(train_statics_special['question_low_acc'],
+                                                              train_statics_special['concept_low_acc'], all_qc_dis)
+            result4statics['qc_high_acc'] = get_performance_qc(train_statics_special['question_high_acc'],
+                                                               train_statics_special['concept_high_acc'], all_qc_dis)
 
             self.objects["logger"].info(f"evaluation based on question & concept frequency")
             self.print_performance(f"low frequency ({result4statics['qc_low_fre']['num_sample']:<9} samples), ",

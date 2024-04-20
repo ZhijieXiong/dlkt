@@ -47,6 +47,19 @@ def num_tokens_from_messages(messages, model="gpt-3.5-turbo-0613"):
     return num_tokens
 
 
+def prompt_chat(openai_key, model_name, prompt, **kwargs):
+    client = OpenAI(api_key=openai_key)
+    messages = [{"role": "user", "content": prompt}]
+
+    completion = client.chat.completions.create(
+        model=model_name,
+        messages=messages,
+        **kwargs
+    )
+
+    return completion.choices[0].message
+
+
 def zero_or_few_shot(openai_key, model_name, profile_message, examples, query, messages_type, **kwargs):
     """
     source: https://cookbook.openai.com/examples/how_to_format_inputs_to_chatgpt_models

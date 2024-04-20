@@ -5,8 +5,6 @@ import inspect
 import torch
 import logging
 
-# 防止
-# os.environ["OMP_NUM_THREADS"] = '1'
 
 current_file_name = inspect.getfile(inspect.currentframe())
 current_dir = os.path.dirname(current_file_name)

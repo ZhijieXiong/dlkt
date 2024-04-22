@@ -1,4 +1,21 @@
-[TOC]
+- [Datasets Intro and Basic Info](#datasets-intro-and-basic-info)
+  - [Seq Info](#seq-info)
+  - [Side Info](#side-info)
+  - [Text Info](#text-info)
+  - [Statics Info](#statics-info)
+    - [original](#original)
+    - [after preprocessing (for single concept datasets or only question datasets)](#after-preprocessing-for-single-concept-datasets-or-only-question-datasets)
+    - [after preprocessing (for multi concept datasets)](#after-preprocessing-for-multi-concept-datasets)
+- [Datasets Download](#datasets-download)
+  - [All Datasets](#all-datasets)
+  - [Assist](#assist)
+  - [SLP](#slp)
+  - [KDD Cup 2010 Education Data Mining Challenge (algebra and bridge2algebra)](#kdd-cup-2010-education-data-mining-challenge-algebra-and-bridge2algebra)
+  - [NeurIPS 2020 Education Challenge (edi2020)](#neurips-2020-education-challenge-edi2020)
+  - [Ednet](#ednet)
+  - [Statics2011](#statics2011)
+  - [Slepemapy](#slepemapy)
+
 
 # Datasets Intro and Basic Info
 

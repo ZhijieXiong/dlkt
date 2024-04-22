@@ -1,4 +1,37 @@
-[TOC]
+- [Knowledge Tracing Models](#knowledge-tracing-models)
+  - [DKT](#dkt)
+  - [DKVMN](#dkvmn)
+  - [SAKT](#sakt)
+  - [GKT](#gkt)
+  - [SAINT](#saint)
+  - [qDKT](#qdkt)
+  - [GIKT](#gikt)
+  - [AKT](#akt)
+  - [Consistency and Monotonicity Regularization for Neural Knowledge Tracing](#consistency-and-monotonicity-regularization-for-neural-knowledge-tracing)
+  - [LPKT](#lpkt)
+  - [IEKT](#iekt)
+  - [ATKT](#atkt)
+  - [DIMKT](#dimkt)
+  - [CL4KT](#cl4kt)
+  - [IKT](#ikt)
+  - [SimpleKT](#simplekt)
+  - [DTransformer](#dtransformer)
+  - [AT-DKT](#at-dkt)
+  - [QIKT](#qikt)
+  - [LBKT](#lbkt)
+  - [CORE](#core)
+- [Cognitive Diagnosis Models](#cognitive-diagnosis-models)
+  - [NCD](#ncd)
+- [Methods from Other Field](#methods-from-other-field)
+  - [DROS](#dros)
+  - [ME-ADA](#me-ada)
+  - [CaCo](#caco)
+  - [DuoRec](#duorec)
+  - [ICL](#icl)
+  - [CoSeRec](#coserec)
+  - [MELT](#melt)
+  - [MCLRec](#mclrec)
+
 
 # Knowledge Tracing Models
 
@@ -100,6 +133,15 @@ Abstract: Knowledge Tracing (KT), which aims to assess students’ dynamic knowl
 [*Wonsung Lee, Jaeyoon Chun, Youngmin Lee, Kyoungsoo Park, and Sungrae Park*. **Contrastive Learning for Knowledge Tracing**. In Proceedings of the ACM Web Conference 2022 (WWW '22)](https://dl.acm.org/doi/abs/10.1145/3485447.3512105)
 
 Abstract: Knowledge tracing is the task of understanding student’s knowl- edge acquisition processes by estimating whether to solve the next question correctly or not. Most deep learning-based methods tackle this problem by identifying hidden representations of knowledge states from learning histories. However, due to the sparse interac- tions between students and questions, the hidden representations can be easily over-fitted and often fail to capture student’s knowl- edge states accurately. This paper introduces a contrastive learning framework for knowledge tracing that reveals semantically similar or dissimilar examples of a learning history and stimulates to learn their relationships. To deal with the complexity of knowledge ac- quisition during learning, we carefully design the components of contrastive learning, such as architectures, data augmentation meth- ods, and hard negatives, taking into account pedagogical rationales. Our extensive experiments on six benchmarks show statistically significant improvements from the previous methods. Further anal- ysis shows how our methods contribute to improving knowledge tracing performances.
+
+## IKT
+
+[*Minn, S., Vie, J.-J., Takeuchi, K., Kashima, H. and Zhu, F*. **Interpretable Knowledge Tracing: Simple and Efficient Student Modeling with Causal Relations**. *Proceedings of the AAAI Conference on Artificial Intelligence* (AAAI-22).](https://ojs.aaai.org/index.php/AAAI/article/view/21560)
+
+Abstract: Intelligent Tutoring Systems have become critically important in future learning environments. Knowledge Tracing (KT) is a crucial part of that system. It is about inferring the skill mastery of students and predicting their performance to adjust the curriculum accordingly. Deep Learning based models like Deep Knowledge Tracing (DKT) and Dynamic Key-Value Memory Network (DKVMN) have shown significant predictive performance compared with traditional models like Bayesian Knowledge Tracing (BKT) and Performance Factors Analysis (PFA). However, it is difficult to extract psychologically meaningful explanations from the tens of thousands of parameters in neural networks, that would relate to cognitive theory. There are several ways to achieve high accuracy in student performance prediction but diagnostic and prognostic reasonings are more critical in learning science. In this work, we present Interpretable Knowledge Tracing (IKT), a simple model that relies on three meaningful features: individual skill mastery, ability profile (learning transfer across skills) and problem difficulty by using data mining techniques. IKT’s prediction of future student performance is made using a Tree Augmented Naive Bayes Classifier (TAN), therefore its predictions are easier to explain than deep learning based student models. IKT also shows better student performance prediction than deep learning based student models without requiring a huge amount of parameters. We conduct ablation studies on each feature to examine their contribution to student performance prediction. Thus, IKT has great potential for providing adaptive and personalized instructions with causal reasoning in real-world educational systems.
+
+- Improvements in code implementation
+  - 
 
 ## SimpleKT
 

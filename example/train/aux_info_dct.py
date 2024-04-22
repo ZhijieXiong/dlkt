@@ -67,7 +67,8 @@ if __name__ == "__main__":
     # 辅助损失
     parser.add_argument("--multi_stage", type=str2bool, default=False)
     parser.add_argument("--temp", type=float, default=0.05)
-    parser.add_argument("--w_cl_loss", type=float, default=0)
+    parser.add_argument("--correct_noise", type=float, default=0.3)
+    parser.add_argument("--w_cl_loss", type=float, default=0.1)
     parser.add_argument("--w_learning", type=float, default=0)
     parser.add_argument("--w_penalty_neg", type=float, default=0)
     parser.add_argument("--q_table_loss_th", type=float, default=0.5)

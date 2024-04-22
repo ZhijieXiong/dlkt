@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     # 加载模型参数配置
     parser.add_argument("--save_model_dir", type=str, help="绝对路径",
-                        default=r"F:\code\myProjects\dlkt\lab\saved_models\save\our_setting_new\AuxInfoDCT\edu_loss_with_pretrain\2024-04-17@19-29-22@@AuxInfoDCT@@seed_0@@our_setting_new@@assist2009_train_fold_0")
+                        default=r"F:\code\myProjects\dlkt\lab\saved_models\save\our_setting_new\AKT\2024-03-22@12-34-53@@AKT@@seed_0@@our_setting_new@@assist2009_train_fold_0")
     parser.add_argument("--save_model_name", type=str, help="文件名", default="saved.ckt")
     parser.add_argument("--model_name_in_ckt", type=str, help="文件名", default="best_valid")
     # 测试配置
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_concept_diff", type=int, default=100)
 
     # 如果是DCT或者AuxInfoDCT，对时间信息首先需要聚合
-    parser.add_argument("--is_dct", type=str2bool, default=True)
+    parser.add_argument("--is_dct", type=str2bool, default=False)
     # -------------------------------------------------------------------------------------------------------------------
 
     args = parser.parse_args()

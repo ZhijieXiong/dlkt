@@ -513,15 +513,17 @@ class AuxInfoDCT(nn.Module):
             return 0, 0
 
     def get_unbias_loss(self, batch):
+        temp = self.params["other"]["instance_cl"]["temp"]
+        correct_noise = self.params["other"]["instance_cl"]["correct_noise"]
+
         batch_size = batch["mask_seq"].shape[0]
         first_index = torch.arange(batch_size).long().to(self.params["device"])
 
-        latent_aug0 = self.get_latent(batch, correct_noise_strength=0.5)
+        latent_aug0 = self.get_latent(batch, correct_noise_strength=correct_noise)
         latent_aug0 = latent_aug0[first_index, batch["seq_len"] - 1]
-        latent_aug1 = self.get_latent(batch, correct_noise_strength=0.5)
+        latent_aug1 = self.get_latent(batch, correct_noise_strength=correct_noise)
         latent_aug1 = latent_aug1[first_index, batch["seq_len"] - 1]
 
-        temp = self.params["other"]["instance_cl"]["temp"]
         cos_sim = torch.cosine_similarity(latent_aug0.unsqueeze(1), latent_aug1.unsqueeze(0), dim=-1) / temp
         batch_size = cos_sim.size(0)
         labels = torch.arange(batch_size).long().to(self.params["device"])

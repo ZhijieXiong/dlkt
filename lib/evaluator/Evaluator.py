@@ -127,10 +127,25 @@ class Evaluator:
             f"overall performance is AUC: {AUC:<9.5}, ACC: {ACC:<9.5}, RMSE: {RMSE:<9.5}, MAE: {MAE:<9.5}\n"
         )
 
+        # correlation between history accuracy and predict score
+        window_lens = [20, 30, 40]
+        PPMCC = cal_PPMCC_his_cur_pred(result_all_batch, window_lens)
+        self.objects["logger"].info(
+            f"correlation (PPMCC) between history average accuracy and current predict score"
+        )
+        for window_len in window_lens:
+            PPMCC_ = PPMCC[window_len]
+            self.objects["logger"].info(
+                f"window length is {window_len}, "
+                f"PPMCC of all is {PPMCC_['all']:<9}, "
+                f"PPMCC of hard is {PPMCC_['hard']:<9}, "
+                f"PPMCC of easy is {PPMCC_['easy']:<9}"
+            )
+
         # CORE evaluate (question bias)
         core_evaluation1 = evaluate_core(predict_score_all, ground_truth_all, np.concatenate(question_all, axis=0), True)
         self.objects["logger"].info(
-            f"evaluation of CORE (allow replace)"
+            f"\nevaluation of CORE (allow replace)"
         )
         self.print_performance(
             f"seq biased point: num of sample is {core_evaluation1['num_sample']:<9}, performance is ", core_evaluation1

@@ -43,15 +43,17 @@ def aux_info_dct_general_config(local_params, global_params, global_objects):
     # 对比学习
     w_cl_loss = local_params["w_cl_loss"]
     temp = local_params["temp"]
+    correct_noise = local_params["correct_noise"]
     if w_cl_loss != 0:
         global_params["loss_config"]["cl loss"] = w_cl_loss
         global_params["other"]["instance_cl"] = {
-            "temp": temp
+            "temp": temp,
+            "correct_noise": correct_noise
         }
 
     global_objects["logger"].info(
         f"cl params\n    "
-        f"temp: {temp}, w_cl_loss: {w_cl_loss}\n"
+        f"temp: {temp}, correct_noise: {correct_noise}, w_cl_loss: {w_cl_loss}\n"
         f"model params\n    "
         f"num_concept: {num_concept}, num_question: {num_question}\n    "
         f"weight_aux_emb: {weight_aux_emb}, dim_question: {dim_question}, dim_latent: {dim_latent}, "

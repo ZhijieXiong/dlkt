@@ -13,7 +13,7 @@ from collections import defaultdict
 
 current_file_name = inspect.getfile(inspect.currentframe())
 current_dir = os.path.dirname(current_file_name)
-settings_path = os.path.join(current_dir, "../../settings.json")
+settings_path = os.path.join(current_dir, "../settings.json")
 with open(settings_path, "r") as f:
     settings = json.load(f)
 FILE_MANAGER_ROOT = settings["FILE_MANAGER_ROOT"]
@@ -382,23 +382,25 @@ def get_data_feature(global_params, global_objects):
         get_bkt_data(data_test, num_concept, question2concept)
 
     # 特征工程：能力画像
+    print("User ability feature engineering ...")
     ability_dict_train, ability_dict_valid, ability_dict_test = user_ability_feature_engineer(
         concept_dict_train, correct_dict_train, concept_dict_valid, correct_dict_valid, concept_dict_test,
         correct_dict_test, num_concept, num_cluster=num_cluster, evaluate_interval=ability_evaluate_interval
     )
 
     # 特征工程：习题难度
+    print("Question difficulty feature engineering ...")
     q_diff_dict_train, q_diff_dict_valid, q_diff_dict_test = question_difficulty_feature_engineer(
         data_train, question_dict_train, question_dict_valid, question_dict_test, num_question,
         num_min_question=num_min_question, num_question_diff=num_question_diff
     )
 
     # 特征工程：BKT知识追踪
+    print("User concept mastery feature engineering by BKT ...")
     mastery_dict_train, mastery_dict_valid, mastery_dict_test = concept_mastery_feature_engineer(
         bkt_data_train, concept_dict_train, correct_dict_train, concept_dict_valid, correct_dict_valid,
         concept_dict_test, correct_dict_test, num_concept
     )
-    # mastery_dict_train, mastery_dict_valid, mastery_dict_test = None, None, None
 
     feature_train = get_feature_all(
         concept_dict_train, correct_dict_train, ability_dict_train, q_diff_dict_train, mastery_dict_train,
@@ -479,6 +481,7 @@ def main(local_params):
     global_params["num_question_diff"] = num_question_diff
 
     # 读取数据
+    print("Loading data ...")
     setting_dir = global_objects["file_manager"].get_setting_dir(setting_name)
     data_train_path = os.path.join(setting_dir, train_file_name)
     data_valid_path = os.path.join(setting_dir, valid_file_name)
@@ -489,6 +492,7 @@ def main(local_params):
     data_test = read_preprocessed_file(data_test_path)
 
     # 必须要进行id重映射，因为这里读取的数据是截断后的，原始user id不唯一
+    print("User id remapping ...")
     user_id_remap(data_train, id_start=0)
     user_id_remap(data_valid, id_start=len(data_train))
     user_id_remap(data_test, id_start=len(data_train)+len(data_valid))
@@ -500,12 +504,16 @@ def main(local_params):
     global_objects["Q_table"] = global_objects["file_manager"].get_q_table(dataset_name, data_type)
     global_objects["question2concept"] = question2concept_from_Q(global_objects["Q_table"])
 
+    print("Start feature engineer")
     feature_train, feature_valid, feature_test = get_data_feature(global_params, global_objects)
 
-    # save_feature
+    print("Saving feature data ...")
     seed = local_params["seed"]
+    min_seq_len = local_params["min_seq_len"]
+
     feature_dir = local_params["feature_dir"]
-    feature_params_str = f"{num_cluster}-{ability_evaluate_interval}-{num_min_question}-{num_question_diff}-{seed}"
+    feature_params_str = f"min_seq_len_{min_seq_len}_feature-params-" \
+                         f"{num_cluster}-{ability_evaluate_interval}-{num_min_question}-{num_question_diff}-{seed}"
     feature_train_name = train_file_name.replace(".txt", f"_feature_{feature_params_str}.arff")
     feature_valid_name = valid_file_name.replace(".txt", f"_feature_{feature_params_str}.arff")
     feature_test_name = test_file_name.replace(".txt", f"_feature_{feature_params_str}.arff")
@@ -514,7 +522,6 @@ def main(local_params):
     feature_valid_path = os.path.join(feature_dir, feature_valid_name)
     feature_test_path = os.path.join(feature_dir, feature_test_name)
 
-    min_seq_len = local_params["min_seq_len"]
     save_feature2arff(dataset_name, feature_train, feature_train_path, min_seq_len)
     save_feature2arff(dataset_name, feature_valid, feature_valid_path, min_seq_len)
     save_feature2arff(dataset_name, feature_test, feature_test_path, min_seq_len)
@@ -524,23 +531,23 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="our_setting_new")
-    parser.add_argument("--dataset_name", type=str, default="assist2017")
-    parser.add_argument("--data_type", type=str, default="single_concept",
+    parser.add_argument("--dataset_name", type=str, default="assist2009")
+    parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2017_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2017_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2017_test_fold_0.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
     parser.add_argument("--feature_dir", type=str, default=r"F:\code\myProjects\dlkt\lab\IKT_feature")
     # 数据集参数
-    parser.add_argument("--num_concept", type=int, default=101)
-    parser.add_argument("--num_question", type=int, default=2803)
+    parser.add_argument("--num_concept", type=int, default=123)
+    parser.add_argument("--num_question", type=int, default=17751)
     # 特征工程参数
     parser.add_argument("--num_cluster", type=int, default=7)
     parser.add_argument("--ability_evaluate_interval", type=int, default=20)
     parser.add_argument("--num_min_question", type=int, default=4)
     parser.add_argument("--num_question_diff", type=int, default=11)
     # 其它
-    parser.add_argument("--min_seq_len", type=int, default=3)
+    parser.add_argument("--min_seq_len", type=int, default=20)
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()

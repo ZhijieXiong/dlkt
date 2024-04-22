@@ -91,8 +91,8 @@ def get_seq_biased_point(all_batch, previous_seq_len, seq_most_accuracy):
                 if m == 0:
                     break
 
-                context_label = label_seq[i-previous_seq_len:i]
-                context_accuracy = sum(context_label) / len(context_label)
+                context_labels = label_seq[i-previous_seq_len:i]
+                context_accuracy = sum(context_labels) / len(context_labels)
 
                 if (context_accuracy <= seq_most_accuracy) and (label_seq[i] == 1):
                     result["low_acc_but_right"]["question"].append(question_seq[i])
@@ -387,3 +387,70 @@ def evaluate_double_easy(seq_easy_point, statics_train, most_accuracy):
             double_biased_predict_label.append(p_label)
 
     return get_performance_no_error(double_biased_predict_score, double_biased_predict_label, double_biased_label)
+
+
+def cal_ppmcc_no_error(x, y):
+    assert len(x) == len(y), f"length of x and y must be equal"
+    if len(x) == 0:
+        return -1
+    return np.corrcoef(x, y)[0, 1]
+
+
+def cal_PPMCC_his_cur_pred(all_batch, window_lens):
+    """
+    计算当前预测和历史（一定窗口长度）正确率的相关系数PPMCC
+
+    :param all_batch:
+    :param window_lens:
+    :return:
+    """
+    his_ave_record = {}
+    for window_len in window_lens:
+        his_ave_record[window_len] = {
+            "history_average_accuracy": [],
+            "current_predict_score": [],
+            "current_label": []
+        }
+
+        for batch in all_batch:
+            zip_iter = zip(batch["question_seqs"], batch["label_seqs"], batch["predict_score_seqs"], batch["mask_seqs"])
+            for question_seq, label_seq, predict_score_seq, mask_seq in zip_iter:
+                for i, m in enumerate(mask_seq[window_len:]):
+                    i += window_len
+                    if m == 0:
+                        break
+
+                    context_labels = label_seq[i - window_len:i]
+                    context_accuracy = sum(context_labels) / len(context_labels)
+
+                    his_ave_record[window_len]["history_average_accuracy"].append(context_accuracy)
+                    his_ave_record[window_len]["current_predict_score"].append(predict_score_seq[i])
+                    his_ave_record[window_len]["current_label"].append(label_seq[i])
+
+    result = {}
+    for window_len in window_lens:
+        result[window_len] = {}
+        # 不过滤，直接计算所有预测和历史的相关系数
+        x = his_ave_record[window_len]["history_average_accuracy"]
+        y = his_ave_record[window_len]["current_predict_score"]
+        labels = his_ave_record[window_len]["current_label"]
+        result[window_len]["all"] = cal_ppmcc_no_error(x, y)
+
+        x_hard = []
+        y_hard = []
+        x_easy = []
+        y_easy = []
+        for xx, yy, l in zip(x, y, labels):
+            if (xx >= 0.5 and l != 1) or (xx <= 0.5 and l != 0):
+                # 过滤高历史正确率且标签为正确以及低历史正确率且标签为错误的点（hard sample）
+                x_hard.append(xx)
+                y_hard.append(yy)
+            else:
+                # 过滤高历史正确率但是标签为错误以及低历史正确率但是标签为正确的点（easy sample）
+                x_easy.append(xx)
+                y_easy.append(yy)
+
+        result[window_len]["hard"] = cal_ppmcc_no_error(x_hard, y_hard)
+        result[window_len]["easy"] = cal_ppmcc_no_error(x_easy, y_easy)
+
+    return result

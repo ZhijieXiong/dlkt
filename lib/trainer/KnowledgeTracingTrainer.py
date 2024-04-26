@@ -136,7 +136,7 @@ class KnowledgeTracingTrainer:
 
     def evaluate_fine_grained(self, data_loader):
         # 只计算不需要依赖训练集信息的细粒度指标
-        model = self.best_model
+        model = self.best_model.to(self.params["device"])
         model.eval()
         has_question_seq = True
         with torch.no_grad():
@@ -214,7 +214,8 @@ class KnowledgeTracingTrainer:
             self.loss_record.clear_loss()
             current_epoch = self.train_record.get_current_epoch()
             if best_epoch == current_epoch:
-                self.best_model = deepcopy(model)
+                # 节省显存
+                self.best_model = deepcopy(model).to("cpu")
                 if save_model:
                     save_model_dir = self.params["save_model_dir"]
                     model_weight_path = os.path.join(save_model_dir, "saved.ckt")

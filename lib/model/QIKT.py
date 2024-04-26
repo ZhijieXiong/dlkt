@@ -104,6 +104,8 @@ class QIKT(nn.Module):
             dim=-1
         )
 
+        self.rnn_layer4question.flatten_parameters()
+        self.rnn_layer4concept.flatten_parameters()
         latent_question = self.dropout_layer(self.rnn_layer4question(qca_emb[:, :-1])[0])
         latent_concept = self.dropout_layer(self.rnn_layer4concept(ca_emb[:, :-1])[0])
 

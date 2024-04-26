@@ -21,7 +21,7 @@ def split1(dataset_uniformed, n_fold, test_radio, valid_radio, seed=0):
     num_all = len(dataset_uniformed)
     num_train_valid = int(num_all * (1 - test_radio))
     num_train = int(num_train_valid * (1 - valid_radio))
-    num_fold = num_train_valid - num_train
+    num_fold = (num_train_valid // n_fold) + 1
 
     if n_fold == 1:
         return dataset_uniformed[0: num_train], dataset_uniformed[num_train: num_train_valid], dataset_uniformed[num_train_valid:]

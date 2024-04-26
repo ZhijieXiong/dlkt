@@ -10,16 +10,12 @@ from lib.util.FileManager import FileManager
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--file_manager_root", type=str, default=r"")
     parser.add_argument("--dataset_src_dir", type=str, default=r"E:\dataSet\knowledgeTracingtData\EDnet\EdNet-KT1\KT1")
     parser.add_argument("--contents_dir", type=str, default=r"E:\dataSet\knowledgeTracingtData\EDnet\EdNet-Contents\contents")
     args = parser.parse_args()
     params = vars(args)
 
-    if params["file_manager_root"] == "":
-        params["file_manager_root"] = config.FILE_MANAGER_ROOT
-
-    file_manager = FileManager(params["file_manager_root"])
+    file_manager = FileManager(config.FILE_MANAGER_ROOT)
 
     data_dir = params["dataset_src_dir"]
     content_dir = params["contents_dir"]

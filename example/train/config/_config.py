@@ -177,7 +177,7 @@ def general_config(local_params, global_params, global_objects):
     # 数据集统计信息
     statics_info_file_path = os.path.join(
         file_manager.get_setting_dir(setting_name),
-        datasets_config["train"]["file_name"].replace(".txt", f"_statics.json")
+        datasets_config["train"]["file_name"].replace(".txt", f"_statics_special.json")
     )
     if not os.path.exists(statics_info_file_path):
         global_objects["logger"].warning(

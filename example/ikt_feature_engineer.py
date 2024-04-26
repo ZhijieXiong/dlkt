@@ -204,29 +204,6 @@ def get_bkt_data(data2transform, num_concept, question2concept):
     return bkt_dict, concept_dict, correct_dict, question_dict
 
 
-def concept_mastery_feature_engineer(bkt_data_train, concept_dict_train, correct_dict_train, concept_dict_valid,
-                                     correct_dict_valid, concept_dict_test, correct_dict_test, num_concept):
-    DL, DT, DG, DS = {}, {}, {}, {}
-    for c_id in bkt_data_train.keys():
-        users_bkt_data = bkt_data_train[c_id]
-        data_train4c_id = []
-        for u_id in users_bkt_data.keys():
-            data_train4c_id.append(users_bkt_data[u_id])
-
-        bkt = BKT(step=0.1, bounded=False, best_k0=True)
-        if len(data_train4c_id) > 2:
-            DL[c_id], DT[c_id], DG[c_id], DS[c_id] = bkt.fit(data_train4c_id)
-        else:
-            DL[c_id], DT[c_id], DG[c_id], DS[c_id] = 0.5, 0.2, 0.1, 0.1
-
-    # mastery: 和concept_dict一样格式，存放的是对应知识点的掌握程度
-    mastery_dict_train = bkt_predict(concept_dict_train, correct_dict_train, DL, DT, DG, DS, num_concept)
-    mastery_dict_valid = bkt_predict(concept_dict_valid, correct_dict_valid, DL, DT, DG, DS, num_concept)
-    mastery_dict_test = bkt_predict(concept_dict_test, correct_dict_test, DL, DT, DG, DS, num_concept)
-
-    return mastery_dict_train, mastery_dict_valid, mastery_dict_test
-
-
 def get_q_diff_feature_dict(data_train, num_question, num_min_question, num_question_diff):
     questions_frequency = defaultdict(int)
     questions_accuracy = defaultdict(int)
@@ -256,18 +233,6 @@ def get_question_difficulty_feature(question_dict, q_diff_feature_dict):
     return diff_feature_dict
 
 
-def question_difficulty_feature_engineer(data_train, question_dict_train, question_dict_valid, question_dict_test,
-                                         num_question, num_min_question=4, num_question_diff=11):
-    q_diff_feature_dict = \
-        get_q_diff_feature_dict(data_train, num_question, num_min_question, num_question_diff)
-
-    q_diff_feature_dict_train = get_question_difficulty_feature(question_dict_train, q_diff_feature_dict)
-    q_diff_feature_dict_valid = get_question_difficulty_feature(question_dict_valid, q_diff_feature_dict)
-    q_diff_feature_dict_test = get_question_difficulty_feature(question_dict_test, q_diff_feature_dict)
-
-    return q_diff_feature_dict_train, q_diff_feature_dict_valid, q_diff_feature_dict_test
-
-
 def get_ability_vector_dict(concept_dict, correct_dict, num_concept, ability_evaluate_interval=20):
     ability_vector_dict = {}
     for u_id in concept_dict.keys():
@@ -281,10 +246,6 @@ def get_ability_vector_dict(concept_dict, correct_dict, num_concept, ability_eva
                 ability_vector = (concept_right + 1.4) / (concept_attempt + 2)
                 seg_index = i // ability_evaluate_interval
                 ability_vector_dict[str(u_id) + "-" + str(seg_index)] = ability_vector
-
-                # 只看前ability_evaluate_interval个step计算画像
-                concept_attempt = np.zeros(num_concept)
-                concept_right = np.zeros(num_concept)
 
             concept_attempt[c_id] += 1
             concept_right[c_id] += correct
@@ -301,27 +262,6 @@ def get_user_ability_feature(ability_vector_dict, cluster):
         ability_feature_dict[k] = ability_feature
 
     return ability_feature_dict
-
-
-def user_ability_feature_engineer(concept_dict_train, correct_dict_train, concept_dict_valid, correct_dict_valid,
-                                  concept_dict_test, correct_dict_test, num_concept,
-                                  evaluate_interval=20, num_cluster=7):
-    ability_vector_dict_train = \
-        get_ability_vector_dict(concept_dict_train, correct_dict_train, num_concept, evaluate_interval)
-    ability_vector_dict_valid = \
-        get_ability_vector_dict(concept_dict_valid, correct_dict_valid, num_concept, evaluate_interval)
-    ability_vector_dict_test = \
-        get_ability_vector_dict(concept_dict_test, correct_dict_test, num_concept, evaluate_interval)
-
-    ability_vector_all = np.stack([v for v in ability_vector_dict_train.values()])
-    cluster = KMeans(n_clusters=num_cluster, n_init=5, max_iter=40)
-    cluster.fit(ability_vector_all)
-
-    ability_feature_train = get_user_ability_feature(ability_vector_dict_train, cluster)
-    ability_feature_valid = get_user_ability_feature(ability_vector_dict_valid, cluster)
-    ability_feature_test = get_user_ability_feature(ability_vector_dict_test, cluster)
-
-    return ability_feature_train, ability_feature_valid, ability_feature_test
 
 
 def get_feature_all(concept_dict, correct_dict, ability_dict, q_diff_dict, mastery_dict, ability_evaluate_interval):
@@ -361,7 +301,7 @@ def get_feature_all(concept_dict, correct_dict, ability_dict, q_diff_dict, maste
     return feature_dict
 
 
-def get_data_feature(global_params, global_objects):
+def get_meta_train_data(global_params, global_objects):
     num_concept = global_params["num_concept"]
     num_question = global_params["num_question"]
     num_cluster = global_params["num_cluster"]
@@ -370,54 +310,67 @@ def get_data_feature(global_params, global_objects):
     num_question_diff = global_params["num_question_diff"]
 
     data_train = global_objects["data_train"]
-    data_valid = global_objects["data_valid"]
-    data_test = global_objects["data_test"]
     question2concept = global_objects["question2concept"]
 
     bkt_data_train, concept_dict_train, correct_dict_train, question_dict_train = \
         get_bkt_data(data_train, num_concept, question2concept)
-    _, concept_dict_valid, correct_dict_valid, question_dict_valid = \
-        get_bkt_data(data_valid, num_concept, question2concept)
-    _, concept_dict_test, correct_dict_test, question_dict_test = \
-        get_bkt_data(data_test, num_concept, question2concept)
+
+    ability_vector_dict_train = \
+        get_ability_vector_dict(concept_dict_train, correct_dict_train, num_concept, ability_evaluate_interval)
+
+    # user ability meta data
+    ability_vector_all = np.stack([v for v in ability_vector_dict_train.values()])
+    cluster = KMeans(n_clusters=num_cluster, n_init=5, max_iter=40)
+    cluster.fit(ability_vector_all)
+
+    # question difficulty meta data
+    q_diff_feature_dict = get_q_diff_feature_dict(data_train, num_question, num_min_question, num_question_diff)
+
+    # concept mastery meta data
+    DL, DT, DG, DS = {}, {}, {}, {}
+    for c_id in bkt_data_train.keys():
+        users_bkt_data = bkt_data_train[c_id]
+        data_train4c_id = []
+        for u_id in users_bkt_data.keys():
+            data_train4c_id.append(users_bkt_data[u_id])
+
+        bkt = BKT(step=0.1, bounded=False, best_k0=True)
+        if len(data_train4c_id) > 2:
+            DL[c_id], DT[c_id], DG[c_id], DS[c_id] = bkt.fit(data_train4c_id)
+        else:
+            DL[c_id], DT[c_id], DG[c_id], DS[c_id] = 0.5, 0.2, 0.1, 0.1
+
+    return cluster, q_diff_feature_dict, {"DL": DL, "DT": DT, "DG": DG, "DS": DS}
+
+
+def get_target_data_feature(global_params, global_objects, target_data="data_train"):
+    num_concept = global_params["num_concept"]
+    ability_evaluate_interval = global_params["ability_evaluate_interval"]
+
+    data_target = global_objects[target_data]
+    question2concept = global_objects["question2concept"]
+    cluster = global_objects["train_cluster"]
+    q_diff_feature_dict = global_objects["train_q_diff_dict"]
+    bkt_params = global_objects["train_bkt_params"]
+
+    _, concept_dict, correct_dict, question_dict = get_bkt_data(data_target, num_concept, question2concept)
 
     # 特征工程：能力画像
-    print("User ability feature engineering ...")
-    ability_dict_train, ability_dict_valid, ability_dict_test = user_ability_feature_engineer(
-        concept_dict_train, correct_dict_train, concept_dict_valid, correct_dict_valid, concept_dict_test,
-        correct_dict_test, num_concept, num_cluster=num_cluster, evaluate_interval=ability_evaluate_interval
-    )
+    ability_vector_dict = get_ability_vector_dict(concept_dict, correct_dict, num_concept, ability_evaluate_interval)
+    ability_feature = get_user_ability_feature(ability_vector_dict, cluster)
 
     # 特征工程：习题难度
-    print("Question difficulty feature engineering ...")
-    q_diff_dict_train, q_diff_dict_valid, q_diff_dict_test = question_difficulty_feature_engineer(
-        data_train, question_dict_train, question_dict_valid, question_dict_test, num_question,
-        num_min_question=num_min_question, num_question_diff=num_question_diff
-    )
+    difficulty_feature = get_question_difficulty_feature(question_dict, q_diff_feature_dict)
 
     # 特征工程：BKT知识追踪
-    print("User concept mastery feature engineering by BKT ...")
-    mastery_dict_train, mastery_dict_valid, mastery_dict_test = concept_mastery_feature_engineer(
-        bkt_data_train, concept_dict_train, correct_dict_train, concept_dict_valid, correct_dict_valid,
-        concept_dict_test, correct_dict_test, num_concept
+    DL, DT, DG, DS = bkt_params["DL"], bkt_params["DT"], bkt_params["DG"], bkt_params["DS"]
+    mastery_feature = bkt_predict(concept_dict, correct_dict, DL, DT, DG, DS, num_concept)
+
+    feature_data = get_feature_all(
+        concept_dict, correct_dict, ability_feature, difficulty_feature, mastery_feature, ability_evaluate_interval
     )
 
-    feature_train = get_feature_all(
-        concept_dict_train, correct_dict_train, ability_dict_train, q_diff_dict_train, mastery_dict_train,
-        ability_evaluate_interval=ability_evaluate_interval
-    )
-
-    feature_valid = get_feature_all(
-        concept_dict_valid, correct_dict_valid, ability_dict_valid, q_diff_dict_valid, mastery_dict_valid,
-        ability_evaluate_interval=ability_evaluate_interval
-    )
-
-    feature_test = get_feature_all(
-        concept_dict_test, correct_dict_test, ability_dict_test, q_diff_dict_test, mastery_dict_test,
-        ability_evaluate_interval=ability_evaluate_interval
-    )
-
-    return feature_train, feature_valid, feature_test
+    return feature_data
 
 
 def save_feature2arff(dataset_name, feature_dict, save_feature_path, min_seq_len=3):
@@ -488,56 +441,79 @@ def main(local_params):
     data_test_path = os.path.join(setting_dir, test_file_name)
 
     data_train = read_preprocessed_file(data_train_path)
-    data_valid = read_preprocessed_file(data_valid_path)
-    data_test = read_preprocessed_file(data_test_path)
+    if os.path.exists(data_valid_path):
+        data_valid = read_preprocessed_file(data_valid_path)
+    else:
+        data_valid = None
+    if os.path.exists(data_test_path):
+        data_test = read_preprocessed_file(data_test_path)
+    else:
+        data_test = None
 
-    # 必须要进行id重映射，因为这里读取的数据是截断后的，原始user id不唯一
     print("User id remapping ...")
     user_id_remap(data_train, id_start=0)
-    user_id_remap(data_valid, id_start=len(data_train))
-    user_id_remap(data_test, id_start=len(data_train)+len(data_valid))
+    if data_valid is not None:
+        user_id_remap(data_valid, id_start=len(data_train))
+    if data_test is not None:
+        if data_valid is not None:
+            user_id_remap(data_test, id_start=len(data_train)+len(data_valid))
+        else:
+            user_id_remap(data_test, id_start=len(data_train))
 
     global_objects["data_train"] = data_train
     global_objects["data_valid"] = data_valid
     global_objects["data_test"] = data_test
-
     global_objects["Q_table"] = global_objects["file_manager"].get_q_table(dataset_name, data_type)
     global_objects["question2concept"] = question2concept_from_Q(global_objects["Q_table"])
 
-    print("Start feature engineer")
-    feature_train, feature_valid, feature_test = get_data_feature(global_params, global_objects)
+    # 获取特征工程所需要的元数据，如聚类中心，bkt参数，习题难度等级
+    print("Obtaining meta (user ability cluster, question difficulty level, bkt params) of train data ...")
+    cluster, q_diff_feature_dict, bkt_params = get_meta_train_data(global_params, global_objects)
+    global_objects["train_cluster"] = cluster
+    global_objects["train_q_diff_dict"] = q_diff_feature_dict
+    global_objects["train_bkt_params"] = bkt_params
+
+    print("Feature engineering ...")
+    feature_train = get_target_data_feature(global_params, global_objects, target_data="data_train")
+    if data_valid is not None:
+        feature_valid = get_target_data_feature(global_params, global_objects, target_data="data_valid")
+    else:
+        feature_valid = None
+    if data_test is not None:
+        feature_test = get_target_data_feature(global_params, global_objects, target_data="data_test")
+    else:
+        feature_test = None
 
     print("Saving feature data ...")
     seed = local_params["seed"]
     min_seq_len = local_params["min_seq_len"]
+    feature_params_str = f"_seed-{seed}_{num_cluster}-{ability_evaluate_interval}-{num_min_question}-{num_question_diff}"
 
-    feature_dir = local_params["feature_dir"]
-    feature_params_str = f"min_seq_len_{min_seq_len}_feature-params-" \
-                         f"{num_cluster}-{ability_evaluate_interval}-{num_min_question}-{num_question_diff}-{seed}"
     feature_train_name = train_file_name.replace(".txt", f"_feature_{feature_params_str}.arff")
-    feature_valid_name = valid_file_name.replace(".txt", f"_feature_{feature_params_str}.arff")
-    feature_test_name = test_file_name.replace(".txt", f"_feature_{feature_params_str}.arff")
-
-    feature_train_path = os.path.join(feature_dir, feature_train_name)
-    feature_valid_path = os.path.join(feature_dir, feature_valid_name)
-    feature_test_path = os.path.join(feature_dir, feature_test_name)
-
+    feature_train_path = os.path.join(setting_dir, feature_train_name)
     save_feature2arff(dataset_name, feature_train, feature_train_path, min_seq_len)
-    save_feature2arff(dataset_name, feature_valid, feature_valid_path, min_seq_len)
-    save_feature2arff(dataset_name, feature_test, feature_test_path, min_seq_len)
+
+    if feature_valid is not None:
+        feature_valid_name = valid_file_name.replace(".txt", f"_feature_{feature_params_str}.arff")
+        feature_valid_path = os.path.join(setting_dir, feature_valid_name)
+        save_feature2arff(dataset_name, feature_valid, feature_valid_path, min_seq_len)
+
+    if feature_test is not None:
+        feature_test_name = test_file_name.replace(".txt", f"_feature_{feature_params_str}.arff")
+        feature_test_path = os.path.join(setting_dir, feature_test_name)
+        save_feature2arff(dataset_name, feature_test, feature_test_path, min_seq_len)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
-    parser.add_argument("--setting_name", type=str, default="our_setting_new")
+    parser.add_argument("--setting_name", type=str, default="ikt_setting")
     parser.add_argument("--dataset_name", type=str, default="assist2009")
     parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
     parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="no_file")
     parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
-    parser.add_argument("--feature_dir", type=str, default=r"F:\code\myProjects\dlkt\lab\IKT_feature")
     # 数据集参数
     parser.add_argument("--num_concept", type=int, default=123)
     parser.add_argument("--num_question", type=int, default=17751)

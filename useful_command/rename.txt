@@ -1,0 +1,7 @@
+ls aux-info-dct_our_setting_new_*.txt | sed -r 's/aux-info-dct_our_setting_new_(.*).txt/mv & \1.txt/' | bash
+sed -r 'p;s/aux-info-dct_our_setting_new_(.*)\.txt/mv & \1.txt/'
+    -r 启用扩展的正则表达式语法，即特殊字符无需\转义
+    s 替换
+    /aux-info-dct_our_setting_new_(.*).txt/是正则表达式，从ls的结果中进行匹配
+    mv & \1.txt是生成的文本，其中&是匹配到的整个字符串，\1对应第一个匹配子串
+    最终生成的文本是 mv aux-info-dct_our_setting_new_(.*).txt (.*).txt，也就是文件重命名（去掉前缀）

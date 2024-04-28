@@ -63,7 +63,8 @@ def config(local_params):
     }
 
     # 细粒度测试配置
-    statics_file_path = local_params["statics_file_path"]
+    train_statics_common_path = local_params["train_statics_common_path"]
+    train_statics_special_path = local_params["train_statics_special_path"]
     max_seq_len = local_params["max_seq_len"]
     seq_len_absolute = local_params["seq_len_absolute"]
     previous_seq_len4bias = local_params["previous_seq_len4bias"]
@@ -77,7 +78,8 @@ def config(local_params):
     fine_grain_config = global_params["evaluate"]["fine_grain"]
     fine_grain_config["max_seq_len"] = max_seq_len
     fine_grain_config["seq_len_absolute"] = eval(seq_len_absolute)
-    fine_grain_config["statics_path"] = statics_file_path
+    fine_grain_config["train_statics_common_path"] = train_statics_common_path
+    fine_grain_config["train_statics_special_path"] = train_statics_special_path
     fine_grain_config["previous_seq_len4bias"] = previous_seq_len4bias
     fine_grain_config["seq_most_accuracy4bias"] = seq_most_accuracy4bias
 
@@ -137,9 +139,10 @@ if __name__ == "__main__":
     # ------------------------------------------- 细粒度指标配置 ----------------------------------------------------------
     # 是否进行细粒度测试
     parser.add_argument("--use_fine_grained_evaluation", type=str2bool, default=True)
-    # 长尾问题（注意不同训练集的长尾统计信息不一样）
-    parser.add_argument("--statics_file_path", type=str, help="prepare4fine_trained_evaluate.py生成的文件绝对路径",
-                        default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new\assist2009_train_fold_0_statics.json")
+    parser.add_argument("--train_statics_common_path", type=str,
+                        default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new\assist2009_train_fold_0_statics_common.json")
+    parser.add_argument("--train_statics_special_path", type=str,
+                        default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new\assist2009_train_fold_0_statics_special.json")
     # 冷启动问题
     parser.add_argument("--max_seq_len", type=int, default=200)
     parser.add_argument("--seq_len_absolute", type=str, help="[0, 10, 200]表示测试模型对位于序列0~10区间的点的性能以及10~200区间点的性能",

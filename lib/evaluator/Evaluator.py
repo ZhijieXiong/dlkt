@@ -137,9 +137,9 @@ class Evaluator:
             PPMCC_ = PPMCC[window_len]
             self.objects["logger"].info(
                 f"window length is {window_len}, "
-                f"PPMCC of all is {PPMCC_['all']:<9}, "
-                f"PPMCC of hard is {PPMCC_['hard']:<9}, "
-                f"PPMCC of easy is {PPMCC_['easy']:<9}"
+                f"PPMCC of all is {PPMCC_['all']:<9.5}, "
+                f"PPMCC of hard is {PPMCC_['hard']:<9.5}, "
+                f"PPMCC of easy is {PPMCC_['easy']:<9.5}"
             )
 
         # CORE evaluate (question bias)

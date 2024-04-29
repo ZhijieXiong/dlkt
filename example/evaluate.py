@@ -1,4 +1,5 @@
 import argparse
+import torch
 
 from torch.utils.data import DataLoader
 
@@ -89,6 +90,11 @@ if __name__ == "__main__":
             global_objects["dimkt"] = {}
             global_objects["dimkt"]["question_difficulty"] = question_difficulty
             global_objects["dimkt"]["concept_difficulty"] = concept_difficulty
+            num_concept = global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_concept"]
+            diff_fuse_table = [0] * num_concept
+            for c_id, c_diff_id in concept_difficulty.items():
+                diff_fuse_table[c_id] = c_diff_id
+            global_objects["dimkt"]["diff_fuse_table"] = torch.LongTensor(diff_fuse_table).to(global_params["device"])
             global_params["datasets_config"]["test"]["type"] = "kt4dimkt"
             global_params["datasets_config"]["test"]["kt4dimkt"] = {}
             global_params["datasets_config"]["test"]["kt4dimkt"]["num_question_difficulty"] = params["num_question_diff"]

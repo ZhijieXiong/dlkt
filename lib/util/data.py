@@ -92,14 +92,14 @@ def read_preprocessed_file(data_path):
 
 
 def load_json(json_path):
-    with open(json_path, "r") as f:
+    with open(json_path, "r", encoding="utf-8") as f:
         result = json.load(f)
     return result
 
 
 def write_json(json_data, json_path):
-    with open(json_path, "w") as f:
-        json.dump(json_data, f, indent=2)
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(json_data, f, indent=2, ensure_ascii=False)
 
 
 def get_concept_from_question(q_table, question_id):

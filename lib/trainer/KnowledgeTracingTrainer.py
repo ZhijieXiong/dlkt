@@ -113,14 +113,14 @@ class KnowledgeTracingTrainer:
                     len1 = len("fine-grained metric of valid data")
                     self.objects["logger"].info("-" * ((100 - len1) // 2) + "fine-grained metric of valid data" +
                                                 "-" * ((100 - len1) // 2))
-                    self.evaluate_fine_grained(valid_loader)
+                    self.evaluate_fine_grained(valid_loader, "valid")
                     self.objects["logger"].info("-" * 100)
 
                     len2 = len("fine-grained metric of test data")
                     self.objects["logger"].info("-" * ((100 - len2) // 2) + "fine-grained metric of test data" +
                                                 "-" * ((100 - len2) // 2))
                     self.objects["logger"].info("fine-grained metric of test data")
-                    self.evaluate_fine_grained(test_loader)
+                    self.evaluate_fine_grained(test_loader, "test")
                     self.objects["logger"].info("-" * 100)
 
         return stop_flag
@@ -134,7 +134,7 @@ class KnowledgeTracingTrainer:
             f"MAE: {performance_dict['MAE']:<9.6}"
         )
 
-    def evaluate_fine_grained(self, data_loader):
+    def evaluate_fine_grained(self, data_loader, valid_or_test):
         # 只计算不需要依赖训练集信息的细粒度指标
         model = self.best_model.to(self.params["device"])
         model.eval()
@@ -164,26 +164,28 @@ class KnowledgeTracingTrainer:
             most_acc_list = [0.4, 0.3, 0.2]
 
             for previous_seq_len4bias, seq_most_accuracy4bias in zip(seq_lens, most_acc_list):
-                self.objects["logger"].info(f"seq bias params: ({previous_seq_len4bias}, {seq_most_accuracy4bias})")
                 seq_easy_point, non_seq_easy_point = \
                     get_seq_easy_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
                 result4seq_easy = evaluate_easy(seq_easy_point)
                 result4non_seq_easy = get_performance_no_error(non_seq_easy_point["predict_score"],
                                                                non_seq_easy_point["predict_label"],
                                                                non_seq_easy_point["ground_truth"])
-                self.print_performance(
-                    f"seq easy point: num of sample is {result4seq_easy['num_sample']:<9}, performance is ", result4seq_easy
-                )
-                self.print_performance(
-                    f"non seq easy point: num of sample is {result4non_seq_easy['num_sample']:<9}, performance is ",
-                    result4non_seq_easy
-                )
-
                 seq_biased_point = get_seq_biased_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
                 result4bias = evaluate_bias(seq_biased_point)
-                self.print_performance(
-                    f"seq biased point: num of sample is {result4bias['num_sample']:<9}, performance is ", result4bias
+
+                params_str = f"({previous_seq_len4bias}, {seq_most_accuracy4bias})"
+                self.objects["logger"].info(
+                    f"seq bias params: {params_str}, "
+                    f"num of seq easy sample: {result4seq_easy['num_sample']:<9}, "
+                    f"num of non seq easy sample: {result4non_seq_easy['num_sample']:<9}, "
+                    f"num of seq biased sample: {result4bias['num_sample']:<9}"
                 )
+                self.print_performance(f"\t{valid_or_test} performance of seq easy samples ({params_str}) is ",
+                                       result4seq_easy)
+                self.print_performance(f"\t{valid_or_test} performance of non seq easy samples ({params_str}) is ",
+                                       result4non_seq_easy)
+                self.print_performance(f"\t{valid_or_test} performance of seq biased samples ({params_str}) is ",
+                                       result4bias)
 
     def evaluate(self):
         train_strategy = self.params["train_strategy"]

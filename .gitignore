@@ -28,6 +28,7 @@ example4llm_based_agent/demo
 /example/keys.py
 /example/demo/keys.py
 /example/settings.json
+/example/translate_xes3g5m.py
 /settings.json
 /*.ipynb
 /note.md

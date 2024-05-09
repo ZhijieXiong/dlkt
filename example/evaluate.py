@@ -64,7 +64,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_question_diff", type=int, default=100)
     parser.add_argument("--num_concept_diff", type=int, default=100)
 
-    # 如果是DCT或者AuxInfoDCT，对时间信息首先需要聚合
+    # 如果是AuxInfoDCT，对时间信息首先需要聚合
     parser.add_argument("--is_dct", type=str2bool, default=False)
     # -------------------------------------------------------------------------------------------------------------------
 

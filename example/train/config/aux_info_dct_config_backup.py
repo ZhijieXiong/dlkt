@@ -19,26 +19,26 @@ def aux_info_dct_general_config(local_params, global_params, global_objects):
     # 配置模型参数
     num_concept = local_params["num_concept"]
     num_question = local_params["num_question"]
-    dim_emb = local_params["dim_emb"]
+    dim_question = local_params["dim_question"]
     dim_latent = local_params["dim_latent"]
     rnn_type = local_params["rnn_type"]
     num_rnn_layer = local_params["num_rnn_layer"]
     num_mlp_layer = local_params["num_mlp_layer"]
     dropout = local_params["dropout"]
-    max_que_disc = local_params["max_que_disc"]
+    weight_aux_emb = local_params["weight_aux_emb"]
 
     # encoder layer
     encoder_config = global_params["models_config"]["kt_model"]["encoder_layer"]["AuxInfoDCT"]
     encoder_config["dataset_name"] = local_params["dataset_name"]
     encoder_config["num_concept"] = num_concept
     encoder_config["num_question"] = num_question
-    encoder_config["dim_emb"] = dim_emb
+    encoder_config["dim_question"] = dim_question
+    encoder_config["weight_aux_emb"] = weight_aux_emb
     encoder_config["dim_latent"] = dim_latent
     encoder_config["rnn_type"] = rnn_type
     encoder_config["num_rnn_layer"] = num_rnn_layer
     encoder_config["num_mlp_layer"] = num_mlp_layer
     encoder_config["dropout"] = dropout
-    encoder_config["max_que_disc"] = max_que_disc
 
     # 对比学习
     w_cl_loss = local_params["w_cl_loss"]
@@ -56,8 +56,8 @@ def aux_info_dct_general_config(local_params, global_params, global_objects):
         f"temp: {temp}, correct_noise: {correct_noise}, w_cl_loss: {w_cl_loss}\n"
         f"model params\n    "
         f"num_concept: {num_concept}, num_question: {num_question}\n    "
-        f"dim_emb: {dim_emb}, dim_latent: {dim_latent}, rnn type: {rnn_type}, num of rnn layer: {num_rnn_layer}, "
-        f"num_mlp_layer: {num_mlp_layer}, dropout: {dropout}, max_que_disc: {max_que_disc}"
+        f"weight_aux_emb: {weight_aux_emb}, dim_question: {dim_question}, dim_latent: {dim_latent}, "
+        f"rnn type: {rnn_type}, num of rnn layer: {num_rnn_layer}, num_mlp_layer: {num_mlp_layer}, dropout: {dropout}"
     )
 
     if local_params["save_model"]:

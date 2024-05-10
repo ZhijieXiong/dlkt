@@ -1,6 +1,3 @@
-import numpy as np
-import torch.nn as nn
-
 from .BaseModel4CL import BaseModel4CL
 from .Module.MLP import MLP4LLM_emb
 from .Module.KTEmbedLayer import KTEmbedLayer

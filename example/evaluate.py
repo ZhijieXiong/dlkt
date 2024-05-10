@@ -100,8 +100,8 @@ if __name__ == "__main__":
             global_params["datasets_config"]["test"]["kt4dimkt"]["num_question_difficulty"] = params["num_question_diff"]
             global_params["datasets_config"]["test"]["kt4dimkt"]["num_concept_difficulty"] = params["num_concept_diff"]
         elif params["is_dct"]:
-            global_params["datasets_config"]["test"]["type"] = "kt4aux_info"
-            global_params["datasets_config"]["test"]["kt4aux_info"] = {}
+            global_params["datasets_config"]["test"]["type"] = "agg_aux_info"
+            global_params["datasets_config"]["test"]["agg_aux_info"] = {}
         dataset_test = KTDataset(global_params, global_objects)
     dataloader_test = DataLoader(dataset_test, batch_size=params["evaluate_batch_size"], shuffle=False)
 

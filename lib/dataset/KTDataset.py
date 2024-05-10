@@ -59,13 +59,40 @@ class KTDataset(Dataset):
             dataset_converted["question_seq_mask"] = []
         if "time_seq" in seq_keys:
             dataset_converted["interval_time_seq"] = []
+        # 根据num_hint和num_attempt取值分为12类，其中num_hint可选值为unknown、0、1、multi，num_attempt可选值为unknown、1、multi
+        dataset_converted["hint_attempt_seq"] = []
         dataset_converted["seq_id"] = []
         if self.params.get("use_sample_weight", False):
             dataset_converted["weight_seq"] = []
+
         max_seq_len = len(dataset_original[0]["mask_seq"])
         for seq_i, item_data in enumerate(dataset_original):
+            seq_len = item_data["seq_len"]
+
+            hint_attempt_seq = []
+            for i in range(seq_len):
+                if "num_attempt_seq" in seq_keys and "num_hint_seq" in seq_keys:
+                    num_attempt = item_data["num_attempt_seq"][i]
+                    num_hint = item_data["num_hint_seq"][i]
+                    if num_attempt == 1:
+                        hint_count = 6 + (num_hint if num_hint <= 1 else 2)
+                    else:
+                        hint_count = 9 + (num_hint if num_hint <= 1 else 2)
+                elif "num_attempt_seq" in seq_keys:
+                    num_attempt = item_data["num_attempt_seq"][i]
+                    hint_count = 1 if num_attempt == 1 else 2
+                elif "num_hint_seq" in seq_keys:
+                    num_hint = item_data["num_hint_seq"][i]
+                    hint_count = 3 + (num_hint if num_hint <= 1 else 2)
+                else:
+                    hint_count = 0
+                hint_attempt_seq.append(hint_count)
+            hint_attempt_seq += [0] * (max_seq_len - seq_len)
+            dataset_converted["hint_attempt_seq"].append(hint_attempt_seq)
+
             for k in id_keys:
                 dataset_converted[k].append(item_data[k])
+
             for k in seq_keys:
                 if data_type == "multi_concept" and k == "question_seq":
                     question_seq = item_data["question_seq"]
@@ -79,10 +106,9 @@ class KTDataset(Dataset):
                     dataset_converted["question_seq_mask"].append(question_seq)
                 elif k == "time_seq":
                     interval_time_seq = [0]
-                    seq_len = item_data["seq_len"]
                     for time_i in range(1, seq_len):
                         interval_time_real = (item_data["time_seq"][time_i] - item_data["time_seq"][time_i - 1]) // 60
-                        if dataset_type == "kt4aux_info":
+                        if dataset_type == "agg_aux_info":
                             interval_time_idx = len(INTERVAL_TIME4LPKT_PLUS)
                             for idx, interval_time_value in enumerate(INTERVAL_TIME4LPKT_PLUS):
                                 if interval_time_real < 0:
@@ -97,8 +123,7 @@ class KTDataset(Dataset):
                     interval_time_seq += [0] * (max_seq_len - seq_len)
                     dataset_converted["interval_time_seq"].append(interval_time_seq)
                 elif k == "use_time_seq":
-                    if dataset_type == "kt4aux_info":
-                        seq_len = item_data["seq_len"]
+                    if dataset_type == "agg_aux_info":
                         use_time_seq = []
                         for time_i, use_time in enumerate(item_data["use_time_seq"][:seq_len]):
                             use_time_idx = len(USE_TIME4LPKT_PLUS)
@@ -130,6 +155,13 @@ class KTDataset(Dataset):
             del dataset_converted["time_seq"]
         if "question_seq_mask" in dataset_converted.keys():
             del dataset_converted["question_seq_mask"]
+
+        question2concept_combination = self.objects["data"].get("question2concept_combination", None)
+        if question2concept_combination is not None:
+            dataset_converted["concept_combination_seq"] = []
+            for question_seq in dataset_converted["question_seq"]:
+                concept_combination_seq = list(map(lambda q_id: question2concept_combination[q_id][0], question_seq))
+                dataset_converted["concept_combination_seq"].append(concept_combination_seq)
 
         for k in dataset_converted.keys():
             if k not in ["weight_seq", "hint_factor_seq", "attempt_factor_seq", "time_factor_seq", "correct_float"]:

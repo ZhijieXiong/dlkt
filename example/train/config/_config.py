@@ -168,6 +168,12 @@ def general_config(local_params, global_params, global_objects):
         global_objects["data"]["q2c_mask_table"] = q2c_mask_table
         global_objects["data"]["num_max_concept"] = num_max_concept
 
+    # 获取习题和知识点组合的关系
+    Q_table_single_concept = file_manager.get_q_table(dataset_name, "single_concept")
+    if Q_table_single_concept is not None:
+        question2concept_combination = question2concept_from_Q(Q_table_single_concept)
+        global_objects["data"]["question2concept_combination"] = question2concept_combination
+
     global_objects["logger"].info(
         "dataset\n"
         f"    setting: {setting_name}, dataset: {dataset_name}, data type: {data_type}, "

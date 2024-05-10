@@ -1,5 +1,3 @@
-from torch import nn
-
 from .util import *
 from .loss_util import binary_entropy
 

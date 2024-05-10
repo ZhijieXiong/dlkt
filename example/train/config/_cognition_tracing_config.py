@@ -64,10 +64,10 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
 
     # 单阶段还是多阶段；损失权重配置
     multi_stage = local_params.get("multi_stage", False)
-    use_hard_Q_table = local_params.get("use_hard_Q_table", False)
+    use_hard_Q_table = local_params.get("use_hard_Q_table", True)
     q_table_loss_th = local_params.get("q_table_loss_th", 0.5)
-    use_pretrain = local_params["use_pretrain"]
-    epoch_pretrain = local_params["epoch_pretrain"]
+    use_pretrain = local_params.get("use_pretrain", False)
+    epoch_pretrain = local_params.get("epoch_pretrain", 20)
     w_learning = local_params.get("w_learning", 0)
     w_counter_fact = local_params.get("w_counter_fact", 0)
     w_penalty_neg = local_params.get("w_penalty_neg", 0)

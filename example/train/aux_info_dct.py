@@ -67,7 +67,6 @@ if __name__ == "__main__":
     parser.add_argument("--w_cl_loss", type=float, default=0)
     parser.add_argument("--w_learning", type=float, default=0)
     parser.add_argument("--w_penalty_neg", type=float, default=0)
-    parser.add_argument("--q_table_loss_th", type=float, default=0.5)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

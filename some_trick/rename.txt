@@ -1,0 +1,4 @@
+批量重命名：将aux-info-dct_baseline_our_setting_new_开头的文件重命名为our_setting_new_开头
+ls aux-info-dct_baseline_our_setting_new_*.txt | sed -r 'p;s/aux-info-dct_baseline_our_setting_new_(.*)\.txt/mv & our_setting_new_\1.txt/' | bash
+ls aux-info-dct_baseline_our_setting_new_*.txt 找到所有符合规则的文件名
+sed -r 'p;s/aux-info-dct_baseline_our_setting_new_(.*)\.txt/mv & our_setting_new_\1.txt/' 用正则表达式（使用//包裹）匹配内容，后面的\1就是对应前面正则表达式里第一个()的内容

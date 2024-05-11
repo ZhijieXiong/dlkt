@@ -1,6 +1,7 @@
 import os
 import json
 import torch
+import hashlib
 import numpy as np
 from copy import deepcopy
 from collections import defaultdict
@@ -436,3 +437,8 @@ def generate_factor4lbkt(data_uniformed, use_time_mean_dict, use_time_std_dict, 
         item_data["time_factor_seq"] = time_factor_seq + [0.] * (max_seq_len - seq_len)
         item_data["attempt_factor_seq"] = attempt_factor_seq + [0.] * (max_seq_len - seq_len)
         item_data["hint_factor_seq"] = hint_factor_seq + [0.] * (max_seq_len - seq_len)
+
+
+def generate_unique_id(input_str):
+    hash_object = hashlib.md5(input_str.encode())
+    return hash_object.hexdigest()

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-file_path="F:\code\myProjects\dlkt\example\result_local\aux-info-dct-hard-q-table-baseline_our_setting_new_statics2011_save.txt"
+file_path="F:\code\myProjects\dlkt\example\result_local\auxInfoDct-baseline_our_setting_new_assist2009_save.txt"
 test_or_valid="test"
 
 python F:/code/myProjects/dlkt/parse_result.py \

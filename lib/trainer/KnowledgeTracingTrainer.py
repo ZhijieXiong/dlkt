@@ -119,7 +119,6 @@ class KnowledgeTracingTrainer:
                     len2 = len("fine-grained metric of test data")
                     self.objects["logger"].info("-" * ((100 - len2) // 2) + "fine-grained metric of test data" +
                                                 "-" * ((100 - len2) // 2))
-                    self.objects["logger"].info("fine-grained metric of test data")
                     self.evaluate_fine_grained(test_loader, "test")
                     self.objects["logger"].info("-" * 100)
 

@@ -41,12 +41,12 @@ def elmkt_general_config(local_params, global_params, global_objects):
     w_cl_loss = local_params["w_cl_loss"]
     temp = local_params["temp"]
     correct_noise = local_params["correct_noise"]
+    global_params["other"]["instance_cl"] = {
+        "temp": temp,
+        "correct_noise": correct_noise
+    }
     if w_cl_loss != 0:
         global_params["loss_config"]["cl loss"] = w_cl_loss
-        global_params["other"]["instance_cl"] = {
-            "temp": temp,
-            "correct_noise": correct_noise
-        }
 
     global_objects["logger"].info(
         f"cl params\n    "

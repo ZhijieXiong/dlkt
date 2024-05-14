@@ -2,12 +2,12 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from config.neuro_mirt_config import neuro_mirt_config
+from config.elmkt_config import elmkt_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.model.NeuroMIRT import NeuroMIRT
+from lib.model.ELMKT import ELMKT
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 
@@ -15,15 +15,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="our_setting_new")
-    parser.add_argument("--dataset_name", type=str, default="assist2009")
-    parser.add_argument("--data_type", type=str, default="only_question",
+    parser.add_argument("--dataset_name", type=str, default="assist2017")
+    parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2017_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2017_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2017_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0)
+    parser.add_argument("--weight_decay", type=float, default=0.000001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
@@ -37,25 +37,33 @@ if __name__ == "__main__":
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
     # 学习率
-    parser.add_argument("--learning_rate", type=float, default=0.002)
+    parser.add_argument("--learning_rate", type=float, default=0.001)
     parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
-    parser.add_argument("--lr_schedule_step", type=int, default=10)
+    parser.add_argument("--lr_schedule_step", type=int, default=5)
     parser.add_argument("--lr_schedule_milestones", type=str, default="[5]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     # batch size
-    parser.add_argument("--train_batch_size", type=int, default=64)
+    parser.add_argument("--train_batch_size", type=int, default=32)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     # 梯度裁剪
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=123)
-    parser.add_argument("--num_concept_combination", type=int, default=149)
-    parser.add_argument("--num_question", type=int, default=17751)
+    parser.add_argument("--num_concept", type=int, default=101)
+    parser.add_argument("--num_question", type=int, default=2803)
     parser.add_argument("--dim_emb", type=int, default=128)
+    parser.add_argument("--use_learnable_q", type=str2bool, default=True)
+    parser.add_argument("--max_q_unrelated_concept", type=float, default=0.1)
+    parser.add_argument("--min_q_related_concept", type=float, default=0.5)
     parser.add_argument("--dropout", type=float, default=0.2)
+    parser.add_argument("--use_lpkt_predictor", type=str2bool, default=True)
+    parser.add_argument("--num_predictor_layer", type=int, default=2)
+    # 对比损失
+    parser.add_argument("--temp", type=float, default=0.05)
+    parser.add_argument("--correct_noise", type=float, default=0.3)
+    parser.add_argument("--w_cl_loss", type=float, default=0.1)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)
@@ -65,7 +73,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = neuro_mirt_config(params)
+    global_params, global_objects = elmkt_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)
@@ -92,7 +100,7 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    global_objects["models"]["kt_model"] = NeuroMIRT(global_params, global_objects).to(global_params["device"])
+    global_objects["models"]["kt_model"] = ELMKT(global_params, global_objects).to(global_params["device"])
     trainer = KnowledgeTracingTrainer(global_params, global_objects)
 
     trainer.train()

@@ -273,6 +273,8 @@ class ELMKT(nn.Module):
         return self.forward(batch)[:, 1:]
 
     def get_predict_loss(self, batch, loss_record=None):
+        loss = 0.
+
         w_cl_loss = self.params["loss_config"].get("cl loss", 0)
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         batch_size = mask_bool_seq.shape[0]
@@ -280,15 +282,16 @@ class ELMKT(nn.Module):
         predict_score = self.get_predict_score(batch)
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
         predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
-
         if loss_record is not None:
             num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
             loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+        loss = loss + predict_loss
 
-        unbias_loss = self.get_unbias_loss(batch)
-        if loss_record is not None:
-            loss_record.add_loss("cl loss", unbias_loss.detach().cpu().item() * batch_size, batch_size)
-        loss = predict_loss + unbias_loss * w_cl_loss
+        if w_cl_loss != 0:
+            unbias_loss = self.get_unbias_loss(batch)
+            if loss_record is not None:
+                loss_record.add_loss("cl loss", unbias_loss.detach().cpu().item() * batch_size, batch_size)
+            loss = predict_loss + unbias_loss * w_cl_loss
 
         return loss
 

@@ -130,7 +130,6 @@ class AuxInfoQDKT(nn.Module):
     def forward(self, batch):
         data_type = self.params["datasets_config"]["data_type"]
         dim_question = self.params["models_config"]["kt_model"]["encoder_layer"]["AuxInfoQDKT"]["dim_question"]
-        weight_aux_emb = self.params["models_config"]["kt_model"]["encoder_layer"]["AuxInfoQDKT"]["weight_aux_emb"]
         batch_size, seq_len = batch["correct_seq"].shape[0], batch["correct_seq"].shape[1]
 
         correct_emb = self.embed_layer.get_emb("correct", batch["correct_seq"])
@@ -174,7 +173,7 @@ class AuxInfoQDKT(nn.Module):
             else:
                 interval_time_emb = self.embed_interval_time(batch["interval_time_seq"])
 
-            encoder_input = torch.cat((interaction_emb, interval_time_emb, ut_nh_na_emb * weight_aux_emb), dim=-1)
+            encoder_input = torch.cat((interaction_emb, interval_time_emb, ut_nh_na_emb), dim=-1)
 
         elif (self.has_use_time or self.has_num_hint or self.has_num_attempt) or self.has_time:
             # 没有时间戳信息，另外三种辅助信息有至少1种
@@ -208,7 +207,7 @@ class AuxInfoQDKT(nn.Module):
 
                 ut_nh_na_emb = torch.cat((use_time_emb, num_hint_emb, num_attempt_emb), dim=-1)
                 ut_nh_na_emb = self.fuse_ut_nh_na(ut_nh_na_emb)
-                encoder_input = torch.cat((interaction_emb, ut_nh_na_emb * weight_aux_emb), dim=-1)
+                encoder_input = torch.cat((interaction_emb, ut_nh_na_emb), dim=-1)
 
         else:
             # 没有任何辅助信息

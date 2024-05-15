@@ -1,6 +1,7 @@
 import torch.nn.init
 
 from .util import *
+from .Module.KTEmbedLayer import KTEmbedLayer
 from ..CONSTANT import HAS_TIME, HAS_USE_TIME, HAS_NUM_HINT, HAS_NUM_ATTEMPT
 
 
@@ -64,6 +65,7 @@ class AuxInfoDCT(nn.Module):
         self.embed_question = nn.Embedding(num_question+1, dim_emb)
         self.embed_concept = nn.Embedding(num_concept+1, dim_emb)
         torch.nn.init.xavier_uniform_(self.embed_question.weight)
+        torch.nn.init.xavier_uniform_(self.embed_concept.weight)
         if self.has_time:
             self.embed_interval_time = nn.Embedding(101, dim_emb)
         if self.has_use_time:
@@ -96,15 +98,29 @@ class AuxInfoDCT(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def get_concept_emb(self, batch):
-        q2c_table = self.objects["data"]["q2c_table"]
-        q2c_mask_table = self.objects["data"]["q2c_mask_table"]
-        question_seq = batch["question_seq"]
-        question_emb = self.embed_question(question_seq)
-        que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
-        qc_relate = torch.gather(que_difficulty, 2, q2c_table[question_seq]) * q2c_mask_table[question_seq]
-        sum_qc_relate = torch.sum(qc_relate, dim=-1, keepdim=True) + 1e-6
-        concept_emb_relate = qc_relate.unsqueeze(-1) * self.embed_concept(q2c_table[question_seq])
-        concept_emb = torch.sum(concept_emb_relate, dim=-2) / sum_qc_relate
+        use_mean_pool = self.params["models_config"]["kt_model"]["encoder_layer"]["AuxInfoDCT"]["use_mean_pool4concept"]
+        if use_mean_pool:
+            data_type = self.params["datasets_config"]["data_type"]
+            if data_type == "only_question":
+                concept_emb = KTEmbedLayer.concept_fused_emb(
+                    self.embed_concept,
+                    self.objects["data"]["q2c_table"],
+                    self.objects["data"]["q2c_mask_table"],
+                    batch["question_seq"],
+                    fusion_type="mean"
+                )
+            else:
+                concept_emb = self.embed_concept(batch["concept_seq"])
+        else:
+            q2c_table = self.objects["data"]["q2c_table"]
+            q2c_mask_table = self.objects["data"]["q2c_mask_table"]
+            question_seq = batch["question_seq"]
+            question_emb = self.embed_question(question_seq)
+            que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
+            qc_relate = torch.gather(que_difficulty, 2, q2c_table[question_seq]) * q2c_mask_table[question_seq]
+            sum_qc_relate = torch.sum(qc_relate, dim=-1, keepdim=True) + 1e-6
+            concept_emb_relate = qc_relate.unsqueeze(-1) * self.embed_concept(q2c_table[question_seq])
+            concept_emb = torch.sum(concept_emb_relate, dim=-2) / sum_qc_relate
 
         return concept_emb
 
@@ -214,9 +230,7 @@ class AuxInfoDCT(nn.Module):
         max_que_disc = encoder_config["max_que_disc"]
 
         multi_stage = self.params["other"]["cognition_tracing"]["multi_stage"]
-        w_learning = self.params["loss_config"].get("learning loss", 0)
         w_penalty_neg = self.params["loss_config"].get("penalty neg loss", 0)
-        w_cl_loss = self.params["loss_config"].get("cl loss", 0)
         data_type = self.params["datasets_config"]["data_type"]
 
         correct_seq = batch["correct_seq"]
@@ -332,30 +346,6 @@ class AuxInfoDCT(nn.Module):
                                              num_sample)
                     loss = loss + penalty_neg_loss * w_penalty_neg
 
-        if (not multi_stage) and (w_learning != 0):
-            # 学习约束：做对了题比不做题学习增长大
-            master_leval = user_ability[:, 1:] - user_ability[:, :-1]
-            mask4master = mask_bool_seq[:, 1:-1].unsqueeze(-1) & \
-                          correct_seq[:, 1:-1].unsqueeze(-1).bool() & \
-                          q2c_mask_table[:, 1:-1].bool()
-            target_neg_master_leval = torch.masked_select(
-                torch.gather(master_leval, 2, q2c_table[:, 1:-1]), mask4master
-            )
-            neg_master_leval = target_neg_master_leval[target_neg_master_leval < 0]
-            num_sample = neg_master_leval.numel()
-            if num_sample > 0:
-                learn_loss = -neg_master_leval.mean()
-                if loss_record is not None:
-                    loss_record.add_loss("learning loss", learn_loss.detach().cpu().item() * num_sample,
-                                         num_sample)
-                loss = loss + learn_loss * w_learning
-
-        if (not multi_stage) and (w_cl_loss != 0):
-            unbias_loss = self.get_unbias_loss(batch)
-            if loss_record is not None:
-                loss_record.add_loss("cl loss", unbias_loss.detach().cpu().item() * batch_size, batch_size)
-            loss = loss + unbias_loss * w_cl_loss
-
         return loss
 
     def get_penalty_neg_loss(self, batch):
@@ -408,60 +398,3 @@ class AuxInfoDCT(nn.Module):
                 return -neg_inter_func_in.mean(), num_sample
             else:
                 return 0, 0
-
-    def get_learn_loss(self, batch):
-        # 学习约束：做对了题比不做题学习增长大
-        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
-        dim_correct = encoder_config["dim_correct"]
-
-        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-        correct_seq = batch["correct_seq"]
-        question_seq = batch["question_seq"]
-        batch_size, seq_len = correct_seq.shape[0], correct_seq.shape[1]
-
-        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
-        question_emb = self.embed_question(question_seq)
-        concept_emb = self.get_concept_emb(batch)
-        interaction_emb = torch.cat((question_emb[:, :-1], concept_emb[:, :-1], correct_emb[:, :-1]), dim=2)
-
-        self.encoder_layer.flatten_parameters()
-        latent, _ = self.encoder_layer(interaction_emb)
-
-        user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
-
-        q2c_table = self.objects["data"]["q2c_table"][batch["question_seq"]]
-        q2c_mask_table = self.objects["data"]["q2c_mask_table"][batch["question_seq"]]
-
-        master_leval = user_ability[:, 1:] - user_ability[:, :-1]
-        mask4master = mask_bool_seq[:, 1:].unsqueeze(-1) & \
-                      correct_seq[:, 1:].unsqueeze(-1).bool() & \
-                      q2c_mask_table[:, 1:].bool()
-        target_neg_master_leval = torch.masked_select(
-            torch.gather(master_leval, 2, q2c_table[:, 1:]), mask4master
-        )
-        neg_master_leval = target_neg_master_leval[target_neg_master_leval < 0]
-        num_sample = neg_master_leval.numel()
-        if num_sample > 0:
-            learn_loss = -neg_master_leval.mean()
-            return learn_loss, num_sample
-        else:
-            return 0, 0
-
-    def get_unbias_loss(self, batch):
-        temp = self.params["other"]["instance_cl"]["temp"]
-        correct_noise = self.params["other"]["instance_cl"]["correct_noise"]
-
-        batch_size = batch["mask_seq"].shape[0]
-        first_index = torch.arange(batch_size).long().to(self.params["device"])
-
-        latent_aug0 = self.get_latent(batch, correct_noise_strength=correct_noise)
-        latent_aug0 = latent_aug0[first_index, batch["seq_len"] - 1]
-        latent_aug1 = self.get_latent(batch, correct_noise_strength=correct_noise)
-        latent_aug1 = latent_aug1[first_index, batch["seq_len"] - 1]
-
-        cos_sim = torch.cosine_similarity(latent_aug0.unsqueeze(1), latent_aug1.unsqueeze(0), dim=-1) / temp
-        batch_size = cos_sim.size(0)
-        labels = torch.arange(batch_size).long().to(self.params["device"])
-        cl_loss = nn.functional.cross_entropy(cos_sim, labels)
-
-        return cl_loss

@@ -19,6 +19,7 @@ def aux_info_dct_general_config(local_params, global_params, global_objects):
     # 配置模型参数
     num_concept = local_params["num_concept"]
     num_question = local_params["num_question"]
+    use_mean_pool4concept = local_params["use_mean_pool4concept"]
     dim_emb = local_params["dim_emb"]
     dim_latent = local_params["dim_latent"]
     rnn_type = local_params["rnn_type"]
@@ -32,6 +33,7 @@ def aux_info_dct_general_config(local_params, global_params, global_objects):
     encoder_config["dataset_name"] = local_params["dataset_name"]
     encoder_config["num_concept"] = num_concept
     encoder_config["num_question"] = num_question
+    encoder_config["use_mean_pool4concept"] = use_mean_pool4concept
     encoder_config["dim_emb"] = dim_emb
     encoder_config["dim_latent"] = dim_latent
     encoder_config["rnn_type"] = rnn_type
@@ -40,24 +42,12 @@ def aux_info_dct_general_config(local_params, global_params, global_objects):
     encoder_config["dropout"] = dropout
     encoder_config["max_que_disc"] = max_que_disc
 
-    # 对比学习
-    w_cl_loss = local_params["w_cl_loss"]
-    temp = local_params["temp"]
-    correct_noise = local_params["correct_noise"]
-    if w_cl_loss != 0:
-        global_params["loss_config"]["cl loss"] = w_cl_loss
-        global_params["other"]["instance_cl"] = {
-            "temp": temp,
-            "correct_noise": correct_noise
-        }
-
     global_objects["logger"].info(
-        f"cl params\n    "
-        f"temp: {temp}, correct_noise: {correct_noise}, w_cl_loss: {w_cl_loss}\n"
         f"model params\n    "
         f"num_concept: {num_concept}, num_question: {num_question}\n    "
-        f"dim_emb: {dim_emb}, dim_latent: {dim_latent}, rnn type: {rnn_type}, num of rnn layer: {num_rnn_layer}, "
-        f"num_mlp_layer: {num_mlp_layer}, dropout: {dropout}, max_que_disc: {max_que_disc}"
+        f"use_mean_pool4concept: {use_mean_pool4concept}, dim_emb: {dim_emb}, dim_latent: {dim_latent}, "
+        f"rnn type: {rnn_type}, num of rnn layer: {num_rnn_layer}, num_mlp_layer: {num_mlp_layer}, dropout: {dropout}, "
+        f"max_que_disc: {max_que_disc}"
     )
 
     if local_params["save_model"]:

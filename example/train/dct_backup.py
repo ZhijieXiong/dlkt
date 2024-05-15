@@ -53,17 +53,32 @@ if __name__ == "__main__":
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=123)
     parser.add_argument("--num_question", type=int, default=17751)
-    parser.add_argument("--use_mean_pool4concept", type=str2bool, default=False)
-    parser.add_argument("--dim_emb", type=int, default=96)
+    parser.add_argument("--dim_question", type=int, default=96)
     parser.add_argument("--dim_latent", type=int, default=96)
     parser.add_argument("--rnn_type", type=str, default="gru", choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=1)
     parser.add_argument("--num_mlp_layer", type=int, default=3)
-    parser.add_argument("--max_que_disc", type=float, default=5)
     parser.add_argument("--dropout", type=float, default=0.2)
+    parser.add_argument("--use_hard_Q_table", type=str2bool, default=False)
+    # 习题和学生初始状态预训练
+    parser.add_argument("--use_pretrain", type=str2bool, default=False)
+    parser.add_argument("--epoch_pretrain", type=int, default=20)
+    # 生成伪标签的参数
+    parser.add_argument("--min_fre4diff", type=int, default=20)
+    parser.add_argument("--min_fre4disc", type=int, default=20)
+    parser.add_argument("--min_seq_len4disc", type=int, default=20)
+    parser.add_argument("--percent_threshold", type=float, default=0.37,
+                        help="计算区分度时，选择正确率最高的k%和最低的k%序列")
     # 损失权重
     parser.add_argument("--multi_stage", type=str2bool, default=False)
+    parser.add_argument("--w_que_diff_pred", type=float, default=0)
+    parser.add_argument("--w_que_disc_pred", type=float, default=0)
+    parser.add_argument("--w_user_ability_pred", type=float, default=0)
     parser.add_argument("--w_penalty_neg", type=float, default=0)
+    parser.add_argument("--w_learning", type=float, default=0)
+    parser.add_argument("--w_counter_fact", type=float, default=0)
+    parser.add_argument("--q_table_loss_th", type=float, default=0.5)
+    parser.add_argument("--w_q_table", type=float, default=0)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

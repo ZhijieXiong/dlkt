@@ -53,6 +53,7 @@ if __name__ == "__main__":
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=188)
     parser.add_argument("--num_question", type=int, default=11858)
+    parser.add_argument("--use_mean_pool4concept", type=str2bool, default=True)
     parser.add_argument("--dim_emb", type=int, default=128)
     parser.add_argument("--dim_latent", type=int, default=64)
     parser.add_argument("--rnn_type", type=str, default="gru", choices=("rnn", "lstm", "gru"))
@@ -62,10 +63,6 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", type=float, default=0.2)
     # 辅助损失
     parser.add_argument("--multi_stage", type=str2bool, default=False)
-    parser.add_argument("--temp", type=float, default=0.05)
-    parser.add_argument("--correct_noise", type=float, default=0.3)
-    parser.add_argument("--w_cl_loss", type=float, default=0)
-    parser.add_argument("--w_learning", type=float, default=0)
     parser.add_argument("--w_penalty_neg", type=float, default=0)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)

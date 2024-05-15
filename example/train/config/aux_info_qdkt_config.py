@@ -9,13 +9,13 @@ from lib.util.basic import *
 
 def aux_info_qdkt_general_config(local_params, global_params, global_objects):
     # 数据集特殊配置；主要是对use time和interval time进行聚合，区别于原始的LPKT，减少time的embedding数量
-    global_params["datasets_config"]["train"]["type"] = "kt4lpkt_plus"
-    global_params["datasets_config"]["train"]["lpkt_plus"] = {}
-    global_params["datasets_config"]["test"]["type"] = "kt4lpkt_plus"
-    global_params["datasets_config"]["test"]["kt4lpkt_plus"] = {}
+    global_params["datasets_config"]["train"]["type"] = "agg_aux_info"
+    global_params["datasets_config"]["train"]["agg_aux_info"] = {}
+    global_params["datasets_config"]["test"]["type"] = "agg_aux_info"
+    global_params["datasets_config"]["test"]["agg_aux_info"] = {}
     if local_params["train_strategy"] == "valid_test":
-        global_params["datasets_config"]["valid"]["type"] = "kt4lpkt_plus"
-        global_params["datasets_config"]["valid"]["kt4lpkt_plus"] = {}
+        global_params["datasets_config"]["valid"]["type"] = "agg_aux_info"
+        global_params["datasets_config"]["valid"]["agg_aux_info"] = {}
 
     global_params["models_config"] = {}
     global_params["models_config"]["kt_model"] = deepcopy(AuxInfoQDKT_MODEL_PARAMS)
@@ -32,7 +32,6 @@ def aux_info_qdkt_general_config(local_params, global_params, global_objects):
     num_predict_layer = local_params["num_predict_layer"]
     dim_predict_mid = local_params["dim_predict_mid"]
     activate_type = local_params["activate_type"]
-    weight_aux_emb = local_params["weight_aux_emb"]
     pretrain_aux_emb_path = local_params.get("pretrain_aux_emb_path", "")
     use_pretrain_aux_emb = os.path.exists(pretrain_aux_emb_path)
 
@@ -52,7 +51,6 @@ def aux_info_qdkt_general_config(local_params, global_params, global_objects):
     encoder_config["dim_latent"] = dim_latent
     encoder_config["rnn_type"] = rnn_type
     encoder_config["num_rnn_layer"] = num_rnn_layer
-    encoder_config["weight_aux_emb"] = weight_aux_emb
 
     # predict layer
     predict_layer_config = global_params["models_config"]["kt_model"]["predict_layer"]
@@ -69,7 +67,7 @@ def aux_info_qdkt_general_config(local_params, global_params, global_objects):
         f"num_concept: {num_concept}, num_question: {num_question}, num_correct: 2\n    "
         f"dim_question: {dim_question}, dim_latent: {dim_latent}, rnn_type: {rnn_type}, num_rnn_layer: {num_rnn_layer}, "
         f"dropout: {dropout},  num_predict_layer: {num_predict_layer}, dim_predict_mid: {dim_predict_mid}, "
-        f"activate_type: {activate_type}, weight_aux_emb: {weight_aux_emb}\n    "
+        f"activate_type: {activate_type}\n    "
         f"use_pretrain_aux_emb: {use_pretrain_aux_emb}"
         f"{'' if not use_pretrain_aux_emb else f', pretrain_aux_emb_path: {pretrain_aux_emb_path}'}"
     )

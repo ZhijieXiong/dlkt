@@ -49,6 +49,7 @@ class AuxInfoDCT(nn.Module):
         dataset_name = encoder_config["dataset_name"]
         num_question = encoder_config["num_question"]
         num_concept = encoder_config["num_concept"]
+        use_proj = encoder_config["use_proj"]
         dim_emb = encoder_config["dim_emb"]
         dim_latent = encoder_config["dim_latent"]
         rnn_type = encoder_config["rnn_type"]
@@ -84,12 +85,13 @@ class AuxInfoDCT(nn.Module):
             dim_rrn_input = dim_emb * 4
         else:
             dim_rrn_input = dim_emb * 3
+        dim_rnn_output = dim_latent if use_proj else num_concept
         if rnn_type == "rnn":
-            self.encoder_layer = nn.RNN(dim_rrn_input, dim_latent, batch_first=True, num_layers=num_rnn_layer)
+            self.encoder_layer = nn.RNN(dim_rrn_input, dim_rnn_output, batch_first=True, num_layers=num_rnn_layer)
         elif rnn_type == "lstm":
-            self.encoder_layer = nn.LSTM(dim_rrn_input, dim_latent, batch_first=True, num_layers=num_rnn_layer)
+            self.encoder_layer = nn.LSTM(dim_rrn_input, dim_rnn_output, batch_first=True, num_layers=num_rnn_layer)
         else:
-            self.encoder_layer = nn.GRU(dim_rrn_input, dim_latent, batch_first=True, num_layers=num_rnn_layer)
+            self.encoder_layer = nn.GRU(dim_rrn_input, dim_rnn_output, batch_first=True, num_layers=num_rnn_layer)
 
         # question和latent的投影层
         self.que2difficulty = MLP4Proj(num_mlp_layer, dim_emb, num_concept, dropout)
@@ -126,8 +128,14 @@ class AuxInfoDCT(nn.Module):
 
     def predict_score(self, latent, question_emb, question_seq):
         max_que_disc = self.params["models_config"]["kt_model"]["encoder_layer"]["AuxInfoDCT"]["max_que_disc"]
+        use_proj = self.params["models_config"]["kt_model"]["encoder_layer"]["AuxInfoDCT"]["use_proj"]
         Q_table = self.objects["data"]["Q_table_tensor"]
-        user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
+
+        if use_proj:
+            user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
+        else:
+            user_ability = torch.sigmoid(latent)
+
         que_discrimination = torch.sigmoid(self.que2discrimination(self.dropout(question_emb))) * max_que_disc
         que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
         user_ability_ = user_ability * Q_table[question_seq]
@@ -140,7 +148,7 @@ class AuxInfoDCT(nn.Module):
 
         return predict_score
 
-    def get_latent(self, batch, correct_noise_strength=0.):
+    def forward(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AuxInfoDCT"]
         dim_emb = encoder_config["dim_emb"]
         correct_seq = batch["correct_seq"]
@@ -150,12 +158,6 @@ class AuxInfoDCT(nn.Module):
         question_emb = self.embed_question(question_seq)
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_emb).reshape(batch_size, -1, dim_emb)
         concept_emb = self.get_concept_emb(batch)
-        if 0 < correct_noise_strength < 0.5:
-            noise = torch.rand(batch_size, seq_len, dim_emb).to(self.params["device"]) * correct_noise_strength
-            noise_mask = torch.ones_like(noise).float().to(self.params["device"])
-            noise_mask[correct_seq == 1] = -1
-            noise = noise * noise_mask
-            correct_emb = correct_emb + noise
         interaction_emb = torch.cat((question_emb, concept_emb, correct_emb), dim=2)
 
         if (self.has_use_time or self.has_num_hint or self.has_num_attempt) and self.has_time:
@@ -204,12 +206,6 @@ class AuxInfoDCT(nn.Module):
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(encoder_input)
 
-        return latent
-
-    def forward(self, batch):
-        question_seq = batch["question_seq"]
-        question_emb = self.embed_question(question_seq)
-        latent = self.get_latent(batch)
         predict_score = self.predict_score(latent[:, :-1], question_emb[:, 1:], question_seq[:, 1:])
 
         return predict_score
@@ -226,12 +222,15 @@ class AuxInfoDCT(nn.Module):
 
     def get_predict_loss(self, batch, loss_record=None):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AuxInfoDCT"]
+        use_proj = encoder_config["use_proj"]
         dim_emb = encoder_config["dim_emb"]
         max_que_disc = encoder_config["max_que_disc"]
 
         multi_stage = self.params["other"]["cognition_tracing"]["multi_stage"]
         w_penalty_neg = self.params["loss_config"].get("penalty neg loss", 0)
         data_type = self.params["datasets_config"]["data_type"]
+
+        Q_table = self.objects["data"]["Q_table_tensor"]
 
         correct_seq = batch["correct_seq"]
         question_seq = batch["question_seq"]
@@ -289,8 +288,11 @@ class AuxInfoDCT(nn.Module):
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(encoder_input)
 
-        Q_table = self.objects["data"]["Q_table_tensor"]
-        user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
+        if use_proj:
+            user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
+        else:
+            user_ability = torch.sigmoid(latent)
+
         que_discrimination = torch.sigmoid(self.que2discrimination(self.dropout(question_emb[:, 1:]))) * max_que_disc
         que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, 1:])))
         inter_func_in = user_ability - que_difficulty
@@ -313,45 +315,65 @@ class AuxInfoDCT(nn.Module):
 
         q2c_table = self.objects["data"]["q2c_table"][batch["question_seq"]]
         q2c_mask_table = self.objects["data"]["q2c_mask_table"][batch["question_seq"]]
+        mask4seq_len = torch.cat((torch.zeros(batch_size, 5), torch.ones(batch_size, seq_len-5)), dim=1)
+        mask4seq_len = mask4seq_len.bool().to(self.params["device"])
         if (not multi_stage) and (w_penalty_neg != 0):
-            # 对于做对的题，惩罚user_ability - que_difficulty小于0的值（只惩罚考察的知识点）
-            # 如果是单知识点数据集，那么对于做错的题，惩罚user_ability - que_difficulty大于0的值（只惩罚考察的知识点）
-            target_inter_func_in = torch.gather(inter_func_in, 2, q2c_table[:, 1:])
-            mask4inter_func_in = mask_bool_seq[:, 1:].unsqueeze(-1) & \
-                                 batch["correct_seq"][:, 1:].bool().unsqueeze(-1) & \
-                                 q2c_mask_table[:, 1:].bool()
-            target_inter_func_in1 = torch.masked_select(target_inter_func_in, mask4inter_func_in)
-            neg_inter_func_in = target_inter_func_in1[target_inter_func_in1 <= 0]
-            num_sample = neg_inter_func_in.numel()
-
+            # 单知识点习题：对于做对的题，惩罚user_ability - que_difficulty小于0的值
+            #            对于做错的题，惩罚user_ability - que_difficulty大于0的值
+            #            只惩罚考察的知识点
+            # 多知识点习题：选择权重最重的惩罚
             if data_type == "single_concept":
+                target_inter_func_in = torch.gather(inter_func_in, 2, q2c_table[:, 1:])
+
+                mask4inter_func_in = mask_bool_seq[:, 1:].unsqueeze(-1) & \
+                                     mask4seq_len[:, 1:].unsqueeze(-1) & \
+                                     batch["correct_seq"][:, 1:].bool().unsqueeze(-1) & \
+                                     q2c_mask_table[:, 1:].bool()
+                target_inter_func_in1 = torch.masked_select(target_inter_func_in, mask4inter_func_in)
+                neg_inter_func_in = target_inter_func_in1[target_inter_func_in1 <= 0]
+                num_sample = neg_inter_func_in.numel()
+
                 mask4inter_func_in2 = mask_bool_seq[:, 1:].unsqueeze(-1) & \
+                                      mask4seq_len[:, 1:].unsqueeze(-1) & \
                                       (1 - batch["correct_seq"][:, 1:]).bool().unsqueeze(-1) & \
                                       q2c_mask_table[:, 1:].bool()
                 target_inter_func_in2 = torch.masked_select(target_inter_func_in, mask4inter_func_in2)
                 pos_inter_func_in = target_inter_func_in2[target_inter_func_in2 >= 0]
                 num_sample = num_sample + pos_inter_func_in.numel()
-                if num_sample > 0:
-                    penalty_value = torch.cat((-neg_inter_func_in, pos_inter_func_in))
-                    penalty_neg_loss = penalty_value.mean()
-                    if loss_record is not None:
-                        loss_record.add_loss("penalty neg loss", penalty_neg_loss.detach().cpu().item() * num_sample,
-                                             num_sample)
-                    loss = loss + penalty_neg_loss * w_penalty_neg
             else:
-                if num_sample > 0:
-                    penalty_neg_loss = -neg_inter_func_in.mean()
-                    if loss_record is not None:
-                        loss_record.add_loss("penalty neg loss", penalty_neg_loss.detach().cpu().item() * num_sample,
-                                             num_sample)
-                    loss = loss + penalty_neg_loss * w_penalty_neg
+                qc_related_extent = torch.gather(que_difficulty, 2, q2c_table[:, 1:]) * q2c_mask_table[:, 1:]
+                qc_max_extent_index = torch.argmax(qc_related_extent, dim=2).unsqueeze(-1)
+                target_inter_func_in = torch.gather(inter_func_in, 2, qc_max_extent_index)
+
+                mask4inter_func_in = mask_bool_seq[:, 1:].unsqueeze(-1) & \
+                                     mask4seq_len[:, 1:].unsqueeze(-1) & \
+                                     batch["correct_seq"][:, 1:].bool().unsqueeze(-1)
+                target_inter_func_in1 = torch.masked_select(target_inter_func_in, mask4inter_func_in)
+                neg_inter_func_in = target_inter_func_in1[target_inter_func_in1 <= 0]
+                num_sample = neg_inter_func_in.numel()
+
+                mask4inter_func_in2 = mask_bool_seq[:, 1:].unsqueeze(-1) & \
+                                      mask4seq_len[:, 1:].unsqueeze(-1) & \
+                                      (1 - batch["correct_seq"][:, 1:]).bool().unsqueeze(-1)
+                target_inter_func_in2 = torch.masked_select(target_inter_func_in, mask4inter_func_in2)
+                pos_inter_func_in = target_inter_func_in2[target_inter_func_in2 >= 0]
+                num_sample = num_sample + pos_inter_func_in.numel()
+
+            if num_sample > 0:
+                penalty_value = torch.cat((-neg_inter_func_in, pos_inter_func_in))
+                penalty_neg_loss = penalty_value.mean()
+                if loss_record is not None:
+                    loss_record.add_loss("penalty neg loss", penalty_neg_loss.detach().cpu().item() * num_sample,
+                                         num_sample)
+                loss = loss + penalty_neg_loss * w_penalty_neg
 
         return loss
 
     def get_penalty_neg_loss(self, batch):
         # 对于做对的题，惩罚user_ability - que_difficulty小于0的值（只惩罚考察的知识点）
         # 如果是单知识点数据集，那么对于做错的题，惩罚user_ability - que_difficulty大于0的值（只惩罚考察的知识点）
-        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AuxInfoDCT"]
+        use_proj = encoder_config["use_proj"]
         dim_correct = encoder_config["dim_correct"]
         data_type = self.params["datasets_config"]["data_type"]
 
@@ -367,7 +389,10 @@ class AuxInfoDCT(nn.Module):
 
         self.encoder_layer.flatten_parameters()
         latent, _ = self.encoder_layer(interaction_emb)
-        user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
+        if use_proj:
+            user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
+        else:
+            user_ability = torch.sigmoid(latent)
         que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, 1:])))
         inter_func_in = user_ability - que_difficulty
 

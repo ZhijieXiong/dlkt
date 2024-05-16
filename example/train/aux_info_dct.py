@@ -23,7 +23,7 @@ if __name__ == "__main__":
     parser.add_argument("--test_file_name", type=str, default="ednet-kt1_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0.00001)
+    parser.add_argument("--weight_decay", type=float, default=0.0001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
@@ -53,14 +53,15 @@ if __name__ == "__main__":
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=188)
     parser.add_argument("--num_question", type=int, default=11858)
-    parser.add_argument("--use_mean_pool4concept", type=str2bool, default=True)
-    parser.add_argument("--dim_emb", type=int, default=128)
+    parser.add_argument("--use_proj", type=str2bool, default=True)
+    parser.add_argument("--use_mean_pool4concept", type=str2bool, default=False)
+    parser.add_argument("--dim_emb", type=int, default=64)
     parser.add_argument("--dim_latent", type=int, default=64)
     parser.add_argument("--rnn_type", type=str, default="gru", choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=1)
     parser.add_argument("--num_mlp_layer", type=int, default=2)
-    parser.add_argument("--max_que_disc", type=float, default=15)
-    parser.add_argument("--dropout", type=float, default=0.2)
+    parser.add_argument("--max_que_disc", type=float, default=8)
+    parser.add_argument("--dropout", type=float, default=0.3)
     # 辅助损失
     parser.add_argument("--multi_stage", type=str2bool, default=False)
     parser.add_argument("--w_penalty_neg", type=float, default=0)

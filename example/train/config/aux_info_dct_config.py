@@ -20,6 +20,7 @@ def aux_info_dct_general_config(local_params, global_params, global_objects):
     num_concept = local_params["num_concept"]
     num_question = local_params["num_question"]
     use_mean_pool4concept = local_params["use_mean_pool4concept"]
+    use_proj = local_params["use_proj"]
     dim_emb = local_params["dim_emb"]
     dim_latent = local_params["dim_latent"]
     rnn_type = local_params["rnn_type"]
@@ -34,6 +35,7 @@ def aux_info_dct_general_config(local_params, global_params, global_objects):
     encoder_config["num_concept"] = num_concept
     encoder_config["num_question"] = num_question
     encoder_config["use_mean_pool4concept"] = use_mean_pool4concept
+    encoder_config["use_proj"] = use_proj
     encoder_config["dim_emb"] = dim_emb
     encoder_config["dim_latent"] = dim_latent
     encoder_config["rnn_type"] = rnn_type
@@ -45,9 +47,9 @@ def aux_info_dct_general_config(local_params, global_params, global_objects):
     global_objects["logger"].info(
         f"model params\n    "
         f"num_concept: {num_concept}, num_question: {num_question}\n    "
-        f"use_mean_pool4concept: {use_mean_pool4concept}, dim_emb: {dim_emb}, dim_latent: {dim_latent}, "
-        f"rnn type: {rnn_type}, num of rnn layer: {num_rnn_layer}, num_mlp_layer: {num_mlp_layer}, dropout: {dropout}, "
-        f"max_que_disc: {max_que_disc}"
+        f"use_proj: {use_proj}, use_mean_pool4concept: {use_mean_pool4concept}, dim_emb: {dim_emb}, "
+        f"dim_latent: {dim_latent}, rnn type: {rnn_type}, num of rnn layer: {num_rnn_layer}, "
+        f"num_mlp_layer: {num_mlp_layer}, dropout: {dropout}, max_que_disc: {max_que_disc}"
     )
 
     if local_params["save_model"]:

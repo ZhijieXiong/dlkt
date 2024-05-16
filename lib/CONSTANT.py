@@ -39,4 +39,4 @@ HAS_CORRECT_FLOAT = ["SLP-chi", "SLP-his", "SLP-mat", "SLP-geo", "SLP-eng", "SLP
 HAS_QUESTION_MODE = ["junyi2015", "SLP-chi", "SLP-his", "SLP-mat", "SLP-geo", "SLP-eng", "SLP-phy", "SLP-bio"]
 
 MODEL_USE_QC = ["qDKT", "SAINT", "AKT", "LPKT", "DIMKT", "SimpleKT", "AT_DKT", "QIKT", "LBKT", "DCT", "AuxInfoDCT",
-                "qDKT_CORE", "ELMKT"]
+                "qDKT_CORE", "ELMKT", "AuxInfoQDKT"]

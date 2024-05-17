@@ -315,18 +315,14 @@ class AuxInfoDCT(nn.Module):
 
         q2c_table = self.objects["data"]["q2c_table"][batch["question_seq"]]
         q2c_mask_table = self.objects["data"]["q2c_mask_table"][batch["question_seq"]]
-        mask4seq_len = torch.cat((torch.zeros(batch_size, 5), torch.ones(batch_size, seq_len-5)), dim=1)
-        mask4seq_len = mask4seq_len.bool().to(self.params["device"])
         if (not multi_stage) and (w_penalty_neg != 0):
             # 单知识点习题：对于做对的题，惩罚user_ability - que_difficulty小于0的值
             #            对于做错的题，惩罚user_ability - que_difficulty大于0的值
             #            只惩罚考察的知识点
-            # 多知识点习题：选择权重最重的惩罚
             if data_type == "single_concept":
                 target_inter_func_in = torch.gather(inter_func_in, 2, q2c_table[:, 1:])
 
                 mask4inter_func_in = mask_bool_seq[:, 1:].unsqueeze(-1) & \
-                                     mask4seq_len[:, 1:].unsqueeze(-1) & \
                                      batch["correct_seq"][:, 1:].bool().unsqueeze(-1) & \
                                      q2c_mask_table[:, 1:].bool()
                 target_inter_func_in1 = torch.masked_select(target_inter_func_in, mask4inter_func_in)
@@ -334,26 +330,34 @@ class AuxInfoDCT(nn.Module):
                 num_sample = neg_inter_func_in.numel()
 
                 mask4inter_func_in2 = mask_bool_seq[:, 1:].unsqueeze(-1) & \
-                                      mask4seq_len[:, 1:].unsqueeze(-1) & \
                                       (1 - batch["correct_seq"][:, 1:]).bool().unsqueeze(-1) & \
                                       q2c_mask_table[:, 1:].bool()
                 target_inter_func_in2 = torch.masked_select(target_inter_func_in, mask4inter_func_in2)
                 pos_inter_func_in = target_inter_func_in2[target_inter_func_in2 >= 0]
                 num_sample = num_sample + pos_inter_func_in.numel()
             else:
-                qc_related_extent = torch.gather(que_difficulty, 2, q2c_table[:, 1:]) * q2c_mask_table[:, 1:]
-                qc_max_extent_index = torch.argmax(qc_related_extent, dim=2).unsqueeze(-1)
-                target_inter_func_in = torch.gather(inter_func_in, 2, qc_max_extent_index)
+                # 放弃的方案：多知识点习题：选择权重最重的惩罚，但是效果不好
+                # qc_related_extent = torch.gather(que_difficulty, 2, q2c_table[:, 1:]) * q2c_mask_table[:, 1:]
+                # qc_max_extent_index = torch.argmax(qc_related_extent, dim=2).unsqueeze(-1)
+                # target_inter_func_in = torch.gather(inter_func_in, 2, qc_max_extent_index)
+
+                # 方案1：对多知识点的习题损失乘一个小于1的权重
+                # penalty_weight4question = self.objects["data"]["penalty_weight4question"][question_seq[:, 1:]]
+                # inter_func_in = inter_func_in * penalty_weight4question
+
+                # 方案2：不计算多知识点习题的损失
+                mask4single_concept = self.objects["data"]["mask4single_concept"][question_seq]
+                target_inter_func_in = torch.gather(inter_func_in, 2, q2c_table[:, 1:])
 
                 mask4inter_func_in = mask_bool_seq[:, 1:].unsqueeze(-1) & \
-                                     mask4seq_len[:, 1:].unsqueeze(-1) & \
+                                     mask4single_concept[:, 1:].unsqueeze(-1) & \
                                      batch["correct_seq"][:, 1:].bool().unsqueeze(-1)
                 target_inter_func_in1 = torch.masked_select(target_inter_func_in, mask4inter_func_in)
                 neg_inter_func_in = target_inter_func_in1[target_inter_func_in1 <= 0]
                 num_sample = neg_inter_func_in.numel()
 
                 mask4inter_func_in2 = mask_bool_seq[:, 1:].unsqueeze(-1) & \
-                                      mask4seq_len[:, 1:].unsqueeze(-1) & \
+                                      mask4single_concept[:, 1:].unsqueeze(-1) & \
                                       (1 - batch["correct_seq"][:, 1:]).bool().unsqueeze(-1)
                 target_inter_func_in2 = torch.masked_select(target_inter_func_in, mask4inter_func_in2)
                 pos_inter_func_in = target_inter_func_in2[target_inter_func_in2 >= 0]
@@ -398,28 +402,42 @@ class AuxInfoDCT(nn.Module):
 
         q2c_table = self.objects["data"]["q2c_table"][batch["question_seq"]]
         q2c_mask_table = self.objects["data"]["q2c_mask_table"][batch["question_seq"]]
-        target_inter_func_in = torch.gather(inter_func_in, 2, q2c_table[:, 1:])
-        mask4inter_func_in = mask_bool_seq[:, 1:].unsqueeze(-1) & \
-                             batch["correct_seq"][:, 1:].bool().unsqueeze(-1) & \
-                             q2c_mask_table[:, 1:].bool()
-        target_inter_func_in1 = torch.masked_select(target_inter_func_in, mask4inter_func_in)
-        neg_inter_func_in = target_inter_func_in1[target_inter_func_in1 <= 0]
-        num_sample = neg_inter_func_in.numel()
-
         if data_type == "single_concept":
-            mask4inter_func_in2 = mask_bool_seq[:, 1:].unsqueeze(-1) & \
-                                 (1 - batch["correct_seq"][:, 1:]).bool().unsqueeze(-1) & \
+            target_inter_func_in = torch.gather(inter_func_in, 2, q2c_table[:, 1:])
+
+            mask4inter_func_in = mask_bool_seq[:, 1:].unsqueeze(-1) & \
+                                 batch["correct_seq"][:, 1:].bool().unsqueeze(-1) & \
                                  q2c_mask_table[:, 1:].bool()
+            target_inter_func_in1 = torch.masked_select(target_inter_func_in, mask4inter_func_in)
+            neg_inter_func_in = target_inter_func_in1[target_inter_func_in1 <= 0]
+            num_sample = neg_inter_func_in.numel()
+
+            mask4inter_func_in2 = mask_bool_seq[:, 1:].unsqueeze(-1) & \
+                                  (1 - batch["correct_seq"][:, 1:]).bool().unsqueeze(-1) & \
+                                  q2c_mask_table[:, 1:].bool()
             target_inter_func_in2 = torch.masked_select(target_inter_func_in, mask4inter_func_in2)
             pos_inter_func_in = target_inter_func_in2[target_inter_func_in2 >= 0]
             num_sample = num_sample + pos_inter_func_in.numel()
-            if num_sample > 0:
-                penalty_value = torch.cat((-neg_inter_func_in, pos_inter_func_in))
-                return penalty_value.mean(), num_sample
-            else:
-                return 0, 0
         else:
-            if num_sample > 0:
-                return -neg_inter_func_in.mean(), num_sample
-            else:
-                return 0, 0
+            qc_related_extent = torch.gather(que_difficulty, 2, q2c_table[:, 1:]) * q2c_mask_table[:, 1:]
+            qc_max_extent_index = torch.argmax(qc_related_extent, dim=2).unsqueeze(-1)
+            target_inter_func_in = torch.gather(inter_func_in, 2, qc_max_extent_index)
+
+            mask4inter_func_in = mask_bool_seq[:, 1:].unsqueeze(-1) & \
+                                 batch["correct_seq"][:, 1:].bool().unsqueeze(-1)
+            target_inter_func_in1 = torch.masked_select(target_inter_func_in, mask4inter_func_in)
+            neg_inter_func_in = target_inter_func_in1[target_inter_func_in1 <= 0]
+            num_sample = neg_inter_func_in.numel()
+
+            mask4inter_func_in2 = mask_bool_seq[:, 1:].unsqueeze(-1) & \
+                                  (1 - batch["correct_seq"][:, 1:]).bool().unsqueeze(-1)
+            target_inter_func_in2 = torch.masked_select(target_inter_func_in, mask4inter_func_in2)
+            pos_inter_func_in = target_inter_func_in2[target_inter_func_in2 >= 0]
+            num_sample = num_sample + pos_inter_func_in.numel()
+
+        if num_sample > 0:
+            penalty_value = torch.cat((-neg_inter_func_in, pos_inter_func_in))
+            penalty_neg_loss = penalty_value.mean()
+            return penalty_neg_loss, num_sample
+        else:
+            return 0, 0

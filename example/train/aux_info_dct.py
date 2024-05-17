@@ -18,9 +18,9 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_name", type=str, default="ednet-kt1")
     parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="ednet-kt1_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="ednet-kt1_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="ednet-kt1_test_fold_0.txt")
+    parser.add_argument("--train_file_name", type=str, default="ednet-kt1_train_fold_1.txt")
+    parser.add_argument("--valid_file_name", type=str, default="ednet-kt1_valid_fold_1.txt")
+    parser.add_argument("--test_file_name", type=str, default="ednet-kt1_test_fold_1.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
     parser.add_argument("--weight_decay", type=float, default=0.0001)
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", type=float, default=0.3)
     # 辅助损失
     parser.add_argument("--multi_stage", type=str2bool, default=False)
-    parser.add_argument("--w_penalty_neg", type=float, default=0)
+    parser.add_argument("--w_penalty_neg", type=float, default=0.01)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

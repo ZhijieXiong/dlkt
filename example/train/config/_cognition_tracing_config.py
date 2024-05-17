@@ -1,5 +1,6 @@
 import torch
 import os
+import numpy as np
 
 from lib.util.data import read_preprocessed_file
 from lib.util.parse import cal_concept_acc
@@ -57,6 +58,14 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
         global_objects["cognition_tracing"]["que_disc_ground_truth"] = torch.tensor(
             [que_discrimination[q_id] * 10 for q_id in que_has_disc_ground_truth]
         ).float().to(global_params["device"])
+
+    # 配置多知识点习题penalty损失权重
+    Q_table = global_objects["data"]["Q_table"]
+    qc_counts = Q_table.sum(axis=-1)
+    penalty_weight4question = torch.from_numpy(np.exp(1 - qc_counts)).to(global_params["device"])
+    global_objects["data"]["penalty_weight4question"] = penalty_weight4question
+    mask4single_concept = torch.from_numpy(qc_counts <= 1).to(global_params["device"])
+    global_objects["data"]["mask4single_concept"] = mask4single_concept
 
     # 提取学生认知标签和对应mask以及权重
     if w_user_ability_pred != 0:

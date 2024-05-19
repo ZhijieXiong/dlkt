@@ -23,6 +23,7 @@ example4cognitive_diagnosis/result_cluster
 example4cognitive_diagnosis/result_server
 example4cognitive_diagnosis/result_local
 example4llm_based_agent/demo
+example4llm_expolre/demo
 
 /example/demo/*.csv
 /example/keys.py

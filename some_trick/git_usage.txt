@@ -14,6 +14,13 @@ git push -u origin main
 细节：撤销对文件夹的管理 git rm -r --cached folder
      撤销对文件的管理 git rm -f --cached file
 
+如果有些文件即使删除并且用git rm --cached清楚缓存了，但是push时还是会尝试提交它
+是因为这个文件仍然存在于提交历史中。因此，每次尝试推送时，Git 仍然会检查整个提交历史，发现这个大文件，从而导致推送失败。
+彻底删除大文件并清理你的提交历史，你可以使用git filter-repo工具
+    pip install git-filter-repo
+git filter-repo --path src/main/resources/userBehavior/xes3g5m.json --invert-paths
+然后push即可
+
 发生冲突
 远程强行覆盖本地：
 1、如果在pull之前add和commit了本地，使用git reset --hard

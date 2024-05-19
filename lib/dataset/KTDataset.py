@@ -28,6 +28,10 @@ class KTDataset(Dataset):
         dataset_config_this = self.params["datasets_config"][self.params["datasets_config"]["dataset_this"]]
         data_type = self.params["datasets_config"]["data_type"]
         dataset_type = dataset_config_this.get("type", "kt")
+        if dataset_type == "agg_aux_info":
+            agg_num = dataset_config_this["agg_aux_info"].get("agg_num", False)
+        else:
+            agg_num = False
         setting_name = dataset_config_this["setting_name"]
         file_name = dataset_config_this["file_name"]
         dataset_path = os.path.join(self.objects["file_manager"].get_setting_dir(setting_name), file_name)
@@ -136,6 +140,9 @@ class KTDataset(Dataset):
                         dataset_converted["use_time_seq"].append(use_time_seq)
                     else:
                         dataset_converted["use_time_seq"].append(item_data["use_time_seq"])
+                elif k in ["num_hint_seq", "num_attempt_seq"] and agg_num:
+                    num_seq = list(map(lambda x: x if (x <= 10) else (10 + x // 5), item_data[k]))
+                    dataset_converted[k].append(num_seq)
                 else:
                     dataset_converted[k].append(item_data[k])
 

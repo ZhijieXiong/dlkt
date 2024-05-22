@@ -73,18 +73,17 @@ class DCT(nn.Module):
 
     def get_concept_emb(self, batch):
         use_mean_pool = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]["use_mean_pool4concept"]
-        if use_mean_pool:
-            data_type = self.params["datasets_config"]["data_type"]
-            if data_type == "only_question":
-                concept_emb = KTEmbedLayer.concept_fused_emb(
-                    self.embed_concept,
-                    self.objects["data"]["q2c_table"],
-                    self.objects["data"]["q2c_mask_table"],
-                    batch["question_seq"],
-                    fusion_type="mean"
-                )
-            else:
-                concept_emb = self.embed_concept(batch["concept_seq"])
+        data_type = self.params["datasets_config"]["data_type"]
+        if use_mean_pool and data_type == "only_question":
+            concept_emb = KTEmbedLayer.concept_fused_emb(
+                self.embed_concept,
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                batch["question_seq"],
+                fusion_type="mean"
+            )
+        elif data_type == "single_concept":
+            concept_emb = self.embed_concept(batch["concept_seq"])
         else:
             q2c_table = self.objects["data"]["q2c_table"]
             q2c_mask_table = self.objects["data"]["q2c_mask_table"]
@@ -270,3 +269,53 @@ class DCT(nn.Module):
                     loss = loss + penalty_neg_loss * w_penalty_neg
 
         return loss
+
+    def get_user_batch(self, user_data):
+        batch = {
+            "question_seq": [],
+            "correct_seq": [],
+            "mask_seq": [],
+        }
+        seq_lens = []
+        max_seq_len = 0
+        for item_data in user_data:
+            seq_len = item_data["seq_len"]
+            seq_lens.append(seq_len)
+            if max_seq_len < seq_len:
+                max_seq_len = seq_len
+            batch["question_seq"].append(item_data["question_seq"])
+            batch["correct_seq"].append(item_data["correct_seq"])
+            batch["mask_seq"].append([1] * seq_len)
+        for seqs in batch.values():
+            for seq in seqs:
+                seq += [0] * (max_seq_len - len(seq))
+        for k, v in batch.items():
+            batch[k] = torch.tensor(v).long().to(self.params["device"])
+        batch["seq_len"] = torch.tensor(seq_lens).long().to(self.params["device"])
+
+        return batch
+
+    def get_user_latent(self, batch):
+        dim_emb = self.params["models_config"]["kt_model"]["encoder_layer"]["DCT"]["dim_emb"]
+        correct_seq = batch["correct_seq"]
+        question_seq = batch["question_seq"]
+
+        batch_size, seq_len = correct_seq.shape[0], correct_seq.shape[1]
+        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_emb).reshape(batch_size, -1, dim_emb)
+        question_emb = self.embed_question(question_seq)
+        concept_emb = self.get_concept_emb(batch)
+        interaction_emb = torch.cat((question_emb, concept_emb, correct_emb), dim=2)
+
+        self.encoder_layer.flatten_parameters()
+        latent, _ = self.encoder_layer(interaction_emb)
+
+        return latent
+
+    def get_user_ability(self, batch):
+        latent = self.get_user_latent(batch)
+        user_ability = torch.sigmoid(self.latent2ability(latent))
+
+        return user_ability
+
+    def get_question_emb_list(self):
+        return self.embed_question.weight.data.detach().cpu().numpy().tolist()

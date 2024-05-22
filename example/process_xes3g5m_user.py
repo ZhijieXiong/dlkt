@@ -2,13 +2,13 @@ import os
 
 import config
 
-from lib.util.data import read_preprocessed_file, generate_unique_id, load_json, write_json
+from lib.util.data import read_preprocessed_file, load_json, write_json
 
 
 if __name__ == "__main__":
-    data_path = r"F:\code\myProjects\dlkt\lab\dataset_preprocessed\xes3g5m\data_only_question.txt"
-    its_question_path = r"F:\code\myProjects\dlkt\lab\math_dataset\xes3g5m\its_question.json"
-    user_data_dir = r"F:\code\myProjects\dlkt\lab\dataset_preprocessed\xes3g5m"
+    data_path = r"F:\code\myProjects\dlkt\lab\settings\baidu_competition\test_data.txt"
+    its_question_path = r"F:\code\myProjects\dlkt\lab\settings\baidu_competition\its_question.json"
+    user_data_dir = r"F:\code\myProjects\dlkt\lab\settings\baidu_competition"
     data = read_preprocessed_file(data_path)
     its_question = load_json(its_question_path)
 
@@ -20,17 +20,17 @@ if __name__ == "__main__":
         while user_id in user_ids:
             user_id += 1
         its_user.append({
-            "name": generate_unique_id(f"xes3g5m-user-data-{user_id}"),
-            "password": f"xes3g5m{user_id}",
-            "email": f"xes3g5m{user_id}@163.com"
-
+            "name": f"xes3g5mUser{user_id}",
+            "password": f"xes3g5mUser{user_id}",
+            "email": f"xes3g5mUser{user_id}@163.com"
         })
         for i in range(item_data["seq_len"]):
             its_user_behavior.append({
-                "user_name": generate_unique_id(f"xes3g5m-user-data-{user_id}"),
+                "user_name": f"xes3g5mUser{user_id}",
                 "question_id": its_question[str(item_data["question_seq"][i])]["question_id"],
+                "question_type": its_question[str(item_data["question_seq"][i])]["question_type"],
                 "correct": bool(item_data["correct_seq"][i]),
-                "timestamp": item_data["time_seq"][i]
+                "timestamp": item_data["time_seq"][i] // 1000
             })
         user_ids.append(user_id)
 

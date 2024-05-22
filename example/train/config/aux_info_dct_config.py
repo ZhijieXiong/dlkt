@@ -6,12 +6,12 @@ from lib.template.kt_model.AuxInfoDCT import MODEL_PARAMS as AuxInfoDCT_PARAMS
 def aux_info_dct_general_config(local_params, global_params, global_objects):
     # 数据集特殊配置；主要是对use time和interval time进行聚合，区别于原始的LPKT，减少time的embedding数量
     global_params["datasets_config"]["train"]["type"] = "agg_aux_info"
-    global_params["datasets_config"]["train"]["agg_aux_info"] = {}
+    global_params["datasets_config"]["train"]["agg_aux_info"] = {"agg_num": True}
     global_params["datasets_config"]["test"]["type"] = "agg_aux_info"
-    global_params["datasets_config"]["test"]["agg_aux_info"] = {}
+    global_params["datasets_config"]["test"]["agg_aux_info"] = {"agg_num": True}
     if local_params["train_strategy"] == "valid_test":
         global_params["datasets_config"]["valid"]["type"] = "agg_aux_info"
-        global_params["datasets_config"]["valid"]["agg_aux_info"] = {}
+        global_params["datasets_config"]["valid"]["agg_aux_info"] = {"agg_num": True}
 
     global_params["models_config"] = {}
     global_params["models_config"]["kt_model"] = deepcopy(AuxInfoDCT_PARAMS)

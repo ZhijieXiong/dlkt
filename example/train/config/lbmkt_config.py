@@ -44,7 +44,7 @@ def lbmkt_general_config(local_params, global_params, global_objects):
         train_file_name = local_params["train_file_name"]
 
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@AuxInfoDCT@@seed_{local_params['seed']}@@{setting_name}@@"
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@LBMKT@@seed_{local_params['seed']}@@{setting_name}@@"
             f"{train_file_name.replace('.txt', '')}")
 
 

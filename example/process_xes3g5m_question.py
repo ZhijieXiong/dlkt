@@ -27,7 +27,7 @@ def text2contents(text, images):
     contents = []
 
     if len(images) == 0:
-        contents.append({"contentType": "TEXT", "chinese": question_text, "english": ""})
+        contents.append({"contentType": "TEXT", "chinese": text, "english": ""})
     else:
         second_text = text
         for image in images:
@@ -114,6 +114,10 @@ if __name__ == "__main__":
         write_json(QUESTION_CONTENT, question_content_path)
 
     # 处理为最终格式，用于ITS系统
+    OUTPUT_DIR = r"F:\code\myProjects\dlkt\lab\settings\baidu_competition"
+    # KT的习题id和ITS的习题id互相转换
+    kt_id2its_id = {}
+    its_id2kt_id = {}
     its_question_path = os.path.join(OUTPUT_DIR, "its_question.json")
     error_question_path = os.path.join(OUTPUT_DIR, "error_question.json")
     if os.path.exists(its_question_path) and os.path.exists(error_question_path):
@@ -140,6 +144,9 @@ if __name__ == "__main__":
                     "options": q_content["options"] if q_content["type"] == "单选" else dict(),
                     "answer": list(map(lambda x: x.strip("$"), q_content["answer"]))
                 }
+
+                kt_id2its_id[q_id] = generate_unique_id(f"xes3g5m-question-data-{q_id}")
+                its_id2kt_id[generate_unique_id(f"xes3g5m-question-data-{q_id}")] = q_id
             except IndexError:
                 # 报错的单独手动处理(只有一道题有问题，是该tag下第23题，填空题)
                 error_question[q_id] = {
@@ -155,6 +162,8 @@ if __name__ == "__main__":
                 }
         write_json(its_question, os.path.join(OUTPUT_DIR, "its_question.json"))
         write_json(error_question, os.path.join(OUTPUT_DIR, "error_question.json"))
+        write_json(kt_id2its_id, os.path.join(OUTPUT_DIR, "kt_id2its_id.json"))
+        write_json(its_id2kt_id, os.path.join(OUTPUT_DIR, "its_id2kt_id.json"))
 
     # 创建符合ITS-back要求格式的数据
     q2c = question2concept_from_Q(np.load(os.path.join(DATA_DIR, "Q_table_multi_concept.npy")))
@@ -164,24 +173,23 @@ if __name__ == "__main__":
         "subjectType": "MATH",
         "exercises": []
     }
+    its_fill_up_question = {
+        "source": "xes3g5m",
+        "link": "",
+        "subjectType": "MATH",
+        "exercises": []
+    }
     tags_count = defaultdict(int)
     options_keys = list(map(lambda x: chr(ord("A") + x), list(range(26))))
     for q_id, question in its_question.items():
         question_type = question["question_type"]
-        if question_type != "单选":
-            continue
-
-        correct_answer = question["answer"]
-        if len(correct_answer) > 1:
-            # 一道选择题多个问题，目前不处理
-            continue
-        correct_answer = ord(correct_answer[0].upper()) - ord('A')
 
         # 直接获取的内容
         concepts = question["concept_routes"]
         question_id = question["question_id"]
         exercise_contents = question["question_contents"]
         explanation_contents = question["analysis_contents"]
+        correct_answer = question["answer"]
 
         # 获取tags和orderInTag
         tags = list(map(lambda x: x.split("----")[-1], concepts))
@@ -190,25 +198,40 @@ if __name__ == "__main__":
         order_in_tag = tags_count[c_ids]
         tags_count[c_ids] += 1
 
-        # 获取options
-        options = []
-        for option_key in options_keys:
-            if option_key in question["options"].keys():
-                options.append([{
-                    "contentType": "TEXT",
-                    "english": "",
-                    "chinese": question["options"][option_key]
-                }])
-
-        its_single_choice_question["exercises"].append({
-            "orderInTag": order_in_tag,
-            "id": question_id,
-            "concepts": concepts,
-            "tags": tags,
-            "exerciseContents": exercise_contents,
-            "options": options,
-            "explanationContents": explanation_contents,
-            "correctAnswer": correct_answer
-        })
+        if question_type != "单选":
+            # 填空
+            its_fill_up_question["exercises"].append({
+                "orderInTag": order_in_tag,
+                "id": question_id,
+                "concepts": concepts,
+                "tags": tags,
+                "exerciseContents": exercise_contents,
+                "explanationContents": explanation_contents,
+                "correctAnswer": correct_answer
+            })
+        else:
+            if len(correct_answer) > 1:
+                # 一道选择题多个问题，目前不处理
+                continue
+            correct_answer = ord(correct_answer[0].upper()) - ord('A')
+            # 获取options
+            options = []
+            for option_key in options_keys:
+                if option_key in question["options"].keys():
+                    options.append([{
+                        "contentType": "TEXT",
+                        "english": "",
+                        "chinese": question["options"][option_key]
+                    }])
+            its_single_choice_question["exercises"].append({
+                "orderInTag": order_in_tag,
+                "id": question_id,
+                "concepts": concepts,
+                "tags": tags,
+                "exerciseContents": exercise_contents,
+                "options": options,
+                "explanationContents": explanation_contents,
+                "correctAnswer": correct_answer
+            })
     write_json(its_single_choice_question, os.path.join(OUTPUT_DIR, "its_single_choice_question.json"))
-
+    write_json(its_fill_up_question, os.path.join(OUTPUT_DIR, "its_fill_up_question.json"))

@@ -101,18 +101,17 @@ class AuxInfoDCT(nn.Module):
 
     def get_concept_emb(self, batch):
         use_mean_pool = self.params["models_config"]["kt_model"]["encoder_layer"]["AuxInfoDCT"]["use_mean_pool4concept"]
-        if use_mean_pool:
-            data_type = self.params["datasets_config"]["data_type"]
-            if data_type == "only_question":
-                concept_emb = KTEmbedLayer.concept_fused_emb(
-                    self.embed_concept,
-                    self.objects["data"]["q2c_table"],
-                    self.objects["data"]["q2c_mask_table"],
-                    batch["question_seq"],
-                    fusion_type="mean"
-                )
-            else:
-                concept_emb = self.embed_concept(batch["concept_seq"])
+        data_type = self.params["datasets_config"]["data_type"]
+        if use_mean_pool and data_type == "only_question":
+            concept_emb = KTEmbedLayer.concept_fused_emb(
+                self.embed_concept,
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                batch["question_seq"],
+                fusion_type="mean"
+            )
+        elif data_type == "single_concept":
+            concept_emb = self.embed_concept(batch["concept_seq"])
         else:
             q2c_table = self.objects["data"]["q2c_table"]
             q2c_mask_table = self.objects["data"]["q2c_mask_table"]
@@ -341,7 +340,7 @@ class AuxInfoDCT(nn.Module):
                 # qc_max_extent_index = torch.argmax(qc_related_extent, dim=2).unsqueeze(-1)
                 # target_inter_func_in = torch.gather(inter_func_in, 2, qc_max_extent_index)
 
-                # 方案1：对多知识点的习题损失乘一个小于1的权重
+                # 方案1：对多知识点的习题损失乘一个小于1的权重，目前该方法最有效
                 penalty_weight4question = self.objects["data"]["penalty_weight4question"][question_seq[:, 1:]]
                 inter_func_in = inter_func_in * penalty_weight4question.unsqueeze(-1)
 
@@ -371,72 +370,3 @@ class AuxInfoDCT(nn.Module):
                 loss = loss + penalty_neg_loss * w_penalty_neg
 
         return loss
-
-    def get_penalty_neg_loss(self, batch):
-        # 对于做对的题，惩罚user_ability - que_difficulty小于0的值（只惩罚考察的知识点）
-        # 如果是单知识点数据集，那么对于做错的题，惩罚user_ability - que_difficulty大于0的值（只惩罚考察的知识点）
-        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AuxInfoDCT"]
-        use_proj = encoder_config["use_proj"]
-        dim_correct = encoder_config["dim_correct"]
-        data_type = self.params["datasets_config"]["data_type"]
-
-        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-        correct_seq = batch["correct_seq"]
-        question_seq = batch["question_seq"]
-        batch_size, seq_len = correct_seq.shape[0], correct_seq.shape[1]
-
-        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
-        question_emb = self.embed_question(question_seq)
-        concept_emb = self.get_concept_emb(batch)
-        interaction_emb = torch.cat((question_emb[:, :-1], concept_emb[:, :-1], correct_emb[:, :-1]), dim=2)
-
-        self.encoder_layer.flatten_parameters()
-        latent, _ = self.encoder_layer(interaction_emb)
-        if use_proj:
-            user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
-        else:
-            user_ability = torch.sigmoid(latent)
-        que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb[:, 1:])))
-        inter_func_in = user_ability - que_difficulty
-
-        q2c_table = self.objects["data"]["q2c_table"][batch["question_seq"]]
-        q2c_mask_table = self.objects["data"]["q2c_mask_table"][batch["question_seq"]]
-        if data_type == "single_concept":
-            target_inter_func_in = torch.gather(inter_func_in, 2, q2c_table[:, 1:])
-
-            mask4inter_func_in = mask_bool_seq[:, 1:].unsqueeze(-1) & \
-                                 batch["correct_seq"][:, 1:].bool().unsqueeze(-1) & \
-                                 q2c_mask_table[:, 1:].bool()
-            target_inter_func_in1 = torch.masked_select(target_inter_func_in, mask4inter_func_in)
-            neg_inter_func_in = target_inter_func_in1[target_inter_func_in1 <= 0]
-            num_sample = neg_inter_func_in.numel()
-
-            mask4inter_func_in2 = mask_bool_seq[:, 1:].unsqueeze(-1) & \
-                                  (1 - batch["correct_seq"][:, 1:]).bool().unsqueeze(-1) & \
-                                  q2c_mask_table[:, 1:].bool()
-            target_inter_func_in2 = torch.masked_select(target_inter_func_in, mask4inter_func_in2)
-            pos_inter_func_in = target_inter_func_in2[target_inter_func_in2 >= 0]
-            num_sample = num_sample + pos_inter_func_in.numel()
-        else:
-            qc_related_extent = torch.gather(que_difficulty, 2, q2c_table[:, 1:]) * q2c_mask_table[:, 1:]
-            qc_max_extent_index = torch.argmax(qc_related_extent, dim=2).unsqueeze(-1)
-            target_inter_func_in = torch.gather(inter_func_in, 2, qc_max_extent_index)
-
-            mask4inter_func_in = mask_bool_seq[:, 1:].unsqueeze(-1) & \
-                                 batch["correct_seq"][:, 1:].bool().unsqueeze(-1)
-            target_inter_func_in1 = torch.masked_select(target_inter_func_in, mask4inter_func_in)
-            neg_inter_func_in = target_inter_func_in1[target_inter_func_in1 <= 0]
-            num_sample = neg_inter_func_in.numel()
-
-            mask4inter_func_in2 = mask_bool_seq[:, 1:].unsqueeze(-1) & \
-                                  (1 - batch["correct_seq"][:, 1:]).bool().unsqueeze(-1)
-            target_inter_func_in2 = torch.masked_select(target_inter_func_in, mask4inter_func_in2)
-            pos_inter_func_in = target_inter_func_in2[target_inter_func_in2 >= 0]
-            num_sample = num_sample + pos_inter_func_in.numel()
-
-        if num_sample > 0:
-            penalty_value = torch.cat((-neg_inter_func_in, pos_inter_func_in))
-            penalty_neg_loss = penalty_value.mean()
-            return penalty_neg_loss, num_sample
-        else:
-            return 0, 0

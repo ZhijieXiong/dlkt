@@ -28,8 +28,7 @@ class LBMKT(nn.Module):
 
         self.aux_emb_fusion = nn.Linear(dim_emb * 3, dim_emb)
         self.interaction_fusion = nn.Linear(dim_emb * 4, dim_emb)
-        self.gate4aux_emb = nn.Linear(dim_emb * 3, dim_emb)
-        self.gate4know_absorb = nn.Linear(dim_emb * 3, dim_emb)
+        self.gate4know_absorb = nn.Linear(dim_emb * 2, dim_emb)
         self.gate4forget = nn.Linear(dim_emb * 3, dim_emb)
         self.learning_gain_trans = nn.Linear(dim_emb * 3, dim_emb)
 
@@ -39,15 +38,19 @@ class LBMKT(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def get_concept_emb(self, batch):
-        q2c_table = self.objects["data"]["q2c_table"]
-        q2c_mask_table = self.objects["data"]["q2c_mask_table"]
-        question_seq = batch["question_seq"]
-        question_emb = self.embed_question(question_seq)
-        que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
-        qc_relate = torch.gather(que_difficulty, 2, q2c_table[question_seq]) * q2c_mask_table[question_seq]
-        sum_qc_relate = torch.sum(qc_relate, dim=-1, keepdim=True) + 1e-6
-        concept_emb_relate = qc_relate.unsqueeze(-1) * self.embed_concept(q2c_table[question_seq])
-        concept_emb = torch.sum(concept_emb_relate, dim=-2) / sum_qc_relate
+        data_type = self.params["datasets_config"]["data_type"]
+        if data_type == "single_concept":
+            concept_emb = self.embed_concept(batch["concept_seq"])
+        else:
+            q2c_table = self.objects["data"]["q2c_table"]
+            q2c_mask_table = self.objects["data"]["q2c_mask_table"]
+            question_seq = batch["question_seq"]
+            question_emb = self.embed_question(question_seq)
+            que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
+            qc_relate = torch.gather(que_difficulty, 2, q2c_table[question_seq]) * q2c_mask_table[question_seq]
+            sum_qc_relate = torch.sum(qc_relate, dim=-1, keepdim=True) + 1e-6
+            concept_emb_relate = qc_relate.unsqueeze(-1) * self.embed_concept(q2c_table[question_seq])
+            concept_emb = torch.sum(concept_emb_relate, dim=-2) / sum_qc_relate
 
         return concept_emb
 
@@ -93,6 +96,9 @@ class LBMKT(nn.Module):
         num_attempt_emb = self.embed_num_hint(batch["num_attempt_seq"]) if has_num_attempt else self.get_empty_emb(shapes)
         interval_time_emb = self.embed_interval_time(batch["interval_time_seq"]) if has_time else self.get_empty_emb(shapes)
         aux_info_emb = self.aux_emb_fusion(torch.cat((use_time_emb, num_hint_emb, num_attempt_emb), dim=-1))
+        interaction_emb = self.interaction_fusion(
+            torch.cat((question_emb, concept_emb, correct_emb, aux_info_emb), dim=-1)
+        )
 
         latent = torch.zeros(batch_size, seq_len, dim_emb).to(self.params["device"])
         latent_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_emb)).to(self.params["device"])
@@ -102,23 +108,16 @@ class LBMKT(nn.Module):
             question_emb_current = question_emb[:, t]
             concept_emb_current = concept_emb[:, t]
             correct_emb_current = correct_emb[:, t]
-            aux_info_emb_current = aux_info_emb[:, t]
+            interaction_emb_current = interaction_emb[:, t]
             interval_time_emb_current = interval_time_emb[:, t]
 
-            aux_info_gate = torch.sigmoid(self.gate4aux_emb(
-                torch.cat((latent_pre, question_emb_current, concept_emb_current), dim=-1)
+            # 从一道题中能学到多少只和题目有关
+            learning_gain_current = torch.tanh(self.learning_gain_trans(
+                torch.cat((question_emb_current, concept_emb_current, correct_emb_current), dim=-1)
             ))
-            aux_info_emb_current = aux_info_emb_current * aux_info_gate
-
-            interaction_emb_current = self.interaction_fusion(
-                torch.cat((question_emb_current, concept_emb_current, correct_emb_current, aux_info_emb_current), dim=-1)
-            )
-
-            learning_gain_current = self.learning_gain_trans(
-                torch.cat((latent_pre, interaction_emb_current, aux_info_emb_current), dim=-1)
-            )
+            # 能吸收多少和学生做题情况（包括辅助信息）有关
             learning_absorb_gate = torch.sigmoid(self.gate4know_absorb(
-                torch.cat((latent_pre, interaction_emb_current, interval_time_emb_current), dim=-1)
+                torch.cat((latent_pre, interaction_emb_current), dim=-1)
             ))
             learning_gain_current = learning_gain_current * learning_absorb_gate
 

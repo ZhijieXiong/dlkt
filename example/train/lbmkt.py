@@ -49,7 +49,7 @@ if __name__ == "__main__":
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     # 梯度裁剪
     parser.add_argument("--enable_clip_grad", type=str2bool, default=True)
-    parser.add_argument("--grad_clipped", type=float, default=10.0)
+    parser.add_argument("--grad_clipped", type=float, default=1.0)
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=101)
     parser.add_argument("--num_question", type=int, default=2803)

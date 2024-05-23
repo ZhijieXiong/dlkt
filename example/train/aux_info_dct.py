@@ -64,6 +64,11 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", type=float, default=0.3)
     # 辅助损失
     parser.add_argument("--multi_stage", type=str2bool, default=False)
+    parser.add_argument("--temp", type=float, default=0.05)
+    parser.add_argument("--correct_noise_strength", type=float, default=0.2)
+    parser.add_argument("--w_unbiased_cl", type=float, default=0)
+    parser.add_argument("--w_counter_fact", type=float, default=0)
+    parser.add_argument("--w_learning", type=float, default=0)
     parser.add_argument("--w_penalty_neg", type=float, default=0)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)

@@ -375,7 +375,7 @@ class AuxInfoDCT(nn.Module):
                     loss = loss + penalty_neg_loss * w_penalty_neg
 
         if (not multi_stage) and (w_learning != 0):
-            # 学习约束：做对了题比不做题学习增长大
+            # 学习约束（单调理论）：做对了题比不做题学习增长大
             master_leval = user_ability[:, 1:] - user_ability[:, :-1]
             mask4master = mask_bool_seq[:, 1:-1].unsqueeze(-1) & \
                           correct_seq[:, 1:-1].unsqueeze(-1).bool() & \

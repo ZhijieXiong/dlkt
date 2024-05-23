@@ -62,7 +62,9 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
     # 配置多知识点习题penalty损失权重
     Q_table = global_objects["data"]["Q_table"]
     qc_counts = Q_table.sum(axis=-1)
+    # 原始方法
     penalty_weight4question = torch.from_numpy(np.exp(1 - qc_counts)).to(global_params["device"])
+    # 考虑到一道题对应知识点越多，习题越难，那么可能就越要求每个知识点掌握程度都高，这个权重应该是先下降再上升
     global_objects["data"]["penalty_weight4question"] = penalty_weight4question
     mask4single_concept = torch.from_numpy(qc_counts <= 1).to(global_params["device"])
     global_objects["data"]["mask4single_concept"] = mask4single_concept
@@ -81,6 +83,9 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
     w_counter_fact = local_params.get("w_counter_fact", 0)
     w_penalty_neg = local_params.get("w_penalty_neg", 0)
     w_q_table = local_params.get("w_q_table", 0)
+    w_unbiased_cl = local_params.get("w_unbiased_cl", 0)
+    temp = local_params.get("temp", 0.05)
+    correct_noise_strength = local_params.get("correct_noise_strength", 0)
 
     # 统计知识点难度，用于初始化encoder
     if use_pretrain:
@@ -117,12 +122,20 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
         global_params["loss_config"]["counterfactual loss"] = w_counter_fact
     if w_q_table != 0:
         global_params["loss_config"]["q table loss"] = w_q_table
+    if w_unbiased_cl != 0:
+        global_params["loss_config"]["unbiased cl loss"] = w_unbiased_cl
+        global_params["other"]["instance_cl"] = {
+            "temp": temp,
+            "correct_noise_strength": correct_noise_strength
+        }
 
     global_objects["logger"].info(
         "loss weight params\n"
-        f"    w_que_diff_pred: {w_que_diff_pred}, w_que_disc_pred: {w_que_disc_pred}, w_user_ability_pred: {w_user_ability_pred}, "
-        f"w_penalty_neg: {w_penalty_neg}, w_learning: {w_learning}, w_counter_fact: {w_counter_fact}, w_q_table: {w_q_table}\n"
+        f"    w_unbiased_cl: {w_unbiased_cl}, w_que_diff_pred: {w_que_diff_pred}, w_que_disc_pred: {w_que_disc_pred}, "
+        f"w_user_ability_pred: {w_user_ability_pred}, w_penalty_neg: {w_penalty_neg}, w_learning: {w_learning}, "
+        f"w_counter_fact: {w_counter_fact}, w_q_table: {w_q_table}\n"
         f"other params:\n"
         f"    multi_stage: {multi_stage}, use_hard_Q_table: {use_hard_Q_table}, use_pretrain: {use_pretrain}, "
-        f"epoch_pretrain: {epoch_pretrain}, q_table_loss_th: {q_table_loss_th}"
+        f"epoch_pretrain: {epoch_pretrain}, q_table_loss_th: {q_table_loss_th}, temp: {temp}, "
+        f"correct_noise_strength: {correct_noise_strength}"
     )

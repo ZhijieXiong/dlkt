@@ -221,12 +221,18 @@ class AuxInfoDCT(nn.Module):
 
     def get_predict_loss(self, batch, loss_record=None):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AuxInfoDCT"]
+        num_concept = encoder_config["num_concept"]
+        dim_latent = encoder_config["dim_latent"]
+        num_rnn_layer = encoder_config["num_rnn_layer"]
         use_proj = encoder_config["use_proj"]
         dim_emb = encoder_config["dim_emb"]
         max_que_disc = encoder_config["max_que_disc"]
 
         multi_stage = self.params["other"]["cognition_tracing"]["multi_stage"]
         w_penalty_neg = self.params["loss_config"].get("penalty neg loss", 0)
+        w_counter_fact = self.params["loss_config"].get("counterfactual loss", 0)
+        w_learning = self.params["loss_config"].get("learning loss", 0)
+        w_cl_loss = self.params["loss_config"].get("learning loss", 0)
         data_type = self.params["datasets_config"]["data_type"]
 
         Q_table = self.objects["data"]["Q_table_tensor"]
@@ -284,8 +290,31 @@ class AuxInfoDCT(nn.Module):
         else:
             encoder_input = interaction_emb
 
-        self.encoder_layer.flatten_parameters()
-        latent, _ = self.encoder_layer(encoder_input)
+        # cf: counterfactual
+        cf_user_ability = torch.zeros(batch_size, seq_len - 1, num_concept).to(self.params["device"])
+        if (not multi_stage) and (w_counter_fact != 0):
+            # 如果使用反事实约束，为了获取RNN每个时刻的hidden state，只能这么写
+            # todo: 这里的代码可能有问题
+            latent = torch.zeros(batch_size, seq_len - 1, dim_latent).to(self.params["device"])
+            cf_correct_emb = (1 - correct_seq).reshape(-1, 1).repeat(1, dim_emb).reshape(batch_size, seq_len, -1)
+            cf_interaction_emb = torch.cat((question_emb, cf_correct_emb), dim=2)
+            # GRU 官方代码初始化h为0向量
+            rnn_h_current = torch.zeros(
+                num_rnn_layer, batch_size, dim_latent, dtype=encoder_input.dtype
+            ).to(self.params["device"])
+            for t in range(seq_len - 1):
+                input_current = encoder_input[:, t].unsqueeze(1)
+                latent_current, rnn_h_next = self.encoder_layer(input_current, rnn_h_current)
+                latent[:, t] = latent_current.squeeze(1)
+
+                cf_input_current = cf_interaction_emb[:, t].unsqueeze(1)
+                cf_latent, _ = self.encoder_layer(cf_input_current, rnn_h_current)
+                cf_user_ability[:, t] = torch.sigmoid(self.latent2ability(self.dropout(cf_latent.squeeze(1))))
+                rnn_h_current = rnn_h_next
+        else:
+            # 如果不使用反事实约束
+            self.encoder_layer.flatten_parameters()
+            latent, _ = self.encoder_layer(encoder_input)
 
         if use_proj:
             user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
@@ -369,4 +398,142 @@ class AuxInfoDCT(nn.Module):
                                          num_sample)
                 loss = loss + penalty_neg_loss * w_penalty_neg
 
+        if (not multi_stage) and (w_counter_fact != 0):
+            # 反事实约束：做对一道题比做错一道题的学习增长大
+            f_minus_cf = torch.gather(user_ability - cf_user_ability, 2, q2c_table[:, :-1])
+            correct_seq1 = batch["correct_seq"][:, :-1].bool()
+            correct_seq2 = (1 - batch["correct_seq"][:, :-1]).bool()
+            mask4correct = mask_bool_seq[:, :-1].unsqueeze(-1) & correct_seq1.unsqueeze(-1) & q2c_mask_table[:, :-1].bool()
+            mask4wrong = mask_bool_seq[:, :-1].unsqueeze(-1) & correct_seq2.unsqueeze(-1) & q2c_mask_table[:, :-1].bool()
+
+            # 对于做对的时刻，f_minus_cf应该大于0，惩罚小于0的部分
+            target_neg_f_minus_cf = torch.masked_select(f_minus_cf, mask4correct)
+            neg_f_minus_cf = target_neg_f_minus_cf[target_neg_f_minus_cf < 0]
+            num_sample1 = neg_f_minus_cf.numel()
+
+            # 对于做错的时刻，f_minus_cf应该小于0，惩罚大于0的部分
+            target_pos_f_minus_cf = torch.masked_select(f_minus_cf, mask4wrong)
+            pos_f_minus_cf = target_pos_f_minus_cf[target_pos_f_minus_cf > 0]
+            num_sample2 = pos_f_minus_cf.numel()
+
+            num_sample = num_sample1 + num_sample2
+            if num_sample > 0:
+                cf_loss = torch.cat((-neg_f_minus_cf, pos_f_minus_cf)).mean()
+                if loss_record is not None:
+                    loss_record.add_loss("counterfactual loss", cf_loss.detach().cpu().item() * num_sample, num_sample)
+                loss = loss + cf_loss * w_counter_fact
+
+        if (not multi_stage) and (w_learning != 0):
+            # 学习约束（单调理论）：做对了题比不做题学习增长大
+            master_leval = user_ability[:, 1:] - user_ability[:, :-1]
+            mask4master = mask_bool_seq[:, 1:-1].unsqueeze(-1) & \
+                          correct_seq[:, 1:-1].unsqueeze(-1).bool() & \
+                          q2c_mask_table[:, 1:-1].bool()
+            target_neg_master_leval = torch.masked_select(
+                torch.gather(master_leval, 2, q2c_table[:, 1:-1]), mask4master
+            )
+            neg_master_leval = target_neg_master_leval[target_neg_master_leval < 0]
+            num_sample = neg_master_leval.numel()
+            if num_sample > 0:
+                learn_loss = -neg_master_leval.mean()
+                if loss_record is not None:
+                    loss_record.add_loss("learning loss", learn_loss.detach().cpu().item() * num_sample,
+                                         num_sample)
+                loss = loss + learn_loss * w_learning
+
+        if (not multi_stage) and (w_cl_loss != 0):
+            unbias_loss = self.get_unbiased_cl_loss(batch)
+            if loss_record is not None:
+                loss_record.add_loss("unbiased cl loss", unbias_loss.detach().cpu().item() * batch_size, batch_size)
+            loss = loss + unbias_loss * w_cl_loss
+
         return loss
+
+    def get_unbiased_cl_loss(self, batch):
+        temp = self.params["other"]["instance_cl"]["temp"]
+        correct_noise_strength = self.params["other"]["instance_cl"]["correct_noise_strength"]
+
+        batch_size = batch["mask_seq"].shape[0]
+        first_index = torch.arange(batch_size).long().to(self.params["device"])
+
+        latent_aug0 = self.get_latent(batch, correct_noise_strength)
+        latent_aug0 = latent_aug0[first_index, batch["seq_len"] - 1]
+        latent_aug1 = self.get_latent(batch, correct_noise_strength)
+        latent_aug1 = latent_aug1[first_index, batch["seq_len"] - 1]
+
+        cos_sim = torch.cosine_similarity(latent_aug0.unsqueeze(1), latent_aug1.unsqueeze(0), dim=-1) / temp
+        batch_size = cos_sim.size(0)
+        labels = torch.arange(batch_size).long().to(self.params["device"])
+        cl_loss = nn.functional.cross_entropy(cos_sim, labels)
+
+        return cl_loss
+
+    def get_latent(self, batch, correct_noise_strength=0.):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AuxInfoDCT"]
+        dim_emb = encoder_config["dim_emb"]
+        correct_seq = batch["correct_seq"]
+        question_seq = batch["question_seq"]
+        batch_size, seq_len = correct_seq.shape[0], correct_seq.shape[1]
+
+        question_emb = self.embed_question(question_seq)
+        concept_emb = self.get_concept_emb(batch)
+        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_emb).reshape(batch_size, -1, dim_emb)
+        if 0 < correct_noise_strength < 0.5:
+            # 均值噪声
+            # noise = torch.rand(batch_size, seq_len, dim_emb).to(self.params["device"]) * correct_noise_strength
+            # 高斯噪声
+            noise = torch.normal(correct_noise_strength, 0.1, size=(batch_size, seq_len, dim_emb)).to(self.params["device"])
+
+            noise_mask = torch.ones_like(noise).float().to(self.params["device"])
+            noise_mask[correct_seq == 1] = -1
+            noise = noise * noise_mask
+            correct_emb = correct_emb + noise
+        interaction_emb = torch.cat((question_emb, concept_emb, correct_emb), dim=2)
+
+        if (self.has_use_time or self.has_num_hint or self.has_num_attempt) and self.has_time:
+            if self.has_use_time:
+                use_time_emb = self.embed_use_time(batch["use_time_seq"])
+            else:
+                use_time_emb = torch.zeros(batch_size, seq_len, dim_emb).to(self.params["device"])
+            if self.has_num_hint:
+                num_hint_emb = self.embed_num_hint(batch["num_hint_seq"])
+            else:
+                num_hint_emb = torch.zeros(batch_size, seq_len, dim_emb).to(self.params["device"])
+            if self.has_num_attempt:
+                num_attempt_emb = self.embed_num_hint(batch["num_attempt_seq"])
+            else:
+                num_attempt_emb = torch.zeros(batch_size, seq_len, dim_emb).to(self.params["device"])
+
+            ut_nh_na_emb = torch.cat((use_time_emb, num_hint_emb, num_attempt_emb), dim=-1)
+            ut_nh_na_emb = self.fuse_ut_nh_na(ut_nh_na_emb)
+            interval_time_emb = self.embed_interval_time(batch["interval_time_seq"])
+            encoder_input = torch.cat((interaction_emb, interval_time_emb, ut_nh_na_emb), dim=-1)
+
+        elif (self.has_use_time or self.has_num_hint or self.has_num_attempt) or self.has_time:
+            if self.has_time:
+                interval_time_emb = self.embed_interval_time(batch["interval_time_seq"])
+                encoder_input = torch.cat((interaction_emb, interval_time_emb), dim=-1)
+            else:
+                if self.has_use_time:
+                    use_time_emb = self.embed_use_time(batch["use_time_seq"])
+                else:
+                    use_time_emb = torch.zeros(batch_size, seq_len, dim_emb).to(self.params["device"])
+                if self.has_num_hint:
+                    num_hint_emb = self.embed_num_hint(batch["num_hint_seq"])
+                else:
+                    num_hint_emb = torch.zeros(batch_size, seq_len, dim_emb).to(self.params["device"])
+                if self.has_num_attempt:
+                    num_attempt_emb = self.embed_num_hint(batch["num_attempt_seq"])
+                else:
+                    num_attempt_emb = torch.zeros(batch_size, seq_len, dim_emb).to(self.params["device"])
+                ut_nh_na_emb = torch.cat((use_time_emb, num_hint_emb, num_attempt_emb), dim=-1)
+                ut_nh_na_emb = self.fuse_ut_nh_na(ut_nh_na_emb)
+                encoder_input = torch.cat((interaction_emb, ut_nh_na_emb), dim=-1)
+
+        else:
+            encoder_input = interaction_emb
+
+        self.encoder_layer.flatten_parameters()
+        latent, _ = self.encoder_layer(encoder_input)
+
+        return latent

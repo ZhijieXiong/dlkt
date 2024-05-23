@@ -1,5 +1,6 @@
+import torch
+
 from .util import *
-from .AuxInfoDCT import MLP4Proj
 
 
 class LBMKT(nn.Module):
@@ -14,27 +15,31 @@ class LBMKT(nn.Module):
         num_question = encoder_config["num_question"]
         num_concept = encoder_config["num_concept"]
         dim_emb = encoder_config["dim_emb"]
-        num_proj_layer = encoder_config["num_proj_layer"]
         dropout = encoder_config["dropout"]
 
         self.embed_question = nn.Embedding(num_question + 1, dim_emb)
+        self.embed_question_disc = nn.Embedding(num_question + 1, 1)
         self.embed_concept = nn.Embedding(num_concept + 1, dim_emb)
-        torch.nn.init.xavier_uniform_(self.embed_question.weight)
-        torch.nn.init.xavier_uniform_(self.embed_concept.weight)
         self.embed_interval_time = nn.Embedding(100, dim_emb)
         self.embed_use_time = nn.Embedding(100, dim_emb)
         self.embed_num_hint = nn.Embedding(100, dim_emb)
         self.embed_num_attempt = nn.Embedding(100, dim_emb)
 
-        self.aux_emb_fusion = nn.Linear(dim_emb * 3, dim_emb)
-        self.interaction_fusion = nn.Linear(dim_emb * 4, dim_emb)
-        self.gate4know_absorb = nn.Linear(dim_emb * 2, dim_emb)
-        self.gate4forget = nn.Linear(dim_emb * 3, dim_emb)
-        self.learning_gain_trans = nn.Linear(dim_emb * 3, dim_emb)
+        torch.nn.init.xavier_uniform_(self.embed_question.weight)
+        torch.nn.init.xavier_uniform_(self.embed_question_disc.weight)
+        torch.nn.init.xavier_uniform_(self.embed_concept.weight)
+        torch.nn.init.xavier_uniform_(self.embed_interval_time.weight)
+        torch.nn.init.xavier_uniform_(self.embed_use_time.weight)
+        torch.nn.init.xavier_uniform_(self.embed_num_hint.weight)
+        torch.nn.init.xavier_uniform_(self.embed_num_attempt.weight)
 
-        self.que2difficulty = MLP4Proj(num_proj_layer, dim_emb, num_concept, dropout)
-        self.latent2ability = MLP4Proj(num_proj_layer, dim_emb, num_concept, dropout)
-        self.que2discrimination = MLP4Proj(num_proj_layer, dim_emb, 1, dropout)
+        self.aux_emb_fusion = nn.Linear(dim_emb * 3, dim_emb)
+        self.gate4know_absorb = nn.Linear(dim_emb * 3, dim_emb)
+        self.gate4forget = nn.Linear(dim_emb * 3, dim_emb)
+        self.learning_gain_trans = nn.Linear(dim_emb * 2, dim_emb)
+
+        self.que2difficulty = nn.Linear(dim_emb, num_concept)
+        self.latent2ability = nn.Linear(dim_emb, num_concept)
         self.dropout = nn.Dropout(dropout)
 
     def get_concept_emb(self, batch):
@@ -58,9 +63,9 @@ class LBMKT(nn.Module):
         max_que_disc = self.params["models_config"]["kt_model"]["encoder_layer"]["LBMKT"]["max_que_disc"]
         Q_table = self.objects["data"]["Q_table_tensor"]
 
-        user_ability = torch.sigmoid(self.latent2ability(self.dropout(latent)))
-        que_discrimination = torch.sigmoid(self.que2discrimination(self.dropout(question_emb))) * max_que_disc
-        que_difficulty = torch.sigmoid(self.que2difficulty(self.dropout(question_emb)))
+        user_ability = torch.sigmoid(self.latent2ability(latent))
+        que_discrimination = torch.sigmoid(self.embed_question_disc(question_seq)) * max_que_disc
+        que_difficulty = torch.sigmoid(self.que2difficulty(question_emb))
         user_ability_ = user_ability * Q_table[question_seq]
         que_difficulty_ = que_difficulty * Q_table[question_seq]
         # 使用补偿性模型，即对于多知识点习题，在考察的一个知识点上的不足可以由其它知识点补偿，同时考虑习题和知识点的关联强度
@@ -96,9 +101,6 @@ class LBMKT(nn.Module):
         num_attempt_emb = self.embed_num_hint(batch["num_attempt_seq"]) if has_num_attempt else self.get_empty_emb(shapes)
         interval_time_emb = self.embed_interval_time(batch["interval_time_seq"]) if has_time else self.get_empty_emb(shapes)
         aux_info_emb = self.aux_emb_fusion(torch.cat((use_time_emb, num_hint_emb, num_attempt_emb), dim=-1))
-        interaction_emb = self.interaction_fusion(
-            torch.cat((question_emb, concept_emb, correct_emb, aux_info_emb), dim=-1)
-        )
 
         latent = torch.zeros(batch_size, seq_len, dim_emb).to(self.params["device"])
         latent_pre = nn.init.xavier_uniform_(torch.zeros(batch_size, dim_emb)).to(self.params["device"])
@@ -108,23 +110,24 @@ class LBMKT(nn.Module):
             question_emb_current = question_emb[:, t]
             concept_emb_current = concept_emb[:, t]
             correct_emb_current = correct_emb[:, t]
-            interaction_emb_current = interaction_emb[:, t]
+            aux_info_emb_current = aux_info_emb[:, t]
             interval_time_emb_current = interval_time_emb[:, t]
 
             # 从一道题中能学到多少只和题目有关
             learning_gain_current = torch.tanh(self.learning_gain_trans(
-                torch.cat((question_emb_current, concept_emb_current, correct_emb_current), dim=-1)
+                torch.cat((question_emb_current, concept_emb_current), dim=-1)
             ))
             # 能吸收多少和学生做题情况（包括辅助信息）有关
             learning_absorb_gate = torch.sigmoid(self.gate4know_absorb(
-                torch.cat((latent_pre, interaction_emb_current), dim=-1)
+                torch.cat((latent_pre, correct_emb_current, aux_info_emb_current), dim=-1)
             ))
-            learning_gain_current = learning_gain_current * learning_absorb_gate
+            learning_gain_current = ((learning_gain_current + 1) / 2) * learning_absorb_gate
+            learning_gain_current_tilde = self.dropout(learning_gain_current)
 
             forget_gate = torch.sigmoid(self.gate4forget(
-                torch.cat((latent_pre, interaction_emb_current, interval_time_emb_current), dim=-1)
+                torch.cat((latent_pre, learning_gain_current, interval_time_emb_current), dim=-1)
             ))
-            latent_current = latent_pre * forget_gate + learning_gain_current
+            latent_current = latent_pre * forget_gate + learning_gain_current_tilde
 
             question_emb_next = question_emb[:, t + 1]
             question_next = question_seq[:, t + 1]

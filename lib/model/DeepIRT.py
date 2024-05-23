@@ -1,84 +1,98 @@
 import torch
 import torch.nn as nn
+from torch.nn import Module, Parameter, Embedding, Linear, Dropout
+from torch.nn.init import kaiming_normal_
 
 
-class DeepIRT(nn.Module):
-    def __init__(
-        self,
-        n_skill,
-        q_embed_dim,
-        qa_embed_dim,
-        hidden_dim,
-        kp_dim,
-        n_layer,
-        dropout,
-        device="cpu",
-        cell_type="lstm",
-    ):
-        super(DeepIRT, self).__init__()
-        self.n_skill = n_skill
-        self.q_embed_dim = q_embed_dim
-        self.qa_embed_dim = qa_embed_dim
-        self.hidden_dim = hidden_dim
-        self.kp_dim = kp_dim
-        self.n_layer = n_layer
-        self.dropout = dropout
-        self.device = device
-        self.rnn = None
+class DeepIRT(Module):
+    model_name = "DeepIRT"
 
-        self.q_embedding = nn.Embedding(n_skill + 1, q_embed_dim, padding_idx=n_skill)
-        self.qa_embedding = nn.Embedding(
-            2 * n_skill + 1, qa_embed_dim, padding_idx=2 * n_skill
+    def __init__(self, params, objects):
+        super().__init__()
+        self.params = params
+        self.objects = objects
+
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DeepIRT"]
+        num_concept = encoder_config["num_concept"]
+        dim_emb = encoder_config["dim_emb"]
+        size_memory = encoder_config["size_memory"]
+        dropout = encoder_config["dropout"]
+
+        self.embed_key = Embedding(num_concept, dim_emb)
+        self.Mk = Parameter(torch.Tensor(size_memory, dim_emb))
+        self.Mv0 = Parameter(torch.Tensor(size_memory, dim_emb))
+        kaiming_normal_(self.Mk)
+        kaiming_normal_(self.Mv0)
+
+        self.embed_value = Embedding(num_concept * 2, dim_emb)
+        self.f_layer = Linear(dim_emb * 2, dim_emb)
+        self.dropout_layer = Dropout(dropout)
+        self.p_layer = Linear(dim_emb, 1)
+
+        self.diff_layer = nn.Sequential(Linear(dim_emb, 1), nn.Tanh())
+        self.ability_layer = nn.Sequential(Linear(dim_emb, 1), nn.Tanh())
+
+        self.e_layer = Linear(dim_emb, dim_emb)
+        self.a_layer = Linear(dim_emb, dim_emb)
+
+    def forward(self, batch):
+        num_concept = self.params["models_config"]["kt_model"]["encoder_layer"]["DeepIRT"]["num_concept"]
+        concept_seq = batch["concept_seq"]
+        correct_seq = batch["correct_seq"]
+        batch_size = concept_seq.shape[0]
+
+        x = concept_seq + num_concept * correct_seq
+        k = self.embed_key(concept_seq)
+        v = self.embed_value(x)
+        Mvt = self.Mv0.unsqueeze(0).repeat(batch_size, 1, 1)
+        Mv = [Mvt]
+        w = torch.softmax(torch.matmul(k, self.Mk.T), dim=-1)
+
+        # Write Process
+        e = torch.sigmoid(self.e_layer(v))
+        a = torch.tanh(self.a_layer(v))
+        for et, at, wt in zip(e.permute(1, 0, 2), a.permute(1, 0, 2), w.permute(1, 0, 2)):
+            Mvt = Mvt * (1 - (wt.unsqueeze(-1) * et.unsqueeze(1))) + (wt.unsqueeze(-1) * at.unsqueeze(1))
+            Mv.append(Mvt)
+        Mv = torch.stack(Mv, dim=1)
+
+        # Read Process
+        f = torch.tanh(
+            self.f_layer(
+                torch.cat(
+                    [
+                        (w.unsqueeze(-1) * Mv[:, :-1]).sum(-2),
+                        k
+                    ],
+                    dim=-1
+                )
+            )
         )
 
-        self.q_kp_relation = nn.Linear(self.q_embed_dim, self.kp_dim)
-        self.q_difficulty = nn.Linear(self.q_embed_dim, self.kp_dim)
-        self.user_ability = nn.Linear(self.hidden_dim, self.kp_dim)
+        stu_ability = self.ability_layer(self.dropout_layer(f))  # equ 12
+        que_diff = self.diff_layer(self.dropout_layer(k))  # equ 13
 
-        if cell_type.lower() == "lstm":
-            self.rnn = nn.LSTM(
-                self.qa_embed_dim,
-                self.hidden_dim,
-                self.n_layer,
-                batch_first=True,
-                dropout=self.dropout,
-            )
-        elif cell_type.lower() == "rnn":
-            self.rnn = nn.RNN(
-                self.qa_embed_dim,
-                self.hidden_dim,
-                self.n_layer,
-                batch_first=True,
-                dropout=self.dropout,
-            )
-        elif cell_type.lower() == "gru":
-            self.rnn = nn.GRU(
-                self.qa_embed_dim,
-                self.hidden_dim,
-                self.n_layer,
-                batch_first=True,
-                dropout=self.dropout,
-            )
+        predict_score = torch.sigmoid(3.0 * stu_ability - que_diff)  # equ 14
+        predict_score = predict_score.squeeze(-1)
 
-        if self.rnn is None:
-            raise ValueError("cell type only support lstm, rnn or gru type.")
+        return predict_score
 
-    def forward(self, q, qa):
-        q_embed_data = self.q_embedding(q)
-        qa_embed_data = self.qa_embedding(qa)
+    def get_predict_score(self, batch):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        predict_score = self.forward(batch)
+        predict_score = torch.masked_select(predict_score[:, 1:], mask_bool_seq[:, 1:])
 
-        batch_size = q.size(0)
-        seq_len = q.size(1)
+        return predict_score
 
-        # h0 = torch.zeros((q.size(0), self.n_layer, self.hidden_dim), device=self.device)
-        states, _ = self.rnn(qa_embed_data)
-        # states_before = torch.cat((h0, states[:, :-1, :]), 1)
-        user_ability = self.user_ability(states).view(batch_size * seq_len, -1)
+    def get_predict_loss(self, batch, loss_record=None):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
 
-        kp_relation = torch.softmax(
-            self.q_kp_relation(q_embed_data.view(batch_size * seq_len, -1)), dim=1
-        )
-        item_difficulty = self.q_difficulty(q_embed_data.view(batch_size * seq_len, -1))
+        predict_score = self.get_predict_score(batch)
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+        predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
 
-        logits = (user_ability - item_difficulty) * kp_relation
-        return logits.sum(dim=1), None
+        if loss_record is not None:
+            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+
+        return predict_loss

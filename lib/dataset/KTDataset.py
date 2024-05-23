@@ -141,7 +141,9 @@ class KTDataset(Dataset):
                     else:
                         dataset_converted["use_time_seq"].append(item_data["use_time_seq"])
                 elif k in ["num_hint_seq", "num_attempt_seq"] and agg_num:
-                    num_seq = list(map(lambda x: x if (x <= 10) else (10 + x // 5), item_data[k]))
+                    num_seq = list(map(lambda x: x if (x <= 10) else (
+                            (5 + x // 5) if (x <= 50) else (50 + x // 10)
+                    ), item_data[k]))
                     dataset_converted[k].append(num_seq)
                 else:
                     dataset_converted[k].append(item_data[k])

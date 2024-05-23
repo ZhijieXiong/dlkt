@@ -174,7 +174,7 @@ class Evaluator:
                     f"acc of answer is {answer_acc * 100:<4.3}% and performance is "
                     f"AUC: {roc_auc_score(y_true=g, y_score=p):<9.5}, "
                     f"ACC: {accuracy_score(g, p_label):<9.5}, "
-                    f"RMSE: {mean_squared_error(y_true=g, y_pred=p):<9.5}, "
+                    f"RMSE: {mean_squared_error(y_true=g, y_pred=p) ** 0.5:<9.5}, "
                     f"MAE: {mean_absolute_error(y_true=g, y_pred=p):<9.5}"
                 )
 

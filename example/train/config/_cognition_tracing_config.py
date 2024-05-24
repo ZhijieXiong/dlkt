@@ -85,7 +85,7 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
     w_q_table = local_params.get("w_q_table", 0)
     w_unbiased_cl = local_params.get("w_unbiased_cl", 0)
     temp = local_params.get("temp", 0.05)
-    correct_noise_strength = local_params.get("correct_noise_strength", 0)
+    correct_noise_strength = local_params.get("correct_noise_strength", 0.1)
 
     # 统计知识点难度，用于初始化encoder
     if use_pretrain:
@@ -114,20 +114,20 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
         global_params["loss_config"]["que disc pred loss"] = w_que_disc_pred
     if w_user_ability_pred != 0:
         global_params["loss_config"]["user ability pred loss"] = w_user_ability_pred
+    if w_q_table != 0:
+        global_params["loss_config"]["q table loss"] = w_q_table
     if w_penalty_neg != 0:
         global_params["loss_config"]["penalty neg loss"] = w_penalty_neg
     if w_learning != 0:
         global_params["loss_config"]["learning loss"] = w_learning
     if w_counter_fact != 0:
         global_params["loss_config"]["counterfactual loss"] = w_counter_fact
-    if w_q_table != 0:
-        global_params["loss_config"]["q table loss"] = w_q_table
     if w_unbiased_cl != 0:
         global_params["loss_config"]["unbiased cl loss"] = w_unbiased_cl
-        global_params["other"]["instance_cl"] = {
-            "temp": temp,
-            "correct_noise_strength": correct_noise_strength
-        }
+    global_params["other"]["instance_cl"] = {
+        "temp": temp,
+        "correct_noise_strength": correct_noise_strength
+    }
 
     global_objects["logger"].info(
         "loss weight params\n"

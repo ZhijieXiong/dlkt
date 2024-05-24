@@ -58,7 +58,7 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", type=float, default=0.2)
     # 辅助损失
     parser.add_argument("--multi_stage", type=str2bool, default=False)
-    parser.add_argument("--w_penalty_neg", type=float, default=0.01)
+    parser.add_argument("--w_penalty_neg", type=float, default=0)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

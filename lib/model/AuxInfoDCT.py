@@ -229,11 +229,11 @@ class AuxInfoDCT(nn.Module):
         max_que_disc = encoder_config["max_que_disc"]
 
         multi_stage = self.params["other"]["cognition_tracing"]["multi_stage"]
+        data_type = self.params["datasets_config"]["data_type"]
         w_penalty_neg = self.params["loss_config"].get("penalty neg loss", 0)
         w_counter_fact = self.params["loss_config"].get("counterfactual loss", 0)
         w_learning = self.params["loss_config"].get("learning loss", 0)
-        w_cl_loss = self.params["loss_config"].get("learning loss", 0)
-        data_type = self.params["datasets_config"]["data_type"]
+        w_unbiased_cl = self.params["loss_config"].get("unbiased cl loss", 0)
 
         Q_table = self.objects["data"]["Q_table_tensor"]
 
@@ -441,11 +441,11 @@ class AuxInfoDCT(nn.Module):
                                          num_sample)
                 loss = loss + learn_loss * w_learning
 
-        if (not multi_stage) and (w_cl_loss != 0):
+        if (not multi_stage) and (w_unbiased_cl != 0):
             unbias_loss = self.get_unbiased_cl_loss(batch)
             if loss_record is not None:
                 loss_record.add_loss("unbiased cl loss", unbias_loss.detach().cpu().item() * batch_size, batch_size)
-            loss = loss + unbias_loss * w_cl_loss
+            loss = loss + unbias_loss * w_unbiased_cl
 
         return loss
 

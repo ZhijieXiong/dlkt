@@ -59,10 +59,18 @@ if __name__ == "__main__":
 
     data_test = read_preprocessed_file(test_file_path)
     user_portrait = {}
+    question_kt_portrait = []
 
     model.eval()
     with torch.no_grad():
         question_emb = model.get_question_emb_list()
+        for q_id, q_emb in enumerate(question_emb):
+            question = {
+                "question_id": its_question[str(q_id)]["question_id"],
+                "question_emb": list(map(lambda x: round(x, 10), q_emb))
+            }
+            question_kt_portrait.append(question)
+
         batch_size = 8
         batch_idx = [i for i in range(0, len(data_test) - batch_size, batch_size)]
         for i_start in batch_idx:
@@ -83,3 +91,4 @@ if __name__ == "__main__":
                 }
 
     write_json(user_portrait, os.path.join(target_dir, "its_user_portrait.json"))
+    write_json(question_kt_portrait, os.path.join(target_dir, "its_question_kt_portrait.json"))

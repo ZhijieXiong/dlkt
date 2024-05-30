@@ -15,7 +15,7 @@ if __name__ == "__main__":
     its_users_behaviors = load_json(its_user_behavior_path)
     its_users_portrait = load_json(its_user_portrait_path)
 
-    num_selected_user = 150
+    num_selected_user = 50
     selected_users = []
     selected_users_behaviors = []
     for i in range(num_selected_user):

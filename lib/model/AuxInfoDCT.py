@@ -347,48 +347,27 @@ class AuxInfoDCT(nn.Module):
             # 单知识点习题：对于做对的题，惩罚user_ability - que_difficulty小于0的值
             #            对于做错的题，惩罚user_ability - que_difficulty大于0的值
             #            只惩罚考察的知识点
-            if data_type == "single_concept":
-                target_inter_func_in = torch.gather(inter_func_in, 2, q2c_table[:, 1:])
+            if data_type != "single_concept":
+                # 对多知识点的习题损失乘一个小于1的权重
+                penalty_loss_weight = self.objects["data"]["loss_weight2"]
+                inter_func_in = inter_func_in * penalty_loss_weight[question_seq[:, 1:]].unsqueeze(-1)
 
-                mask4inter_func_in = mask_bool_seq[:, 1:].unsqueeze(-1) & \
-                                     batch["correct_seq"][:, 1:].bool().unsqueeze(-1) & \
-                                     q2c_mask_table[:, 1:].bool()
-                target_inter_func_in1 = torch.masked_select(target_inter_func_in, mask4inter_func_in)
-                neg_inter_func_in = target_inter_func_in1[target_inter_func_in1 <= 0]
-                num_sample = neg_inter_func_in.numel()
+            target_inter_func_in = torch.gather(inter_func_in, 2, q2c_table[:, 1:])
+            mask4inter_func_in = mask_bool_seq[:, 1:].unsqueeze(-1) & \
+                                 correct_seq[:, 1:].bool().unsqueeze(-1) & \
+                                 q2c_mask_table[:, 1:].bool()
+            target_inter_func_in1 = torch.masked_select(target_inter_func_in, mask4inter_func_in)
 
-                mask4inter_func_in2 = mask_bool_seq[:, 1:].unsqueeze(-1) & \
-                                      (1 - batch["correct_seq"][:, 1:]).bool().unsqueeze(-1) & \
-                                      q2c_mask_table[:, 1:].bool()
-                target_inter_func_in2 = torch.masked_select(target_inter_func_in, mask4inter_func_in2)
-                pos_inter_func_in = target_inter_func_in2[target_inter_func_in2 >= 0]
-                num_sample = num_sample + pos_inter_func_in.numel()
-            else:
-                # 放弃的方案：多知识点习题：选择权重最重的惩罚，但是效果不好
-                # qc_related_extent = torch.gather(que_difficulty, 2, q2c_table[:, 1:]) * q2c_mask_table[:, 1:]
-                # qc_max_extent_index = torch.argmax(qc_related_extent, dim=2).unsqueeze(-1)
-                # target_inter_func_in = torch.gather(inter_func_in, 2, qc_max_extent_index)
+            neg_inter_func_in = target_inter_func_in1[target_inter_func_in1 <= 0]
+            num_sample = neg_inter_func_in.numel()
 
-                # 方案1：对多知识点的习题损失乘一个小于1的权重，目前该方法最有效
-                penalty_weight4question = self.objects["data"]["penalty_weight4question"][question_seq[:, 1:]]
-                inter_func_in = inter_func_in * penalty_weight4question.unsqueeze(-1)
+            mask4inter_func_in2 = mask_bool_seq[:, 1:].unsqueeze(-1) & \
+                                  (1 - correct_seq[:, 1:]).bool().unsqueeze(-1) & \
+                                  q2c_mask_table[:, 1:].bool()
+            target_inter_func_in2 = torch.masked_select(target_inter_func_in, mask4inter_func_in2)
 
-                # 方案2：不计算多知识点习题的损失
-                # mask4single_concept = self.objects["data"]["mask4single_concept"][question_seq]
-                # mask4single_concept[:, 1:].unsqueeze(-1) & \
-
-                target_inter_func_in = torch.gather(inter_func_in, 2, q2c_table[:, 1:])
-                mask4inter_func_in = mask_bool_seq[:, 1:].unsqueeze(-1) & \
-                                     batch["correct_seq"][:, 1:].bool().unsqueeze(-1)
-                target_inter_func_in1 = torch.masked_select(target_inter_func_in, mask4inter_func_in)
-                neg_inter_func_in = target_inter_func_in1[target_inter_func_in1 <= 0]
-                num_sample = neg_inter_func_in.numel()
-
-                mask4inter_func_in2 = mask_bool_seq[:, 1:].unsqueeze(-1) & \
-                                      (1 - batch["correct_seq"][:, 1:]).bool().unsqueeze(-1)
-                target_inter_func_in2 = torch.masked_select(target_inter_func_in, mask4inter_func_in2)
-                pos_inter_func_in = target_inter_func_in2[target_inter_func_in2 >= 0]
-                num_sample = num_sample + pos_inter_func_in.numel()
+            pos_inter_func_in = target_inter_func_in2[target_inter_func_in2 >= 0]
+            num_sample = num_sample + pos_inter_func_in.numel()
 
             if num_sample > 0:
                 penalty_value = torch.cat((-neg_inter_func_in, pos_inter_func_in))
@@ -425,13 +404,17 @@ class AuxInfoDCT(nn.Module):
 
         if (not multi_stage) and (w_learning != 0):
             # 学习约束（单调理论）：做对了题比不做题学习增长大
-            master_leval = user_ability[:, 1:] - user_ability[:, :-1]
-            mask4master = mask_bool_seq[:, 1:-1].unsqueeze(-1) & \
-                          correct_seq[:, 1:-1].unsqueeze(-1).bool() & \
-                          q2c_mask_table[:, 1:-1].bool()
-            target_neg_master_leval = torch.masked_select(
-                torch.gather(master_leval, 2, q2c_table[:, 1:-1]), mask4master
-            )
+            user_ability_change = user_ability[:, 1:] - user_ability[:, :-1]
+            if data_type != "single_concept":
+                learn_loss_weight = self.objects["data"]["loss_weight1"]
+                user_ability_change = user_ability_change * learn_loss_weight[question_seq[:, 1:-1]].unsqueeze(-1)
+
+            target_ability_change = torch.gather(user_ability_change, 2, q2c_table[:, 1:-1])
+            mask4ability_change = mask_bool_seq[:, 1:-1].unsqueeze(-1) & \
+                                  correct_seq[:, 1:-1].unsqueeze(-1).bool() & \
+                                  q2c_mask_table[:, 1:-1].bool()
+            target_neg_master_leval = torch.masked_select(target_ability_change, mask4ability_change)
+
             neg_master_leval = target_neg_master_leval[target_neg_master_leval < 0]
             num_sample = neg_master_leval.numel()
             if num_sample > 0:

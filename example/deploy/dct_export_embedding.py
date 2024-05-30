@@ -21,6 +21,7 @@ from lib.model.Module.KTEmbedLayer import KTEmbedLayer
 
 
 if __name__ == "__main__":
+    emb_path = r"F:\code\myProjects\dlkt\lab\dataset_raw\xes3g5m\metadata\embeddings\qid2content_emb.json"
     save_model_dir = r"F:\code\myProjects\dlkt\lab\saved_models\2024-05-21@19-25-59@@DCT@@seed_0@@baidu_competition@@train_dataset"
     its_question_path = r"F:\code\myProjects\dlkt\lab\settings\baidu_competition\its_question.json"
     save_model_name = "saved.ckt"
@@ -34,6 +35,18 @@ if __name__ == "__main__":
     file_manager = FileManager(FILE_MANAGER_ROOT)
 
     its_question = load_json(its_question_path)
+
+    # 使用语言模型提取的emb
+    question_lm_emb = load_json(emb_path)
+    question_lm_portrait = []
+    for q_id, q_emb in question_lm_emb.items():
+        question = {
+            "question_type": its_question[str(q_id)]["question_type"],
+            "question_id": its_question[str(q_id)]["question_id"],
+            "question_emb": list(map(lambda x: round(x, 8), q_emb))
+        }
+        question_lm_portrait.append(question)
+    write_json(question_lm_portrait, os.path.join(target_dir, "its_question_lm_portrait.json"))
 
     global_objects = {}
     Q_table = file_manager.get_q_table(dataset_name, data_type)
@@ -66,6 +79,7 @@ if __name__ == "__main__":
         question_emb = model.get_question_emb_list()
         for q_id, q_emb in enumerate(question_emb):
             question = {
+                "question_type": its_question[str(q_id)]["question_type"],
                 "question_id": its_question[str(q_id)]["question_id"],
                 "question_emb": list(map(lambda x: round(x, 10), q_emb))
             }
@@ -74,7 +88,7 @@ if __name__ == "__main__":
         batch_size = 8
         batch_idx = [i for i in range(0, len(data_test) - batch_size, batch_size)]
         for i_start in batch_idx:
-            batch_data = data_test[batch_size * i_start: batch_size * i_start + batch_size]
+            batch_data = data_test[i_start: i_start + batch_size]
             if len(batch_data) == 0:
                 break
             user_names = [f"xes3g5mUser{item_data['user_id']}" for item_data in batch_data]

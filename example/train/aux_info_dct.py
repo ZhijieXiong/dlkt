@@ -18,9 +18,9 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_name", type=str, default="ednet-kt1")
     parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="ednet-kt1_train_fold_1.txt")
-    parser.add_argument("--valid_file_name", type=str, default="ednet-kt1_valid_fold_1.txt")
-    parser.add_argument("--test_file_name", type=str, default="ednet-kt1_test_fold_1.txt")
+    parser.add_argument("--train_file_name", type=str, default="ednet-kt1_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="ednet-kt1_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="ednet-kt1_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
     parser.add_argument("--weight_decay", type=float, default=0.0001)
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     parser.add_argument("--multi_stage", type=str2bool, default=False)
     parser.add_argument("--temp", type=float, default=0.05)
     parser.add_argument("--correct_noise_strength", type=float, default=0.2)
-    parser.add_argument("--w_unbiased_cl", type=float, default=0.1)
+    parser.add_argument("--w_unbiased_cl", type=float, default=0)
     parser.add_argument("--w_counter_fact", type=float, default=0)
     parser.add_argument("--w_learning", type=float, default=0)
     parser.add_argument("--w_penalty_neg", type=float, default=0)

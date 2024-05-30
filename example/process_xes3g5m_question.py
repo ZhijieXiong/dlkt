@@ -120,7 +120,9 @@ if __name__ == "__main__":
     its_id2kt_id = {}
     its_question_path = os.path.join(OUTPUT_DIR, "its_question.json")
     error_question_path = os.path.join(OUTPUT_DIR, "error_question.json")
-    if os.path.exists(its_question_path) and os.path.exists(error_question_path):
+    rag_lib_path = os.path.join(OUTPUT_DIR, "its_rag_question_lib.txt")
+    rag_question_lib = []
+    if os.path.exists(its_question_path) and os.path.exists(error_question_path) and os.path.exists(rag_lib_path):
         its_question = load_json(its_question_path)
         error_question = load_json(error_question_path)
     else:
@@ -131,12 +133,21 @@ if __name__ == "__main__":
             question_images = QUESTION_IMAGE[q_id]
             analysis_text = q_content["analysis"]
             analysis_images = ANALYSIS_IMAGE[q_id]
-
+            its_question_id = generate_unique_id(f"xes3g5m-question-data-{q_id}")
+            concept_kc_routes = list(filter(lambda x: "知识点" in x[:6], q_content["kc_routes"]))
+            concept_kc_route_str = "；".join(concept_kc_routes)
+            last_in_kc_routes = list(set(map(lambda x: x.split("----")[-1].strip(), q_content["kc_routes"])))
+            lib_text = f"习题id：{its_question_id}\n" \
+                       f"习题考察的知识点: {concept_kc_route_str}\n" \
+                       f"习题关联的知识点或能力：{'， '.join(last_in_kc_routes)}\n" \
+                       f"习题文本：{question_text}\n" \
+                       f"习题答案与解释：{analysis_text}"
+            rag_question_lib.append(lib_text)
             try:
                 question_contents = text2contents(question_text, question_images)
                 analysis_contents = text2contents(analysis_text, analysis_images)
                 its_question[q_id] = {
-                    "question_id": generate_unique_id(f"xes3g5m-question-data-{q_id}"),
+                    "question_id": its_question_id,
                     "question_contents": question_contents,
                     "analysis_contents": analysis_contents,
                     "question_type": q_content["type"],
@@ -144,13 +155,12 @@ if __name__ == "__main__":
                     "options": q_content["options"] if q_content["type"] == "单选" else dict(),
                     "answer": list(map(lambda x: x.strip("$"), q_content["answer"]))
                 }
-
                 kt_id2its_id[q_id] = generate_unique_id(f"xes3g5m-question-data-{q_id}")
                 its_id2kt_id[generate_unique_id(f"xes3g5m-question-data-{q_id}")] = q_id
             except IndexError:
                 # 报错的单独手动处理(只有一道题有问题，是该tag下第23题，填空题)
                 error_question[q_id] = {
-                    "question_id": generate_unique_id(question_text),
+                    "question_id": its_question_id,
                     "question_text": question_text,
                     "analysis_text": analysis_text,
                     "question_images": question_images,
@@ -160,6 +170,9 @@ if __name__ == "__main__":
                     "options": q_content["options"] if q_content["type"] == "单选" else dict(),
                     "answer": list(map(lambda x: x.strip("$"), q_content["answer"]))
                 }
+        with open(rag_lib_path, "w", encoding="utf-8") as f:
+            lines = "\n##############################\n".join(rag_question_lib)
+            f.write(lines)
         write_json(its_question, os.path.join(OUTPUT_DIR, "its_question.json"))
         write_json(error_question, os.path.join(OUTPUT_DIR, "error_question.json"))
         write_json(kt_id2its_id, os.path.join(OUTPUT_DIR, "kt_id2its_id.json"))

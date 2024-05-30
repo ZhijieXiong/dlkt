@@ -62,12 +62,28 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
     # 配置多知识点习题penalty损失权重
     Q_table = global_objects["data"]["Q_table"]
     qc_counts = Q_table.sum(axis=-1)
-    # 原始方法
-    penalty_weight4question = torch.from_numpy(np.exp(1 - qc_counts)).to(global_params["device"])
-    # 考虑到一道题对应知识点越多，习题越难，那么可能就越要求每个知识点掌握程度都高，这个权重应该是先下降再上升
-    global_objects["data"]["penalty_weight4question"] = penalty_weight4question
-    mask4single_concept = torch.from_numpy(qc_counts <= 1).to(global_params["device"])
-    global_objects["data"]["mask4single_concept"] = mask4single_concept
+    num_max_qc_count = max(qc_counts)
+    if num_max_qc_count > 1:
+        # 损失权重1：单调下降
+        loss_weight1 = torch.from_numpy(np.exp(1 - qc_counts)).to(global_params["device"])
+        global_objects["data"]["loss_weight1"] = loss_weight1
+
+        # 损失权重2：先下降后上升
+        weight1 = np.exp(1 - qc_counts)
+        # 考虑到一道题对应知识点越多，习题越难，那么可能就越要求每个知识点掌握程度都高，这个权重应该是先下降再上升
+        th = num_max_qc_count / 2 + 0.5
+        ones_array = np.ones_like(qc_counts)
+        exp_neg = np.exp(ones_array - th)
+        # 分母
+        num1 = ones_array * (num_max_qc_count - th)
+        # 分子
+        num2 = (ones_array - exp_neg) * qc_counts + num_max_qc_count * exp_neg - ones_array * th
+        weight2 = num2 / num1
+        # 知识点数目小于3使用1，大于等于3使用2
+        weight1[qc_counts > th] = 0
+        weight2[qc_counts < th] = 0
+        loss_weight2 = torch.from_numpy(weight1 + weight2).to(global_params["device"])
+        global_objects["data"]["loss_weight2"] = loss_weight2
 
     # 提取学生认知标签和对应mask以及权重
     if w_user_ability_pred != 0:

@@ -454,3 +454,58 @@ def cal_PPMCC_his_cur_pred(all_batch, window_lens):
         result[window_len]["easy"] = cal_ppmcc_no_error(x_easy, y_easy)
 
     return result
+
+
+def cal_PPMCC_label(all_batch, window_lens):
+    """
+    计算当前标签和历史（一定窗口长度）正确率的相关系数PPMCC
+
+    :param all_batch:
+    :param window_lens:
+    :return:
+    """
+    his_ave_record = {}
+    for window_len in window_lens:
+        his_ave_record[window_len] = {
+            "history_average_accuracy": [],
+            "current_label": []
+        }
+
+        for batch in all_batch:
+            zip_iter = zip(batch["question_seqs"], batch["label_seqs"], batch["mask_seqs"])
+            for question_seq, label_seq, mask_seq in zip_iter:
+                for i, m in enumerate(mask_seq[window_len:]):
+                    i += window_len
+                    if m == 0:
+                        break
+
+                    context_labels = label_seq[i - window_len:i]
+                    context_accuracy = sum(context_labels) / len(context_labels)
+
+                    his_ave_record[window_len]["history_average_accuracy"].append(context_accuracy)
+                    his_ave_record[window_len]["current_label"].append(label_seq[i])
+
+    result = {}
+    for window_len in window_lens:
+        result[window_len] = {}
+        # 不过滤，直接计算所有标签和历史的相关系数
+        x = his_ave_record[window_len]["history_average_accuracy"]
+        y = his_ave_record[window_len]["current_label"]
+        result[window_len]["all"] = cal_ppmcc_no_error(x, y)
+
+        x_label_eq0 = []
+        y_label_eq0 = []
+        x_label_eq1 = []
+        y_label_eq1 = []
+        for xx, yy in zip(x, y):
+            if yy == 0:
+                x_label_eq0.append(xx)
+                y_label_eq0.append(0)
+            else:
+                x_label_eq1.append(xx)
+                y_label_eq1.append(1)
+
+        result[window_len]["label_eq0"] = cal_ppmcc_no_error(x_label_eq0, y_label_eq0)
+        result[window_len]["label_eq1"] = cal_ppmcc_no_error(x_label_eq1, y_label_eq1)
+
+    return result

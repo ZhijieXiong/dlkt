@@ -9,7 +9,7 @@ from lib.util.parse import question2concept_from_Q
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="assist2009",
+    parser.add_argument("--dataset_name", type=str, default="ednet-kt1",
                         choices=("assist2009", "assist2009-new", "ednet-kt1", "xes3g5m"))
     parser.add_argument("--data_path", type=str,
                         default=r"F:\code\myProjects\dlkt\lab\dataset_preprocessed\ednet-kt1\data_only_question.txt")
@@ -40,4 +40,4 @@ if __name__ == "__main__":
 
     num_c_sorted = sorted(list(q_acc_num_c.keys()))
     for k in num_c_sorted:
-        print(f"num sample and acc of question with {k} concepts: {question_acc[k]['count']}, {q_acc_num_c[k]}")
+        print(f"num sample and acc of question with {k} concepts: {question_acc[k]['count']}, {q_acc_num_c[k]:.4}")

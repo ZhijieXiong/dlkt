@@ -298,6 +298,53 @@ def get_seq_easy_point(all_batch, previous_seq_len, seq_most_accuracy):
     return result, non_seq_easy
 
 
+def get_hard_sample_point(all_batch, previous_seq_len, question2concept):
+    """
+    返回每条序列中满足以下条件的点：\n
+    该点的context seq（上下文窗口长度最大为previous_seq_len）不包含和当前习题相关的练习记录，为hard样本，反正为easy样本
+    :param all_batch:
+    :param previous_seq_len:
+    :param question2concept:
+    :return:
+    """
+    easy_sample = {
+        "question": [],
+        "predict_score": [],
+        "predict_label": [],
+        "ground_truth": []
+    }
+    hard_sample = {
+        "question": [],
+        "predict_score": [],
+        "predict_label": [],
+        "ground_truth": []
+    }
+    for batch in all_batch:
+        zip_iter = zip(batch["question_seqs"], batch["label_seqs"], batch["predict_score_seqs"], batch["mask_seqs"])
+        for question_seq, label_seq, predict_score_seq, mask_seq in zip_iter:
+            concept_context = list(map(lambda q: question2concept[q], question_seq))
+            for i, m in enumerate(mask_seq[1:]):
+                if m == 0:
+                    break
+                i += 1
+                start_i = max(0, i - previous_seq_len)
+                context_concepts = set([c_id for c_ids in concept_context[start_i:i] for c_id in c_ids])
+                current_concept = set([c_id for c_id in concept_context[i]])
+
+                if not bool(context_concepts & current_concept):
+                    hard_sample["question"].append(question_seq[i])
+                    hard_sample["predict_score"].append(predict_score_seq[i])
+                    hard_sample["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
+                    hard_sample["ground_truth"].append(label_seq[i])
+                else:
+                    easy_sample["question"].append(question_seq[i])
+                    easy_sample["predict_score"].append(predict_score_seq[i])
+                    easy_sample["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
+                    easy_sample["ground_truth"].append(label_seq[i])
+
+    return easy_sample, hard_sample
+
+
 def get_question_easy_point(all_batch, statics_train, most_accuracy):
     """
     返回满足以下条件的点：该习题是高正确率习题，且做对，或者，该习题是低正确率习题，且做错\n
@@ -396,12 +443,13 @@ def cal_ppmcc_no_error(x, y):
     return np.corrcoef(x, y)[0, 1]
 
 
-def cal_PPMCC_his_cur_pred(all_batch, window_lens):
+def cal_PPMCC_his_acc_and_cur_model_pred(all_batch, window_lens, question2concept):
     """
     计算当前预测和历史（一定窗口长度）正确率的相关系数PPMCC
 
     :param all_batch:
     :param window_lens:
+    :param question2concept:
     :return:
     """
     his_ave_record = {}
@@ -409,12 +457,14 @@ def cal_PPMCC_his_cur_pred(all_batch, window_lens):
         his_ave_record[window_len] = {
             "history_average_accuracy": [],
             "current_predict_score": [],
-            "current_label": []
+            "current_label": [],
+            "concept_did": []
         }
 
         for batch in all_batch:
             zip_iter = zip(batch["question_seqs"], batch["label_seqs"], batch["predict_score_seqs"], batch["mask_seqs"])
             for question_seq, label_seq, predict_score_seq, mask_seq in zip_iter:
+                concept_context = list(map(lambda q: question2concept[q], question_seq))
                 for i, m in enumerate(mask_seq[window_len:]):
                     i += window_len
                     if m == 0:
@@ -423,9 +473,13 @@ def cal_PPMCC_his_cur_pred(all_batch, window_lens):
                     context_labels = label_seq[i - window_len:i]
                     context_accuracy = sum(context_labels) / len(context_labels)
 
+                    context_concepts = set([c_id for c_ids in concept_context[i - window_len:i] for c_id in c_ids])
+                    current_concept = set([c_id for c_id in concept_context[i]])
+
                     his_ave_record[window_len]["history_average_accuracy"].append(context_accuracy)
                     his_ave_record[window_len]["current_predict_score"].append(predict_score_seq[i])
                     his_ave_record[window_len]["current_label"].append(label_seq[i])
+                    his_ave_record[window_len]["concept_did"].append(bool(context_concepts & current_concept))
 
     result = {}
     for window_len in window_lens:
@@ -433,20 +487,17 @@ def cal_PPMCC_his_cur_pred(all_batch, window_lens):
         # 不过滤，直接计算所有预测和历史的相关系数
         x = his_ave_record[window_len]["history_average_accuracy"]
         y = his_ave_record[window_len]["current_predict_score"]
-        labels = his_ave_record[window_len]["current_label"]
         result[window_len]["all"] = cal_ppmcc_no_error(x, y)
 
-        x_hard = []
-        y_hard = []
         x_easy = []
         y_easy = []
-        for xx, yy, l in zip(x, y, labels):
-            if (xx >= 0.5 and l != 1) or (xx <= 0.5 and l != 0):
-                # 过滤高历史正确率且标签为正确以及低历史正确率且标签为错误的点（hard sample）
+        x_hard = []
+        y_hard = []
+        for xx, yy, ll in zip(x, y, his_ave_record[window_len]["current_label"]):
+            if ((xx < 0.4) and (ll == 1)) or ((xx > 0.6) and (ll == 0)):
                 x_hard.append(xx)
                 y_hard.append(yy)
             else:
-                # 过滤高历史正确率但是标签为错误以及低历史正确率但是标签为正确的点（easy sample）
                 x_easy.append(xx)
                 y_easy.append(yy)
 
@@ -456,7 +507,7 @@ def cal_PPMCC_his_cur_pred(all_batch, window_lens):
     return result
 
 
-def cal_PPMCC_label(all_batch, window_lens):
+def cal_PPMCC_his_acc_and_cur_label(all_batch, window_lens):
     """
     计算当前标签和历史（一定窗口长度）正确率的相关系数PPMCC
 
@@ -507,5 +558,62 @@ def cal_PPMCC_label(all_batch, window_lens):
 
         result[window_len]["label_eq0"] = cal_ppmcc_no_error(x_label_eq0, y_label_eq0)
         result[window_len]["label_eq1"] = cal_ppmcc_no_error(x_label_eq1, y_label_eq1)
+
+    return result
+
+
+def cal_PPMCC_his_acc_and_cur_label_new(all_batch, window_lens, question2concept):
+    """
+    计算当前标签和历史（一定窗口长度）正确率的相关系数PPMCC\n
+    easy是历史窗口包含和当前习题相关练习记录，反之为hard
+
+    :param all_batch:
+    :param window_lens:
+    :param question2concept:
+    :return:
+    """
+    his_ave_record = {}
+    for window_len in window_lens:
+        his_ave_record[window_len] = {
+            "history_average_accuracy": [],
+            "current_label": [],
+            "concept_did": []
+        }
+
+        for batch in all_batch:
+            zip_iter = zip(batch["question_seqs"], batch["label_seqs"], batch["mask_seqs"])
+            for question_seq, label_seq, mask_seq in zip_iter:
+                concept_context = list(map(lambda q: question2concept[q], question_seq))
+                for i, m in enumerate(mask_seq[window_len:]):
+                    i += window_len
+                    if m == 0:
+                        break
+
+                    context_labels = label_seq[i - window_len:i]
+                    context_accuracy = sum(context_labels) / len(context_labels)
+
+                    context_concepts = set([c_id for c_ids in concept_context[i - window_len:i] for c_id in c_ids])
+                    current_concept = set([c_id for c_id in concept_context[i]])
+
+                    his_ave_record[window_len]["history_average_accuracy"].append(context_accuracy)
+                    his_ave_record[window_len]["current_label"].append(label_seq[i])
+                    his_ave_record[window_len]["concept_did"].append(bool(context_concepts & current_concept))
+
+    result = {}
+    for window_len in window_lens:
+        result[window_len] = {}
+        # 不过滤，直接计算所有标签和历史的相关系数
+        x = his_ave_record[window_len]["history_average_accuracy"]
+        y = his_ave_record[window_len]["current_label"]
+        result[window_len]["all"] = cal_ppmcc_no_error(x, y)
+
+        x_hard = []
+        y_hard = []
+        for xx, yy, concept_did in zip(x, y, his_ave_record[window_len]["concept_did"]):
+            if not concept_did:
+                x_hard.append(xx)
+                y_hard.append(yy)
+
+        result[window_len]["hard"] = cal_ppmcc_no_error(x_hard, y_hard)
 
     return result

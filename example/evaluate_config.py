@@ -66,12 +66,6 @@ def evaluate_general_config(local_params):
     # 细粒度测试配置
     max_seq_len = local_params["max_seq_len"]
     seq_len_absolute = local_params["seq_len_absolute"]
-    previous_seq_len4bias = local_params["previous_seq_len4bias"]
-    if previous_seq_len4bias < 5:
-        global_objects["logger"].info("previous_seq_len4bias must > 0, and suggest > 5")
-    seq_most_accuracy4bias = local_params["seq_most_accuracy4bias"]
-    if seq_most_accuracy4bias >= 0.5:
-        global_objects["logger"].info("seq_most_accuracy4bias must < 0.5")
 
     global_params["evaluate"] = {"fine_grain": {}}
     fine_grain_config = global_params["evaluate"]["fine_grain"]
@@ -79,8 +73,6 @@ def evaluate_general_config(local_params):
     fine_grain_config["seq_len_absolute"] = eval(seq_len_absolute)
     fine_grain_config["train_statics_common_path"] = train_statics_common_path
     fine_grain_config["train_statics_special_path"] = train_statics_special_path
-    fine_grain_config["previous_seq_len4bias"] = previous_seq_len4bias
-    fine_grain_config["seq_most_accuracy4bias"] = seq_most_accuracy4bias
 
     # 是否将head的知识迁移到zero shot的知识
     transfer_head2zero = local_params.get("transfer_head2zero", False)
@@ -106,5 +98,11 @@ def evaluate_general_config(local_params):
         global_objects["data"]["q2c_table"] = q2c_table
         global_objects["data"]["q2c_mask_table"] = q2c_mask_table
         global_objects["data"]["num_max_concept"] = num_max_concept
+
+    # 获取习题和知识点组合的关系
+    Q_table_single_concept = file_manager.get_q_table(dataset_name, "single_concept")
+    if Q_table_single_concept is not None:
+        question2concept_combination = question2concept_from_Q(Q_table_single_concept)
+        global_objects["data"]["question2concept_combination"] = question2concept_combination
 
     return global_params, global_objects

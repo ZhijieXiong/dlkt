@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     # 加载模型参数配置
     parser.add_argument("--save_model_dir", type=str, help="绝对路径",
-                        default=r"F:\code\myProjects\dlkt\lab\saved_models\save\our_setting_new\AKT\2024-03-22@12-34-53@@AKT@@seed_0@@our_setting_new@@assist2009_train_fold_0")
+                        default=r"F:\code\myProjects\dlkt\lab\saved_models\save\our_setting\AKT\2024-03-22@12-34-53@@AKT@@seed_0@@our_setting_new@@assist2009_train_fold_0")
     parser.add_argument("--save_model_name", type=str, help="文件名", default="saved.ckt")
     parser.add_argument("--model_name_in_ckt", type=str, help="文件名", default="best_valid")
     # 测试配置
@@ -45,8 +45,7 @@ if __name__ == "__main__":
                         default="[0, 10, 100, 200]")
     # 偏差问题（习题偏差和学生偏差，测试模型对于正确率高（低）的序列中高（低）正确率习题的预测能力）
     # 需要[train_file]_statics_common.json文件
-    parser.add_argument("--previous_seq_len4bias", type=int, default=40)
-    parser.add_argument("--seq_most_accuracy4bias", type=float, default=0.2)
+
     # 习题偏差问题（论文：Do We Fully Understand Students’ Knowledge States? Identifying and Mitigating Answer Bias in Knowledge Tracing提出）
     # 长尾问题：需要[train_file]_statics_special.json文件
     # -------------------------------------------------------------------------------------------------------------------

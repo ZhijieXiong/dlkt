@@ -44,12 +44,25 @@ def aux_info_dct_general_config(local_params, global_params, global_objects):
     encoder_config["dropout"] = dropout
     encoder_config["max_que_disc"] = max_que_disc
 
+    # IPS
+    use_sample_weight = local_params["use_sample_weight"]
+    sample_weight_method = local_params["sample_weight_method"]
+    IPS_min = local_params["IPS_min"]
+    IPS_his_seq_len = local_params['IPS_his_seq_len']
+
+    global_params["use_sample_weight"] = use_sample_weight
+    global_params["sample_weight_method"] = sample_weight_method
+    global_params["IPS_min"] = IPS_min
+    global_params["IPS_his_seq_len"] = IPS_his_seq_len
+
     global_objects["logger"].info(
         f"model params\n    "
         f"num_concept: {num_concept}, num_question: {num_question}\n    "
         f"use_proj: {use_proj}, use_mean_pool4concept: {use_mean_pool4concept}, dim_emb: {dim_emb}, "
         f"dim_latent: {dim_latent}, rnn type: {rnn_type}, num of rnn layer: {num_rnn_layer}, "
-        f"num_mlp_layer: {num_mlp_layer}, dropout: {dropout}, max_que_disc: {max_que_disc}"
+        f"num_mlp_layer: {num_mlp_layer}, dropout: {dropout}, max_que_disc: {max_que_disc}\n"
+        f"IPS params\n    "
+        f"use IPS: {use_sample_weight}, IPS_min: {IPS_min}, IPS_his_seq_len: {IPS_his_seq_len}"
     )
 
     if local_params["save_model"]:

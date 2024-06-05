@@ -127,35 +127,30 @@ class Evaluator:
             f"overall performance is AUC: {AUC:<9.5}, ACC: {ACC:<9.5}, RMSE: {RMSE:<9.5}, MAE: {MAE:<9.5}\n"
         )
 
-        # correlation between history accuracy and predict score
-        window_lens = [20, 30, 40]
-        PPMCC = cal_PPMCC_his_cur_pred(result_all_batch, window_lens)
+        # correlation between history accuracy and model predict score
+        window_lens = [5, 10, 15, 20, 30, 40]
+        question2concept = self.objects["data"]["question2concept"]
+        PPMCC = cal_PPMCC_his_acc_and_cur_model_pred(result_all_batch, window_lens, question2concept)
         self.objects["logger"].info(
-            f"correlation (PPMCC) between history average accuracy and current predict score"
+            f"PPMCC between history average accuracy and current model predict score"
         )
         for window_len in window_lens:
             PPMCC_ = PPMCC[window_len]
             self.objects["logger"].info(
-                f"window length is {window_len}, "
-                f"PPMCC of all is {PPMCC_['all']:<9.5}, "
-                f"PPMCC of hard is {PPMCC_['hard']:<9.5}, "
-                f"PPMCC of easy is {PPMCC_['easy']:<9.5}"
+                f"window_len = {window_len}, "
+                f"PPMCC_his_acc_&_model_pred of all is {PPMCC_['all']:<9.5}, "
+                f"PPMCC_his_acc_&_model_pred of hard is {PPMCC_['hard']:<9.5}, "
+                f"PPMCC_his_acc_&_model_pred of easy is {PPMCC_['easy']:<9.5}"
             )
 
         # CORE evaluate (question bias)
         core_evaluation1 = evaluate_core(predict_score_all, ground_truth_all, np.concatenate(question_all, axis=0), True)
-        self.objects["logger"].info(
-            f"\nevaluation of CORE (allow replace)"
-        )
-        self.print_performance(
-            f"seq biased point: num of sample is {core_evaluation1['num_sample']:<9}, performance is ", core_evaluation1
-        )
         core_evaluation2 = evaluate_core(predict_score_all, ground_truth_all, np.concatenate(question_all, axis=0), False)
-        self.objects["logger"].info(
-            f"evaluation of CORE (disallow replace)"
+        self.print_performance(
+            f"\nCORE metric allow repeat ({core_evaluation1['num_sample']:<9}), performance is ", core_evaluation1
         )
         self.print_performance(
-            f"seq biased point: num of sample is {core_evaluation2['num_sample']:<9}, performance is ", core_evaluation2
+            f"CORE metric disallow repeat ({core_evaluation2['num_sample']:<9}), performance is ", core_evaluation2
         )
 
         # performance by seq len
@@ -170,53 +165,56 @@ class Evaluator:
                 p_label = [1 if _ >= 0.5 else 0 for _ in p]
                 answer_acc = g.sum() / len(g)
                 self.objects["logger"].info(
-                    f"({indices4len[i][0]:<3}, {indices4len[i][1]:<3}), num of samples is {g.size:<10}, "
-                    f"acc of answer is {answer_acc * 100:<4.3}% and performance is "
+                    f"({indices4len[i][0]:<3}, {indices4len[i][1]:<3}), num of samples: {g.size:<10}, "
+                    f"acc of answer: {answer_acc * 100:<4.3}%, performance is "
                     f"AUC: {roc_auc_score(y_true=g, y_score=p):<9.5}, "
                     f"ACC: {accuracy_score(g, p_label):<9.5}, "
                     f"RMSE: {mean_squared_error(y_true=g, y_pred=p) ** 0.5:<9.5}, "
                     f"MAE: {mean_absolute_error(y_true=g, y_pred=p):<9.5}"
                 )
 
-        # 测试集的偏差子集上的性能（简单、中等、困难样本）
+        # 测试集的偏差子集（第一种划分，用到了历史正确率和标签）上的性能（简单、中等、困难样本）
         if hasattr(model, "get_predict_score_seq_len_minus1"):
-            previous_seq_len4bias = fine_grain_config["previous_seq_len4bias"]
-            seq_most_accuracy4bias = fine_grain_config["seq_most_accuracy4bias"]
+            # self.objects["logger"].info("\nevaluation result from biased point (split method 1)")
+            # window_lens = [10, 20, 30]
+            # for window_len in window_lens:
+            #     easy_sample, hard_sample = get_hard_sample_point(result_all_batch, window_len, question2concept)
+            #     easy_AUC = roc_auc_score(y_true=easy_sample["ground_truth"], y_score=easy_sample["predict_score"])
+            #     easy_ACC = accuracy_score(y_true=easy_sample["ground_truth"], y_pred=easy_sample["predict_label"])
+            #     easy_MAE = mean_absolute_error(y_true=easy_sample["ground_truth"], y_pred=easy_sample["predict_score"])
+            #     easy_RMSE = mean_squared_error(y_true=easy_sample["ground_truth"], y_pred=easy_sample["predict_score"]) ** 0.5
+            #
+            #     hard_AUC = roc_auc_score(y_true=hard_sample["ground_truth"], y_score=hard_sample["predict_score"])
+            #     hard_ACC = accuracy_score(y_true=hard_sample["ground_truth"], y_pred=hard_sample["predict_label"])
+            #     hard_MAE = mean_absolute_error(y_true=hard_sample["ground_truth"], y_pred=hard_sample["predict_score"])
+            #     hard_RMSE = mean_squared_error(y_true=hard_sample["ground_truth"], y_pred=hard_sample["predict_score"]) ** 0.5
 
-            # easy and non-easy sample evaluation
-            seq_easy_point, non_seq_easy_point = \
-                get_seq_easy_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
-            result4seq_easy = evaluate_easy(seq_easy_point)
-            result4non_seq_easy = get_performance_no_error(non_seq_easy_point["predict_score"],
-                                                           non_seq_easy_point["predict_label"],
-                                                           non_seq_easy_point["ground_truth"])
-            self.objects["logger"].info(
-                f"\nperformance of seq easy point, param is previous_seq_len4easy: {previous_seq_len4bias}, "
-                f"seq_most_accuracy4easy: {seq_most_accuracy4bias}"
-            )
-            self.print_performance(
-                f"seq easy point: num of sample is {result4seq_easy['num_sample']:<9}, performance is ", result4seq_easy
-            )
+            self.objects["logger"].info("\nevaluation result from biased point (split method 2)")
+            previous_seq_lens = [20, 30, 40]
+            seq_most_acc = [0.4, 0.3, 0.2]
+            for previous_seq_len4bias, seq_most_accuracy4bias in zip(previous_seq_lens, seq_most_acc):
+                # easy and non-easy sample evaluation
+                seq_easy_point, non_seq_easy_point = \
+                    get_seq_easy_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
+                result4seq_easy = evaluate_easy(seq_easy_point)
+                result4non_seq_easy = get_performance_no_error(non_seq_easy_point["predict_score"],
+                                                               non_seq_easy_point["predict_label"],
+                                                               non_seq_easy_point["ground_truth"])
+                seq_biased_point = get_seq_biased_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
+                result4bias = evaluate_bias(seq_biased_point)
 
-            self.objects["logger"].info(
-                f"\nperformance of non seq easy point, param is previous_seq_len4easy: {previous_seq_len4bias}, "
-                f"seq_most_accuracy4easy: {seq_most_accuracy4bias}"
-            )
-            self.print_performance(
-                f"non seq easy point: num of sample is {result4non_seq_easy['num_sample']:<9}, performance is ",
-                result4non_seq_easy
-            )
-
-            # biased evaluation (hard sample evaluation)
-            seq_biased_point = get_seq_biased_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
-            result4bias = evaluate_bias(seq_biased_point)
-            self.objects["logger"].info(
-                f"\nperformance of seq bias point, param is previous_seq_len4bias: {previous_seq_len4bias}, "
-                f"seq_most_accuracy4bias: {seq_most_accuracy4bias}"
-            )
-            self.print_performance(
-                f"seq biased point: num of sample is {result4bias['num_sample']:<9}, performance is ", result4bias
-            )
+                self.print_performance(
+                    f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) seq easy point "
+                    f"({result4seq_easy['num_sample']:<9}), performance is ", result4seq_easy
+                )
+                self.print_performance(
+                    f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) non seq easy point "
+                    f"({result4non_seq_easy['num_sample']:<9}), performance is ", result4non_seq_easy
+                )
+                self.print_performance(
+                    f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) seq hard point "
+                    f"({result4bias['num_sample']:<9}), performance is ", result4bias
+                )
 
         # 不同频率知识点/习题的性能
         train_statics_common_path = fine_grain_config["train_statics_common_path"]
@@ -235,69 +233,51 @@ class Evaluator:
                 concept_acc_dict[int(c_id)] = c_acc
             train_statics_common["concept_acc"] = concept_acc_dict
 
-        most_accuracy4bias = fine_grain_config["seq_most_accuracy4bias"]
-        question_biased_point = get_question_biased_point(result_all_batch, train_statics_common, most_accuracy4bias)
-        # question easy sample evaluation (easy sample)
-        question_easy_point, non_question_easy_point = \
-            get_question_easy_point(result_all_batch, train_statics_common, most_accuracy4bias)
-        result4question_easy = evaluate_easy(question_easy_point)
-        result4non_question_easy = get_performance_no_error(non_question_easy_point["predict_score"],
-                                                            non_question_easy_point["predict_label"],
-                                                            non_question_easy_point["ground_truth"])
-        self.objects["logger"].info(
-            f"\nperformance of question easy point, param is most_accuracy4easy: {most_accuracy4bias}"
-        )
-        self.print_performance(
-            f"question easy point: num of sample is {result4question_easy['num_sample']:<9}, performance is ",
-            result4question_easy
-        )
+        most_acc = [0.4, 0.3, 0.2]
+        for most_accuracy4bias in most_acc:
+            question_easy_point, non_question_easy_point = \
+                get_question_easy_point(result_all_batch, train_statics_common, most_accuracy4bias)
+            result4question_easy = evaluate_easy(question_easy_point)
+            result4non_question_easy = get_performance_no_error(non_question_easy_point["predict_score"],
+                                                                non_question_easy_point["predict_label"],
+                                                                non_question_easy_point["ground_truth"])
+            question_biased_point = get_question_biased_point(result_all_batch, train_statics_common,
+                                                              most_accuracy4bias)
+            result4question_biased_bias = evaluate_bias(question_biased_point)
 
-        self.objects["logger"].info(
-            f"\nperformance of non question easy point, param is most_accuracy4easy: {most_accuracy4bias}"
-        )
-        self.print_performance(
-            f"non question easy point: num of sample is {result4non_question_easy['num_sample']:<9}, performance is ",
-            result4non_question_easy
-        )
-
-        # question biased evaluation (hard sample)
-        result4question_biased_bias = evaluate_bias(question_biased_point)
-        self.objects["logger"].info(
-            f"\nperformance of question bias point, param is most_accuracy4bias: {most_accuracy4bias}"
-        )
-        self.print_performance(
-            f"question biased point: num of sample is {result4question_biased_bias['num_sample']:<9}, performance is ",
-            result4question_biased_bias
-        )
+            self.print_performance(
+                f"({most_accuracy4bias},   ) question easy point ({result4question_easy['num_sample']:<9}), "
+                f"performance is ", result4question_easy
+            )
+            self.print_performance(
+                f"({most_accuracy4bias},   ) non question easy point ({result4non_question_easy['num_sample']:<9}), "
+                f"performance is ", result4non_question_easy
+            )
+            self.print_performance(
+                f"({most_accuracy4bias},   ) question hard point ({result4question_biased_bias['num_sample']:<9}), "
+                f"performance is ", result4question_biased_bias
+            )
 
         if hasattr(model, "get_predict_score_seq_len_minus1"):
-            previous_seq_len4bias = fine_grain_config["previous_seq_len4bias"]
-            seq_most_accuracy4bias = fine_grain_config["seq_most_accuracy4bias"]
+            previous_seq_lens = [20, 30, 40]
+            seq_most_acc = [0.4, 0.3, 0.2]
+            for previous_seq_len4bias, seq_most_accuracy4bias in zip(previous_seq_lens, seq_most_acc):
+                # double easy sample evaluation (most easy sample)
+                seq_easy_point, non_seq_easy_point = \
+                    get_seq_easy_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
+                result4double_easy = evaluate_double_easy(seq_easy_point, train_statics_common, seq_most_accuracy4bias)
+                seq_biased_point = get_seq_biased_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
+                result4double_bias = evaluate_double_bias(seq_biased_point, train_statics_common,
+                                                          seq_most_accuracy4bias)
 
-            # double easy sample evaluation (most easy sample)
-            seq_easy_point, non_seq_easy_point = \
-                get_seq_easy_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
-            result4double_easy = evaluate_double_easy(seq_easy_point, train_statics_common, seq_most_accuracy4bias)
-            self.objects["logger"].info(
-                f"\nperformance of double easy (seq and question easy) point, param is previous_seq_len4easy: "
-                f"{previous_seq_len4bias}, seq_most_accuracy4easy: {seq_most_accuracy4bias}"
-            )
-            self.print_performance(
-                f"double easy point: num of sample is {result4double_easy['num_sample']:<9}, performance is ",
-                result4double_easy
-            )
-
-            # double biased evaluation (most hard sample)
-            seq_biased_point = get_seq_biased_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
-            result4double_bias = evaluate_double_bias(seq_biased_point, train_statics_common, seq_most_accuracy4bias)
-            self.objects["logger"].info(
-                f"\nperformance of double bias (seq and question bias) point, param is previous_seq_len4bias: "
-                f"{previous_seq_len4bias}, seq_most_accuracy4bias: {seq_most_accuracy4bias}"
-            )
-            self.print_performance(
-                f"double biased point: num of sample is {result4double_bias['num_sample']:<9}, performance is ",
-                result4double_bias
-            )
+                self.print_performance(
+                    f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) double easy point "
+                    f"({result4double_easy['num_sample']:<9}), performance is ", result4double_easy
+                )
+                self.print_performance(
+                    f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) double hard point "
+                    f"({result4double_bias['num_sample']:<9}), performance is ", result4double_bias
+                )
 
         # 高|中|低频习题|知识点的性能；高|中|低正确率习题|知识点的性能
         train_statics_special_path = fine_grain_config["train_statics_special_path"]
@@ -331,22 +311,20 @@ class Evaluator:
         result4statics['question_middle_acc'] = get_performance(train_statics_special['question_middle_acc'], all_question_dis)
         result4statics['question_high_acc'] = get_performance(train_statics_special['question_high_acc'], all_question_dis)
 
-        self.objects["logger"].info(f"evaluation based on question frequency")
-        self.print_performance(f"zero shot ({result4statics['question_zero_fre']['num_sample']:<9} samples), ",
+        self.print_performance(f"question zero shot ({result4statics['question_zero_fre']['num_sample']:<9} samples), ",
                                result4statics['question_zero_fre'])
-        self.print_performance(f"low frequency ({result4statics['question_low_fre']['num_sample']:<9} samples), ",
+        self.print_performance(f"question low frequency ({result4statics['question_low_fre']['num_sample']:<9} samples), ",
                                result4statics['question_low_fre'])
-        self.print_performance(f"middle frequency ({result4statics['question_middle_fre']['num_sample']:<9} samples), ",
+        self.print_performance(f"question middle frequency ({result4statics['question_middle_fre']['num_sample']:<9} samples), ",
                                result4statics['question_middle_fre'])
-        self.print_performance(f"high frequency ({result4statics['question_high_fre']['num_sample']:<9} samples), ",
+        self.print_performance(f"question high frequency ({result4statics['question_high_fre']['num_sample']:<9} samples), ",
                                result4statics['question_high_fre'])
 
-        self.objects["logger"].info(f"evaluation based on question accuracy")
-        self.print_performance(f"low accuracy ({result4statics['question_low_acc']['num_sample']:<9} samples), ",
+        self.print_performance(f"question low accuracy ({result4statics['question_low_acc']['num_sample']:<9} samples), ",
                                result4statics['question_low_acc'])
-        self.print_performance(f"middle accuracy ({result4statics['question_middle_acc']['num_sample']:<9} samples), ",
+        self.print_performance(f"question middle accuracy ({result4statics['question_middle_acc']['num_sample']:<9} samples), ",
                                result4statics['question_middle_acc'])
-        self.print_performance(f"high accuracy ({result4statics['question_high_acc']['num_sample']:<9} samples), ",
+        self.print_performance(f"question high accuracy ({result4statics['question_high_acc']['num_sample']:<9} samples), ",
                                result4statics['question_high_acc'])
 
         if data_type != "only_question":
@@ -361,20 +339,18 @@ class Evaluator:
             result4statics['concept_middle_acc'] = get_performance(train_statics_special['concept_middle_acc'], all_concept_dis)
             result4statics['concept_high_acc'] = get_performance(train_statics_special['concept_high_acc'], all_concept_dis)
 
-            self.objects["logger"].info(f"evaluation based on concept frequency")
-            self.print_performance(f"low frequency ({result4statics['concept_low_fre']['num_sample']:<9} samples), ",
+            self.print_performance(f"concept low frequency ({result4statics['concept_low_fre']['num_sample']:<9} samples), ",
                                    result4statics['concept_low_fre'])
-            self.print_performance(f"middle frequency ({result4statics['concept_middle_fre']['num_sample']:<9} samples), ",
+            self.print_performance(f"concept middle frequency ({result4statics['concept_middle_fre']['num_sample']:<9} samples), ",
                                    result4statics['concept_middle_fre'])
-            self.print_performance(f"high frequency ({result4statics['concept_high_fre']['num_sample']:<9} samples), ",
+            self.print_performance(f"concept high frequency ({result4statics['concept_high_fre']['num_sample']:<9} samples), ",
                                    result4statics['concept_high_fre'])
 
-            self.objects["logger"].info(f"evaluation based on concept accuracy")
-            self.print_performance(f"low accuracy ({result4statics['concept_low_acc']['num_sample']:<9} samples), ",
+            self.print_performance(f"concept low accuracy ({result4statics['concept_low_acc']['num_sample']:<9} samples), ",
                                    result4statics['concept_low_acc'])
-            self.print_performance(f"middle accuracy ({result4statics['concept_middle_acc']['num_sample']:<9} samples), ",
+            self.print_performance(f"concept middle accuracy ({result4statics['concept_middle_acc']['num_sample']:<9} samples), ",
                                    result4statics['concept_middle_acc'])
-            self.print_performance(f"high accuracy ({result4statics['concept_high_acc']['num_sample']:<9} samples), ",
+            self.print_performance(f"concept high accuracy ({result4statics['concept_high_acc']['num_sample']:<9} samples), ",
                                    result4statics['concept_high_acc'])
 
             # 同时考虑习题和知识点
@@ -390,16 +366,14 @@ class Evaluator:
             result4statics['qc_high_acc'] = get_performance_qc(train_statics_special['question_high_acc'],
                                                                train_statics_special['concept_high_acc'], all_qc_dis)
 
-            self.objects["logger"].info(f"evaluation based on question & concept frequency")
-            self.print_performance(f"low frequency ({result4statics['qc_low_fre']['num_sample']:<9} samples), ",
+            self.print_performance(f"qc low frequency ({result4statics['qc_low_fre']['num_sample']:<9} samples), ",
                                    result4statics['qc_low_fre'])
-            self.print_performance(f"high frequency ({result4statics['qc_high_fre']['num_sample']:<9} samples), ",
+            self.print_performance(f"qc high frequency ({result4statics['qc_high_fre']['num_sample']:<9} samples), ",
                                    result4statics['qc_high_fre'])
 
-            self.objects["logger"].info(f"evaluation based on question & concept accuracy")
-            self.print_performance(f"low accuracy ({result4statics['qc_low_acc']['num_sample']:<9} samples), ",
+            self.print_performance(f"qc low accuracy ({result4statics['qc_low_acc']['num_sample']:<9} samples), ",
                                    result4statics['qc_low_acc'])
-            self.print_performance(f"high accuracy ({result4statics['qc_high_acc']['num_sample']:<9} samples), ",
+            self.print_performance(f"qc high accuracy ({result4statics['qc_high_acc']['num_sample']:<9} samples), ",
                                    result4statics['qc_high_acc'])
 
     def print_performance(self, prefix, performance_dict):

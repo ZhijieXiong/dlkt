@@ -70,6 +70,11 @@ if __name__ == "__main__":
     parser.add_argument("--w_counter_fact", type=float, default=0)
     parser.add_argument("--w_learning", type=float, default=0)
     parser.add_argument("--w_penalty_neg", type=float, default=0)
+    # IPS
+    parser.add_argument("--use_sample_weight", type=str2bool, default=False)
+    parser.add_argument("--sample_weight_method", type=str, default="IPS")
+    parser.add_argument("--IPS_min", type=float, default=0.9)
+    parser.add_argument("--IPS_his_seq_len", type=int, default=20)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

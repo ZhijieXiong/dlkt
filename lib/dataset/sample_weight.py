@@ -31,3 +31,33 @@ def highlight_tail(w, question_seq, train_statics, seq_len, max_seq_len):
     w_seq += [1] * (max_seq_len - len(w_seq))
 
     return w_seq
+
+
+def IPS_weight(item_data, question2concept, IPS_min, IPS_his_seq_len):
+    question_seq = item_data["question_seq"]
+    concept_context = list(map(lambda q: question2concept[q], question_seq))
+    correct_seq = item_data["correct_seq"]
+    max_seq_len = len(question_seq)
+    seq_len = item_data["seq_len"]
+
+    if seq_len <= IPS_his_seq_len:
+        return [1.0] * seq_len + [0.] * (max_seq_len - seq_len)
+
+    weight_seq = [1.0] * IPS_his_seq_len
+    for i in range(IPS_his_seq_len, seq_len):
+        correct_context = correct_seq[i-IPS_his_seq_len:i]
+        context_concepts = set([c_id for c_ids in concept_context[i - IPS_his_seq_len:i] for c_id in c_ids])
+        current_concept = set([c_id for c_id in concept_context[i]])
+
+        seq_accuracy = sum(correct_context) / IPS_his_seq_len
+
+        if (bool(context_concepts & current_concept)) or (0.4 <= seq_accuracy <= 0.6):
+            weight = 1.0
+        else:
+            acc_abs_diff = ((seq_accuracy - 0.6) if (seq_accuracy > 0.6) else (0.4 - seq_accuracy)) + 0.1
+            weight = 1.0 - ((1.0 - IPS_min) / 5 * (acc_abs_diff // 0.1))
+
+        weight_seq.append(weight)
+    weight_seq += [0] * (max_seq_len - seq_len)
+
+    return weight_seq

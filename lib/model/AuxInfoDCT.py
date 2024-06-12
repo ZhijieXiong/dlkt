@@ -244,6 +244,8 @@ class AuxInfoDCT(nn.Module):
         concept_emb = self.get_concept_emb(batch)
         correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_emb).reshape(batch_size, -1, dim_emb)
         interaction_emb = torch.cat((question_emb[:, :-1], concept_emb[:, :-1], correct_emb[:, :-1]), dim=2)
+        cf_correct_emb = (1 - correct_seq).reshape(-1, 1).repeat(1, dim_emb).reshape(batch_size, seq_len, -1)
+        cf_interaction_emb = torch.cat((question_emb[:, :-1], concept_emb[:, :-1], cf_correct_emb[:, :-1]), dim=2)
 
         if (self.has_use_time or self.has_num_hint or self.has_num_attempt) and self.has_time:
             if self.has_use_time:
@@ -265,11 +267,15 @@ class AuxInfoDCT(nn.Module):
             encoder_input = torch.cat(
                 (interaction_emb, interval_time_emb[:, :-1], ut_nh_na_emb[:, :-1]), dim=-1
             )
+            cf_encoder_input = torch.cat(
+                (cf_interaction_emb, interval_time_emb[:, :-1], ut_nh_na_emb[:, :-1]), dim=-1
+            )
 
         elif (self.has_use_time or self.has_num_hint or self.has_num_attempt) or self.has_time:
             if self.has_time:
                 interval_time_emb = self.embed_interval_time(batch["interval_time_seq"])
                 encoder_input = torch.cat((interaction_emb, interval_time_emb[:, :-1]), dim=-1)
+                cf_encoder_input = torch.cat((cf_interaction_emb, interval_time_emb[:, :-1]), dim=-1)
             else:
                 if self.has_use_time:
                     use_time_emb = self.embed_use_time(batch["use_time_seq"])
@@ -286,18 +292,17 @@ class AuxInfoDCT(nn.Module):
                 ut_nh_na_emb = torch.cat((use_time_emb, num_hint_emb, num_attempt_emb), dim=-1)
                 ut_nh_na_emb = self.fuse_ut_nh_na(ut_nh_na_emb)
                 encoder_input = torch.cat((interaction_emb, ut_nh_na_emb[:, :-1]), dim=-1)
+                cf_encoder_input = torch.cat((cf_interaction_emb, ut_nh_na_emb[:, :-1]), dim=-1)
 
         else:
             encoder_input = interaction_emb
+            cf_encoder_input = cf_interaction_emb
 
         # cf: counterfactual
         cf_user_ability = torch.zeros(batch_size, seq_len - 1, num_concept).to(self.params["device"])
         if (not multi_stage) and (w_counter_fact != 0):
             # 如果使用反事实约束，为了获取RNN每个时刻的hidden state，只能这么写
-            # todo: 这里的代码可能有问题
             latent = torch.zeros(batch_size, seq_len - 1, dim_latent).to(self.params["device"])
-            cf_correct_emb = (1 - correct_seq).reshape(-1, 1).repeat(1, dim_emb).reshape(batch_size, seq_len, -1)
-            cf_interaction_emb = torch.cat((question_emb, cf_correct_emb), dim=2)
             # GRU 官方代码初始化h为0向量
             rnn_h_current = torch.zeros(
                 num_rnn_layer, batch_size, dim_latent, dtype=encoder_input.dtype
@@ -307,7 +312,7 @@ class AuxInfoDCT(nn.Module):
                 latent_current, rnn_h_next = self.encoder_layer(input_current, rnn_h_current)
                 latent[:, t] = latent_current.squeeze(1)
 
-                cf_input_current = cf_interaction_emb[:, t].unsqueeze(1)
+                cf_input_current = cf_encoder_input[:, t].unsqueeze(1)
                 cf_latent, _ = self.encoder_layer(cf_input_current, rnn_h_current)
                 cf_user_ability[:, t] = torch.sigmoid(self.latent2ability(self.dropout(cf_latent.squeeze(1))))
                 rnn_h_current = rnn_h_next
@@ -385,7 +390,11 @@ class AuxInfoDCT(nn.Module):
 
         if (not multi_stage) and (w_counter_fact != 0):
             # 反事实约束：做对一道题比做错一道题的学习增长大
-            f_minus_cf = torch.gather(user_ability - cf_user_ability, 2, q2c_table[:, :-1])
+            cf_user_ability_change = user_ability - cf_user_ability
+            if data_type != "single_concept":
+                learn_loss_weight = self.objects["data"]["loss_weight1"]
+                cf_user_ability_change = cf_user_ability_change * learn_loss_weight[question_seq[:, :-1]].unsqueeze(-1)
+            f_minus_cf = torch.gather(cf_user_ability_change, 2, q2c_table[:, :-1])
             correct_seq1 = batch["correct_seq"][:, :-1].bool()
             correct_seq2 = (1 - batch["correct_seq"][:, :-1]).bool()
             mask4correct = mask_bool_seq[:, :-1].unsqueeze(-1) & correct_seq1.unsqueeze(-1) & q2c_mask_table[:, :-1].bool()

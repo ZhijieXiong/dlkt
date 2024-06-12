@@ -1,3 +1,6 @@
+import math
+
+
 def discount(correct_seq, seq_len, max_seq_len):
     # 生成weight seq
     w_seq = [1]
@@ -51,11 +54,10 @@ def IPS_weight(item_data, question2concept, IPS_min, IPS_his_seq_len):
 
         seq_accuracy = sum(correct_context) / IPS_his_seq_len
 
-        if (bool(context_concepts & current_concept)) or (0.4 <= seq_accuracy <= 0.6):
+        if bool(context_concepts & current_concept):
             weight = 1.0
         else:
-            acc_abs_diff = ((seq_accuracy - 0.6) if (seq_accuracy > 0.6) else (0.4 - seq_accuracy)) + 0.1
-            weight = 1.0 - ((1.0 - IPS_min) / 5 * (acc_abs_diff // 0.1))
+            weight = IPS_min + math.fabs(seq_accuracy - 0.5) * (1 - IPS_min) / 0.5
 
         weight_seq.append(weight)
     weight_seq += [0] * (max_seq_len - seq_len)

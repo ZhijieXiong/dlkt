@@ -55,14 +55,19 @@ if __name__ == "__main__":
     parser.add_argument("--num_concept", type=int, default=123)
     parser.add_argument("--num_question", type=int, default=17751)
     parser.add_argument("--dim_question", type=int, default=64)
-    parser.add_argument("--dim_latent", type=int, default=128)
+    parser.add_argument("--dim_latent", type=int, default=64)
     parser.add_argument("--rnn_type", type=str, default="gru",
                         choices=("rnn", "lstm", "gru"))
     parser.add_argument("--num_rnn_layer", type=int, default=1)
     parser.add_argument("--dropout", type=float, default=0.3)
-    parser.add_argument("--num_predict_layer", type=int, default=2)
-    parser.add_argument("--dim_predict_mid", type=int, default=128)
+    parser.add_argument("--num_predict_layer", type=int, default=1)
+    parser.add_argument("--dim_predict_mid", type=int, default=64)
     parser.add_argument("--activate_type", type=str, default="relu")
+    # IPS
+    parser.add_argument("--use_sample_weight", type=str2bool, default=False)
+    parser.add_argument("--sample_weight_method", type=str, default="IPS")
+    parser.add_argument("--IPS_min", type=float, default=0.9)
+    parser.add_argument("--IPS_his_seq_len", type=int, default=20)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

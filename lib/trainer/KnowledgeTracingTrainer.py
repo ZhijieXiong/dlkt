@@ -9,7 +9,7 @@ from .util import *
 from ..util.basic import *
 from .LossRecord import *
 from .TrainRecord import *
-from ..evaluator.util import get_seq_easy_point, get_seq_biased_point, get_performance_no_error, evaluate_easy, evaluate_bias
+from ..evaluator.util import get_seq_easy_point, get_seq_biased_point, get_performance_no_error, evaluate_easy, evaluate_bias, get_seq_fine_grained_performance
 from ..CONSTANT import MODEL_USE_QC
 
 
@@ -159,32 +159,41 @@ class KnowledgeTracingTrainer:
             return
 
         if hasattr(model, "get_predict_score_seq_len_minus1"):
-            seq_lens = [20, 30, 40]
-            most_acc_list = [0.4, 0.3, 0.2]
+            # self.objects["logger"].info("\nevaluation result from biased point (method2)")
+            # previous_seq_lens = [10, 15, 20]
+            # seq_most_acc = [0.4, 0.3]
+            # for previous_seq_len4bias in previous_seq_lens:
+            #     for seq_most_accuracy4bias in seq_most_acc:
+            #         result_performance = get_seq_easy_hard_performance(
+            #             result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias
+            #         )
+            #         self.print_performance(
+            #             f"({previous_seq_len4bias}, {seq_most_accuracy4bias}), {valid_or_test} seq easy point "
+            #             f"({result_performance['easy']['num_sample']:<9}), performance is ", result_performance['easy']
+            #         )
+            #         self.print_performance(
+            #             f"({previous_seq_len4bias}, {seq_most_accuracy4bias}), {valid_or_test} seq hard point "
+            #             f"({result_performance['hard']['num_sample']:<9}), performance is ", result_performance['hard']
+            #         )
 
+            seq_lens = [10, 20]
+            most_acc_list = [0.4, 0.4]
             for previous_seq_len4bias, seq_most_accuracy4bias in zip(seq_lens, most_acc_list):
-                seq_easy_point, non_seq_easy_point = \
-                    get_seq_easy_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
-                result4seq_easy = evaluate_easy(seq_easy_point)
-                result4non_seq_easy = get_performance_no_error(non_seq_easy_point["predict_score"],
-                                                               non_seq_easy_point["predict_label"],
-                                                               non_seq_easy_point["ground_truth"])
-                seq_biased_point = get_seq_biased_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
-                result4bias = evaluate_bias(seq_biased_point)
-
-                params_str = f"({previous_seq_len4bias}, {seq_most_accuracy4bias})"
-                self.objects["logger"].info(
-                    f"seq bias params: {params_str}, "
-                    f"num of seq easy sample: {result4seq_easy['num_sample']:<9}, "
-                    f"num of non seq easy sample: {result4non_seq_easy['num_sample']:<9}, "
-                    f"num of seq biased sample: {result4bias['num_sample']:<9}"
+                seq_fine_grained_performance = get_seq_fine_grained_performance(
+                    result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias
                 )
-                self.print_performance(f"\t{valid_or_test} performance of seq easy samples ({params_str}) is ",
-                                       result4seq_easy)
-                self.print_performance(f"\t{valid_or_test} performance of non seq easy samples ({params_str}) is ",
-                                       result4non_seq_easy)
-                self.print_performance(f"\t{valid_or_test} performance of seq biased samples ({params_str}) is ",
-                                       result4bias)
+                self.print_performance(
+                    f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) {valid_or_test} seq easy point, "
+                    f"performance is ", seq_fine_grained_performance['easy']
+                )
+                self.print_performance(
+                    f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) {valid_or_test} seq normal point, "
+                    f"performance is ", seq_fine_grained_performance['normal']
+                )
+                self.print_performance(
+                    f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) {valid_or_test} seq hard point, "
+                    f"performance is ", seq_fine_grained_performance['hard']
+                )
 
     def evaluate(self):
         train_strategy = self.params["train_strategy"]

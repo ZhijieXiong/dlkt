@@ -67,12 +67,6 @@ def config(local_params):
     train_statics_special_path = local_params["train_statics_special_path"]
     max_seq_len = local_params["max_seq_len"]
     seq_len_absolute = local_params["seq_len_absolute"]
-    previous_seq_len4bias = local_params["previous_seq_len4bias"]
-    if previous_seq_len4bias < 5:
-        global_objects["logger"].info("previous_seq_len4bias must > 0, and suggest > 5")
-    seq_most_accuracy4bias = local_params["seq_most_accuracy4bias"]
-    if seq_most_accuracy4bias >= 0.5:
-        global_objects["logger"].info("seq_most_accuracy4bias must < 0.5")
 
     global_params["evaluate"] = {"fine_grain": {}}
     fine_grain_config = global_params["evaluate"]["fine_grain"]
@@ -80,8 +74,6 @@ def config(local_params):
     fine_grain_config["seq_len_absolute"] = eval(seq_len_absolute)
     fine_grain_config["train_statics_common_path"] = train_statics_common_path
     fine_grain_config["train_statics_special_path"] = train_statics_special_path
-    fine_grain_config["previous_seq_len4bias"] = previous_seq_len4bias
-    fine_grain_config["seq_most_accuracy4bias"] = seq_most_accuracy4bias
 
     # Q_table
     dataset_name = local_params["dataset_name"]
@@ -148,9 +140,6 @@ if __name__ == "__main__":
     parser.add_argument("--seq_len_absolute", type=str, help="[0, 10, 200]表示测试模型对位于序列0~10区间的点的性能以及10~200区间点的性能",
                         default="[0, 10, 100, 200]")
     # 偏差问题（习题偏差和学生偏差，测试模型对于正确率高（低）的序列中高（低）正确率习题的预测能力），需要配合statics_file_path使用
-    parser.add_argument("--previous_seq_len4bias", type=int, default=20)
-    parser.add_argument("--seq_most_accuracy4bias", type=float, default=0.4)
-
     # 习题偏差问题（论文：Do We Fully Understand Students’ Knowledge States? Identifying and Mitigating Answer Bias in Knowledge Tracing提出）
     # 该测试无需配置
 

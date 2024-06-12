@@ -87,21 +87,21 @@ def get_seq_biased_point(all_batch, previous_seq_len, seq_most_accuracy):
         zip_iter = zip(batch["question_seqs"], batch["label_seqs"], batch["predict_score_seqs"], batch["mask_seqs"])
         for question_seq, label_seq, predict_score_seq, mask_seq in zip_iter:
             for i, m in enumerate(mask_seq[previous_seq_len:]):
-                i += previous_seq_len
+                j = i + previous_seq_len
                 if m == 0:
                     break
 
-                context_labels = label_seq[i-previous_seq_len:i]
+                context_labels = label_seq[j-previous_seq_len:j]
                 context_accuracy = sum(context_labels) / len(context_labels)
 
-                if (context_accuracy <= seq_most_accuracy) and (label_seq[i] == 1):
-                    result["low_acc_but_right"]["question"].append(question_seq[i])
-                    result["low_acc_but_right"]["predict_score"].append(predict_score_seq[i])
-                    result["low_acc_but_right"]["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
-                elif (context_accuracy >= (1 - seq_most_accuracy)) and (label_seq[i] == 0):
-                    result["high_acc_but_wrong"]["question"].append(question_seq[i])
-                    result["high_acc_but_wrong"]["predict_score"].append(predict_score_seq[i])
-                    result["high_acc_but_wrong"]["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
+                if (context_accuracy <= seq_most_accuracy) and (label_seq[j] == 1):
+                    result["low_acc_but_right"]["question"].append(question_seq[j])
+                    result["low_acc_but_right"]["predict_score"].append(predict_score_seq[j])
+                    result["low_acc_but_right"]["predict_label"].append(1 if (predict_score_seq[j] > 0.5) else 0)
+                elif (context_accuracy >= (1 - seq_most_accuracy)) and (label_seq[j] == 0):
+                    result["high_acc_but_wrong"]["question"].append(question_seq[j])
+                    result["high_acc_but_wrong"]["predict_score"].append(predict_score_seq[j])
+                    result["high_acc_but_wrong"]["predict_label"].append(1 if (predict_score_seq[j] > 0.5) else 0)
                 else:
                     pass
 
@@ -275,46 +275,114 @@ def get_seq_easy_point(all_batch, previous_seq_len, seq_most_accuracy):
                 non_seq_easy["ground_truth"].append(label_seq[i])
 
             for i, m in enumerate(mask_seq[previous_seq_len:]):
-                i += previous_seq_len
+                j = i + previous_seq_len
                 if m == 0:
                     break
 
-                context_label = label_seq[i-previous_seq_len:i]
+                context_label = label_seq[j-previous_seq_len:j]
                 context_accuracy = sum(context_label) / len(context_label)
 
-                if (context_accuracy <= seq_most_accuracy) and (label_seq[i] == 0):
-                    result["low_acc_and_wrong"]["question"].append(question_seq[i])
-                    result["low_acc_and_wrong"]["predict_score"].append(predict_score_seq[i])
-                    result["low_acc_and_wrong"]["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
-                elif (context_accuracy >= (1 - seq_most_accuracy)) and (label_seq[i] == 1):
-                    result["high_acc_and_right"]["question"].append(question_seq[i])
-                    result["high_acc_and_right"]["predict_score"].append(predict_score_seq[i])
-                    result["high_acc_and_right"]["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
+                if (context_accuracy < seq_most_accuracy) and (label_seq[j] == 0):
+                    result["low_acc_and_wrong"]["question"].append(question_seq[j])
+                    result["low_acc_and_wrong"]["predict_score"].append(predict_score_seq[j])
+                    result["low_acc_and_wrong"]["predict_label"].append(1 if (predict_score_seq[j] > 0.5) else 0)
+                elif (context_accuracy > (1 - seq_most_accuracy)) and (label_seq[j] == 1):
+                    result["high_acc_and_right"]["question"].append(question_seq[j])
+                    result["high_acc_and_right"]["predict_score"].append(predict_score_seq[j])
+                    result["high_acc_and_right"]["predict_label"].append(1 if (predict_score_seq[j] > 0.5) else 0)
                 else:
-                    non_seq_easy["predict_score"].append(predict_score_seq[i])
-                    non_seq_easy["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
-                    non_seq_easy["ground_truth"].append(label_seq[i])
+                    non_seq_easy["predict_score"].append(predict_score_seq[j])
+                    non_seq_easy["predict_label"].append(1 if (predict_score_seq[j] > 0.5) else 0)
+                    non_seq_easy["ground_truth"].append(label_seq[j])
 
     return result, non_seq_easy
 
 
-def get_hard_sample_point(all_batch, previous_seq_len, question2concept):
+def get_num_seq_fine_grained_point(all_batch, previous_seq_len, seq_most_accuracy):
     """
-    返回每条序列中满足以下条件的点：\n
-    该点的context seq（上下文窗口长度最大为previous_seq_len）不包含和当前习题相关的练习记录，为hard样本，反正为easy样本
     :param all_batch:
     :param previous_seq_len:
-    :param question2concept:
+    :param seq_most_accuracy:
     :return:
     """
-    easy_sample = {
-        "question": [],
+    num_easy = 0
+    num_normal = 0
+    num_hard = 0
+    num_cold_start = 0
+    num_warm_started = 0
+    for batch in all_batch:
+        zip_iter = zip(batch["question_seqs"], batch["label_seqs"], batch["mask_seqs"])
+        for question_seq, label_seq, mask_seq in zip_iter:
+            for i, m in enumerate(mask_seq[:previous_seq_len]):
+                if m == 0:
+                    break
+                num_cold_start += 1
+
+            for i, m in enumerate(mask_seq[previous_seq_len:]):
+                j = i + previous_seq_len
+                if m == 0:
+                    break
+
+                num_warm_started += 1
+
+                context_label = label_seq[j-previous_seq_len:j]
+                context_accuracy = sum(context_label) / len(context_label)
+
+                if seq_most_accuracy <= context_accuracy <= (1 - seq_most_accuracy):
+                    num_normal += 1
+                elif ((context_accuracy > (1 - seq_most_accuracy)) and (label_seq[j] == 0)) or \
+                        ((context_accuracy < seq_most_accuracy) and (label_seq[j] == 1)):
+                    num_hard += 1
+                elif ((context_accuracy > (1 - seq_most_accuracy)) and (label_seq[j] == 1)) or \
+                        ((context_accuracy < seq_most_accuracy) and (label_seq[j] == 0)):
+                    num_easy += 1
+
+    return num_easy, num_normal, num_hard, num_cold_start, num_warm_started
+
+
+def get_seq_fine_grained_performance(all_batch, previous_seq_len, seq_most_accuracy):
+    """
+    :param all_batch:
+    :param previous_seq_len:
+    :param seq_most_accuracy:
+    :return:
+    """
+    seq_easy = {
         "predict_score": [],
         "predict_label": [],
         "ground_truth": []
     }
-    hard_sample = {
-        "question": [],
+    seq_normal = {
+        "predict_score": [],
+        "predict_label": [],
+        "ground_truth": []
+    }
+    seq_hard = {
+        "predict_score": [],
+        "predict_label": [],
+        "ground_truth": []
+    }
+    cold_start = {
+        "predict_score": [],
+        "predict_label": [],
+        "ground_truth": []
+    }
+    cold_start_and_normal = {
+        "predict_score": [],
+        "predict_label": [],
+        "ground_truth": []
+    }
+    seq_normal_and_hard = {
+        "predict_score": [],
+        "predict_label": [],
+        "ground_truth": []
+    }
+    cold_start_and_normal_and_hard = {
+        "predict_score": [],
+        "predict_label": [],
+        "ground_truth": []
+    }
+    warm_started = {
         "predict_score": [],
         "predict_label": [],
         "ground_truth": []
@@ -322,27 +390,92 @@ def get_hard_sample_point(all_batch, previous_seq_len, question2concept):
     for batch in all_batch:
         zip_iter = zip(batch["question_seqs"], batch["label_seqs"], batch["predict_score_seqs"], batch["mask_seqs"])
         for question_seq, label_seq, predict_score_seq, mask_seq in zip_iter:
-            concept_context = list(map(lambda q: question2concept[q], question_seq))
-            for i, m in enumerate(mask_seq[1:]):
+            for i, m in enumerate(mask_seq[:previous_seq_len]):
                 if m == 0:
                     break
-                i += 1
-                start_i = max(0, i - previous_seq_len)
-                context_concepts = set([c_id for c_ids in concept_context[start_i:i] for c_id in c_ids])
-                current_concept = set([c_id for c_id in concept_context[i]])
+                cold_start["predict_score"].append(predict_score_seq[i])
+                cold_start["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
+                cold_start["ground_truth"].append(label_seq[i])
+                cold_start_and_normal["predict_score"].append(predict_score_seq[i])
+                cold_start_and_normal["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
+                cold_start_and_normal["ground_truth"].append(label_seq[i])
+                cold_start_and_normal_and_hard["predict_score"].append(predict_score_seq[i])
+                cold_start_and_normal_and_hard["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
+                cold_start_and_normal_and_hard["ground_truth"].append(label_seq[i])
 
-                if not bool(context_concepts & current_concept):
-                    hard_sample["question"].append(question_seq[i])
-                    hard_sample["predict_score"].append(predict_score_seq[i])
-                    hard_sample["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
-                    hard_sample["ground_truth"].append(label_seq[i])
-                else:
-                    easy_sample["question"].append(question_seq[i])
-                    easy_sample["predict_score"].append(predict_score_seq[i])
-                    easy_sample["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
-                    easy_sample["ground_truth"].append(label_seq[i])
+            for i, m in enumerate(mask_seq[previous_seq_len:]):
+                j = i + previous_seq_len
+                if m == 0:
+                    break
 
-    return easy_sample, hard_sample
+                warm_started["predict_score"].append(predict_score_seq[j])
+                warm_started["predict_label"].append(1 if (predict_score_seq[j] > 0.5) else 0)
+                warm_started["ground_truth"].append(label_seq[j])
+
+                context_label = label_seq[j-previous_seq_len:j]
+                context_accuracy = sum(context_label) / len(context_label)
+
+                if seq_most_accuracy <= context_accuracy <= (1 - seq_most_accuracy):
+                    seq_normal["predict_score"].append(predict_score_seq[j])
+                    seq_normal["predict_label"].append(1 if (predict_score_seq[j] > 0.5) else 0)
+                    seq_normal["ground_truth"].append(label_seq[j])
+                    seq_normal_and_hard["predict_score"].append(predict_score_seq[j])
+                    seq_normal_and_hard["predict_label"].append(1 if (predict_score_seq[j] > 0.5) else 0)
+                    seq_normal_and_hard["ground_truth"].append(label_seq[j])
+                    cold_start_and_normal["predict_score"].append(predict_score_seq[j])
+                    cold_start_and_normal["predict_label"].append(1 if (predict_score_seq[j] > 0.5) else 0)
+                    cold_start_and_normal["ground_truth"].append(label_seq[j])
+                elif ((context_accuracy > (1 - seq_most_accuracy)) and (label_seq[j] == 0)) or \
+                        ((context_accuracy < seq_most_accuracy) and (label_seq[j] == 1)):
+                    seq_hard["predict_score"].append(predict_score_seq[j])
+                    seq_hard["predict_label"].append(1 if (predict_score_seq[j] > 0.5) else 0)
+                    seq_hard["ground_truth"].append(label_seq[j])
+                    seq_normal_and_hard["predict_score"].append(predict_score_seq[j])
+                    seq_normal_and_hard["predict_label"].append(1 if (predict_score_seq[j] > 0.5) else 0)
+                    seq_normal_and_hard["ground_truth"].append(label_seq[j])
+                    cold_start_and_normal_and_hard["predict_score"].append(predict_score_seq[j])
+                    cold_start_and_normal_and_hard["predict_label"].append(1 if (predict_score_seq[j] > 0.5) else 0)
+                    cold_start_and_normal_and_hard["ground_truth"].append(label_seq[j])
+                elif ((context_accuracy > (1 - seq_most_accuracy)) and (label_seq[j] == 1)) or \
+                        ((context_accuracy < seq_most_accuracy) and (label_seq[j] == 0)):
+                    seq_easy["predict_score"].append(predict_score_seq[j])
+                    seq_easy["predict_label"].append(1 if (predict_score_seq[j] > 0.5) else 0)
+                    seq_easy["ground_truth"].append(label_seq[j])
+
+    result = {
+        "easy": get_performance_no_error(
+            seq_easy["predict_score"], seq_easy["predict_label"], seq_easy["ground_truth"]
+        ),
+        "normal": get_performance_no_error(
+            seq_normal["predict_score"], seq_normal["predict_label"], seq_normal["ground_truth"]
+        ),
+        "hard": get_performance_no_error(
+            seq_hard["predict_score"], seq_hard["predict_label"], seq_hard["ground_truth"]
+        ),
+        "cold_start": get_performance_no_error(
+            cold_start["predict_score"], cold_start["predict_label"], cold_start["ground_truth"]
+        ),
+        "cold_start_and_normal": get_performance_no_error(
+            cold_start_and_normal["predict_score"],
+            cold_start_and_normal["predict_label"],
+            cold_start_and_normal["ground_truth"]
+        ),
+        "normal_and_hard": get_performance_no_error(
+            seq_normal_and_hard["predict_score"],
+            seq_normal_and_hard["predict_label"],
+            seq_normal_and_hard["ground_truth"]
+        ),
+        "cold_start_and_normal_and_hard": get_performance_no_error(
+            cold_start_and_normal_and_hard["predict_score"],
+            cold_start_and_normal_and_hard["predict_label"],
+            cold_start_and_normal_and_hard["ground_truth"]
+        ),
+        "warm_started": get_performance_no_error(
+            warm_started["predict_score"], warm_started["predict_label"], warm_started["ground_truth"]
+        ),
+    }
+
+    return result
 
 
 def get_question_easy_point(all_batch, statics_train, most_accuracy):
@@ -443,13 +576,13 @@ def cal_ppmcc_no_error(x, y):
     return np.corrcoef(x, y)[0, 1]
 
 
-def cal_PPMCC_his_acc_and_cur_model_pred(all_batch, window_lens, question2concept):
+def cal_PPMCC_his_acc_and_cur_model_pred(all_batch, window_lens, his_acc_th):
     """
     计算当前预测和历史（一定窗口长度）正确率的相关系数PPMCC
 
     :param all_batch:
     :param window_lens:
-    :param question2concept:
+    :param his_acc_th:
     :return:
     """
     his_ave_record = {}
@@ -457,14 +590,12 @@ def cal_PPMCC_his_acc_and_cur_model_pred(all_batch, window_lens, question2concep
         his_ave_record[window_len] = {
             "history_average_accuracy": [],
             "current_predict_score": [],
-            "current_label": [],
-            "concept_did": []
+            "current_label": []
         }
 
         for batch in all_batch:
             zip_iter = zip(batch["question_seqs"], batch["label_seqs"], batch["predict_score_seqs"], batch["mask_seqs"])
             for question_seq, label_seq, predict_score_seq, mask_seq in zip_iter:
-                concept_context = list(map(lambda q: question2concept[q], question_seq))
                 for i, m in enumerate(mask_seq[window_len:]):
                     i += window_len
                     if m == 0:
@@ -473,13 +604,9 @@ def cal_PPMCC_his_acc_and_cur_model_pred(all_batch, window_lens, question2concep
                     context_labels = label_seq[i - window_len:i]
                     context_accuracy = sum(context_labels) / len(context_labels)
 
-                    context_concepts = set([c_id for c_ids in concept_context[i - window_len:i] for c_id in c_ids])
-                    current_concept = set([c_id for c_id in concept_context[i]])
-
                     his_ave_record[window_len]["history_average_accuracy"].append(context_accuracy)
                     his_ave_record[window_len]["current_predict_score"].append(predict_score_seq[i])
                     his_ave_record[window_len]["current_label"].append(label_seq[i])
-                    his_ave_record[window_len]["concept_did"].append(bool(context_concepts & current_concept))
 
     result = {}
     for window_len in window_lens:
@@ -494,7 +621,7 @@ def cal_PPMCC_his_acc_and_cur_model_pred(all_batch, window_lens, question2concep
         x_hard = []
         y_hard = []
         for xx, yy, ll in zip(x, y, his_ave_record[window_len]["current_label"]):
-            if ((xx < 0.4) and (ll == 1)) or ((xx > 0.6) and (ll == 0)):
+            if his_acc_th <= xx <= (1 - his_acc_th):
                 x_hard.append(xx)
                 y_hard.append(yy)
             else:
@@ -507,12 +634,13 @@ def cal_PPMCC_his_acc_and_cur_model_pred(all_batch, window_lens, question2concep
     return result
 
 
-def cal_PPMCC_his_acc_and_cur_label(all_batch, window_lens):
+def cal_PPMCC_his_acc_and_cur_label(all_batch, window_lens, his_acc_th):
     """
     计算当前标签和历史（一定窗口长度）正确率的相关系数PPMCC
 
     :param all_batch:
     :param window_lens:
+    :param his_acc_th:
     :return:
     """
     his_ave_record = {}
@@ -544,20 +672,20 @@ def cal_PPMCC_his_acc_and_cur_label(all_batch, window_lens):
         y = his_ave_record[window_len]["current_label"]
         result[window_len]["all"] = cal_ppmcc_no_error(x, y)
 
-        x_label_eq0 = []
-        y_label_eq0 = []
-        x_label_eq1 = []
-        y_label_eq1 = []
+        x_easy = []
+        y_easy = []
+        x_hard = []
+        y_hard = []
         for xx, yy in zip(x, y):
-            if yy == 0:
-                x_label_eq0.append(xx)
-                y_label_eq0.append(0)
+            if his_acc_th <= xx <= (1 - his_acc_th):
+                x_hard.append(xx)
+                y_hard.append(yy)
             else:
-                x_label_eq1.append(xx)
-                y_label_eq1.append(1)
+                x_easy.append(xx)
+                y_easy.append(yy)
 
-        result[window_len]["label_eq0"] = cal_ppmcc_no_error(x_label_eq0, y_label_eq0)
-        result[window_len]["label_eq1"] = cal_ppmcc_no_error(x_label_eq1, y_label_eq1)
+        result[window_len]["easy"] = cal_ppmcc_no_error(x_easy, y_easy)
+        result[window_len]["hard"] = cal_ppmcc_no_error(x_hard, y_hard)
 
     return result
 

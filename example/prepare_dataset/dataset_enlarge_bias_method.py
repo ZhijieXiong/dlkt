@@ -31,10 +31,10 @@ if __name__ == "__main__":
         correct_seq = item_data["correct_seq"][:item_data["seq_len"]]
         seq_acc = sum(correct_seq) / item_data["seq_len"]
         if acc_th <= seq_acc <= (1 - acc_th):
-            data_unbiased.append(item_data)
-        else:
             num_seq_deleted += 1
+        else:
+            data_unbiased.append(item_data)
 
     print(f"num of deleted seq is {num_seq_deleted}")
-    write2file(data_unbiased, os.path.join(data_dir, file_name.replace(".txt", f"_unbiased_by_delete_seq.txt")))
+    write2file(data_unbiased, os.path.join(data_dir, file_name.replace(".txt", f"_enlarge_biased_by_delete_seq.txt")))
 

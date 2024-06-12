@@ -62,6 +62,17 @@ def aux_info_qdkt_general_config(local_params, global_params, global_objects):
     predict_layer_config["direct"]["activate_type"] = activate_type
     predict_layer_config["direct"]["dim_predict_out"] = 1
 
+    # IPS
+    use_sample_weight = local_params["use_sample_weight"]
+    sample_weight_method = local_params["sample_weight_method"]
+    IPS_min = local_params["IPS_min"]
+    IPS_his_seq_len = local_params['IPS_his_seq_len']
+
+    global_params["use_sample_weight"] = use_sample_weight
+    global_params["sample_weight_method"] = sample_weight_method
+    global_params["IPS_min"] = IPS_min
+    global_params["IPS_his_seq_len"] = IPS_his_seq_len
+
     global_objects["logger"].info(
         f"model params\n    "
         f"num_concept: {num_concept}, num_question: {num_question}, num_correct: 2\n    "
@@ -69,7 +80,9 @@ def aux_info_qdkt_general_config(local_params, global_params, global_objects):
         f"dropout: {dropout},  num_predict_layer: {num_predict_layer}, dim_predict_mid: {dim_predict_mid}, "
         f"activate_type: {activate_type}\n    "
         f"use_pretrain_aux_emb: {use_pretrain_aux_emb}"
-        f"{'' if not use_pretrain_aux_emb else f', pretrain_aux_emb_path: {pretrain_aux_emb_path}'}"
+        f"{'' if not use_pretrain_aux_emb else f', pretrain_aux_emb_path: {pretrain_aux_emb_path}'}\n"
+        f"IPS params\n    "
+        f"use IPS: {use_sample_weight}, IPS_min: {IPS_min}, IPS_his_seq_len: {IPS_his_seq_len}"
     )
 
     if local_params["save_model"]:

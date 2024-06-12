@@ -26,11 +26,11 @@ if __name__ == "__main__":
     for item_data in data:
         correct_seq = item_data["correct_seq"][:item_data["seq_len"]]
         seq_acc = sum(correct_seq) / item_data["seq_len"]
-        if 0.45 <= seq_acc <= 0.55:
+        if 0.47 <= seq_acc <= 0.53:
             data_deleted.append(item_data)
         else:
             r = random.random()
-            if (r < 0.9) or (num_deleted >= max_sample_delete):
+            if (r < 0.85) or (num_deleted >= max_sample_delete):
                 data_deleted.append(item_data)
             else:
                 num_deleted += item_data["seq_len"]

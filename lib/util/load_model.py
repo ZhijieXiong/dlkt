@@ -81,6 +81,9 @@ def load_kt_model(global_params, global_objects, save_model_dir, ckt_name="saved
         # 聚合时间信息
         global_params["datasets_config"]["test"]["type"] = "kt4lpkt_plus"
         global_params["datasets_config"]["test"]["kt4lpkt_plus"] = {}
+    if kt_model_name == "AuxInfoDCT":
+        #
+        pass
     model_class = model_table[kt_model_name]
     model = model_class(global_params, global_objects).to(global_params["device"])
     saved_ckt = torch.load(ckt_path)

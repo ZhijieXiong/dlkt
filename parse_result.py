@@ -13,7 +13,7 @@ def cal_average(metrics):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--file_path", type=str,
-                        default=r"F:\code\myProjects\dlkt\example\result_local\our_setting_new\lpkt\lpkt_unbiased_by_delete_sample_our_setting_new_ednet-kt1_save.txt")
+                        default=r"F:\code\myProjects\dlkt\example\result_local\auxInfoQDKT-IPS_our_setting_new_ednet-kt1_save.txt")
     parser.add_argument("--key_words", type=str, default="test performance by best valid epoch is main metric")
     parser.add_argument("--n", help="隔几个做一次平均", type=int, default=5)
     parser.add_argument("--first_num", type=int, default=1,

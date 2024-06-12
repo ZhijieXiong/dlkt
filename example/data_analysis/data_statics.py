@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser.add_argument("--data_dir", type=str,
                         default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new")
     parser.add_argument("--data_names", type=str,
-                        default="['assist2017_train_fold_0_unbiased_by_delete_seq.txt', 'assist2017_train_fold_1_unbiased_by_delete_seq.txt', 'assist2017_train_fold_2_unbiased_by_delete_seq.txt', 'assist2017_train_fold_3_unbiased_by_delete_seq.txt', 'assist2017_train_fold_4_unbiased_by_delete_seq.txt']")
+                        default="['ednet-kt1_train_fold_0_unbiased_by_delete_seq.txt', 'ednet-kt1_train_fold_1_unbiased_by_delete_seq.txt', 'ednet-kt1_train_fold_2_unbiased_by_delete_seq.txt', 'ednet-kt1_train_fold_3_unbiased_by_delete_seq.txt', 'ednet-kt1_train_fold_4_unbiased_by_delete_seq.txt']")
     args = parser.parse_args()
     params = vars(args)
 
@@ -29,6 +29,6 @@ if __name__ == "__main__":
     # ednet-kt1: 365161 -> 351035
 
     # debias by delete seq
-    # assist2012: 1736153 -> 1619169
-    # assist2017: 552453 -> 523911
-    # ednet-kt1: 365161 -> 351658
+    # assist2012: 1736153 -> 1556391
+    # assist2017: 552453 -> 515608
+    # ednet-kt1: 365161 -> 343394

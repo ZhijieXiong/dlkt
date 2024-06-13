@@ -94,11 +94,11 @@ def get_seq_biased_point(all_batch, previous_seq_len, seq_most_accuracy):
                 context_labels = label_seq[j-previous_seq_len:j]
                 context_accuracy = sum(context_labels) / len(context_labels)
 
-                if (context_accuracy <= seq_most_accuracy) and (label_seq[j] == 1):
+                if (context_accuracy < seq_most_accuracy) and (label_seq[j] == 1):
                     result["low_acc_but_right"]["question"].append(question_seq[j])
                     result["low_acc_but_right"]["predict_score"].append(predict_score_seq[j])
                     result["low_acc_but_right"]["predict_label"].append(1 if (predict_score_seq[j] > 0.5) else 0)
-                elif (context_accuracy >= (1 - seq_most_accuracy)) and (label_seq[j] == 0):
+                elif (context_accuracy > (1 - seq_most_accuracy)) and (label_seq[j] == 0):
                     result["high_acc_but_wrong"]["question"].append(question_seq[j])
                     result["high_acc_but_wrong"]["predict_score"].append(predict_score_seq[j])
                     result["high_acc_but_wrong"]["predict_label"].append(1 if (predict_score_seq[j] > 0.5) else 0)

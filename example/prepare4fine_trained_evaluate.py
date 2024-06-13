@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--target_file_path", type=str,
                         help="用于从数据中提取信息，如每道习题出现的频率（长尾问题），准确率（偏差问题）",
-                        default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new\assist2009_train_fold_0.txt")
+                        default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_ood_by_school\assist2009_train_split_0.txt")
     # 数据集信息
     parser.add_argument("--preprocessed_dir", type=str, default=r"F:\code\myProjects\dlkt\lab\dataset_preprocessed")
     parser.add_argument("--dataset_name", type=str, default="assist2009")

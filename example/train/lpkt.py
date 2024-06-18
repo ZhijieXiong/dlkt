@@ -15,12 +15,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="our_setting_new")
-    parser.add_argument("--dataset_name", type=str, default="ednet-kt1")
+    parser.add_argument("--dataset_name", type=str, default="assist2009")
     parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="ednet-kt1_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="ednet-kt1_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="ednet-kt1_test_fold_0.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
     parser.add_argument("--weight_decay", type=float, default=0.00001)
@@ -46,22 +46,22 @@ if __name__ == "__main__":
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     # batch size
     parser.add_argument("--train_batch_size", type=int, default=8)
-    parser.add_argument("--evaluate_batch_size", type=int, default=256)
+    parser.add_argument("--evaluate_batch_size", type=int, default=8)
     # 梯度裁剪
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=188)
-    parser.add_argument("--num_question", type=int, default=11858)
+    parser.add_argument("--num_concept", type=int, default=123)
+    parser.add_argument("--num_question", type=int, default=17751)
     parser.add_argument("--dim_e", type=int, default=64)
     parser.add_argument("--dim_k", type=int, default=64)
     parser.add_argument("--dim_correct", type=int, default=64)
-    parser.add_argument("--dropout", type=float, default=0.3)
+    parser.add_argument("--dropout", type=float, default=0.1)
     # 消融
-    parser.add_argument("--ablation_set", type=int, default=0,
+    parser.add_argument("--ablation_set", type=int, default=2,
                         help="0: use time seq and interval time seq"
                              "1: only interval time seq"
-                             "2: do not use time information")
+                             "2: only use time seq")
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

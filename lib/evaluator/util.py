@@ -3,6 +3,52 @@ import torch
 from sklearn.metrics import roc_auc_score, accuracy_score, mean_absolute_error, mean_squared_error
 
 
+def get_performance(item_list, item_pg_all):
+    """
+    获取指定item（习题或者知识点）上的性能
+    :param item_list: 习题或者知识点的id list，即想要获取的那部分
+    :param item_pg_all: 形式为{item1: [(p1, g1), (p2, g2), ...], item2: [(p1, g1), (p2, g2), ...], ...}
+    :return:
+    """
+    predict_score = []
+    ground_truth = []
+
+    for item in item_list:
+        p_list = list(map(lambda x: x[0], item_pg_all[item]))
+        g_list = list(map(lambda x: x[1], item_pg_all[item]))
+        predict_score += p_list
+        ground_truth += g_list
+    predict_label = [1 if p >= 0.5 else 0 for p in predict_score]
+
+    return get_performance_no_error(predict_score, predict_label, ground_truth)
+
+
+def get_performance_qc(question_list, concept_list, qc_pg_all):
+    """
+    获取指定习题以及知识点上的性能
+    :param question_list:
+    :param concept_list:
+    :param qc_pg_all: 形式为{"q1_c1": [(p1, g1), (p2, g2), ...], "q2_c2": [(p1, g1), (p2, g2), ...], ...}
+    :return:
+    """
+    predict_score = []
+    ground_truth = []
+
+    qc_all = []
+    for q_id in question_list:
+        for c_id in concept_list:
+            qc_all.append(f"{q_id}_{c_id}")
+
+    for qc_id in qc_all:
+        p_list = list(map(lambda x: x[0], qc_pg_all[qc_id]))
+        g_list = list(map(lambda x: x[1], qc_pg_all[qc_id]))
+        predict_score += p_list
+        ground_truth += g_list
+    predict_label = [1 if p >= 0.5 else 0 for p in predict_score]
+
+    return get_performance_no_error(predict_score, predict_label, ground_truth)
+
+
 def record_dis4seq_len(ground_truth, prediction, mask):
     batch_size, max_seq_len = ground_truth.shape[0], ground_truth.shape[1]
     label_dis = [[] for _ in range(max_seq_len)]
@@ -101,12 +147,6 @@ def evaluate_core(predict_score, ground_truth, question_ids, allow_replace=True)
 
 
 def get_seq_fine_grained_sample(all_batch, previous_seq_len, seq_most_accuracy):
-    """
-    :param all_batch:
-    :param previous_seq_len:
-    :param seq_most_accuracy:
-    :return:
-    """
     easy_sample = {
         "question": [],
         "predict_score": [],
@@ -180,12 +220,6 @@ def get_seq_fine_grained_sample(all_batch, previous_seq_len, seq_most_accuracy):
 
 
 def get_num_seq_fine_grained_sample(all_batch, window_seq_len, acc_th):
-    """
-    :param all_batch:
-    :param window_seq_len:
-    :param acc_th:
-    :return:
-    """
     seq_fine_grained_sample = get_seq_fine_grained_sample(all_batch, window_seq_len, acc_th)
     num_easy = len(seq_fine_grained_sample["easy"]["question"])
     num_normal = len(seq_fine_grained_sample["normal"]["question"])
@@ -197,12 +231,6 @@ def get_num_seq_fine_grained_sample(all_batch, window_seq_len, acc_th):
 
 
 def get_seq_fine_grained_performance(all_batch, window_seq_len, acc_th):
-    """
-    :param all_batch:
-    :param window_seq_len:
-    :param acc_th:
-    :return:
-    """
     seq_fine_grained_sample = get_seq_fine_grained_sample(all_batch, window_seq_len, acc_th)
     easy_sample = seq_fine_grained_sample["easy"]
     normal_sample = seq_fine_grained_sample["normal"]
@@ -228,13 +256,6 @@ def get_seq_fine_grained_performance(all_batch, window_seq_len, acc_th):
 
 
 def get_question_fine_grained_sample(all_batch, statics_train, most_accuracy):
-    """
-    返回满足以下条件的点：该习题是高正确率习题，但是做错，或者，该习题是低正确率习题，但是做对\n
-    :param all_batch:
-    :param statics_train:
-    :param most_accuracy:
-    :return:
-    """
     unseen_sample = {
         "question": [],
         "predict_score": [],
@@ -303,13 +324,6 @@ def get_question_fine_grained_sample(all_batch, statics_train, most_accuracy):
 
 
 def get_question_fine_grained_performance(all_batch, statics_train, acc_th):
-    """
-    返回满足以下条件的点：该习题是高正确率习题，但是做错，或者，该习题是低正确率习题，但是做对\n
-    :param all_batch:
-    :param statics_train:
-    :param acc_th:
-    :return:
-    """
     question_fine_grained_sample = get_question_fine_grained_sample(all_batch, statics_train, acc_th)
     easy_sample = question_fine_grained_sample["easy"]
     normal_sample = question_fine_grained_sample["normal"]
@@ -336,13 +350,65 @@ def get_question_fine_grained_performance(all_batch, statics_train, acc_th):
 
 def get_double_fine_grained_sample(all_batch, statics_train, window_seq_len, acc_th):
     seq_fine_grained_sample = get_seq_fine_grained_sample(all_batch, window_seq_len, acc_th)
+    seq_easy_sample = seq_fine_grained_sample["easy"]
+    seq_hard_sample = seq_fine_grained_sample["hard"]
     double_easy_sample = {
-
+        "question": [],
+        "predict_score": [],
+        "predict_label": [],
+        "ground_truth": []
     }
     double_hard_sample = {
-
+        "question": [],
+        "predict_score": [],
+        "predict_label": [],
+        "ground_truth": []
     }
-    pass
+    for i, q_id in enumerate(seq_easy_sample["question"]):
+        q_acc_statics = statics_train["question_acc"][q_id]
+        ps = seq_easy_sample["predict_score"][i]
+        pl = seq_easy_sample["predict_label"][i]
+        gt = seq_easy_sample["ground_truth"][i]
+        if (q_acc_statics > (1 - acc_th)) or (q_acc_statics < acc_th):
+            double_easy_sample["question"].append(q_id)
+            double_easy_sample["predict_score"].append(ps)
+            double_easy_sample["predict_label"].append(pl)
+            double_easy_sample["ground_truth"].append(gt)
+
+    for i, q_id in enumerate(seq_hard_sample["question"]):
+        q_acc_statics = statics_train["question_acc"][q_id]
+        ps = seq_hard_sample["predict_score"][i]
+        pl = seq_hard_sample["predict_label"][i]
+        gt = seq_hard_sample["ground_truth"][i]
+        if (q_acc_statics > (1 - acc_th)) or (q_acc_statics < acc_th):
+            double_hard_sample["question"].append(q_id)
+            double_hard_sample["predict_score"].append(ps)
+            double_hard_sample["predict_label"].append(pl)
+            double_hard_sample["ground_truth"].append(gt)
+
+    double_fine_grained_sample = {
+        "easy": double_easy_sample,
+        "hard": double_hard_sample
+    }
+
+    return double_fine_grained_sample
+
+
+def get_double_fine_grained_performance(all_batch, statics_train, window_seq_len, acc_th):
+    double_fine_grained_sample = get_double_fine_grained_sample(all_batch, statics_train, window_seq_len, acc_th)
+    easy_sample = double_fine_grained_sample["easy"]
+    hard_sample = double_fine_grained_sample["hard"]
+
+    performance_result = {
+        "easy": get_performance_no_error(
+            easy_sample["predict_score"], easy_sample["predict_label"], easy_sample["ground_truth"]
+        ),
+        "hard": get_performance_no_error(
+            hard_sample["predict_score"], hard_sample["predict_label"], hard_sample["ground_truth"]
+        ),
+    }
+
+    return performance_result
 
 
 def cal_PPMCC_his_acc_and_cur_model_pred(all_batch, window_lens, his_acc_th):

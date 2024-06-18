@@ -8,52 +8,6 @@ from ..util.basic import get_now_time
 from ..model.util import get_mask4last_or_penultimate
 
 
-def get_performance(item_list, item_pg_all):
-    """
-    获取指定item（习题或者知识点）上的性能
-    :param item_list: 习题或者知识点的id list，即想要获取的那部分
-    :param item_pg_all: 形式为{item1: [(p1, g1), (p2, g2), ...], item2: [(p1, g1), (p2, g2), ...], ...}
-    :return:
-    """
-    predict_score = []
-    ground_truth = []
-
-    for item in item_list:
-        p_list = list(map(lambda x: x[0], item_pg_all[item]))
-        g_list = list(map(lambda x: x[1], item_pg_all[item]))
-        predict_score += p_list
-        ground_truth += g_list
-    predict_label = [1 if p >= 0.5 else 0 for p in predict_score]
-
-    return get_performance_no_error(predict_score, predict_label, ground_truth)
-
-
-def get_performance_qc(question_list, concept_list, qc_pg_all):
-    """
-    获取指定习题以及知识点上的性能
-    :param question_list:
-    :param concept_list:
-    :param qc_pg_all: 形式为{"q1_c1": [(p1, g1), (p2, g2), ...], "q2_c2": [(p1, g1), (p2, g2), ...], ...}
-    :return:
-    """
-    predict_score = []
-    ground_truth = []
-
-    qc_all = []
-    for q_id in question_list:
-        for c_id in concept_list:
-            qc_all.append(f"{q_id}_{c_id}")
-
-    for qc_id in qc_all:
-        p_list = list(map(lambda x: x[0], qc_pg_all[qc_id]))
-        g_list = list(map(lambda x: x[1], qc_pg_all[qc_id]))
-        predict_score += p_list
-        ground_truth += g_list
-    predict_label = [1 if p >= 0.5 else 0 for p in predict_score]
-
-    return get_performance_no_error(predict_score, predict_label, ground_truth)
-
-
 class Evaluator:
     def __init__(self, params, objects):
         self.params = params
@@ -128,8 +82,8 @@ class Evaluator:
         )
 
         # correlation between history accuracy and model predict score
-        window_lens = [10, 15, 20]
-        his_acc_ths = [0.4, 0.35, 0.3]
+        window_lens = [10, 20]
+        his_acc_ths = [0.4, 0.3]
         self.objects["logger"].info(
             f"PPMCC between history average accuracy and current model predict score"
         )
@@ -154,7 +108,7 @@ class Evaluator:
         # performance by seq len
         if hasattr(model, "get_predict_score_seq_len_minus1"):
             label_dis4len, score_dis4len, indices4len = evaluate4seq_len(all_label_dis, all_score_dis, seq_len_absolute)
-            self.objects["logger"].info("\nsplit by seq length")
+            self.objects["logger"].info("\nevaluation result of samples at different position")
             for i in range(len(label_dis4len)):
                 if len(label_dis4len[i]) == 0:
                     continue
@@ -173,35 +127,34 @@ class Evaluator:
 
         # 测试集的偏差子集
         if hasattr(model, "get_predict_score_seq_len_minus1"):
-            self.objects["logger"].info("\nevaluation result from seq biased point")
+            self.objects["logger"].info("\nevaluation result of seq biased samples")
             his_window_lens = [10, 15, 20]
             acc_ths = [0.4, 0.3, 0.2]
-            for his_window_len in his_window_lens:
-                for acc_th in acc_ths:
-                    seq_fine_grained_performance = get_seq_fine_grained_performance(
-                        result_all_batch, his_window_len, acc_th
-                    )
+            for his_window_len, acc_th in zip(his_window_lens, acc_ths):
+                seq_fine_grained_performance = get_seq_fine_grained_performance(
+                    result_all_batch, his_window_len, acc_th
+                )
 
-                    self.print_performance(
-                        f"({his_window_len}, {acc_th}) seq easy point "
-                        f"({seq_fine_grained_performance['easy']['num_sample']:<9}), performance is ",
-                        seq_fine_grained_performance['easy']
-                    )
-                    self.print_performance(
-                        f"({his_window_len}, {acc_th}) seq normal point "
-                        f"({seq_fine_grained_performance['normal']['num_sample']:<9}), performance is ",
-                        seq_fine_grained_performance['normal']
-                    )
-                    self.print_performance(
-                        f"({his_window_len}, {acc_th}) seq hard point "
-                        f"({seq_fine_grained_performance['hard']['num_sample']:<9}), performance is ",
-                        seq_fine_grained_performance['hard']
-                    )
-                    self.print_performance(
-                        f"({his_window_len}, {acc_th}) cold start point "
-                        f"({seq_fine_grained_performance['cold_start']['num_sample']:<9}), performance is ",
-                        seq_fine_grained_performance['cold_start']
-                    )
+                self.print_performance(
+                    f"({his_window_len}, {acc_th}) seq easy samples "
+                    f"({seq_fine_grained_performance['easy']['num_sample']:<9}), performance is ",
+                    seq_fine_grained_performance['easy']
+                )
+                self.print_performance(
+                    f"({his_window_len}, {acc_th}) seq normal samples "
+                    f"({seq_fine_grained_performance['normal']['num_sample']:<9}), performance is ",
+                    seq_fine_grained_performance['normal']
+                )
+                self.print_performance(
+                    f"({his_window_len}, {acc_th}) seq hard samples "
+                    f"({seq_fine_grained_performance['hard']['num_sample']:<9}), performance is ",
+                    seq_fine_grained_performance['hard']
+                )
+                self.print_performance(
+                    f"({his_window_len}, {acc_th}) cold start samples "
+                    f"({seq_fine_grained_performance['cold_start']['num_sample']:<9}), performance is ",
+                    seq_fine_grained_performance['cold_start']
+                )
 
         # 不同频率知识点/习题的性能
         train_statics_common_path = fine_grain_config["train_statics_common_path"]
@@ -221,29 +174,29 @@ class Evaluator:
             train_statics_common["concept_acc"] = concept_acc_dict
 
         acc_ths = [0.4, 0.3, 0.2]
-        self.objects["logger"].info("\nevaluation result from question biased point")
+        self.objects["logger"].info("\nevaluation result of question biased samples")
         for acc_th in acc_ths:
             question_fine_grained_performance = get_question_fine_grained_performance(
                 result_all_batch, train_statics_common, acc_th
             )
 
             self.print_performance(
-                f"({acc_th}) question easy point "
+                f"({acc_th}) question easy samples "
                 f"({question_fine_grained_performance['easy']['num_sample']:<9}), performance is ",
                 question_fine_grained_performance['easy']
             )
             self.print_performance(
-                f"({acc_th}) question normal point "
+                f"({acc_th}) question normal samples "
                 f"({question_fine_grained_performance['normal']['num_sample']:<9}), performance is ",
                 question_fine_grained_performance['normal']
             )
             self.print_performance(
-                f"({acc_th}) question hard point "
+                f"({acc_th}) question hard samples "
                 f"({question_fine_grained_performance['hard']['num_sample']:<9}), performance is ",
                 question_fine_grained_performance['hard']
             )
             self.print_performance(
-                f"({acc_th}) question unseen point "
+                f"({acc_th}) question unseen samples "
                 f"({question_fine_grained_performance['unseen']['num_sample']:<9}), performance is ",
                 question_fine_grained_performance['unseen']
             )
@@ -251,10 +204,22 @@ class Evaluator:
         if hasattr(model, "get_predict_score_seq_len_minus1"):
             his_window_lens = [10, 15, 20]
             acc_ths = [0.4, 0.3, 0.2]
-            self.objects["logger"].info("\nevaluation result from double biased point")
-            for his_window_len in his_window_lens:
-                for acc_th in acc_ths:
-                    pass
+            self.objects["logger"].info("\nevaluation result of double biased samples")
+            for his_window_len, acc_th in zip(his_window_lens, acc_ths):
+                double_fine_grained_performance = get_double_fine_grained_performance(
+                    result_all_batch, train_statics_common, his_window_len, acc_th
+                )
+
+                self.print_performance(
+                    f"({his_window_len}, {acc_th}) double easy samples "
+                    f"({double_fine_grained_performance['easy']['num_sample']:<9}), performance is ",
+                    double_fine_grained_performance['easy']
+                )
+                self.print_performance(
+                    f"({his_window_len}, {acc_th}) double hard samples "
+                    f"({double_fine_grained_performance['hard']['num_sample']:<9}), performance is ",
+                    double_fine_grained_performance['hard']
+                )
 
         # 高|中|低频习题|知识点的性能；高|中|低正确率习题|知识点的性能
         train_statics_special_path = fine_grain_config["train_statics_special_path"]
@@ -297,61 +262,61 @@ class Evaluator:
         self.print_performance(f"question high frequency ({result4statics['question_high_fre']['num_sample']:<9} samples), ",
                                result4statics['question_high_fre'])
 
-        self.print_performance(f"question low accuracy ({result4statics['question_low_acc']['num_sample']:<9} samples), ",
-                               result4statics['question_low_acc'])
-        self.print_performance(f"question middle accuracy ({result4statics['question_middle_acc']['num_sample']:<9} samples), ",
-                               result4statics['question_middle_acc'])
-        self.print_performance(f"question high accuracy ({result4statics['question_high_acc']['num_sample']:<9} samples), ",
-                               result4statics['question_high_acc'])
+        # self.print_performance(f"question low accuracy ({result4statics['question_low_acc']['num_sample']:<9} samples), ",
+        #                        result4statics['question_low_acc'])
+        # self.print_performance(f"question middle accuracy ({result4statics['question_middle_acc']['num_sample']:<9} samples), ",
+        #                        result4statics['question_middle_acc'])
+        # self.print_performance(f"question high accuracy ({result4statics['question_high_acc']['num_sample']:<9} samples), ",
+        #                        result4statics['question_high_acc'])
 
-        if data_type != "only_question":
-            concept_all = np.concatenate(concept_all, axis=0)
-            all_concept_dis = defaultdict(list)
-            for c_id, p, g in zip(concept_all, predict_score_all, ground_truth_all):
-                all_concept_dis[c_id].append((p, g))
-            result4statics['concept_low_fre'] = get_performance(train_statics_special['concept_low_fre'], all_concept_dis)
-            result4statics['concept_middle_fre'] = get_performance(train_statics_special['concept_middle_fre'], all_concept_dis)
-            result4statics['concept_high_fre'] = get_performance(train_statics_special['concept_high_fre'], all_concept_dis)
-            result4statics['concept_low_acc'] = get_performance(train_statics_special['concept_low_acc'], all_concept_dis)
-            result4statics['concept_middle_acc'] = get_performance(train_statics_special['concept_middle_acc'], all_concept_dis)
-            result4statics['concept_high_acc'] = get_performance(train_statics_special['concept_high_acc'], all_concept_dis)
-
-            self.print_performance(f"concept low frequency ({result4statics['concept_low_fre']['num_sample']:<9} samples), ",
-                                   result4statics['concept_low_fre'])
-            self.print_performance(f"concept middle frequency ({result4statics['concept_middle_fre']['num_sample']:<9} samples), ",
-                                   result4statics['concept_middle_fre'])
-            self.print_performance(f"concept high frequency ({result4statics['concept_high_fre']['num_sample']:<9} samples), ",
-                                   result4statics['concept_high_fre'])
-
-            self.print_performance(f"concept low accuracy ({result4statics['concept_low_acc']['num_sample']:<9} samples), ",
-                                   result4statics['concept_low_acc'])
-            self.print_performance(f"concept middle accuracy ({result4statics['concept_middle_acc']['num_sample']:<9} samples), ",
-                                   result4statics['concept_middle_acc'])
-            self.print_performance(f"concept high accuracy ({result4statics['concept_high_acc']['num_sample']:<9} samples), ",
-                                   result4statics['concept_high_acc'])
-
-            # 同时考虑习题和知识点
-            all_qc_dis = defaultdict(list)
-            for q_id, c_id, p, g in zip(question_all, concept_all, predict_score_all, ground_truth_all):
-                all_qc_dis[f"{q_id}_{c_id}"].append((p, g))
-            result4statics['qc_low_fre'] = get_performance_qc(train_statics_special['question_low_fre'],
-                                                              train_statics_special['concept_low_fre'], all_qc_dis)
-            result4statics['qc_high_fre'] = get_performance_qc(train_statics_special['question_high_fre'],
-                                                               train_statics_special['concept_high_fre'], all_qc_dis)
-            result4statics['qc_low_acc'] = get_performance_qc(train_statics_special['question_low_acc'],
-                                                              train_statics_special['concept_low_acc'], all_qc_dis)
-            result4statics['qc_high_acc'] = get_performance_qc(train_statics_special['question_high_acc'],
-                                                               train_statics_special['concept_high_acc'], all_qc_dis)
-
-            self.print_performance(f"qc low frequency ({result4statics['qc_low_fre']['num_sample']:<9} samples), ",
-                                   result4statics['qc_low_fre'])
-            self.print_performance(f"qc high frequency ({result4statics['qc_high_fre']['num_sample']:<9} samples), ",
-                                   result4statics['qc_high_fre'])
-
-            self.print_performance(f"qc low accuracy ({result4statics['qc_low_acc']['num_sample']:<9} samples), ",
-                                   result4statics['qc_low_acc'])
-            self.print_performance(f"qc high accuracy ({result4statics['qc_high_acc']['num_sample']:<9} samples), ",
-                                   result4statics['qc_high_acc'])
+        # if data_type != "only_question":
+        #     concept_all = np.concatenate(concept_all, axis=0)
+        #     all_concept_dis = defaultdict(list)
+        #     for c_id, p, g in zip(concept_all, predict_score_all, ground_truth_all):
+        #         all_concept_dis[c_id].append((p, g))
+        #     result4statics['concept_low_fre'] = get_performance(train_statics_special['concept_low_fre'], all_concept_dis)
+        #     result4statics['concept_middle_fre'] = get_performance(train_statics_special['concept_middle_fre'], all_concept_dis)
+        #     result4statics['concept_high_fre'] = get_performance(train_statics_special['concept_high_fre'], all_concept_dis)
+        #     result4statics['concept_low_acc'] = get_performance(train_statics_special['concept_low_acc'], all_concept_dis)
+        #     result4statics['concept_middle_acc'] = get_performance(train_statics_special['concept_middle_acc'], all_concept_dis)
+        #     result4statics['concept_high_acc'] = get_performance(train_statics_special['concept_high_acc'], all_concept_dis)
+        #
+        #     self.print_performance(f"concept low frequency ({result4statics['concept_low_fre']['num_sample']:<9} samples), ",
+        #                            result4statics['concept_low_fre'])
+        #     self.print_performance(f"concept middle frequency ({result4statics['concept_middle_fre']['num_sample']:<9} samples), ",
+        #                            result4statics['concept_middle_fre'])
+        #     self.print_performance(f"concept high frequency ({result4statics['concept_high_fre']['num_sample']:<9} samples), ",
+        #                            result4statics['concept_high_fre'])
+        #
+        #     self.print_performance(f"concept low accuracy ({result4statics['concept_low_acc']['num_sample']:<9} samples), ",
+        #                            result4statics['concept_low_acc'])
+        #     self.print_performance(f"concept middle accuracy ({result4statics['concept_middle_acc']['num_sample']:<9} samples), ",
+        #                            result4statics['concept_middle_acc'])
+        #     self.print_performance(f"concept high accuracy ({result4statics['concept_high_acc']['num_sample']:<9} samples), ",
+        #                            result4statics['concept_high_acc'])
+        #
+        #     # 同时考虑习题和知识点
+        #     all_qc_dis = defaultdict(list)
+        #     for q_id, c_id, p, g in zip(question_all, concept_all, predict_score_all, ground_truth_all):
+        #         all_qc_dis[f"{q_id}_{c_id}"].append((p, g))
+        #     result4statics['qc_low_fre'] = get_performance_qc(train_statics_special['question_low_fre'],
+        #                                                       train_statics_special['concept_low_fre'], all_qc_dis)
+        #     result4statics['qc_high_fre'] = get_performance_qc(train_statics_special['question_high_fre'],
+        #                                                        train_statics_special['concept_high_fre'], all_qc_dis)
+        #     result4statics['qc_low_acc'] = get_performance_qc(train_statics_special['question_low_acc'],
+        #                                                       train_statics_special['concept_low_acc'], all_qc_dis)
+        #     result4statics['qc_high_acc'] = get_performance_qc(train_statics_special['question_high_acc'],
+        #                                                        train_statics_special['concept_high_acc'], all_qc_dis)
+        #
+        #     self.print_performance(f"qc low frequency ({result4statics['qc_low_fre']['num_sample']:<9} samples), ",
+        #                            result4statics['qc_low_fre'])
+        #     self.print_performance(f"qc high frequency ({result4statics['qc_high_fre']['num_sample']:<9} samples), ",
+        #                            result4statics['qc_high_fre'])
+        #
+        #     self.print_performance(f"qc low accuracy ({result4statics['qc_low_acc']['num_sample']:<9} samples), ",
+        #                            result4statics['qc_low_acc'])
+        #     self.print_performance(f"qc high accuracy ({result4statics['qc_high_acc']['num_sample']:<9} samples), ",
+        #                            result4statics['qc_high_acc'])
 
     def print_performance(self, prefix, performance_dict):
         self.objects["logger"].info(

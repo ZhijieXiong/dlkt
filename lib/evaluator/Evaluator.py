@@ -173,71 +173,34 @@ class Evaluator:
 
         # 测试集的偏差子集
         if hasattr(model, "get_predict_score_seq_len_minus1"):
-            # self.objects["logger"].info("\nevaluation result from biased point")
-            # previous_seq_lens = [10, 15, 20]
-            # seq_most_acc = [0.4, 0.3]
-            # for previous_seq_len4bias in previous_seq_lens:
-            #     for seq_most_accuracy4bias in seq_most_acc:
-            #         result_performance = get_seq_easy_hard_performance(
-            #             result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias
-            #         )
-            #         self.print_performance(
-            #             f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) seq easy point "
-            #             f"({result_performance['easy']['num_sample']:<9}), performance is ", result_performance['easy']
-            #         )
-            #         self.print_performance(
-            #             f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) seq hard point "
-            #             f"({result_performance['hard']['num_sample']:<9}), performance is ", result_performance['hard']
-            #         )
-
-            self.objects["logger"].info("\nevaluation result from biased point")
-            previous_seq_lens = [10, 15, 20]
-            seq_most_acc = [0.4, 0.35, 0.3]
-            for previous_seq_len4bias in previous_seq_lens:
-                for seq_most_accuracy4bias in seq_most_acc:
+            self.objects["logger"].info("\nevaluation result from seq biased point")
+            his_window_lens = [10, 15, 20]
+            acc_ths = [0.4, 0.3, 0.2]
+            for his_window_len in his_window_lens:
+                for acc_th in acc_ths:
                     seq_fine_grained_performance = get_seq_fine_grained_performance(
-                        result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias
+                        result_all_batch, his_window_len, acc_th
                     )
 
                     self.print_performance(
-                        f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) seq easy point "
+                        f"({his_window_len}, {acc_th}) seq easy point "
                         f"({seq_fine_grained_performance['easy']['num_sample']:<9}), performance is ",
                         seq_fine_grained_performance['easy']
                     )
                     self.print_performance(
-                        f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) seq normal point "
+                        f"({his_window_len}, {acc_th}) seq normal point "
                         f"({seq_fine_grained_performance['normal']['num_sample']:<9}), performance is ",
                         seq_fine_grained_performance['normal']
                     )
                     self.print_performance(
-                        f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) seq hard point "
+                        f"({his_window_len}, {acc_th}) seq hard point "
                         f"({seq_fine_grained_performance['hard']['num_sample']:<9}), performance is ",
                         seq_fine_grained_performance['hard']
                     )
                     self.print_performance(
-                        f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) cold start point "
+                        f"({his_window_len}, {acc_th}) cold start point "
                         f"({seq_fine_grained_performance['cold_start']['num_sample']:<9}), performance is ",
                         seq_fine_grained_performance['cold_start']
-                    )
-                    self.print_performance(
-                        f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) cold start + seq normal point "
-                        f"({seq_fine_grained_performance['cold_start_and_normal']['num_sample']:<9}), performance is ",
-                        seq_fine_grained_performance['cold_start_and_normal']
-                    )
-                    self.print_performance(
-                        f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) seq normal + seq hard point "
-                        f"({seq_fine_grained_performance['normal_and_hard']['num_sample']:<9}), performance is ",
-                        seq_fine_grained_performance['normal_and_hard']
-                    )
-                    self.print_performance(
-                        f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) cold start + seq normal + seq hard point "
-                        f"({seq_fine_grained_performance['cold_start_and_normal']['num_sample']:<9}), performance is ",
-                        seq_fine_grained_performance['cold_start_and_normal']
-                    )
-                    self.print_performance(
-                        f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) warm started point "
-                        f"({seq_fine_grained_performance['warm_started']['num_sample']:<9}), performance is ",
-                        seq_fine_grained_performance['warm_started']
                     )
 
         # 不同频率知识点/习题的性能
@@ -257,51 +220,41 @@ class Evaluator:
                 concept_acc_dict[int(c_id)] = c_acc
             train_statics_common["concept_acc"] = concept_acc_dict
 
-        most_acc = [0.4, 0.3, 0.2]
-        for most_accuracy4bias in most_acc:
-            question_easy_point, non_question_easy_point = \
-                get_question_easy_point(result_all_batch, train_statics_common, most_accuracy4bias)
-            result4question_easy = evaluate_easy(question_easy_point)
-            result4non_question_easy = get_performance_no_error(non_question_easy_point["predict_score"],
-                                                                non_question_easy_point["predict_label"],
-                                                                non_question_easy_point["ground_truth"])
-            question_biased_point = get_question_biased_point(result_all_batch, train_statics_common,
-                                                              most_accuracy4bias)
-            result4question_biased_bias = evaluate_bias(question_biased_point)
-
-            self.print_performance(
-                f"({most_accuracy4bias},   ) question easy point ({result4question_easy['num_sample']:<9}), "
-                f"performance is ", result4question_easy
-            )
-            self.print_performance(
-                f"({most_accuracy4bias},   ) non question easy point ({result4non_question_easy['num_sample']:<9}), "
-                f"performance is ", result4non_question_easy
-            )
-            self.print_performance(
-                f"({most_accuracy4bias},   ) question hard point ({result4question_biased_bias['num_sample']:<9}), "
-                f"performance is ", result4question_biased_bias
+        acc_ths = [0.4, 0.3, 0.2]
+        self.objects["logger"].info("\nevaluation result from question biased point")
+        for acc_th in acc_ths:
+            question_fine_grained_performance = get_question_fine_grained_performance(
+                result_all_batch, train_statics_common, acc_th
             )
 
-        # if hasattr(model, "get_predict_score_seq_len_minus1"):
-        #     previous_seq_lens = [20, 30, 40]
-        #     seq_most_acc = [0.4, 0.3, 0.2]
-        #     for previous_seq_len4bias, seq_most_accuracy4bias in zip(previous_seq_lens, seq_most_acc):
-        #         # double easy sample evaluation (most easy sample)
-        #         seq_easy_point, non_seq_easy_point = \
-        #             get_seq_easy_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
-        #         result4double_easy = evaluate_double_easy(seq_easy_point, train_statics_common, seq_most_accuracy4bias)
-        #         seq_biased_point = get_seq_biased_point(result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias)
-        #         result4double_bias = evaluate_double_bias(seq_biased_point, train_statics_common,
-        #                                                   seq_most_accuracy4bias)
-        #
-        #         self.print_performance(
-        #             f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) double easy point "
-        #             f"({result4double_easy['num_sample']:<9}), performance is ", result4double_easy
-        #         )
-        #         self.print_performance(
-        #             f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) double hard point "
-        #             f"({result4double_bias['num_sample']:<9}), performance is ", result4double_bias
-        #         )
+            self.print_performance(
+                f"({acc_th}) question easy point "
+                f"({question_fine_grained_performance['easy']['num_sample']:<9}), performance is ",
+                question_fine_grained_performance['easy']
+            )
+            self.print_performance(
+                f"({acc_th}) question normal point "
+                f"({question_fine_grained_performance['normal']['num_sample']:<9}), performance is ",
+                question_fine_grained_performance['normal']
+            )
+            self.print_performance(
+                f"({acc_th}) question hard point "
+                f"({question_fine_grained_performance['hard']['num_sample']:<9}), performance is ",
+                question_fine_grained_performance['hard']
+            )
+            self.print_performance(
+                f"({acc_th}) question unseen point "
+                f"({question_fine_grained_performance['unseen']['num_sample']:<9}), performance is ",
+                question_fine_grained_performance['unseen']
+            )
+
+        if hasattr(model, "get_predict_score_seq_len_minus1"):
+            his_window_lens = [10, 15, 20]
+            acc_ths = [0.4, 0.3, 0.2]
+            self.objects["logger"].info("\nevaluation result from double biased point")
+            for his_window_len in his_window_lens:
+                for acc_th in acc_ths:
+                    pass
 
         # 高|中|低频习题|知识点的性能；高|中|低正确率习题|知识点的性能
         train_statics_special_path = fine_grain_config["train_statics_special_path"]

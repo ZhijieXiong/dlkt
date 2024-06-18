@@ -9,7 +9,7 @@ from .util import *
 from ..util.basic import *
 from .LossRecord import *
 from .TrainRecord import *
-from ..evaluator.util import get_seq_easy_point, get_seq_biased_point, get_performance_no_error, evaluate_easy, evaluate_bias, get_seq_fine_grained_performance
+from ..evaluator.util import get_seq_fine_grained_performance
 from ..CONSTANT import MODEL_USE_QC
 
 
@@ -159,23 +159,6 @@ class KnowledgeTracingTrainer:
             return
 
         if hasattr(model, "get_predict_score_seq_len_minus1"):
-            # self.objects["logger"].info("\nevaluation result from biased point (method2)")
-            # previous_seq_lens = [10, 15, 20]
-            # seq_most_acc = [0.4, 0.3]
-            # for previous_seq_len4bias in previous_seq_lens:
-            #     for seq_most_accuracy4bias in seq_most_acc:
-            #         result_performance = get_seq_easy_hard_performance(
-            #             result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias
-            #         )
-            #         self.print_performance(
-            #             f"({previous_seq_len4bias}, {seq_most_accuracy4bias}), {valid_or_test} seq easy point "
-            #             f"({result_performance['easy']['num_sample']:<9}), performance is ", result_performance['easy']
-            #         )
-            #         self.print_performance(
-            #             f"({previous_seq_len4bias}, {seq_most_accuracy4bias}), {valid_or_test} seq hard point "
-            #             f"({result_performance['hard']['num_sample']:<9}), performance is ", result_performance['hard']
-            #         )
-
             seq_lens = [10, 20]
             most_acc_list = [0.4, 0.4]
             for previous_seq_len4bias, seq_most_accuracy4bias in zip(seq_lens, most_acc_list):

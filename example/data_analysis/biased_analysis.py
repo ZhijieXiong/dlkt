@@ -3,7 +3,7 @@ import argparse
 import config
 
 from lib.util.data import read_preprocessed_file
-from lib.evaluator.util import get_num_seq_fine_grained_point
+from lib.evaluator.util import get_num_seq_fine_grained_sample
 
 
 if __name__ == "__main__":
@@ -39,7 +39,7 @@ if __name__ == "__main__":
         for seq_most_accuracy in [0.4, 0.35, 0.3]:
             k = f"({previous_seq_len}, {seq_most_accuracy})"
             num_easy, num_normal, num_hard, num_cold_start, num_warm_started = \
-                get_num_seq_fine_grained_point(all_batch, previous_seq_len, seq_most_accuracy)
+                get_num_seq_fine_grained_sample(all_batch, previous_seq_len, seq_most_accuracy)
             sub_data_statics[k] = {
                 "seq_easy_sample": num_easy / num_sample_all,
                 "seq_hard_sample": num_hard / num_sample_all,

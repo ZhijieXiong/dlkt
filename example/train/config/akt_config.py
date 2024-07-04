@@ -43,11 +43,24 @@ def akt_general_config(local_params, global_params, global_objects):
     # 损失权重
     global_params["loss_config"]["rasch_loss"] = local_params["weight_rasch_loss"]
 
+    # IPS
+    use_sample_weight = local_params["use_sample_weight"]
+    sample_weight_method = local_params["sample_weight_method"]
+    IPS_min = local_params["IPS_min"]
+    IPS_his_seq_len = local_params['IPS_his_seq_len']
+
+    global_params["use_sample_weight"] = use_sample_weight
+    global_params["sample_weight_method"] = sample_weight_method
+    global_params["IPS_min"] = IPS_min
+    global_params["IPS_his_seq_len"] = IPS_his_seq_len
+
     global_objects["logger"].info(
         "model params\n"
-        f"    num of concept: {num_concept}, num of question: {num_question}, dim of model: {dim_model}, num of block: {num_block}, "
-        f"num of attention head: {num_head}, dim of ff: {dim_ff}, dim of final fc: {dim_final_fc}, dropout: {dropout}\n"
-        f"    separate question answer: {separate_qa}, key and query of attention are same: {key_query_same}, representation of seq in AKT: {seq_representation}"
+        f"    num_concept: {num_concept}, num_question: {num_question}, dim_model: {dim_model}, num_block: {num_block}, "
+        f"num_head: {num_head}, dim_ff: {dim_ff}, dim_final_fc: {dim_final_fc}, \n     dropout: {dropout}, "
+        f"separate_qa: {separate_qa}, key_query_same: {key_query_same}, seq_representation: {seq_representation}\n"
+        f"IPS params\n    "
+        f"use IPS: {use_sample_weight}, IPS_min: {IPS_min}, IPS_his_seq_len: {IPS_his_seq_len}"
     )
 
     if local_params["save_model"]:

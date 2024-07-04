@@ -41,10 +41,23 @@ def lpkt_general_config(local_params, global_params, global_objects):
     q_matrix = global_objects["LPKT"]["q_matrix"]
     q_matrix[q_matrix > 1] = 1
 
+    # IPS
+    use_sample_weight = local_params["use_sample_weight"]
+    sample_weight_method = local_params["sample_weight_method"]
+    IPS_min = local_params["IPS_min"]
+    IPS_his_seq_len = local_params['IPS_his_seq_len']
+
+    global_params["use_sample_weight"] = use_sample_weight
+    global_params["sample_weight_method"] = sample_weight_method
+    global_params["IPS_min"] = IPS_min
+    global_params["IPS_his_seq_len"] = IPS_his_seq_len
+
     global_objects["logger"].info(
         "model params\n"
         f"    num of concept: {num_concept}, num of question: {num_question}, dim of e: {dim_e}, dim of k: {dim_k}, "
-        f"dim of correct emb: {dim_correct}, dropout: {dropout}"
+        f"dim of correct emb: {dim_correct}, dropout: {dropout}\n"
+        f"IPS params\n    "
+        f"use IPS: {use_sample_weight}, IPS_min: {IPS_min}, IPS_his_seq_len: {IPS_his_seq_len}"
     )
 
     if local_params["save_model"]:

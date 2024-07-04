@@ -234,6 +234,7 @@ class AuxInfoDCT(nn.Module):
         w_counter_fact = self.params["loss_config"].get("counterfactual loss", 0)
         w_learning = self.params["loss_config"].get("learning loss", 0)
         w_unbiased_cl = self.params["loss_config"].get("unbiased cl loss", 0)
+        w_question_stable = self.params["loss_config"].get("question stable loss", 0)
 
         Q_table = self.objects["data"]["Q_table_tensor"]
 
@@ -351,6 +352,35 @@ class AuxInfoDCT(nn.Module):
             num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
             loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
         loss = loss + predict_loss
+
+        if (not multi_stage) and (w_question_stable != 0):
+            noise_strength = self.params["other"]["question_noise_strength"]
+            noise1 = torch.rand(batch_size, seq_len - 1, num_concept).to(self.params["device"]) * \
+                     noise_strength * 2 - noise_strength
+            que_difficulty_aug1 = torch.clamp(que_difficulty + noise1, 0.0, 1.0)
+            inter_func_in_aug1 = user_ability - que_difficulty_aug1
+            que_difficulty_aug1_ = que_difficulty_aug1 * Q_table[question_seq[:, 1:]]
+            irt_logits_aug1 = que_discrimination * inter_func_in_aug1 * Q_table[question_seq[:, 1:]]
+            sum_weight_concept_aug1 = torch.sum(que_difficulty_aug1_, dim=-1, keepdim=True) + 1e-6
+            y_aug1 = irt_logits_aug1 / sum_weight_concept_aug1
+            predict_score_aug1 = torch.sigmoid(torch.sum(y_aug1, dim=-1))
+            predict_score_aug1 = torch.masked_select(predict_score_aug1, mask_bool_seq[:, 1:])
+
+            # noise2 = torch.rand(batch_size, seq_len - 1, num_concept).to(self.params["device"]) * 0.2 - 0.1
+            # que_difficulty_aug2 = torch.clamp(que_difficulty + noise2, 0.0, 1.0)
+            # inter_func_in_aug2 = user_ability - que_difficulty_aug2
+            # que_difficulty_aug2_ = que_difficulty_aug2 * Q_table[question_seq[:, 1:]]
+            # irt_logits_aug2 = que_discrimination * inter_func_in_aug2 * Q_table[question_seq[:, 1:]]
+            # sum_weight_concept_aug2 = torch.sum(que_difficulty_aug2_, dim=-1, keepdim=True) + 1e-6
+            # y_aug2 = irt_logits_aug2 / sum_weight_concept_aug2
+            # predict_score_aug2 = torch.sigmoid(torch.sum(y_aug2, dim=-1))
+
+            question_stable_loss = nn.functional.mse_loss(predict_score_aug1, predict_score)
+            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+            if loss_record is not None:
+                loss_record.add_loss("question stable loss", question_stable_loss.detach().cpu().item() * num_sample,
+                                     num_sample)
+            loss = loss + w_question_stable * question_stable_loss
 
         q2c_table = self.objects["data"]["q2c_table"][batch["question_seq"]]
         q2c_mask_table = self.objects["data"]["q2c_mask_table"][batch["question_seq"]]

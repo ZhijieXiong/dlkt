@@ -36,9 +36,8 @@ def highlight_tail(w, question_seq, train_statics, seq_len, max_seq_len):
     return w_seq
 
 
-def IPS_weight(item_data, question2concept, IPS_min, IPS_his_seq_len):
+def IPS_seq_weight(item_data, IPS_min, IPS_his_seq_len):
     question_seq = item_data["question_seq"]
-    concept_context = list(map(lambda q: question2concept[q], question_seq))
     correct_seq = item_data["correct_seq"]
     max_seq_len = len(question_seq)
     seq_len = item_data["seq_len"]
@@ -49,17 +48,76 @@ def IPS_weight(item_data, question2concept, IPS_min, IPS_his_seq_len):
     weight_seq = [1.0] * IPS_his_seq_len
     for i in range(IPS_his_seq_len, seq_len):
         correct_context = correct_seq[i-IPS_his_seq_len:i]
-        context_concepts = set([c_id for c_ids in concept_context[i - IPS_his_seq_len:i] for c_id in c_ids])
-        current_concept = set([c_id for c_id in concept_context[i]])
-
         seq_accuracy = sum(correct_context) / IPS_his_seq_len
+        label_current = correct_seq[i]
 
-        if bool(context_concepts & current_concept):
+        if ((seq_accuracy <= 0.5) and (label_current == 1)) or ((seq_accuracy >= 0.5) and (label_current == 0)):
             weight = 1.0
         else:
             weight = IPS_min + math.fabs(seq_accuracy - 0.5) * (1 - IPS_min) / 0.5
 
         weight_seq.append(weight)
+    weight_seq += [0] * (max_seq_len - seq_len)
+
+    return weight_seq
+
+
+def IPS_question_weight(item_data, statics_train, IPS_min):
+    question_seq = item_data["question_seq"]
+    correct_seq = item_data["correct_seq"]
+    max_seq_len = len(question_seq)
+    seq_len = item_data["seq_len"]
+
+    weight_seq = []
+    for i in range(seq_len):
+        q_id = question_seq[i]
+        q_acc_statics = statics_train["question_acc"][q_id]
+        label_current = correct_seq[i]
+
+        if (q_acc_statics < 0) or \
+                ((q_acc_statics <= 0.5) and (label_current == 1)) or \
+                ((q_acc_statics >= 0.5) and (label_current == 0)):
+            weight = 1.0
+        else:
+            weight = IPS_min + math.fabs(q_acc_statics - 0.5) * (1 - IPS_min) / 0.5
+
+        weight_seq.append(weight)
+    weight_seq += [0] * (max_seq_len - seq_len)
+
+    return weight_seq
+
+
+def IPS_double_weight(item_data, statics_train, IPS_min, IPS_his_seq_len):
+    question_seq = item_data["question_seq"]
+    correct_seq = item_data["correct_seq"]
+    max_seq_len = len(question_seq)
+    seq_len = item_data["seq_len"]
+
+    weight_seq = []
+    for i in range(seq_len):
+        q_id = question_seq[i]
+        q_acc_statics = statics_train["question_acc"][q_id]
+        label_current = correct_seq[i]
+
+        if (q_acc_statics < 0) or \
+                ((q_acc_statics <= 0.5) and (label_current == 1)) or \
+                ((q_acc_statics >= 0.5) and (label_current == 0)):
+            weight_1 = 1.0
+        else:
+            weight_1 = IPS_min + math.fabs(q_acc_statics - 0.5) * (1 - IPS_min) / 0.5
+
+        if i < IPS_his_seq_len:
+            weight_2 = 1.0
+        else:
+            correct_context = correct_seq[i - IPS_his_seq_len:i]
+            seq_accuracy = sum(correct_context) / IPS_his_seq_len
+
+            if ((seq_accuracy <= 0.5) and (label_current == 1)) or ((seq_accuracy >= 0.5) and (label_current == 0)):
+                weight_2 = 1.0
+            else:
+                weight_2 = IPS_min + math.fabs(seq_accuracy - 0.5) * (1 - IPS_min) / 0.5
+
+        weight_seq.append((weight_1 + weight_2) / 2)
     weight_seq += [0] * (max_seq_len - seq_len)
 
     return weight_seq

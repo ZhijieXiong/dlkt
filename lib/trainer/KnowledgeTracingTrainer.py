@@ -9,7 +9,7 @@ from .util import *
 from ..util.basic import *
 from .LossRecord import *
 from .TrainRecord import *
-from ..evaluator.util import get_seq_fine_grained_performance
+from ..evaluator.util import get_seq_fine_grained_performance, get_question_fine_grained_performance, get_double_fine_grained_performance
 from ..CONSTANT import MODEL_USE_QC
 
 
@@ -159,24 +159,44 @@ class KnowledgeTracingTrainer:
             return
 
         if hasattr(model, "get_predict_score_seq_len_minus1"):
-            seq_lens = [10, 20]
-            most_acc_list = [0.4, 0.4]
-            for previous_seq_len4bias, seq_most_accuracy4bias in zip(seq_lens, most_acc_list):
-                seq_fine_grained_performance = get_seq_fine_grained_performance(
-                    result_all_batch, previous_seq_len4bias, seq_most_accuracy4bias
-                )
+            # 历史偏差
+            window_lens = [10, 20]
+            acc_ths = [0.4, 0.4]
+            for window_len, acc_th in zip(window_lens, acc_ths):
+                seq_fine_grained_performance = get_seq_fine_grained_performance(result_all_batch, window_len, acc_th)
                 self.print_performance(
-                    f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) {valid_or_test} seq easy point, "
+                    f"({window_len}, {acc_th}) {valid_or_test} seq easy point, "
                     f"performance is ", seq_fine_grained_performance['easy']
                 )
                 self.print_performance(
-                    f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) {valid_or_test} seq normal point, "
+                    f"({window_len}, {acc_th}) {valid_or_test} seq normal point, "
                     f"performance is ", seq_fine_grained_performance['normal']
                 )
                 self.print_performance(
-                    f"({previous_seq_len4bias}, {seq_most_accuracy4bias}) {valid_or_test} seq hard point, "
+                    f"({window_len}, {acc_th}) {valid_or_test} seq hard point, "
                     f"performance is ", seq_fine_grained_performance['hard']
                 )
+
+            # 习题偏差
+            train_statics_common = self.objects["data"].get("train_data_statics_common", None)
+            if train_statics_common is not None:
+                acc_ths = [0.4, 0.3, 0.2]
+                for acc_th in acc_ths:
+                    question_fine_grained_performance = get_question_fine_grained_performance(
+                        result_all_batch, train_statics_common, acc_th
+                    )
+                    self.print_performance(
+                        f"({acc_th}, ) {valid_or_test} question easy point, "
+                        f"performance is ", question_fine_grained_performance['easy']
+                    )
+                    self.print_performance(
+                        f"({acc_th}, ) {valid_or_test} question normal point, "
+                        f"performance is ", question_fine_grained_performance['normal']
+                    )
+                    self.print_performance(
+                        f"({acc_th}, ) {valid_or_test} question hard point, "
+                        f"performance is ", question_fine_grained_performance['hard']
+                    )
 
     def evaluate(self):
         train_strategy = self.params["train_strategy"]

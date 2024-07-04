@@ -22,23 +22,23 @@ if __name__ == "__main__":
 
     # 加载模型参数配置
     parser.add_argument("--save_model_dir", type=str, help="绝对路径",
-                        default=r"F:\code\myProjects\dlkt\lab\saved_models\save\our_setting\AKT\2024-03-22@12-34-53@@AKT@@seed_0@@our_setting_new@@assist2009_train_fold_0")
+                        default=r"F:\code\myProjects\dlkt\lab\saved_models\save\our_setting\AuxInfoDCT\baseline\2024-05-22@10-37-44@@AuxInfoDCT@@seed_0@@our_setting_new@@ednet-kt1_train_fold_0")
     parser.add_argument("--save_model_name", type=str, help="文件名", default="saved.ckt")
     parser.add_argument("--model_name_in_ckt", type=str, help="文件名", default="best_valid")
     # 测试配置
     parser.add_argument("--setting_name", type=str, default="our_setting_new")
-    parser.add_argument("--dataset_name", type=str, default="assist2009")
+    parser.add_argument("--dataset_name", type=str, default="ednet-kt1")
     parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--test_file_name", type=str, help="文件名", default="assist2009_test_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, help="文件名", default="ednet-kt1_test_fold_0.txt")
     parser.add_argument("--base_type", type=str, default="concept", choices=("concept", "question"),
                         help="如果是multi concept数据集训练，并且想使用由PYKT提出的基于习题的测试，请设置为question，其它情况都为concept")
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
 
     # ---------------------------- 细粒度配置（不适用于base_type为question的evaluate）----------------------------------------
     # 由prepare4fine_trained_evaluate.py生成
-    parser.add_argument("--train_statics_common_path", type=str, default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new\assist2009_train_fold_0_statics_common.json")
-    parser.add_argument("--train_statics_special_path", type=str, default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new\assist2009_train_fold_0_statics_special.json")
+    parser.add_argument("--train_statics_common_path", type=str, default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new\ednet-kt1_train_fold_0_statics_common.json")
+    parser.add_argument("--train_statics_special_path", type=str, default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new\ednet-kt1_train_fold_0_statics_special.json")
     # 冷启动问题
     parser.add_argument("--max_seq_len", type=int, default=200)
     parser.add_argument("--seq_len_absolute", type=str, help="[0, 10, 200]表示测试模型对位于序列0~10区间的点的性能以及10~200区间点的性能",
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_concept_diff", type=int, default=100)
 
     # 如果是AuxInfoDCT，对时间信息首先需要聚合
-    parser.add_argument("--is_dct", type=str2bool, default=False)
+    parser.add_argument("--is_dct", type=str2bool, default=True)
     # -------------------------------------------------------------------------------------------------------------------
 
     args = parser.parse_args()

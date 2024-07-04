@@ -195,6 +195,26 @@ def general_config(local_params, global_params, global_objects):
         with open(statics_info_file_path, "r") as file:
             global_objects["data"]["train_data_statics"] = json.load(file)
 
+    # 训练集习题正确率信息
+    statics_statics_common_path = os.path.join(
+        file_manager.get_setting_dir(setting_name),
+        datasets_config["train"]["file_name"].replace(".txt", f"_statics_common.json")
+    )
+    if not os.path.exists(statics_statics_common_path):
+        global_objects["logger"].warning(
+            f"\nWARNING: statics of train dataset (`{statics_statics_common_path}`) is not exist. This file is required "
+            f"for IPS-question"
+            "If it is necessary, please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset\n"
+        )
+    else:
+        with open(statics_statics_common_path, "r") as file:
+            train_statics_common = json.load(file)
+            question_acc_dict = {}
+            for q_id, q_acc in train_statics_common["question_acc"].items():
+                question_acc_dict[int(q_id)] = q_acc
+            train_statics_common["question_acc"] = question_acc_dict
+            global_objects["data"]["train_data_statics_common"] = train_statics_common
+
     # load大模型的embedding
     if use_LLM_emb4question or use_LLM_emb4concept:
         dataset_name = local_params["dataset_name"]

@@ -14,7 +14,7 @@ from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
-    parser.add_argument("--setting_name", type=str, default="our_setting")
+    parser.add_argument("--setting_name", type=str, default="our_setting_new")
     parser.add_argument("--dataset_name", type=str, default="statics2011")
     parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
@@ -65,6 +65,11 @@ if __name__ == "__main__":
                         help="choose the representation of sequence in AKT, knowledge_encoder_output is the choice of CL4KT",
                         choices=("encoder_output", "knowledge_encoder_output"))
     parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
+    # IPS
+    parser.add_argument("--use_sample_weight", type=str2bool, default=False)
+    parser.add_argument("--sample_weight_method", type=str, default="IPS")
+    parser.add_argument("--IPS_min", type=float, default=0.7)
+    parser.add_argument("--IPS_his_seq_len", type=int, default=20)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

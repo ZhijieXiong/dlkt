@@ -14,7 +14,7 @@ from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
-    parser.add_argument("--setting_name", type=str, default="our_setting")
+    parser.add_argument("--setting_name", type=str, default="our_setting_new")
     parser.add_argument("--dataset_name", type=str, default="assist2009")
     parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
@@ -68,6 +68,11 @@ if __name__ == "__main__":
     parser.add_argument("--use_LLM_emb4question", type=str2bool, default=False)
     parser.add_argument("--use_LLM_emb4concept", type=str2bool, default=False)
     parser.add_argument("--train_LLM_emb", type=str2bool, default=True)
+    # IPS
+    parser.add_argument("--use_sample_weight", type=str2bool, default=False)
+    parser.add_argument("--sample_weight_method", type=str, default="IPS-question")
+    parser.add_argument("--IPS_min", type=float, default=0.3)
+    parser.add_argument("--IPS_his_seq_len", type=int, default=20)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

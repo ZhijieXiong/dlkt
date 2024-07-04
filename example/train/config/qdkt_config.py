@@ -77,6 +77,23 @@ def qdkt_config(local_params):
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
     qdkt_general_config(local_params, global_params, global_objects)
+
+    # IPS
+    use_sample_weight = local_params["use_sample_weight"]
+    sample_weight_method = local_params["sample_weight_method"]
+    IPS_min = local_params["IPS_min"]
+    IPS_his_seq_len = local_params['IPS_his_seq_len']
+
+    global_params["use_sample_weight"] = use_sample_weight
+    global_params["sample_weight_method"] = sample_weight_method
+    global_params["IPS_min"] = IPS_min
+    global_params["IPS_his_seq_len"] = IPS_his_seq_len
+
+    global_objects["logger"].info(
+        f"IPS params\n    "
+        f"use IPS: {use_sample_weight}, IPS_min: {IPS_min}, IPS_his_seq_len: {IPS_his_seq_len}"
+    )
+
     if local_params["save_model"]:
         save_params(global_params, global_objects)
 

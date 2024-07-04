@@ -100,8 +100,10 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
     w_penalty_neg = local_params.get("w_penalty_neg", 0)
     w_q_table = local_params.get("w_q_table", 0)
     w_unbiased_cl = local_params.get("w_unbiased_cl", 0)
+    w_question_stable = local_params.get("w_question_stable", 0)
     temp = local_params.get("temp", 0.05)
     correct_noise_strength = local_params.get("correct_noise_strength", 0.1)
+    question_noise_strength = local_params.get("question_noise_strength", 0.1)
 
     # 统计知识点难度，用于初始化encoder
     if use_pretrain:
@@ -140,18 +142,21 @@ def cognition_tracing_general_config(local_params, global_params, global_objects
         global_params["loss_config"]["counterfactual loss"] = w_counter_fact
     if w_unbiased_cl != 0:
         global_params["loss_config"]["unbiased cl loss"] = w_unbiased_cl
+    if w_question_stable != 0:
+        global_params["loss_config"]["question stable loss"] = w_question_stable
     global_params["other"]["instance_cl"] = {
         "temp": temp,
         "correct_noise_strength": correct_noise_strength
     }
+    global_params["other"]["question_noise_strength"] = question_noise_strength
 
     global_objects["logger"].info(
         "loss weight params\n"
         f"    w_unbiased_cl: {w_unbiased_cl}, w_que_diff_pred: {w_que_diff_pred}, w_que_disc_pred: {w_que_disc_pred}, "
         f"w_user_ability_pred: {w_user_ability_pred}, w_penalty_neg: {w_penalty_neg}, w_learning: {w_learning}, "
-        f"w_counter_fact: {w_counter_fact}, w_q_table: {w_q_table}\n"
+        f"w_question_stable: {w_question_stable}, w_counter_fact: {w_counter_fact}, w_q_table: {w_q_table}\n"
         f"other params:\n"
         f"    multi_stage: {multi_stage}, use_hard_Q_table: {use_hard_Q_table}, use_pretrain: {use_pretrain}, "
         f"epoch_pretrain: {epoch_pretrain}, q_table_loss_th: {q_table_loss_th}, temp: {temp}, "
-        f"correct_noise_strength: {correct_noise_strength}"
+        f"correct_noise_strength: {correct_noise_strength}, question_noise_strength: {question_noise_strength}"
     )

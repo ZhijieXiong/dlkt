@@ -155,10 +155,18 @@ class KTDataset(Dataset):
                 elif self.params["sample_weight_method"] == "highlight_tail":
                     w_seq = highlight_tail(self.params["tail_weight"], item_data["question_seq"],
                                            self.objects["data"]["train_data_statics"], item_data["seq_len"], max_seq_len)
-                elif self.params["sample_weight_method"] == "IPS":
+                elif self.params["sample_weight_method"] == "IPS-seq":
                     IPS_min = self.params["IPS_min"]
                     IPS_his_seq_len = self.params["IPS_his_seq_len"]
-                    w_seq = IPS_weight(item_data, self.objects["data"]["question2concept"], IPS_min, IPS_his_seq_len)
+                    w_seq = IPS_seq_weight(item_data, IPS_min, IPS_his_seq_len)
+                elif self.params["sample_weight_method"] == "IPS-question":
+                    IPS_min = self.params["IPS_min"]
+                    w_seq = IPS_question_weight(item_data, self.objects["data"]["train_data_statics_common"], IPS_min)
+                elif self.params["sample_weight_method"] == "IPS-double":
+                    IPS_min = self.params["IPS_min"]
+                    IPS_his_seq_len = self.params["IPS_his_seq_len"]
+                    w_seq = IPS_double_weight(item_data, self.objects["data"]["train_data_statics_common"],
+                                              IPS_min, IPS_his_seq_len)
                 else:
                     raise NotImplementedError()
                 dataset_converted["weight_seq"].append(w_seq)

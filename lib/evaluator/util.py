@@ -110,7 +110,7 @@ def get_performance_no_error(predict_score, predict_label, true_label):
 def get_ppmcc_no_error(x, y):
     assert len(x) == len(y), f"length of x and y must be equal"
     if len(x) == 0:
-        return -1
+        return -1.0
     return np.corrcoef(x, y)[0, 1]
 
 
@@ -224,10 +224,10 @@ def get_num_seq_fine_grained_sample(all_batch, window_seq_len, acc_th):
     num_easy = len(seq_fine_grained_sample["easy"]["question"])
     num_normal = len(seq_fine_grained_sample["normal"]["question"])
     num_hard = len(seq_fine_grained_sample["hard"]["question"])
-    num_cold_start = len(seq_fine_grained_sample["cold_start"]["question"])
-    num_warm_started = num_easy + num_normal + num_hard
+    num_hard_label1 = sum(seq_fine_grained_sample["hard"]["ground_truth"])
+    num_hard_label0 = num_hard - num_hard_label1
 
-    return num_easy, num_normal, num_hard, num_cold_start, num_warm_started
+    return num_easy, num_normal, num_hard, num_hard_label0, num_hard_label1
 
 
 def get_seq_fine_grained_performance(all_batch, window_seq_len, acc_th):
@@ -321,6 +321,17 @@ def get_question_fine_grained_sample(all_batch, statics_train, most_accuracy):
     }
 
     return fine_grained_sample
+
+
+def get_num_question_fine_grained_sample(all_batch, statics_train, acc_th):
+    seq_fine_grained_sample = get_question_fine_grained_sample(all_batch, statics_train, acc_th)
+    num_easy = len(seq_fine_grained_sample["easy"]["question"])
+    num_normal = len(seq_fine_grained_sample["normal"]["question"])
+    num_hard = len(seq_fine_grained_sample["hard"]["question"])
+    num_hard_label1 = sum(seq_fine_grained_sample["hard"]["ground_truth"])
+    num_hard_label0 = num_hard - num_hard_label1
+
+    return num_easy, num_normal, num_hard, num_hard_label0, num_hard_label1
 
 
 def get_question_fine_grained_performance(all_batch, statics_train, acc_th):
@@ -452,18 +463,94 @@ def cal_PPMCC_his_acc_and_cur_model_pred(all_batch, window_lens, his_acc_th):
 
         x_easy = []
         y_easy = []
+        x_normal = []
+        y_normal = []
         x_hard = []
         y_hard = []
+        x_input_unbalanced = []
+        y_input_unbalanced = []
         for xx, yy, ll in zip(x, y, his_ave_record[window_len]["current_label"]):
             if his_acc_th <= xx <= (1 - his_acc_th):
-                x_hard.append(xx)
-                y_hard.append(yy)
-            else:
+                x_normal.append(xx)
+                y_normal.append(yy)
+            elif ((xx < his_acc_th) and (ll == 0)) or ((xx > (1 - his_acc_th)) and (ll == 1)):
                 x_easy.append(xx)
                 y_easy.append(yy)
+            else:
+                x_hard.append(xx)
+                y_hard.append(yy)
+
+            if not(his_acc_th <= xx <= (1 - his_acc_th)):
+                x_input_unbalanced.append(xx)
+                y_input_unbalanced.append(yy)
 
         result[window_len]["hard"] = get_ppmcc_no_error(x_hard, y_hard)
+        result[window_len]["normal"] = get_ppmcc_no_error(x_normal, y_normal)
         result[window_len]["easy"] = get_ppmcc_no_error(x_easy, y_easy)
+        result[window_len]["unbalanced"] = get_ppmcc_no_error(x_input_unbalanced, y_input_unbalanced)
+
+    return result
+
+
+def cal_PPMCC_train_question_acc_and_cur_model_pred(all_batch, statics_train, acc_th):
+    """
+    计算当前预测和习题在训练集中正确率的相关系数PPMCC\n
+    :param all_batch:
+    :param statics_train:
+    :param acc_th:
+    :return:
+    """
+    sample_record = {
+        "train_q_acc": [],
+        "current_predict_score": [],
+        "current_label": []
+    }
+    for batch in all_batch:
+        zip_iter = zip(batch["question_seqs"], batch["label_seqs"], batch["predict_score_seqs"], batch["mask_seqs"])
+        for question_seq, label_seq, predict_score_seq, mask_seq in zip_iter:
+            for i, m in enumerate(mask_seq):
+                if m == 0:
+                    break
+                q_id = question_seq[i]
+                q_acc_statics = statics_train["question_acc"][q_id]
+
+                if q_acc_statics != -1:
+                    sample_record["train_q_acc"].append(q_acc_statics)
+                    sample_record["current_predict_score"].append(predict_score_seq[i])
+                    sample_record["current_label"].append(label_seq[i])
+
+    result = {}
+    x = sample_record["train_q_acc"]
+    y = sample_record["current_predict_score"]
+    result["all"] = get_ppmcc_no_error(x, y)
+
+    x_easy = []
+    y_easy = []
+    x_normal = []
+    y_normal = []
+    x_hard = []
+    y_hard = []
+    x_input_unbalanced = []
+    y_input_unbalanced = []
+    for xx, yy, ll in zip(x, y, sample_record["current_label"]):
+        if acc_th <= xx <= (1 - acc_th):
+            x_normal.append(xx)
+            y_normal.append(yy)
+        elif ((xx < acc_th) and (ll == 0)) or ((xx > (1 - acc_th)) and (ll == 1)):
+            x_easy.append(xx)
+            y_easy.append(yy)
+        else:
+            x_hard.append(xx)
+            y_hard.append(yy)
+
+        if not (acc_th <= xx <= (1 - acc_th)):
+            x_input_unbalanced.append(xx)
+            y_input_unbalanced.append(yy)
+
+    result["hard"] = get_ppmcc_no_error(x_hard, y_hard)
+    result["normal"] = get_ppmcc_no_error(x_normal, y_normal)
+    result["easy"] = get_ppmcc_no_error(x_easy, y_easy)
+    result["unbalanced"] = get_ppmcc_no_error(x_input_unbalanced, y_input_unbalanced)
 
     return result
 
@@ -507,17 +594,91 @@ def cal_PPMCC_his_acc_and_cur_label(all_batch, window_lens, his_acc_th):
 
         x_easy = []
         y_easy = []
+        x_normal = []
+        y_normal = []
         x_hard = []
         y_hard = []
-        for xx, yy in zip(x, y):
+        x_input_unbalanced = []
+        y_input_unbalanced = []
+        for xx, yy, ll in zip(x, y, his_ave_record[window_len]["current_label"]):
             if his_acc_th <= xx <= (1 - his_acc_th):
-                x_hard.append(xx)
-                y_hard.append(yy)
-            else:
+                x_normal.append(xx)
+                y_normal.append(yy)
+            elif ((xx < his_acc_th) and (ll == 0)) or ((xx > (1 - his_acc_th)) and (ll == 1)):
                 x_easy.append(xx)
                 y_easy.append(yy)
+            else:
+                x_hard.append(xx)
+                y_hard.append(yy)
+
+            if not(his_acc_th <= xx <= (1 - his_acc_th)):
+                x_input_unbalanced.append(xx)
+                y_input_unbalanced.append(yy)
 
         result[window_len]["easy"] = get_ppmcc_no_error(x_easy, y_easy)
+        result[window_len]["normal"] = get_ppmcc_no_error(x_normal, y_normal)
         result[window_len]["hard"] = get_ppmcc_no_error(x_hard, y_hard)
+        result[window_len]["unbalanced"] = get_ppmcc_no_error(x_input_unbalanced, y_input_unbalanced)
+
+    return result
+
+
+def cal_PPMCC_train_question_acc_and_cur_label(all_batch, statics_train, acc_th):
+    """
+    计算当前标签和习题在训练集中正确率的相关系数PPMCC\n
+    :param all_batch:
+    :param statics_train:
+    :param acc_th:
+    :return:
+    """
+    sample_record = {
+        "train_q_acc": [],
+        "current_label": []
+    }
+    for batch in all_batch:
+        zip_iter = zip(batch["question_seqs"], batch["label_seqs"], batch["mask_seqs"])
+        for question_seq, label_seq, mask_seq in zip_iter:
+            for i, m in enumerate(mask_seq):
+                if m == 0:
+                    break
+                q_id = question_seq[i]
+                q_acc_statics = statics_train["question_acc"][q_id]
+
+                if q_acc_statics != -1:
+                    sample_record["train_q_acc"].append(q_acc_statics)
+                    sample_record["current_label"].append(label_seq[i])
+
+    result = {}
+    x = sample_record["train_q_acc"]
+    y = sample_record["current_label"]
+    result["all"] = get_ppmcc_no_error(x, y)
+
+    x_easy = []
+    y_easy = []
+    x_normal = []
+    y_normal = []
+    x_hard = []
+    y_hard = []
+    x_input_unbalanced = []
+    y_input_unbalanced = []
+    for xx, yy, ll in zip(x, y, sample_record["current_label"]):
+        if acc_th <= xx <= (1 - acc_th):
+            x_normal.append(xx)
+            y_normal.append(yy)
+        elif ((xx < acc_th) and (ll == 0)) or ((xx > (1 - acc_th)) and (ll == 1)):
+            x_easy.append(xx)
+            y_easy.append(yy)
+        else:
+            x_hard.append(xx)
+            y_hard.append(yy)
+
+        if not (acc_th <= xx <= (1 - acc_th)):
+            x_input_unbalanced.append(xx)
+            y_input_unbalanced.append(yy)
+
+    result["hard"] = get_ppmcc_no_error(x_hard, y_hard)
+    result["normal"] = get_ppmcc_no_error(x_normal, y_normal)
+    result["easy"] = get_ppmcc_no_error(x_easy, y_easy)
+    result["unbalanced"] = get_ppmcc_no_error(x_input_unbalanced, y_input_unbalanced)
 
     return result

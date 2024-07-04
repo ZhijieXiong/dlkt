@@ -82,25 +82,26 @@ class Evaluator:
         )
 
         # correlation between history accuracy and model predict score
-        window_lens = [10, 20]
-        his_acc_ths = [0.4, 0.3]
+        window_lens = [10, 15, 20]
+        his_acc_ths = [0.4, 0.3, 0.2]
         self.objects["logger"].info(
             f"PPMCC between history average accuracy and current model predict score"
         )
         for his_acc_th in his_acc_ths:
             ppmcc = cal_PPMCC_his_acc_and_cur_model_pred(result_all_batch, window_lens, his_acc_th)
             for window_len in window_lens:
-                for k in ["all", "easy", "hard"]:
+                for k in ["all", "easy", "normal", "hard", "unbalanced"]:
                     self.objects["logger"].info(
-                        f"({window_len}, {his_acc_th}), PPMCC of {k:<5} is {ppmcc[window_len][k]:.4}"
+                        f"({window_len}, {his_acc_th}), PPMCC between history acc and prediction of {k}"
+                        f" is {ppmcc[window_len][k]:.4}"
                     )
 
         # CORE evaluate (question bias)
-        # core_evaluation1 = evaluate_core(predict_score_all, ground_truth_all, np.concatenate(question_all, axis=0), True)
+        core_evaluation1 = evaluate_core(predict_score_all, ground_truth_all, np.concatenate(question_all, axis=0), True)
         # core_evaluation2 = evaluate_core(predict_score_all, ground_truth_all, np.concatenate(question_all, axis=0), False)
-        # self.print_performance(
-        #     f"\nCORE metric allow repeat ({core_evaluation1['num_sample']:<9}), performance is ", core_evaluation1
-        # )
+        self.print_performance(
+            f"\nCORE metric allow repeat ({core_evaluation1['num_sample']:<9}), performance is ", core_evaluation1
+        )
         # self.print_performance(
         #     f"CORE metric disallow repeat ({core_evaluation2['num_sample']:<9}), performance is ", core_evaluation2
         # )
@@ -130,33 +131,33 @@ class Evaluator:
             self.objects["logger"].info("\nevaluation result of seq biased samples")
             his_window_lens = [10, 15, 20]
             acc_ths = [0.4, 0.3, 0.2]
-            for his_window_len, acc_th in zip(his_window_lens, acc_ths):
-                seq_fine_grained_performance = get_seq_fine_grained_performance(
-                    result_all_batch, his_window_len, acc_th
-                )
+            for his_window_len in his_window_lens:
+                for acc_th in acc_ths:
+                    seq_fine_grained_performance = get_seq_fine_grained_performance(
+                        result_all_batch, his_window_len, acc_th
+                    )
 
-                self.print_performance(
-                    f"({his_window_len}, {acc_th}) seq easy samples "
-                    f"({seq_fine_grained_performance['easy']['num_sample']:<9}), performance is ",
-                    seq_fine_grained_performance['easy']
-                )
-                self.print_performance(
-                    f"({his_window_len}, {acc_th}) seq normal samples "
-                    f"({seq_fine_grained_performance['normal']['num_sample']:<9}), performance is ",
-                    seq_fine_grained_performance['normal']
-                )
-                self.print_performance(
-                    f"({his_window_len}, {acc_th}) seq hard samples "
-                    f"({seq_fine_grained_performance['hard']['num_sample']:<9}), performance is ",
-                    seq_fine_grained_performance['hard']
-                )
-                self.print_performance(
-                    f"({his_window_len}, {acc_th}) cold start samples "
-                    f"({seq_fine_grained_performance['cold_start']['num_sample']:<9}), performance is ",
-                    seq_fine_grained_performance['cold_start']
-                )
+                    self.print_performance(
+                        f"({his_window_len}, {acc_th}) seq easy samples "
+                        f"({seq_fine_grained_performance['easy']['num_sample']:<9}), performance is ",
+                        seq_fine_grained_performance['easy']
+                    )
+                    self.print_performance(
+                        f"({his_window_len}, {acc_th}) seq normal samples "
+                        f"({seq_fine_grained_performance['normal']['num_sample']:<9}), performance is ",
+                        seq_fine_grained_performance['normal']
+                    )
+                    self.print_performance(
+                        f"({his_window_len}, {acc_th}) seq hard samples "
+                        f"({seq_fine_grained_performance['hard']['num_sample']:<9}), performance is ",
+                        seq_fine_grained_performance['hard']
+                    )
+                    self.print_performance(
+                        f"({his_window_len}, {acc_th}) cold start samples "
+                        f"({seq_fine_grained_performance['cold_start']['num_sample']:<9}), performance is ",
+                        seq_fine_grained_performance['cold_start']
+                    )
 
-        # 不同频率知识点/习题的性能
         train_statics_common_path = fine_grain_config["train_statics_common_path"]
         if not os.path.exists(train_statics_common_path):
             return
@@ -172,6 +173,17 @@ class Evaluator:
             for c_id, c_acc in train_statics_common["concept_acc"].items():
                 concept_acc_dict[int(c_id)] = c_acc
             train_statics_common["concept_acc"] = concept_acc_dict
+
+        his_acc_ths = [0.4, 0.3, 0.2]
+        self.objects["logger"].info(
+            f"\nPPMCC between question accuracy in train dataset and current model predict score"
+        )
+        for his_acc_th in his_acc_ths:
+            ppmcc = cal_PPMCC_train_question_acc_and_cur_model_pred(result_all_batch, train_statics_common, his_acc_th)
+            for k in ["all", "easy", "normal", "hard", "unbalanced"]:
+                self.objects["logger"].info(
+                    f"({his_acc_th}), PPMCC between question acc and prediction of {k} is {ppmcc[k]:.4}"
+                )
 
         acc_ths = [0.4, 0.3, 0.2]
         self.objects["logger"].info("\nevaluation result of question biased samples")
@@ -205,21 +217,22 @@ class Evaluator:
             his_window_lens = [10, 15, 20]
             acc_ths = [0.4, 0.3, 0.2]
             self.objects["logger"].info("\nevaluation result of double biased samples")
-            for his_window_len, acc_th in zip(his_window_lens, acc_ths):
-                double_fine_grained_performance = get_double_fine_grained_performance(
-                    result_all_batch, train_statics_common, his_window_len, acc_th
-                )
+            for his_window_len in his_window_lens:
+                for acc_th in acc_ths:
+                    double_fine_grained_performance = get_double_fine_grained_performance(
+                        result_all_batch, train_statics_common, his_window_len, acc_th
+                    )
 
-                self.print_performance(
-                    f"({his_window_len}, {acc_th}) double easy samples "
-                    f"({double_fine_grained_performance['easy']['num_sample']:<9}), performance is ",
-                    double_fine_grained_performance['easy']
-                )
-                self.print_performance(
-                    f"({his_window_len}, {acc_th}) double hard samples "
-                    f"({double_fine_grained_performance['hard']['num_sample']:<9}), performance is ",
-                    double_fine_grained_performance['hard']
-                )
+                    self.print_performance(
+                        f"({his_window_len}, {acc_th}) double easy samples "
+                        f"({double_fine_grained_performance['easy']['num_sample']:<9}), performance is ",
+                        double_fine_grained_performance['easy']
+                    )
+                    self.print_performance(
+                        f"({his_window_len}, {acc_th}) double hard samples "
+                        f"({double_fine_grained_performance['hard']['num_sample']:<9}), performance is ",
+                        double_fine_grained_performance['hard']
+                    )
 
         # 高|中|低频习题|知识点的性能；高|中|低正确率习题|知识点的性能
         train_statics_special_path = fine_grain_config["train_statics_special_path"]

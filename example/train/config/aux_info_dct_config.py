@@ -62,7 +62,8 @@ def aux_info_dct_general_config(local_params, global_params, global_objects):
         f"dim_latent: {dim_latent}, rnn type: {rnn_type}, num of rnn layer: {num_rnn_layer}, "
         f"num_mlp_layer: {num_mlp_layer}, dropout: {dropout}, max_que_disc: {max_que_disc}\n"
         f"IPS params\n    "
-        f"use IPS: {use_sample_weight}, IPS_min: {IPS_min}, IPS_his_seq_len: {IPS_his_seq_len}"
+        f"use IPS: {use_sample_weight}, sample_weight_method: {sample_weight_method}, IPS_min: {IPS_min}, "
+        f"IPS_his_seq_len: {IPS_his_seq_len}"
     )
 
     if local_params["save_model"]:

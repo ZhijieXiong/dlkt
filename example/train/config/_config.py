@@ -43,6 +43,7 @@ def general_config(local_params, global_params, global_objects):
     if local_params.get("debug_mode", False):
         torch.autograd.set_detect_anomaly(True)
     global_params["seed"] = local_params["seed"]
+    global_params["trace_epoch"] = local_params.get("trace_epoch", False)
 
     # 训练策略配置
     num_epoch = local_params["num_epoch"]
@@ -145,6 +146,9 @@ def general_config(local_params, global_params, global_objects):
 
     # 优化器配置
     global_objects["logger"].info("optimizer setting")
+    global_params["optimizers_config"] = {}
+    global_params["grad_clip_config"] = {}
+    global_params["schedulers_config"] = {}
     config_optimizer(local_params, global_params, global_objects, model_name="kt_model")
 
     # Q table，并解析Q table并得到相关数据

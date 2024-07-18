@@ -9,7 +9,8 @@ from .util import *
 from ..util.basic import *
 from .LossRecord import *
 from .TrainRecord import *
-from ..evaluator.util import get_seq_fine_grained_performance, get_question_fine_grained_performance, get_double_fine_grained_performance
+from ..evaluator.util import get_seq_fine_grained_performance, get_question_fine_grained_performance, \
+    get_seq_fine_grained_sample_mask, get_question_fine_grained_sample_mask
 from ..CONSTANT import MODEL_USE_QC
 
 
@@ -20,6 +21,37 @@ class KnowledgeTracingTrainer:
         self.best_model = None
         self.objects["optimizers"] = {}
         self.objects["schedulers"] = {}
+
+        self.loss_every_batch = {
+            "seq_easy": [],
+            "seq_hard": [],
+            "question_easy": [],
+            "question_hard": []
+        }
+        self.AUC_every_batch = {
+            "seq_easy": [],
+            "seq_hard": [],
+            "question_easy": [],
+            "question_hard": []
+        }
+        self.loss_every_epoch = {
+            "seq_easy": [],
+            "seq_hard": [],
+            "question_easy": [],
+            "question_hard": []
+        }
+        self.AUC_every_epoch_valid = {
+            "seq_easy": [],
+            "seq_hard": [],
+            "question_easy": [],
+            "question_hard": []
+        }
+        self.AUC_every_epoch_test = {
+            "seq_easy": [],
+            "seq_hard": [],
+            "question_easy": [],
+            "question_hard": []
+        }
 
         self.loss_record = self.init_loss_record()
         self.train_record = TrainRecord(params, objects)
@@ -41,13 +73,14 @@ class KnowledgeTracingTrainer:
         schedulers_config = self.params["schedulers_config"]
 
         for model_name, optimizer_config in optimizers_config.items():
-            scheduler_config = schedulers_config[model_name]
-            optimizers[model_name] = create_optimizer(models[model_name].parameters(), optimizer_config)
+            if models[model_name] is not None:
+                scheduler_config = schedulers_config[model_name]
+                optimizers[model_name] = create_optimizer(models[model_name].parameters(), optimizer_config)
 
-            if scheduler_config["use_scheduler"]:
-                schedulers[model_name] = create_scheduler(optimizers[model_name], scheduler_config)
-            else:
-                schedulers[model_name] = None
+                if scheduler_config["use_scheduler"]:
+                    schedulers[model_name] = create_scheduler(optimizers[model_name], scheduler_config)
+                else:
+                    schedulers[model_name] = None
 
     def train(self):
         train_strategy = self.params["train_strategy"]
@@ -74,13 +107,97 @@ class KnowledgeTracingTrainer:
                 if grad_clip_config["use_clip"]:
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
                 optimizer.step()
+
+                # ------------------------------------------------------------------------------------------------------
+                # 每个batch测一下模型在简单样本和困难样本上的性能
+                # if self.params.get("trace_batch", False):
+                #     model.eval()
+                #     self.get_fine_grained_performance(
+                #         model, self.objects["data_loaders"]["test_loader"], is_epoch=False, is_test=True
+                #     )
+                #
+                #     # 每个batch测一下模型在简单样本和困难样本上的loss
+                #     predict_score = model.get_predict_score_seq_len_minus1(batch)
+                #     ground_truth = batch["correct_seq"][:, 1:]
+                #     batch_ = {
+                #         "question_seqs": batch["question_seq"][:, 1:].detach().tolist(),
+                #         "label_seqs": batch["correct_seq"][:, 1:].detach().tolist(),
+                #         "mask_seqs": batch["mask_seq"][:, 1:].detach().tolist()
+                #     }
+                #     seq_easy_mask, seq_normal_mask, seq_hard_mask = get_seq_fine_grained_sample_mask(batch_, 10, 0.4)
+                #     seq_easy_mask = torch.BoolTensor(seq_easy_mask).to(self.params["device"])
+                #     seq_hard_mask = torch.BoolTensor(seq_hard_mask).to(self.params["device"])
+                #
+                #     seq_easy_predict_score = torch.masked_select(predict_score, seq_easy_mask).double()
+                #     seq_easy_ground_truth = torch.masked_select(ground_truth, seq_easy_mask).double()
+                #     seq_easy_loss = nn.functional.binary_cross_entropy(seq_easy_predict_score, seq_easy_ground_truth)
+                #     self.loss_every_batch["seq_easy"].append(seq_easy_loss.detach().cpu().item())
+                #
+                #     seq_hard_predict_score = torch.masked_select(predict_score, seq_hard_mask).double()
+                #     seq_hard_ground_truth = torch.masked_select(ground_truth, seq_hard_mask).double()
+                #     seq_hard_loss = nn.functional.binary_cross_entropy(seq_hard_predict_score, seq_hard_ground_truth)
+                #     self.loss_every_batch["seq_hard"].append(seq_hard_loss.detach().cpu().item())
+                #
+                #     train_statics_common = self.objects["data"].get("train_data_statics_common", None)
+                #     if train_statics_common is not None:
+                #         question_easy_mask, question_normal_mask, question_hard_mask = \
+                #             get_question_fine_grained_sample_mask(batch_, train_statics_common, 0.4)
+                #         question_easy_mask = torch.BoolTensor(question_easy_mask).to(self.params["device"])
+                #         question_hard_mask = torch.BoolTensor(question_hard_mask).to(self.params["device"])
+                #
+                #         question_easy_predict_score = torch.masked_select(predict_score, question_easy_mask).double()
+                #         question_easy_ground_truth = torch.masked_select(ground_truth, question_easy_mask).double()
+                #         question_easy_loss = \
+                #             nn.functional.binary_cross_entropy(question_easy_predict_score, question_easy_ground_truth)
+                #         self.loss_every_batch["question_easy"].append(question_easy_loss.detach().cpu().item())
+                #
+                #         question_hard_predict_score = torch.masked_select(predict_score, question_hard_mask).double()
+                #         question_hard_ground_truth = torch.masked_select(ground_truth, question_hard_mask).double()
+                #         question_hard_loss = \
+                #             nn.functional.binary_cross_entropy(question_hard_predict_score, question_hard_ground_truth)
+                #         self.loss_every_batch["question_hard"].append(question_hard_loss.detach().cpu().item())
+                #     model.train()
+                # ------------------------------------------------------------------------------------------------------
+
                 if hasattr(model, "apply_clipper"):
                     model.apply_clipper()
             if schedulers_config["use_scheduler"]:
                 scheduler.step()
+
+            # ----------------------------------------------------------------------------------------------------------
+            # 每个epoch测一下模型在简单样本和困难样本上的性能
+            if self.params.get("trace_epoch", False):
+                model.eval()
+                self.get_fine_grained_performance(model, self.objects["data_loaders"]["test_loader"], is_test=True)
+                self.get_fine_grained_performance(model, self.objects["data_loaders"]["valid_loader"], is_test=False)
+                self.get_fine_grained_loss(model, self.objects["data_loaders"]["train_loader"])
+            # ----------------------------------------------------------------------------------------------------------
+
             self.evaluate()
             if self.stop_train():
                 break
+
+        if self.params.get("trace_epoch", False):
+            self.objects["logger"].info(f'{"-"*35}AUC of valid sample{"-"*35}')
+            self.objects["logger"].info(f'AUC_seq_easy,AUC_seq_hard,AUC_question_easy,AUC_question_hard')
+            for pse, psh, pqe, pqh in zip(
+                    self.AUC_every_epoch_valid["seq_easy"], self.AUC_every_epoch_valid["seq_hard"],
+                    self.AUC_every_epoch_valid["question_easy"], self.AUC_every_epoch_valid["question_hard"]
+            ):
+                self.objects["logger"].info(f"{pse},{psh},{pqe},{pqh}")
+            self.objects["logger"].info(f'{"-" * 100}')
+
+            self.objects["logger"].info(f'{"-"*25}loss of train sample and AUC of test sample{"-"*25}')
+            self.objects["logger"].info(f'loss_seq_easy,loss_seq_hard,loss_question_easy,loss_question_hard,'
+                                        f'AUC_seq_easy,AUC_seq_hard,AUC_question_easy,AUC_question_hard')
+            for lse, lsh, lqe, lqh, pse, psh, pqe, pqh in zip(
+                    self.loss_every_epoch["seq_easy"], self.loss_every_epoch["seq_hard"],
+                    self.loss_every_epoch["question_easy"], self.loss_every_epoch["question_hard"],
+                    self.AUC_every_epoch_test["seq_easy"], self.AUC_every_epoch_test["seq_hard"],
+                    self.AUC_every_epoch_test["question_easy"], self.AUC_every_epoch_test["question_hard"]
+            ):
+                self.objects["logger"].info(f"{lse},{lsh},{lqe},{lqh},{pse},{psh},{pqe},{pqh}")
+            self.objects["logger"].info(f'{"-" * 100}')
 
     def stop_train(self):
         train_strategy = self.params["train_strategy"]
@@ -273,3 +390,131 @@ class KnowledgeTracingTrainer:
             MAE = mean_absolute_error(y_true=ground_truth_all, y_pred=predict_score_all)
             RMSE = mean_squared_error(y_true=ground_truth_all, y_pred=predict_score_all) ** 0.5
         return {"AUC": AUC, "ACC": ACC, "MAE": MAE, "RMSE": RMSE}
+
+    def get_fine_grained_performance(self, model, data_loader, is_epoch=True, is_test=True):
+        has_question_seq = True
+        with torch.no_grad():
+            result_all_batch = []
+            for batch in data_loader:
+                if "question_seq" not in batch.keys():
+                    has_question_seq = False
+                    break
+                correct_seq = batch["correct_seq"]
+                question_seq = batch["question_seq"]
+                predict_score = model.get_predict_score_seq_len_minus1(batch)
+                result_all_batch.append({
+                    "question_seqs": question_seq[:, 1:].detach().cpu().numpy().tolist(),
+                    "label_seqs": correct_seq[:, 1:].detach().cpu().numpy().tolist(),
+                    "predict_score_seqs": predict_score.detach().cpu().numpy().tolist(),
+                    "mask_seqs": batch["mask_seq"][:, 1:].detach().cpu().numpy().tolist()
+                })
+
+        if not has_question_seq:
+            return
+
+        # 历史偏差
+        seq_fine_grained_performance = get_seq_fine_grained_performance(result_all_batch, 10, 0.4)
+        if is_epoch:
+            if is_test:
+                self.AUC_every_epoch_test["seq_easy"].append(seq_fine_grained_performance["easy"]["AUC"])
+                self.AUC_every_epoch_test["seq_hard"].append(seq_fine_grained_performance["hard"]["AUC"])
+            else:
+                self.AUC_every_epoch_valid["seq_easy"].append(seq_fine_grained_performance["easy"]["AUC"])
+                self.AUC_every_epoch_valid["seq_hard"].append(seq_fine_grained_performance["hard"]["AUC"])
+        else:
+            self.AUC_every_batch["seq_easy"].append(seq_fine_grained_performance["easy"]["AUC"])
+            self.AUC_every_batch["seq_hard"].append(seq_fine_grained_performance["hard"]["AUC"])
+
+        # 习题偏差
+        train_statics_common = self.objects["data"].get("train_data_statics_common", None)
+        if train_statics_common is not None:
+            question_fine_grained_performance = get_question_fine_grained_performance(
+                result_all_batch, train_statics_common, 0.4
+            )
+            if is_epoch:
+                if is_test:
+                    self.AUC_every_epoch_test["question_easy"].append(question_fine_grained_performance["easy"]["AUC"])
+                    self.AUC_every_epoch_test["question_hard"].append(question_fine_grained_performance["hard"]["AUC"])
+                else:
+                    self.AUC_every_epoch_valid["question_easy"].append(question_fine_grained_performance["easy"]["AUC"])
+                    self.AUC_every_epoch_valid["question_hard"].append(question_fine_grained_performance["hard"]["AUC"])
+            else:
+                self.AUC_every_batch["question_easy"].append(question_fine_grained_performance["easy"]["AUC"])
+                self.AUC_every_batch["question_hard"].append(question_fine_grained_performance["hard"]["AUC"])
+
+    def get_fine_grained_loss(self, model, data_loader):
+        train_statics_common = self.objects["data"].get("train_data_statics_common", None)
+
+        with torch.no_grad():
+            seq_easy_predict_score_all = []
+            seq_easy_ground_truth_all = []
+            seq_hard_predict_score_all = []
+            seq_hard_ground_truth_all = []
+
+            question_easy_predict_score_all = []
+            question_easy_ground_truth_all = []
+            question_hard_predict_score_all = []
+            question_hard_ground_truth_all = []
+            for batch in data_loader:
+                predict_score = model.get_predict_score_seq_len_minus1(batch)
+                ground_truth = batch["correct_seq"][:, 1:]
+
+                batch_ = {
+                    "question_seqs": batch["question_seq"][:, 1:].detach().tolist(),
+                    "label_seqs": batch["correct_seq"][:, 1:].detach().tolist(),
+                    "mask_seqs": batch["mask_seq"][:, 1:].detach().tolist()
+                }
+                seq_easy_mask, seq_normal_mask, seq_hard_mask = get_seq_fine_grained_sample_mask(batch_, 10, 0.4)
+                seq_easy_mask = torch.BoolTensor(seq_easy_mask).to(self.params["device"])
+                seq_hard_mask = torch.BoolTensor(seq_hard_mask).to(self.params["device"])
+
+                seq_easy_predict_score = torch.masked_select(predict_score, seq_easy_mask).double()
+                seq_easy_ground_truth = torch.masked_select(ground_truth, seq_easy_mask).double()
+                seq_easy_predict_score_all.append(seq_easy_predict_score)
+                seq_easy_ground_truth_all.append(seq_easy_ground_truth)
+
+                seq_hard_predict_score = torch.masked_select(predict_score, seq_hard_mask).double()
+                seq_hard_ground_truth = torch.masked_select(ground_truth, seq_hard_mask).double()
+                seq_hard_predict_score_all.append(seq_hard_predict_score)
+                seq_hard_ground_truth_all.append(seq_hard_ground_truth)
+
+                if train_statics_common is not None:
+                    question_easy_mask, question_normal_mask, question_hard_mask = \
+                        get_question_fine_grained_sample_mask(batch_, train_statics_common, 0.4)
+                    question_easy_mask = torch.BoolTensor(question_easy_mask).to(self.params["device"])
+                    question_hard_mask = torch.BoolTensor(question_hard_mask).to(self.params["device"])
+
+                    question_easy_predict_score = torch.masked_select(predict_score, question_easy_mask).double()
+                    question_easy_ground_truth = torch.masked_select(ground_truth, question_easy_mask).double()
+                    question_easy_predict_score_all.append(question_easy_predict_score)
+                    question_easy_ground_truth_all.append(question_easy_ground_truth)
+
+                    question_hard_predict_score = torch.masked_select(predict_score, question_hard_mask).double()
+                    question_hard_ground_truth = torch.masked_select(ground_truth, question_hard_mask).double()
+                    question_hard_predict_score_all.append(question_hard_predict_score)
+                    question_hard_ground_truth_all.append(question_hard_ground_truth)
+
+            seq_easy_predict_score_all = torch.cat(seq_easy_predict_score_all, dim=0)
+            seq_easy_ground_truth_all = torch.cat(seq_easy_ground_truth_all, dim=0)
+            seq_hard_predict_score_all = torch.cat(seq_hard_predict_score_all, dim=0)
+            seq_hard_ground_truth_all = torch.cat(seq_hard_ground_truth_all, dim=0)
+
+            seq_easy_loss = nn.functional.binary_cross_entropy(seq_easy_predict_score_all, seq_easy_ground_truth_all)
+            self.loss_every_epoch["seq_easy"].append(seq_easy_loss.detach().cpu().item())
+
+            seq_hard_loss = nn.functional.binary_cross_entropy(seq_hard_predict_score_all, seq_hard_ground_truth_all)
+            self.loss_every_epoch["seq_hard"].append(seq_hard_loss.detach().cpu().item())
+
+            if train_statics_common is not None:
+                question_easy_predict_score_all = torch.cat(question_easy_predict_score_all, dim=0)
+                question_easy_ground_truth_all = torch.cat(question_easy_ground_truth_all, dim=0)
+                question_hard_predict_score_all = torch.cat(question_hard_predict_score_all, dim=0)
+                question_hard_ground_truth_all = torch.cat(question_hard_ground_truth_all, dim=0)
+
+                question_easy_loss = \
+                    nn.functional.binary_cross_entropy(question_easy_predict_score_all, question_easy_ground_truth_all)
+                self.loss_every_epoch["question_easy"].append(question_easy_loss.detach().cpu().item())
+
+                question_hard_loss = \
+                    nn.functional.binary_cross_entropy(question_hard_predict_score_all, question_hard_ground_truth_all)
+                self.loss_every_epoch["question_hard"].append(question_hard_loss.detach().cpu().item())

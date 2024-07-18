@@ -124,11 +124,17 @@ class qDKT(nn.Module, BaseModel4CL):
         return predict_score
 
     def get_predict_loss(self, batch, loss_record=None):
+        adv_bias_aug = self.params["other"].get("adv_bias_aug", None)
+        use_sample_weight = True
+        if adv_bias_aug is not None:
+            adv_bias_aug_ablation = self.params["other"]["adv_bias_aug"]["ablation"]
+            if adv_bias_aug_ablation == 9:
+                use_sample_weight = False
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
 
         predict_score = self.get_predict_score(batch)
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
-        if self.params.get("use_sample_weight", False):
+        if self.params.get("use_sample_weight", False) and use_sample_weight:
             weight = torch.masked_select(batch["weight_seq"][:, 1:], mask_bool_seq[:, 1:])
             predict_loss = nn.functional.binary_cross_entropy(predict_score.double(),
                                                               ground_truth.double(),
@@ -141,6 +147,32 @@ class qDKT(nn.Module, BaseModel4CL):
             loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
 
         return predict_loss
+
+    def get_GCE_loss(self, batch, q=0.7):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+
+        # predict_score全是为1的概率
+        predict_score = self.get_predict_score(batch)
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+        # predict_score_gt为1或者为0的概率，如果标签为1，则是为1的概率，如果标签是0，则是为0的概率
+        predict_score_gt = predict_score * ground_truth + (1 - predict_score) * (1 - ground_truth)
+        weight = (predict_score_gt.detach() ** q) * q
+        GCE_loss = nn.functional.binary_cross_entropy(
+            predict_score.double(), ground_truth.double(), weight=weight
+        )
+
+        return GCE_loss
+
+    def get_predict_loss_per_sample(self, batch):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+
+        predict_score = self.get_predict_score(batch)
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+        predict_loss_per_sample = nn.functional.binary_cross_entropy(
+            predict_score.double(), ground_truth.double(), reduction="none"
+        )
+
+        return predict_loss_per_sample
 
     def get_latent(self, batch, use_emb_dropout=False, dropout=0.1):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
@@ -580,21 +612,33 @@ class qDKT(nn.Module, BaseModel4CL):
 
         return latent_mean
 
-    def get_predict_score_from_adv_data(self, dataset, batch):
-        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+    def get_predict_score_from_adv_data(self, dataset, batch, mask4adv=None):
         predict_score = self.forward_from_adv_data(dataset, batch)
-        predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
+        if mask4adv is None:
+            mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+            predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
+        else:
+            predict_score = torch.masked_select(predict_score, mask4adv)
 
         return predict_score
 
-    def get_predict_loss_from_adv_data(self, dataset, batch):
-        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-        predict_score = self.get_predict_score_from_adv_data(dataset, batch)
-        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
-        predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
-        loss = predict_loss
+    def get_predict_loss_from_adv_data(self, dataset, batch, mask4adv=None):
+        ablation = self.params["other"]["adv_bias_aug"]["ablation"]
+        if mask4adv is None:
+            predict_score = self.get_predict_score_from_adv_data(dataset, batch)
+            mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+            ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+            if self.params.get("use_sample_weight", False) and ablation != 9:
+                weight = torch.masked_select(batch["weight_seq"][:, 1:], mask_bool_seq[:, 1:])
+                predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double(), weight=weight)
+            else:
+                predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+        else:
+            predict_score = self.get_predict_score_from_adv_data(dataset, batch, mask4adv)
+            ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask4adv)
+            predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
 
-        return loss
+        return predict_loss
 
     def max_entropy_adv_aug(self, dataset, batch, optimizer, loop_adv, eta, gamma):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
@@ -626,6 +670,60 @@ class qDKT(nn.Module, BaseModel4CL):
 
         return adv_predict_loss, adv_entropy, adv_mse_loss
 
+    def adv_bias_aug(self, dataset, batch, optimizer, loop_adv, eta, gamma, mask4gen=None):
+        ablation = self.params["other"]["adv_bias_aug"]["ablation"]
+        if mask4gen is None:
+            mask4gen = torch.ne(batch["mask_seq"][:, 1:], 0)
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask4gen)
+
+        latent_ori = self.get_latent_from_adv_data(dataset, batch).detach().clone()
+        latent_ori = latent_ori[:, 1:][mask4gen]
+        latent_ori.requires_grad_(False)
+        adv_predict_loss = 0.
+        adv_entropy = 0.
+        adv_mse_loss = 0.
+        for ite_max in range(loop_adv):
+            predict_score = self.forward_from_adv_data(dataset, batch)
+            predict_score = torch.masked_select(predict_score, mask4gen)
+            if ablation == 9:
+                weight = torch.masked_select(batch["weight_seq"][:, 1:], mask4gen)
+                weight = 2 - weight
+                predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double(), weight=weight)
+            else:
+                predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+            # entropy_loss = binary_entropy(predict_score)
+            latent = self.get_latent_from_adv_data(dataset, batch)
+            latent = latent[:, 1:][mask4gen]
+            latent_mse_loss = nn.functional.mse_loss(latent, latent_ori)
+
+            if ite_max == (loop_adv - 1):
+                adv_predict_loss += predict_loss.detach().cpu().item()
+                # adv_entropy += entropy_loss.detach().cpu().item()
+                adv_mse_loss += latent_mse_loss.detach().cpu().item()
+            # loss = predict_loss + eta * entropy_loss - gamma * latent_mse_loss
+            loss = predict_loss - gamma * latent_mse_loss
+            self.zero_grad()
+            optimizer.zero_grad()
+            (-loss).backward()
+            optimizer.step()
+
+        return adv_predict_loss, adv_mse_loss, adv_entropy
+
+    def get_interaction_emb(self, batch):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
+        dim_correct = encoder_config["dim_correct"]
+        correct_seq = batch["correct_seq"]
+        data_type = self.params["datasets_config"]["data_type"]
+
+        batch_size = correct_seq.shape[0]
+        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
+        if data_type == "only_question":
+            qc_emb = self.get_qc_emb4only_question(batch)
+        else:
+            qc_emb = self.get_qc_emb4single_concept(batch)
+        interaction_emb = torch.cat((qc_emb, correct_emb), dim=2)
+
+        return interaction_emb
     # ----------------------------------------------------MELT----------------------------------------------------------
 
     def get_predict_score4long_tail(self, batch, seq_branch):

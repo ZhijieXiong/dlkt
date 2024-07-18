@@ -11,9 +11,9 @@ from lib.evaluator.util import get_num_seq_fine_grained_sample, get_num_question
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str,
-                        default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new\assist2012_train_fold_0.txt")
+                        default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_ood_by_country\slepemapy_test_ood_split_0.txt")
     parser.add_argument("--train_statics_common_path", type=str,
-                        default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new\assist2012_train_fold_0_statics_common.json")
+                        default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_ood_by_country\slepemapy_train_split_0_statics_common.json")
     args = parser.parse_args()
     params = vars(args)
 

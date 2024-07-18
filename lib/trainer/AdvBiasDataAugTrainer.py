@@ -1,12 +1,13 @@
 import torch
 import torch.nn as nn
 
-from .BaseTrainer4ME_ADA import BaseTrainer4ME_ADA
+from .BaseTrainer4AB_DA import BaseTrainer4AB_DA
+from ..evaluator.util import get_seq_fine_grained_sample_mask, get_question_fine_grained_sample_mask
 
 
-class MaxEntropyAdvAugTrainer(BaseTrainer4ME_ADA):
+class AdvBiasDataAugTrainer(BaseTrainer4AB_DA):
     def __init__(self, params, objects):
-        super(MaxEntropyAdvAugTrainer, self).__init__(params, objects)
+        super(AdvBiasDataAugTrainer, self).__init__(params, objects)
 
     def train(self):
         train_strategy = self.params["train_strategy"]
@@ -20,31 +21,63 @@ class MaxEntropyAdvAugTrainer(BaseTrainer4ME_ADA):
 
         self.print_data_statics()
 
-        weight_adv_pred_loss = self.params["loss_config"]["adv predict loss"]
-        max_entropy_adv_aug_config = self.params["other"]["max_entropy_adv_aug"]
-        use_warm_up = max_entropy_adv_aug_config["use_warm_up"]
-        epoch_warm_up = max_entropy_adv_aug_config["epoch_warm_up"]
+        weight_adv_pred_loss = self.params["loss_config"]["ada adv predict loss"]
+        ablation = self.params["other"]["adv_bias_aug"]["ablation"]
         for epoch in range(1, num_epoch + 1):
-            self.do_max_entropy_aug()
-            after_warm_up = epoch > epoch_warm_up
+            if ablation in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
+                self.do_adv_aug()
 
             model.train()
-            for batch_idx, batch in enumerate(train_loader):
-                optimizer.zero_grad()
-
+            for _, batch in enumerate(train_loader):
                 num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+                batch_ = {
+                    "question_seqs": batch["question_seq"][:, 1:].detach().tolist(),
+                    "label_seqs": batch["correct_seq"][:, 1:].detach().tolist(),
+                    "mask_seqs": batch["mask_seq"][:, 1:].detach().tolist()
+                }
+                seq_easy_mask, seq_normal_mask, seq_hard_mask = get_seq_fine_grained_sample_mask(batch_, 10, 0.4)
+                train_statics_common = self.objects["data"].get("train_data_statics_common", None)
+                question_easy_mask, question_normal_mask, question_hard_mask = \
+                    get_question_fine_grained_sample_mask(batch_, train_statics_common, 0.4)
+
+                if ablation in [0, 3]:
+                    bias_aligned_mask = torch.BoolTensor(question_easy_mask).to(self.params["device"])
+                    bias_conflicting_mask = torch.BoolTensor(question_hard_mask).to(self.params["device"])
+                elif ablation in [1, 4]:
+                    bias_aligned_mask = torch.BoolTensor(seq_easy_mask).to(self.params["device"])
+                    bias_conflicting_mask = torch.BoolTensor(seq_hard_mask).to(self.params["device"])
+                elif ablation in [2, 5, 6, 7, 8, 9]:
+                    bias_aligned_mask = torch.BoolTensor(question_easy_mask).to(self.params["device"]) | \
+                                        torch.BoolTensor(seq_easy_mask).to(self.params["device"])
+                    bias_conflicting_mask = torch.BoolTensor(question_hard_mask).to(self.params["device"]) | \
+                                            torch.BoolTensor(seq_hard_mask).to(self.params["device"])
+                else:
+                    raise NotImplementedError()
+
+                optimizer.zero_grad()
                 predict_loss = model.get_predict_loss(batch)
                 self.loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
                 predict_loss.backward()
+
                 if grad_clip_config["use_clip"]:
                     nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_config["grad_clipped"])
                 optimizer.step()
 
-                if not use_warm_up or after_warm_up:
+                # ADA训练
+                if ablation in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
                     optimizer.zero_grad()
-                    adv_aug_predict_loss = model.get_predict_loss_from_adv_data(self.dataset_adv_generated, batch)
-                    self.loss_record.add_loss("adv predict loss",
-                                              adv_aug_predict_loss.detach().cpu().item() * num_sample, num_sample)
+                    if ablation in [0, 1, 2, 6, 8, 9]:
+                        # 使用全部样本计算对抗预测损失
+                        adv_aug_predict_loss = model.get_predict_loss_from_adv_data(self.dataset_adv_generated, batch)
+                    else:
+                        # 只用bias_conflicting计算对抗预测损失
+                        num_sample = torch.sum(bias_conflicting_mask).item()
+                        adv_aug_predict_loss = model.get_predict_loss_from_adv_data(
+                            self.dataset_adv_generated, batch, bias_conflicting_mask
+                        )
+                    self.loss_record.add_loss(
+                        "ada adv predict loss", adv_aug_predict_loss.detach().cpu().item() * num_sample, num_sample
+                    )
                     adv_aug_predict_loss = weight_adv_pred_loss * adv_aug_predict_loss
                     adv_aug_predict_loss.backward()
                     if grad_clip_config["use_clip"]:
@@ -59,8 +92,7 @@ class MaxEntropyAdvAugTrainer(BaseTrainer4ME_ADA):
             if self.params.get("trace_epoch", False):
                 model.eval()
                 self.get_fine_grained_performance(model, self.objects["data_loaders"]["test_loader"], is_test=True)
-                self.get_fine_grained_performance(model, self.objects["data_loaders"]["valid_loader"],
-                                                  is_test=False)
+                self.get_fine_grained_performance(model, self.objects["data_loaders"]["valid_loader"], is_test=False)
                 self.get_fine_grained_loss(model, self.objects["data_loaders"]["train_loader"])
             # ----------------------------------------------------------------------------------------------------------
 

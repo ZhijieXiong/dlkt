@@ -14,7 +14,7 @@ from lib.trainer.MaxEntropyAdvAugTrainer import MaxEntropyAdvAugTrainer
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
-    parser.add_argument("--setting_name", type=str, default="our_setting")
+    parser.add_argument("--setting_name", type=str, default="our_setting_new")
     parser.add_argument("--dataset_name", type=str, default="assist2009")
     parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
@@ -71,11 +71,17 @@ if __name__ == "__main__":
     parser.add_argument("--weight_adv_pred_loss", type=float, default=1)
     parser.add_argument("--loop_adv", type=int, default=3)
     parser.add_argument("--adv_learning_rate", type=float, default=10.0)
-    parser.add_argument("--eta", type=float, default=20.0)
+    parser.add_argument("--eta", type=float, default=5.0)
     parser.add_argument("--gamma", type=float, default=10.0)
+    # IPS
+    parser.add_argument("--use_sample_weight", type=str2bool, default=False, help="re-weighting只添加到对抗预测损失上")
+    parser.add_argument("--sample_weight_method", type=str, default="IPS-double")
+    parser.add_argument("--IPS_min", type=float, default=0.3)
+    parser.add_argument("--IPS_his_seq_len", type=int, default=10)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)
+    parser.add_argument("--trace_epoch", type=str2bool, default=True)
     parser.add_argument("--use_cpu", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
 

@@ -45,9 +45,10 @@ class ForgetGRU(nn.Module):
         for _ in range(num_layers):
             self.cells.append(ForgetGRUCell(input_size, hidden_size, extra_input_size))
 
-    def forward(self, x, h0, extra_input):
+    def forward(self, x, extra_input):
+        batch_size = x.shape[0]
         # Initialize hidden state
-        h = h0
+        h = [torch.zeros(batch_size, self.hidden_size).to(x.device) for _ in range(self.num_layers)]
 
         # Iterate through time steps
         outputs = []

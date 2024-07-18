@@ -2,28 +2,29 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from config.qdkt_config import qdkt_config
+from config.idct_config import idct_config, idct_two_stage_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.model.qDKT import qDKT
+from lib.model.IDCT import IDCT
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
+from lib.trainer.IDCTTrainer import IDCTTrainer
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="our_setting_new")
-    parser.add_argument("--dataset_name", type=str, default="assist2009")
+    parser.add_argument("--dataset_name", type=str, default="ednet-kt1")
     parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
+    parser.add_argument("--train_file_name", type=str, default="ednet-kt1_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="ednet-kt1_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="ednet-kt1_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0.001)
+    parser.add_argument("--weight_decay", type=float, default=0.00001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
@@ -51,39 +52,31 @@ if __name__ == "__main__":
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=123)
-    parser.add_argument("--num_question", type=int, default=17751)
-    parser.add_argument("--dim_concept", type=int, default=64)
-    parser.add_argument("--dim_question", type=int, default=64)
-    parser.add_argument("--dim_correct", type=int, default=64)
-    parser.add_argument("--dim_latent", type=int, default=64)
-    parser.add_argument("--rnn_type", type=str, default="gru",
-                        choices=("rnn", "lstm", "gru"))
-    parser.add_argument("--num_rnn_layer", type=int, default=1)
-    parser.add_argument("--dropout", type=float, default=0.3)
-    parser.add_argument("--num_predict_layer", type=int, default=3)
-    parser.add_argument("--dim_predict_mid", type=int, default=128)
-    parser.add_argument("--activate_type", type=str, default="relu")
-    # 是否使用LLM的emb初始化
-    parser.add_argument("--use_LLM_emb4question", type=str2bool, default=False)
-    parser.add_argument("--use_LLM_emb4concept", type=str2bool, default=False)
-    parser.add_argument("--train_LLM_emb", type=str2bool, default=True)
-    # IPS
-    parser.add_argument("--use_sample_weight", type=str2bool, default=False)
-    parser.add_argument("--sample_weight_method", type=str, default="IPS-question")
-    parser.add_argument("--IPS_min", type=float, default=0.3)
-    parser.add_argument("--IPS_his_seq_len", type=int, default=20)
+    parser.add_argument("--num_concept", type=int, default=188)
+    parser.add_argument("--num_question", type=int, default=11858)
+    parser.add_argument("--dim_emb", type=int, default=64)
+    parser.add_argument("--max_que_disc", type=float, default=10)
+    parser.add_argument("--dropout", type=float, default=0)
+    # 是否两阶段训练
+    parser.add_argument("--is_two_stage", type=str2bool, default=False)
+    # 辅助损失权重
+    parser.add_argument("--w_monotonic", type=float, default=1)
+    parser.add_argument("--w_mirt", type=float, default=1)
+    parser.add_argument("--diff_noise_strength", type=float, default=0.2)
+    parser.add_argument("--w_diff_stable", type=float, default=10)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)
-    parser.add_argument("--trace_epoch", type=str2bool, default=False)
     parser.add_argument("--use_cpu", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = qdkt_config(params)
+    if params["is_two_stage"]:
+        global_params, global_objects = idct_two_stage_config(params)
+    else:
+        global_params, global_objects = idct_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)
@@ -104,11 +97,16 @@ if __name__ == "__main__":
     dataloader_test = DataLoader(dataset_test, batch_size=params["evaluate_batch_size"], shuffle=False)
 
     global_objects["data_loaders"] = {}
+    global_objects["models"] = {}
+
     global_objects["data_loaders"]["train_loader"] = dataloader_train
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = qDKT(global_params, global_objects).to(global_params["device"])
+    model = IDCT(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
-    trainer = KnowledgeTracingTrainer(global_params, global_objects)
+    if params["is_two_stage"]:
+        trainer = IDCTTrainer(global_params, global_objects)
+    else:
+        trainer = KnowledgeTracingTrainer(global_params, global_objects)
     trainer.train()

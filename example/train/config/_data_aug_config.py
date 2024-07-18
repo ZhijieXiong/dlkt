@@ -37,6 +37,34 @@ def max_entropy_adv_aug_general_config(local_params, global_params, global_objec
     )
 
 
+def adv_bias_aug_general_config(local_params, global_params, global_objects):
+    loop_adv = local_params["loop_adv"]
+    epoch_interval_generate = local_params["epoch_interval_generate"]
+    adv_learning_rate = local_params["adv_learning_rate"]
+    eta = local_params["eta"]
+    gamma = local_params["gamma"]
+    weight_adv_pred_loss = local_params["weight_adv_pred_loss"]
+    ablation = local_params["ablation"]
+
+    global_params["other"]["adv_bias_aug"] = {}
+    adv_bias_aug = global_params["other"]["adv_bias_aug"]
+    adv_bias_aug["loop_adv"] = loop_adv
+    adv_bias_aug["epoch_interval_generate"] = epoch_interval_generate
+    adv_bias_aug["adv_learning_rate"] = adv_learning_rate
+    adv_bias_aug["eta"] = eta
+    adv_bias_aug["gamma"] = gamma
+    adv_bias_aug["ablation"] = ablation
+    global_params["loss_config"]["ada adv predict loss"] = weight_adv_pred_loss
+    global_params["loss_config"]["at adv predict loss"] = 1
+
+    global_objects["logger"].info(
+        f"adversarial data augment\n    "
+        f"ablation: {ablation}, adv_learning_rate: {adv_learning_rate}, gamma: {gamma}, "
+        f"weight_adv_pred_loss: {weight_adv_pred_loss}, epoch_interval_generate: {epoch_interval_generate}, "
+        f"loop_adv: {loop_adv}"
+    )
+
+
 def output_enhance_general_config(local_params, global_params, global_objects):
     enhance_method = local_params["enhance_method"]
     num_min_question4diff = local_params["num_min_question4diff"]

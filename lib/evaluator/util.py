@@ -219,6 +219,53 @@ def get_seq_fine_grained_sample(all_batch, previous_seq_len, seq_most_accuracy):
     return fine_grained_sample
 
 
+def get_seq_fine_grained_sample_mask(batch, previous_seq_len, seq_most_accuracy):
+    easy_mask = []
+    normal_mask = []
+    hard_mask = []
+    zip_iter = zip(batch["question_seqs"], batch["label_seqs"], batch["mask_seqs"])
+    for question_seq, label_seq, mask_seq in zip_iter:
+        easy_mask_seq = []
+        normal_mask_seq = []
+        hard_mask_seq = []
+        for _ in mask_seq[:previous_seq_len]:
+            easy_mask_seq.append(False)
+            normal_mask_seq.append(False)
+            hard_mask_seq.append(False)
+
+        for i, m in enumerate(mask_seq[previous_seq_len:]):
+            j = i + previous_seq_len
+            if m == 0:
+                easy_mask_seq.append(False)
+                normal_mask_seq.append(False)
+                hard_mask_seq.append(False)
+                continue
+
+            context_label = label_seq[j-previous_seq_len:j]
+            context_accuracy = sum(context_label) / len(context_label)
+
+            if seq_most_accuracy <= context_accuracy <= (1 - seq_most_accuracy):
+                easy_mask_seq.append(False)
+                normal_mask_seq.append(True)
+                hard_mask_seq.append(False)
+            elif ((context_accuracy > (1 - seq_most_accuracy)) and (label_seq[j] == 0)) or \
+                    ((context_accuracy < seq_most_accuracy) and (label_seq[j] == 1)):
+                easy_mask_seq.append(False)
+                normal_mask_seq.append(False)
+                hard_mask_seq.append(True)
+            elif ((context_accuracy > (1 - seq_most_accuracy)) and (label_seq[j] == 1)) or \
+                    ((context_accuracy < seq_most_accuracy) and (label_seq[j] == 0)):
+                easy_mask_seq.append(True)
+                normal_mask_seq.append(False)
+                hard_mask_seq.append(False)
+
+        easy_mask.append(easy_mask_seq)
+        normal_mask.append(normal_mask_seq)
+        hard_mask.append(hard_mask_seq)
+
+    return easy_mask, normal_mask, hard_mask
+
+
 def get_num_seq_fine_grained_sample(all_batch, window_seq_len, acc_th):
     seq_fine_grained_sample = get_seq_fine_grained_sample(all_batch, window_seq_len, acc_th)
     num_easy = len(seq_fine_grained_sample["easy"]["question"])
@@ -323,6 +370,50 @@ def get_question_fine_grained_sample(all_batch, statics_train, most_accuracy):
     return fine_grained_sample
 
 
+def get_question_fine_grained_sample_mask(batch, statics_train, most_accuracy):
+    easy_mask = []
+    normal_mask = []
+    hard_mask = []
+    zip_iter = zip(batch["question_seqs"], batch["label_seqs"], batch["mask_seqs"])
+    for question_seq, label_seq, mask_seq in zip_iter:
+        easy_mask_seq = []
+        normal_mask_seq = []
+        hard_mask_seq = []
+        for i, m in enumerate(mask_seq):
+            if m == 0:
+                easy_mask_seq.append(False)
+                normal_mask_seq.append(False)
+                hard_mask_seq.append(False)
+                continue
+            q_id = question_seq[i]
+            q_acc_statics = statics_train["question_acc"][q_id]
+            label = label_seq[i]
+            if q_acc_statics < 0:
+                easy_mask_seq.append(False)
+                normal_mask_seq.append(False)
+                hard_mask_seq.append(False)
+            elif ((q_acc_statics > (1 - most_accuracy)) and (label == 1)) or \
+                    ((q_acc_statics < most_accuracy) and (label == 0)):
+                easy_mask_seq.append(True)
+                normal_mask_seq.append(False)
+                hard_mask_seq.append(False)
+            elif most_accuracy <= q_acc_statics <= (1 - most_accuracy):
+                easy_mask_seq.append(False)
+                normal_mask_seq.append(True)
+                hard_mask_seq.append(False)
+            elif ((q_acc_statics > (1 - most_accuracy)) and (label == 0)) or \
+                    ((q_acc_statics < most_accuracy) and (label == 1)):
+                easy_mask_seq.append(False)
+                normal_mask_seq.append(False)
+                hard_mask_seq.append(True)
+
+        easy_mask.append(easy_mask_seq)
+        normal_mask.append(normal_mask_seq)
+        hard_mask.append(hard_mask_seq)
+
+    return easy_mask, normal_mask, hard_mask
+
+
 def get_num_question_fine_grained_sample(all_batch, statics_train, acc_th):
     seq_fine_grained_sample = get_question_fine_grained_sample(all_batch, statics_train, acc_th)
     num_easy = len(seq_fine_grained_sample["easy"]["question"])
@@ -377,10 +468,12 @@ def get_double_fine_grained_sample(all_batch, statics_train, window_seq_len, acc
     }
     for i, q_id in enumerate(seq_easy_sample["question"]):
         q_acc_statics = statics_train["question_acc"][q_id]
+        if q_acc_statics < 0:
+            continue
         ps = seq_easy_sample["predict_score"][i]
         pl = seq_easy_sample["predict_label"][i]
         gt = seq_easy_sample["ground_truth"][i]
-        if (q_acc_statics > (1 - acc_th)) or (q_acc_statics < acc_th):
+        if ((q_acc_statics > (1 - acc_th)) and (gt == 1)) or ((q_acc_statics < acc_th) and (gt == 0)):
             double_easy_sample["question"].append(q_id)
             double_easy_sample["predict_score"].append(ps)
             double_easy_sample["predict_label"].append(pl)
@@ -388,10 +481,12 @@ def get_double_fine_grained_sample(all_batch, statics_train, window_seq_len, acc
 
     for i, q_id in enumerate(seq_hard_sample["question"]):
         q_acc_statics = statics_train["question_acc"][q_id]
+        if q_acc_statics < 0:
+            continue
         ps = seq_hard_sample["predict_score"][i]
         pl = seq_hard_sample["predict_label"][i]
         gt = seq_hard_sample["ground_truth"][i]
-        if (q_acc_statics > (1 - acc_th)) or (q_acc_statics < acc_th):
+        if ((q_acc_statics > (1 - acc_th)) and (gt == 0)) or ((q_acc_statics < acc_th) and (gt == 1)):
             double_hard_sample["question"].append(q_id)
             double_hard_sample["predict_score"].append(ps)
             double_hard_sample["predict_label"].append(pl)

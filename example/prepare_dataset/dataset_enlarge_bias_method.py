@@ -21,7 +21,6 @@ if __name__ == "__main__":
     max_seq_len2delete = params["max_seq_len2delete"]
     acc_th = params["acc_th"]
 
-    # 删除正确率极度不平衡的序列
     data_unbiased = []
     num_seq_deleted = 0
     for item_data in data:

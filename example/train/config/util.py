@@ -1,23 +1,32 @@
 import json
 
 
-def config_optimizer(local_params, global_params, global_objects, model_name="kt_model"):
+def config_optimizer(local_params, global_params, global_objects, model_name="kt_model", same_as_kt=False):
     # 优化器配置
-    optimizer_type = local_params[f"optimizer_type{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
-    weight_decay = local_params[f"weight_decay{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
-    momentum = local_params[f"momentum{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
-    learning_rate = local_params[f"learning_rate{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
-    enable_lr_schedule = local_params[f"enable_lr_schedule{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
-    lr_schedule_type = local_params[f"lr_schedule_type{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
-    lr_schedule_step = local_params[f"lr_schedule_step{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
-    lr_schedule_milestones = eval(local_params[f"lr_schedule_milestones{'' if (model_name == 'kt_model') else ('_' + model_name)}"])
-    lr_schedule_gamma = local_params[f"lr_schedule_gamma{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
-    enable_clip_grad = local_params[f"enable_clip_grad{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
-    grad_clipped = local_params[f"grad_clipped{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
-
-    global_params["optimizers_config"] = {}
-    global_params["grad_clip_config"] = {}
-    global_params["schedulers_config"] = {}
+    if same_as_kt:
+        optimizer_type = local_params[f"optimizer_type"]
+        weight_decay = local_params[f"weight_decay"]
+        momentum = local_params[f"momentum"]
+        learning_rate = local_params[f"learning_rate"]
+        enable_lr_schedule = local_params[f"enable_lr_schedule"]
+        lr_schedule_type = local_params[f"lr_schedule_type"]
+        lr_schedule_step = local_params[f"lr_schedule_step"]
+        lr_schedule_milestones = eval(local_params[f"lr_schedule_milestones"])
+        lr_schedule_gamma = local_params[f"lr_schedule_gamma"]
+        enable_clip_grad = local_params[f"enable_clip_grad"]
+        grad_clipped = local_params[f"grad_clipped"]
+    else:
+        optimizer_type = local_params[f"optimizer_type{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+        weight_decay = local_params[f"weight_decay{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+        momentum = local_params[f"momentum{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+        learning_rate = local_params[f"learning_rate{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+        enable_lr_schedule = local_params[f"enable_lr_schedule{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+        lr_schedule_type = local_params[f"lr_schedule_type{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+        lr_schedule_step = local_params[f"lr_schedule_step{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+        lr_schedule_milestones = eval(local_params[f"lr_schedule_milestones{'' if (model_name == 'kt_model') else ('_' + model_name)}"])
+        lr_schedule_gamma = local_params[f"lr_schedule_gamma{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+        enable_clip_grad = local_params[f"enable_clip_grad{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
+        grad_clipped = local_params[f"grad_clipped{'' if (model_name == 'kt_model') else ('_' + model_name)}"]
 
     global_params["optimizers_config"][model_name] = {}
     optimizer_config = global_params["optimizers_config"][model_name]

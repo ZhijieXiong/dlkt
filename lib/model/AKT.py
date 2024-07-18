@@ -308,6 +308,32 @@ class AKT(nn.Module, BaseModel4CL):
 
         return loss
 
+    def get_GCE_loss(self, batch, q=0.7):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+
+        predict_score = self.get_predict_score(batch)
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+        # predict_score_gt为1或者为0的概率，如果标签为1，则是为1的概率，如果标签是0，则是为0的概率
+        predict_score_gt = predict_score * ground_truth + (1 - predict_score) * (1 - ground_truth)
+        weight = (predict_score_gt.detach() ** q) * q
+        GCE_loss = nn.functional.binary_cross_entropy(
+            predict_score.double(), ground_truth.double(), weight=weight
+        )
+        rasch_loss = self.get_rasch_loss(batch)
+
+        return GCE_loss + rasch_loss * self.params["loss_config"]["rasch_loss"]
+
+    def get_predict_loss_per_sample(self, batch):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+
+        predict_score = self.get_predict_score(batch)
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+        predict_loss_per_sample = nn.functional.binary_cross_entropy(
+            predict_score.double(), ground_truth.double(), reduction="none"
+        )
+
+        return predict_loss_per_sample
+
     def get_predict_enhance_loss(self, batch, loss_record=None):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]
         enhance_method = self.params["other"]["output_enhance"]["enhance_method"]
@@ -537,20 +563,34 @@ class AKT(nn.Module, BaseModel4CL):
 
         return latent_mean
 
-    def get_predict_score_from_adv_data(self, dataset, batch):
-        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+    def get_predict_score_from_adv_data(self, dataset, batch, mask4adv=None):
         predict_score = self.forward_from_adv_data(dataset, batch)
-        predict_score = torch.masked_select(predict_score[:, 1:], mask_bool_seq[:, 1:])
+        if mask4adv is None:
+            mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+            predict_score = torch.masked_select(predict_score[:, 1:], mask_bool_seq[:, 1:])
+        else:
+            predict_score = torch.masked_select(predict_score[:, 1:], mask4adv)
 
         return predict_score
 
-    def get_predict_loss_from_adv_data(self, dataset, batch):
-        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-        predict_score = self.get_predict_score_from_adv_data(dataset, batch)
-        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
-        predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
-        rasch_loss = self.get_rasch_loss(batch)
-        loss = predict_loss + rasch_loss * self.params["loss_config"]["rasch_loss"]
+    def get_predict_loss_from_adv_data(self, dataset, batch, mask4adv=None):
+        ablation = self.params["other"]["adv_bias_aug"]["ablation"]
+        if mask4adv is None:
+            predict_score = self.get_predict_score_from_adv_data(dataset, batch)
+            mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+            ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+            if self.params.get("use_sample_weight", False) and ablation != 9:
+                weight = torch.masked_select(batch["weight_seq"][:, 1:], mask_bool_seq[:, 1:])
+                predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double(),
+                                                                  weight=weight)
+            else:
+                predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+        else:
+            predict_score = self.get_predict_score_from_adv_data(dataset, batch, mask4adv)
+            ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask4adv)
+            predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+
+        loss = predict_loss
 
         return loss
 
@@ -567,10 +607,7 @@ class AKT(nn.Module, BaseModel4CL):
         for ite_max in range(loop_adv):
             predict_score = self.get_predict_score_from_adv_data(dataset, batch)
             predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
-            question_seq = batch["question_seq"]
-            question_difficulty_emb = dataset["embed_question_difficulty"](question_seq)
-            rasch_loss = (question_difficulty_emb ** 2.).sum()
-            predict_loss = predict_loss + rasch_loss * self.params["loss_config"]["rasch_loss"]
+            predict_loss = predict_loss
             entropy_loss = binary_entropy(predict_score)
             latent = self.get_latent_from_adv_data(dataset, batch)
             latent = latent[mask_bool_seq]
@@ -589,6 +626,47 @@ class AKT(nn.Module, BaseModel4CL):
             optimizer.step()
 
         return adv_predict_loss, adv_entropy, adv_mse_loss
+
+    def adv_bias_aug(self, dataset, batch, optimizer, loop_adv, eta, gamma, mask4gen=None):
+        ablation = self.params["other"]["adv_bias_aug"]["ablation"]
+        if mask4gen is None:
+            mask4gen = torch.ne(batch["mask_seq"][:, 1:], 0)
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask4gen)
+
+        latent_ori = self.get_latent_from_adv_data(dataset, batch).detach().clone()
+        latent_ori = latent_ori[:, 1:][mask4gen]
+        latent_ori.requires_grad_(False)
+        adv_predict_loss = 0.
+        adv_entropy = 0.
+        adv_mse_loss = 0.
+        for ite_max in range(loop_adv):
+            predict_score = self.forward_from_adv_data(dataset, batch)
+            predict_score = torch.masked_select(predict_score[:, 1:], mask4gen)
+            if ablation == 9:
+                weight = torch.masked_select(batch["weight_seq"][:, 1:], mask4gen)
+                weight = 2 - weight
+                predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double(), weight=weight)
+            else:
+                predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+            # entropy_loss = binary_entropy(predict_score)
+            latent = self.get_latent_from_adv_data(dataset, batch)
+            latent = latent[:, 1:][mask4gen]
+            latent_mse_loss = nn.functional.mse_loss(latent, latent_ori)
+
+            if ite_max == (loop_adv - 1):
+                adv_predict_loss += predict_loss.detach().cpu().item()
+                # adv_entropy += entropy_loss.detach().cpu().item()
+                adv_mse_loss += latent_mse_loss.detach().cpu().item()
+            # loss = predict_loss + eta * entropy_loss - gamma * latent_mse_loss
+            loss = predict_loss - gamma * latent_mse_loss
+            self.zero_grad()
+            optimizer.zero_grad()
+            (-loss).backward()
+            # 防止梯度爆炸
+            nn.utils.clip_grad_norm_(optimizer.param_groups[0]["params"], max_norm=10)
+            optimizer.step()
+
+        return adv_predict_loss, adv_mse_loss, adv_entropy
 
     def forward4question_evaluate(self, batch):
         # 直接输出的是每个序列最后一个时刻的预测分数

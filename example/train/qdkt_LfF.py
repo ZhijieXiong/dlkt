@@ -2,13 +2,13 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from config.qdkt_config import qdkt_config
+from config.qdkt_config import qdkt_LfF_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
 from lib.model.qDKT import qDKT
-from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
+from lib.trainer.LearnFromFailureTrainer import LearnFromFailureTrainer
 
 
 if __name__ == "__main__":
@@ -64,15 +64,8 @@ if __name__ == "__main__":
     parser.add_argument("--num_predict_layer", type=int, default=3)
     parser.add_argument("--dim_predict_mid", type=int, default=128)
     parser.add_argument("--activate_type", type=str, default="relu")
-    # 是否使用LLM的emb初始化
-    parser.add_argument("--use_LLM_emb4question", type=str2bool, default=False)
-    parser.add_argument("--use_LLM_emb4concept", type=str2bool, default=False)
-    parser.add_argument("--train_LLM_emb", type=str2bool, default=True)
-    # IPS
-    parser.add_argument("--use_sample_weight", type=str2bool, default=False)
-    parser.add_argument("--sample_weight_method", type=str, default="IPS-question")
-    parser.add_argument("--IPS_min", type=float, default=0.3)
-    parser.add_argument("--IPS_his_seq_len", type=int, default=20)
+    # LfF的超参，控制去偏的程度，值越小，去偏越弱（如0.1），值越大，去偏越强（如0.9），去偏越强，对easy样本的学习越差
+    parser.add_argument("--q", type=float, default=0.3)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)
@@ -83,7 +76,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = qdkt_config(params)
+    global_params, global_objects = qdkt_LfF_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)
@@ -108,7 +101,10 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = qDKT(global_params, global_objects).to(global_params["device"])
-    global_objects["models"]["kt_model"] = model
-    trainer = KnowledgeTracingTrainer(global_params, global_objects)
+    model_biased = qDKT(global_params, global_objects).to(global_params["device"])
+    model_de_biased = qDKT(global_params, global_objects).to(global_params["device"])
+    global_objects["models"]["model_biased"] = model_biased
+    global_objects["models"]["model_de_biased"] = model_de_biased
+    global_objects["models"]["kt_model"] = model_de_biased
+    trainer = LearnFromFailureTrainer(global_params, global_objects)
     trainer.train()

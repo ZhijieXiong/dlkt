@@ -23,12 +23,3 @@ if __name__ == "__main__":
             num_sample_all += item_data["seq_len"]
     print(f"ave num of sample: {num_sample_all / len(data_paths)}")
 
-    # enlarge bias
-    # assist2012: 1736153 -> 1650304
-    # assist2017: 552453 -> 537361
-    # ednet-kt1: 365161 -> 351035
-
-    # debias by delete seq
-    # assist2012: 1736153 -> 1556391
-    # assist2017: 552453 -> 515608
-    # ednet-kt1: 365161 -> 343394

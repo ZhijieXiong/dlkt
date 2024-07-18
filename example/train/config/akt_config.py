@@ -43,24 +43,11 @@ def akt_general_config(local_params, global_params, global_objects):
     # 损失权重
     global_params["loss_config"]["rasch_loss"] = local_params["weight_rasch_loss"]
 
-    # IPS
-    use_sample_weight = local_params["use_sample_weight"]
-    sample_weight_method = local_params["sample_weight_method"]
-    IPS_min = local_params["IPS_min"]
-    IPS_his_seq_len = local_params['IPS_his_seq_len']
-
-    global_params["use_sample_weight"] = use_sample_weight
-    global_params["sample_weight_method"] = sample_weight_method
-    global_params["IPS_min"] = IPS_min
-    global_params["IPS_his_seq_len"] = IPS_his_seq_len
-
     global_objects["logger"].info(
         "model params\n"
         f"    num_concept: {num_concept}, num_question: {num_question}, dim_model: {dim_model}, num_block: {num_block}, "
         f"num_head: {num_head}, dim_ff: {dim_ff}, dim_final_fc: {dim_final_fc}, \n     dropout: {dropout}, "
         f"separate_qa: {separate_qa}, key_query_same: {key_query_same}, seq_representation: {seq_representation}\n"
-        f"IPS params\n    "
-        f"use IPS: {use_sample_weight}, IPS_min: {IPS_min}, IPS_his_seq_len: {IPS_his_seq_len}"
     )
 
     if local_params["save_model"]:
@@ -77,6 +64,23 @@ def akt_config(local_params):
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
     akt_general_config(local_params, global_params, global_objects)
+
+    # IPS
+    use_sample_weight = local_params["use_sample_weight"]
+    sample_weight_method = local_params["sample_weight_method"]
+    IPS_min = local_params["IPS_min"]
+    IPS_his_seq_len = local_params['IPS_his_seq_len']
+
+    global_params["use_sample_weight"] = use_sample_weight
+    global_params["sample_weight_method"] = sample_weight_method
+    global_params["IPS_min"] = IPS_min
+    global_params["IPS_his_seq_len"] = IPS_his_seq_len
+
+    global_objects["logger"].info(
+        f"IPS params\n    "
+        f"use IPS: {use_sample_weight}, IPS_min: {IPS_min}, IPS_his_seq_len: {IPS_his_seq_len}"
+    )
+
     if local_params["save_model"]:
         save_params(global_params, global_objects)
 
@@ -190,6 +194,73 @@ def akt_output_enhance_config(local_params):
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
             global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT-output_enhance@@"))
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects
+
+
+def akt_LfF_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    akt_general_config(local_params, global_params, global_objects)
+
+    q = local_params["q"]
+    global_params["other"]["LfF"] = {
+        "q": q
+    }
+
+    # 配置两个优化器的参数（使用相同的参数）
+    config_optimizer(local_params, global_params, global_objects, "model_biased", same_as_kt=True)
+    config_optimizer(local_params, global_params, global_objects, "model_de_biased", same_as_kt=True)
+
+    global_objects["logger"].info(
+        f"LfF params\n    "
+        f"q: {q}"
+    )
+
+    if local_params["save_model"]:
+        setting_name = local_params["setting_name"]
+        train_file_name = local_params["train_file_name"]
+        global_params["save_model_dir_name"] = (
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@AKT_LfF@@seed_{local_params['seed']}"
+            f"@@{setting_name}@@{train_file_name.replace('.txt', '')}"
+        )
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects
+
+
+def akt_adv_bias_aug_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    akt_general_config(local_params, global_params, global_objects)
+    adv_bias_aug_general_config(local_params, global_params, global_objects)
+
+    # IPS
+    use_sample_weight = local_params["use_sample_weight"]
+    sample_weight_method = local_params["sample_weight_method"]
+    IPS_min = local_params["IPS_min"]
+    IPS_his_seq_len = local_params['IPS_his_seq_len']
+
+    global_params["use_sample_weight"] = use_sample_weight
+    global_params["sample_weight_method"] = sample_weight_method
+    global_params["IPS_min"] = IPS_min
+    global_params["IPS_his_seq_len"] = IPS_his_seq_len
+
+    global_objects["logger"].info(
+        f"IPS params\n    "
+        f"use IPS: {use_sample_weight}, IPS_min: {IPS_min}, IPS_his_seq_len: {IPS_his_seq_len}"
+    )
+
+    if local_params["save_model"]:
+        setting_name = local_params["setting_name"]
+        train_file_name = local_params["train_file_name"]
+        global_params["save_model_dir_name"] = (
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@AKT-ADA@@seed_{local_params['seed']}"
+            f"@@{setting_name}@@{train_file_name.replace('.txt', '')}"
+        )
         save_params(global_params, global_objects)
 
     return global_params, global_objects

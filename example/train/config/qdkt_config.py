@@ -91,7 +91,9 @@ def qdkt_config(local_params):
 
     global_objects["logger"].info(
         f"IPS params\n    "
-        f"use IPS: {use_sample_weight}, IPS_min: {IPS_min}, IPS_his_seq_len: {IPS_his_seq_len}"
+        f"use IPS: {use_sample_weight}, IPS_min: {IPS_min}, IPS_his_seq_len: {IPS_his_seq_len}\n"
+        f"mix up params\n    "
+        f"use_mix_up: {local_params['use_mix_up']}, weight4mix_up_sample: {local_params['weight4mix_up_sample']}"
     )
 
     if local_params["save_model"]:

@@ -25,6 +25,7 @@ from ..model.SAINT import SAINT
 from ..model.qDKT import qDKT
 from ..model.QIKT import QIKT
 from ..model.qDKT_CORE import qDKT_CORE
+from ..model.SimpleKT import SimpleKT
 
 
 model_table = {
@@ -49,7 +50,8 @@ model_table = {
     "SAINT": SAINT,
     "qDKT": qDKT,
     "QIKT": QIKT,
-    "qDKT_CORE": qDKT_CORE
+    "qDKT_CORE": qDKT_CORE,
+    "SimpleKT": SimpleKT
 }
 
 

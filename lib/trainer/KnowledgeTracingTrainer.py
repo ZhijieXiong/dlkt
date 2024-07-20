@@ -58,7 +58,10 @@ class KnowledgeTracingTrainer:
         self.init_trainer()
 
     def init_loss_record(self):
+        use_mix_up = self.params.get("use_mix_up", False)
         used_losses = ["predict loss"]
+        if use_mix_up:
+            used_losses.append("mix up predict loss")
         loss_config = self.params["loss_config"]
         for loss_name in loss_config:
             used_losses.append(loss_name)

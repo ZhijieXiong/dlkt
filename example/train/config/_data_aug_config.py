@@ -55,7 +55,6 @@ def adv_bias_aug_general_config(local_params, global_params, global_objects):
     adv_bias_aug["gamma"] = gamma
     adv_bias_aug["ablation"] = ablation
     global_params["loss_config"]["ada adv predict loss"] = weight_adv_pred_loss
-    global_params["loss_config"]["at adv predict loss"] = 1
 
     global_objects["logger"].info(
         f"adversarial data augment\n    "

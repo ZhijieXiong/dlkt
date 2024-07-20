@@ -44,6 +44,8 @@ def general_config(local_params, global_params, global_objects):
         torch.autograd.set_detect_anomaly(True)
     global_params["seed"] = local_params["seed"]
     global_params["trace_epoch"] = local_params.get("trace_epoch", False)
+    global_params["use_mix_up"] = local_params.get("use_mix_up", False)
+    global_params["weight4mix_up_sample"] = local_params.get("weight4mix_up_sample", 1)
 
     # 训练策略配置
     num_epoch = local_params["num_epoch"]

@@ -1,3 +1,4 @@
+from copy import deepcopy
 from .BaseModel4CL import BaseModel4CL
 from .Module.KTEmbedLayer import KTEmbedLayer
 from .Module.PredictorLayer import PredictorLayer
@@ -123,6 +124,34 @@ class qDKT(nn.Module, BaseModel4CL):
 
         return predict_score
 
+    def get_predict_score4mix_up_sample(self, batch):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
+        dim_correct = encoder_config["dim_correct"]
+        correct_seq = batch["correct_seq"]
+        data_type = self.params["datasets_config"]["data_type"]
+
+        batch_size = correct_seq.shape[0]
+        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
+        if data_type == "only_question":
+            qc_emb = self.get_qc_emb4only_question(batch)
+        else:
+            qc_emb = self.get_qc_emb4single_concept(batch)
+        interaction_emb = torch.cat((qc_emb[:, :-1], correct_emb[:, :-1]), dim=2)
+
+        self.encoder_layer.flatten_parameters()
+        latent, _ = self.encoder_layer(interaction_emb)
+
+        batch4mix_up = deepcopy(batch)
+        batch4mix_up["question_seq"] = batch["question_seq4mix_up"]
+        qc_emb4mix_up = self.get_qc_emb4only_question(batch4mix_up)
+        predict_layer_input = torch.cat((latent, (qc_emb[:, 1:] + qc_emb4mix_up[:, 1:]) / 2), dim=2)
+        predict_score = self.predict_layer(predict_layer_input).squeeze(dim=-1)
+
+        mask_bool_seq = torch.ne(batch["mask_seq4mix_up"], 0)
+        predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
+
+        return predict_score
+
     def get_predict_loss(self, batch, loss_record=None):
         adv_bias_aug = self.params["other"].get("adv_bias_aug", None)
         use_sample_weight = True
@@ -145,6 +174,31 @@ class qDKT(nn.Module, BaseModel4CL):
         if loss_record is not None:
             num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
             loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+
+        use_mix_up = self.params.get("use_mix_up", False)
+        if use_mix_up:
+            weight4mix_up_sample = self.params["weight4mix_up_sample"]
+            predict_score4mix_up = self.get_predict_score4mix_up_sample(batch)
+            mask_bool_seq4mix_up = torch.ne(batch["mask_seq4mix_up"], 0)
+            ground_truth4mix_up = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq4mix_up[:, 1:])
+            if self.params.get("use_sample_weight", False) and use_sample_weight:
+                weight4mix_up = torch.masked_select(batch["weight_seq"][:, 1:], mask_bool_seq4mix_up[:, 1:])
+                predict_loss4mix_up = nn.functional.binary_cross_entropy(predict_score4mix_up.double(),
+                                                                         ground_truth4mix_up.double(),
+                                                                         weight=weight4mix_up)
+            else:
+                predict_loss4mix_up = nn.functional.binary_cross_entropy(
+                    predict_score4mix_up.double(), ground_truth4mix_up.double()
+                )
+
+            if loss_record is not None:
+                num_sample4mix_up = torch.sum(batch["mask_seq4mix_up"][:, 1:]).item()
+                loss_record.add_loss(
+                    "mix up predict loss",
+                    predict_loss4mix_up.detach().cpu().item() * num_sample4mix_up,
+                    num_sample4mix_up
+                )
+            predict_loss += predict_loss4mix_up * weight4mix_up_sample
 
         return predict_loss
 
@@ -622,6 +676,36 @@ class qDKT(nn.Module, BaseModel4CL):
 
         return predict_score
 
+    def get_predict_score_from_adv_data4mix_up(self, dataset, batch):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT"]
+        data_type = self.params["datasets_config"]["data_type"]
+        dim_correct = encoder_config["dim_correct"]
+
+        correct_seq = batch["correct_seq"]
+        question_seq = batch["question_seq"]
+        batch_size = correct_seq.shape[0]
+        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
+        if data_type == "only_question":
+            question_emb = dataset["embed_layer"].get_emb("question", question_seq)
+            concept_emb = dataset["embed_layer"].get_concept_fused_emb(question_seq, fusion_type="mean")
+            qc_emb = torch.cat((concept_emb, question_emb), dim=-1)
+        else:
+            concept_seq = batch["concept_seq"]
+            qc_emb = dataset["embed_layer"].get_emb_concatenated(("concept", "question"), (concept_seq, question_seq))
+        interaction_emb = torch.cat((qc_emb[:, :-1], correct_emb[:, :-1]), dim=2)
+
+        self.encoder_layer.flatten_parameters()
+        latent, _ = self.encoder_layer(interaction_emb)
+
+        question_emb = dataset["embed_layer"].get_emb("question", batch["question_seq4mix_up"])
+        concept_emb = dataset["embed_layer"].get_concept_fused_emb(batch["question_seq4mix_up"], fusion_type="mean")
+        qc_emb4mix_up = torch.cat((concept_emb, question_emb), dim=-1)
+
+        predict_layer_input = torch.cat((latent, (qc_emb[:, 1:] + qc_emb4mix_up[:, 1:]) / 2), dim=2)
+        predict_score = self.predict_layer(predict_layer_input).squeeze(dim=-1)
+
+        pass
+
     def get_predict_loss_from_adv_data(self, dataset, batch, mask4adv=None):
         ablation = self.params["other"]["adv_bias_aug"]["ablation"]
         if mask4adv is None:
@@ -637,6 +721,24 @@ class qDKT(nn.Module, BaseModel4CL):
             predict_score = self.get_predict_score_from_adv_data(dataset, batch, mask4adv)
             ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask4adv)
             predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+
+        # use_mix_up = self.params.get("use_mix_up", False)
+        # if use_mix_up:
+        #     weight4mix_up_sample = self.params["weight4mix_up_sample"]
+        #     predict_score4mix_up = self.get_predict_score4mix_up_sample(batch)
+        #     mask_bool_seq4mix_up = torch.ne(batch["mask_seq4mix_up"], 0)
+        #     ground_truth4mix_up = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq4mix_up[:, 1:])
+        #     if self.params.get("use_sample_weight", False):
+        #         weight4mix_up = torch.masked_select(batch["weight_seq"][:, 1:], mask_bool_seq4mix_up[:, 1:])
+        #         predict_loss4mix_up = nn.functional.binary_cross_entropy(predict_score4mix_up.double(),
+        #                                                                  ground_truth4mix_up.double(),
+        #                                                                  weight=weight4mix_up)
+        #     else:
+        #         predict_loss4mix_up = nn.functional.binary_cross_entropy(
+        #             predict_score4mix_up.double(), ground_truth4mix_up.double()
+        #         )
+        #
+        #     predict_loss += predict_loss4mix_up * weight4mix_up_sample
 
         return predict_loss
 

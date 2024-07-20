@@ -72,7 +72,7 @@ if __name__ == "__main__":
     parser.add_argument("--gamma", type=float, default=1)
     parser.add_argument("--epsilon", type=int, default=10, help="扰动幅度")
     parser.add_argument("--beta", type=float, default=1, help="扰动损失权重")
-    parser.add_argument("--ablation", type=int, default=9,
+    parser.add_argument("--ablation", type=int, default=8,
                         help="0：对抗损失使用question bias-aligned样本（ME-ADA），对抗样本预测损失使用全部样本"
                              "1：对抗损失使用seq bias-aligned样本（ME-ADA），对抗样本预测损失使用全部样本"
                              "2：对抗损失使用全部bias-aligned样本（ME-ADA），对抗样本预测损失使用全部样本"
@@ -89,6 +89,10 @@ if __name__ == "__main__":
     parser.add_argument("--sample_weight_method", type=str, default="IPS-double")
     parser.add_argument("--IPS_min", type=float, default=0.3)
     parser.add_argument("--IPS_his_seq_len", type=int, default=10)
+    # mix_up
+    parser.add_argument("--use_mix_up", type=str2bool, default=False)
+    parser.add_argument("--weight4mix_up_sample", type=float, default=1)
+    parser.add_argument("--use_mix_up4adv", type=str2bool, default=False)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

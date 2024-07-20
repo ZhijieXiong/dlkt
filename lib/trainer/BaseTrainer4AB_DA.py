@@ -56,13 +56,11 @@ class BaseTrainer4AB_DA(KnowledgeTracingTrainer):
                 elif ablation in [1, 4]:
                     bias_aligned_mask = torch.BoolTensor(seq_easy_mask).to(self.params["device"])
                     bias_conflicting_mask = torch.BoolTensor(seq_hard_mask).to(self.params["device"])
-                elif ablation in [2, 5, 6, 7, 8, 9]:
+                else:
                     bias_aligned_mask = torch.BoolTensor(question_easy_mask).to(self.params["device"]) | \
                                         torch.BoolTensor(seq_easy_mask).to(self.params["device"])
                     bias_conflicting_mask = torch.BoolTensor(question_hard_mask).to(self.params["device"]) | \
                                             torch.BoolTensor(seq_hard_mask).to(self.params["device"])
-                else:
-                    raise NotImplementedError()
 
                 num_sample = torch.sum(bias_aligned_mask).item()
                 if ablation in [0, 1, 2, 3, 4, 5]:
@@ -73,12 +71,10 @@ class BaseTrainer4AB_DA(KnowledgeTracingTrainer):
                     adv_predict_loss, adv_mse_loss, adv_entropy = model.adv_bias_aug(
                         self.dataset_adv_generated, batch, optimizer, loop_adv, eta, gamma, bias_conflicting_mask
                     )
-                elif ablation in [8, 9]:
+                else:
                     adv_predict_loss, adv_mse_loss, adv_entropy = model.adv_bias_aug(
                         self.dataset_adv_generated, batch, optimizer, loop_adv, eta, gamma
                     )
-                else:
-                    raise NotImplementedError()
                 self.adv_loss.add_loss("ada gen pred loss", adv_predict_loss * num_sample, num_sample)
                 self.adv_loss.add_loss("ada gen mse loss", adv_mse_loss * num_sample, num_sample)
                 self.adv_loss.add_loss("ada gen entropy", adv_entropy * num_sample, num_sample)

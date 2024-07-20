@@ -46,17 +46,14 @@ class AdvBiasDataAugTrainer(BaseTrainer4AB_DA):
                 elif ablation in [1, 4]:
                     bias_aligned_mask = torch.BoolTensor(seq_easy_mask).to(self.params["device"])
                     bias_conflicting_mask = torch.BoolTensor(seq_hard_mask).to(self.params["device"])
-                elif ablation in [2, 5, 6, 7, 8, 9]:
+                else:
                     bias_aligned_mask = torch.BoolTensor(question_easy_mask).to(self.params["device"]) | \
                                         torch.BoolTensor(seq_easy_mask).to(self.params["device"])
                     bias_conflicting_mask = torch.BoolTensor(question_hard_mask).to(self.params["device"]) | \
                                             torch.BoolTensor(seq_hard_mask).to(self.params["device"])
-                else:
-                    raise NotImplementedError()
 
                 optimizer.zero_grad()
-                predict_loss = model.get_predict_loss(batch)
-                self.loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+                predict_loss = model.get_predict_loss(batch, self.loss_record)
                 predict_loss.backward()
 
                 if grad_clip_config["use_clip"]:

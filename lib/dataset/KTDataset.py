@@ -1,4 +1,5 @@
 from torch.utils.data import Dataset
+import random
 
 from ..util.data import *
 from ..util.parse import *
@@ -20,6 +21,47 @@ class KTDataset(Dataset):
 
     def __getitem__(self, index):
         result = dict()
+        use_mix_up = self.params.get("use_mix_up", False)
+        if use_mix_up:
+            question_seq4mix_up = []
+            mask_seq4mix_up = []
+
+            question_seq = self.dataset["question_seq"][index].cpu().detach().tolist()
+            correct_seq = self.dataset["correct_seq"][index].cpu().detach().tolist()
+            mask_seq = self.dataset["mask_seq"][index].cpu().detach().tolist()
+            max_seq_len = len(question_seq)
+
+            # 从历史序列中随机找一个标签（如果有的话）的习题，作为增强样本
+            his_q_right = []
+            his_q_wrong = []
+            for i, (q_id, c, m) in enumerate(zip(question_seq, correct_seq, mask_seq)):
+                if m == 0:
+                    break
+                question4mix_up = 0
+                mask4mix_up = 0
+
+                if (c == 1) and (len(his_q_right) > 0):
+                    question4mix_up = random.choice(his_q_right)
+                    mask4mix_up = 1
+
+                if (c == 0) and (len(his_q_wrong) > 0):
+                    question4mix_up = random.choice(his_q_wrong)
+                    mask4mix_up = 1
+
+                if c == 0:
+                    his_q_wrong.append(q_id)
+                else:
+                    his_q_right.append(q_id)
+
+                question_seq4mix_up.append(question4mix_up)
+                mask_seq4mix_up.append(mask4mix_up)
+
+            question_seq4mix_up += [0] * (max_seq_len - len(question_seq4mix_up))
+            mask_seq4mix_up += [0] * (max_seq_len - len(mask_seq4mix_up))
+
+            result["question_seq4mix_up"] = torch.LongTensor(question_seq4mix_up).to(self.params["device"])
+            result["mask_seq4mix_up"] = torch.LongTensor(mask_seq4mix_up).to(self.params["device"])
+
         for key in self.dataset.keys():
             result[key] = self.dataset[key][index]
         return result

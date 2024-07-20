@@ -1,4 +1,5 @@
 import torch
+import math
 import numpy as np
 import torch.nn.functional as F
 from torch.nn import Softplus
@@ -250,3 +251,38 @@ def attention_CL4KT(q, k, v, d_k, mask, dropout, device, gamma=None, zero_pad=Tr
     scores = dropout(scores)
     output = torch.matmul(scores, v)
     return output, attn_scores
+
+
+def attention_SparseKT(q, k, v, dim_head, mask, dropout, zero_pad, k_index, device):
+    # BS, 8, seq_len, seq_len
+    scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(dim_head)
+    bs, head, seq_len = scores.size(0), scores.size(1), scores.size(2)
+    scores.masked_fill_(mask == 0, -1e32)
+    scores = F.softmax(scores, dim=-1)  # BS,8,seq_len,seq_len
+
+    # sorted_attention：只用top-k，因为从论文消融实验来看top-k效果更好，并且原代码默认使用top-k
+    if k_index + 1 >= seq_len:
+        scores = scores
+    else:
+        scores_a = scores[:, :, : k_index + 1, :]
+        scores_b = scores[:, :, k_index + 1:, :].reshape(
+            bs * head * (seq_len - k_index - 1), -1
+        )
+        sorted_scores, sorted_idx = torch.sort(scores_b, descending=True)
+        scores_t = sorted_scores[:, k_index - 1: k_index].repeat(1, seq_len)
+        scores_b = torch.where(
+            scores_b - scores_t >= 0, scores_b, -1e32
+        ).reshape(bs, head, seq_len - k_index - 1, -1)
+        # BS,8,seq_len,seq_len
+        scores_b = F.softmax(scores_b, dim=-1)
+        scores = torch.cat([scores_a, scores_b], dim=2)
+
+    if zero_pad:
+        pad_zero = torch.zeros(bs, head, 1, seq_len).to(device)
+        # 第一行score置0
+        scores = torch.cat([pad_zero, scores[:bs, :, 1:, :]], dim=2)
+
+    scores = dropout(scores)
+    output = torch.matmul(scores, v)
+
+    return output, scores

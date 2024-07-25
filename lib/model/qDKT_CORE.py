@@ -32,7 +32,7 @@ class qDKT_CORE(nn.Module):
             nn.ReLU(),
             nn.Linear(64, 2)
         )
-        self.use_net = nn.Linear(dim_emb, 2)
+        self.user_net = nn.Linear(dim_emb, 2)
         self.softmax = nn.Softmax(-1)
 
     def get_qc_emb4single_concept(self, batch):
@@ -51,9 +51,9 @@ class qDKT_CORE(nn.Module):
     def get_predict_score(self, batch):
         # inference和train不一样
         mask_bool_seq = batch["mask_seq"][:, 1:].unsqueeze(-1).bool()
-        _, _, _, logit_Core_DKT = self.forward(batch)
-        CORE_qDKT_pred = torch.masked_select(logit_Core_DKT, mask_bool_seq)
-        predict_score = torch.softmax(CORE_qDKT_pred.view(-1, 2), dim=-1)[:, 1]
+        _, _, _, logit_Core = self.forward(batch)
+        CORE_pred = torch.masked_select(logit_Core, mask_bool_seq)
+        predict_score = torch.softmax(CORE_pred.view(-1, 2), dim=-1)[:, 1]
 
         return predict_score
 
@@ -66,7 +66,7 @@ class qDKT_CORE(nn.Module):
     def get_predict_loss(self, batch, loss_record=None):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
 
-        z_nde_pred, q_pred, z_qks_pred, CORE_qDKT_pred = self.forward(batch)
+        z_nde_pred, q_pred, z_qks_pred, CORE_pred = self.forward(batch)
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
         predict_loss = torch.nn.functional.cross_entropy(z_qks_pred, ground_truth) + \
                        torch.nn.functional.cross_entropy(q_pred, ground_truth)
@@ -103,7 +103,7 @@ class qDKT_CORE(nn.Module):
         latent, _ = self.lstm(interaction_emb)
         logits = self.fc(torch.cat([latent, qc_emb[:, 1:]], -1))
         q_logits = self.question_net(qc_emb[:, 1:].detach())
-        s_logits = self.use_net(latent.detach())
+        s_logits = self.user_net(latent.detach())
 
         # z_QKS = self.fusion(logits, q_logits, s_logits, Q_fact=True, K_fact=True, S_fact=True)
         # z_Q = self.fusion(logits, q_logits, s_logits, Q_fact=True, K_fact=False, S_fact=False)

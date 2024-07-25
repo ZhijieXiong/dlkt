@@ -24,7 +24,7 @@ class Architecture(nn.Module):
             y = block(y, y, y, batch["question_difficulty_emb"], apply_pos=False, mask_flag=True)
         return y
 
-    def forward(self, batch):
+    def forward(self, batch, is_core=False):
         x = batch["question_emb"]
         y = batch["interaction_emb"]
         question_difficulty_emb = batch["question_difficulty_emb"]
@@ -47,7 +47,10 @@ class Architecture(nn.Module):
                 x = block(x, x, y, question_difficulty_emb, apply_pos=True, mask_flag=False)
                 flag_first = True
 
-        return x
+        if is_core:
+            return x, y
+        else:
+            return x
 
 
 class TransformerLayer(nn.Module):

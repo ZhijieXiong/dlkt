@@ -271,7 +271,7 @@ def attention_SparseKT(q, k, v, dim_head, mask, dropout, zero_pad, k_index, devi
         sorted_scores, sorted_idx = torch.sort(scores_b, descending=True)
         scores_t = sorted_scores[:, k_index - 1: k_index].repeat(1, seq_len)
         scores_b = torch.where(
-            scores_b - scores_t >= 0, scores_b, -1e32
+            scores_b - scores_t >= 0, scores_b, torch.tensor(-1e16, dtype=torch.float32, device=device)
         ).reshape(bs, head, seq_len - k_index - 1, -1)
         # BS,8,seq_len,seq_len
         scores_b = F.softmax(scores_b, dim=-1)

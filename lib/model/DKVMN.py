@@ -1,6 +1,7 @@
 import torch
-
 import torch.nn as nn
+
+from .Module.KTEmbedLayer import KTEmbedLayer
 
 
 class DKVMN(nn.Module):
@@ -38,20 +39,43 @@ class DKVMN(nn.Module):
         self.a_layer = nn.Linear(dim_key, dim_key)
 
     def forward(self, batch):
+        data_type = self.params["datasets_config"]["data_type"]
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DKVMN"]
         use_concept = encoder_config["use_concept"]
-        if use_concept:
-            num_item = encoder_config["num_concept"]
-            item_seq = batch["concept_seq"]
-        else:
-            num_item = encoder_config["num_question"]
-            item_seq = batch["question_seq"]
-
         correct_seq = batch["correct_seq"]
-        batch_size = item_seq.shape[0]
-        x = item_seq + num_item * correct_seq
-        k = self.k_emb_layer(item_seq)
-        v = self.v_emb_layer(x)
+        batch_size = correct_seq.shape[0]
+
+        if use_concept:
+            num_concept = encoder_config["num_concept"]
+            if data_type == "single_concept":
+                concept_seq = batch["concept_seq"]
+                x = concept_seq + num_concept * correct_seq
+                k = self.k_emb_layer(concept_seq)
+                v = self.v_emb_layer(x)
+            else:
+                question_seq = batch["question_seq"]
+                k = KTEmbedLayer.concept_fused_emb(
+                    self.k_emb_layer,
+                    self.objects["data"]["q2c_table"],
+                    self.objects["data"]["q2c_mask_table"],
+                    question_seq,
+                    fusion_type="mean"
+                )
+                v = KTEmbedLayer.interaction_fused_emb(
+                    self.v_emb_layer,
+                    self.objects["data"]["q2c_table"],
+                    self.objects["data"]["q2c_mask_table"],
+                    question_seq,
+                    correct_seq,
+                    num_concept,
+                    fusion_type="mean"
+                )
+        else:
+            num_question = encoder_config["num_question"]
+            question_seq = batch["question_seq"]
+            x = question_seq + num_question * correct_seq
+            k = self.k_emb_layer(question_seq)
+            v = self.v_emb_layer(x)
 
         Mvt = self.Mv0.unsqueeze(0).repeat(batch_size, 1, 1)
 
@@ -102,3 +126,6 @@ class DKVMN(nn.Module):
             loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
 
         return predict_loss
+
+    def get_predict_score_seq_len_minus1(self, batch):
+        return self.forward(batch)[:, 1:]

@@ -185,6 +185,29 @@ class KTEmbedLayer(nn.Module):
         return emb_concept_fusion
 
     @staticmethod
+    def interaction_fused_emb(embed_concept, q2c_table, q2c_mask_table, question_seq, correct_seq, num_concept,
+                              fusion_type="mean"):
+        """
+        多知识点的交互融合，如一道多知识点习题的知识点作答结果（如DKVMN）取平均值作为该交互的embedding
+        :param embed_concept:
+        :param q2c_table:
+        :param q2c_mask_table:
+        :param question_seq:
+        :param correct_seq:
+        :param num_concept:
+        :param fusion_type:
+        :return:
+        """
+        emb_interaction = embed_concept(q2c_table[question_seq] + num_concept * correct_seq.unsqueeze(-1))
+        mask_concept = q2c_mask_table[question_seq]
+        if fusion_type == "mean":
+            emb_interaction_fusion = (emb_interaction * mask_concept.unsqueeze(-1)).sum(-2)
+            emb_interaction_fusion = emb_interaction_fusion / mask_concept.sum(-1).unsqueeze(-1)
+        else:
+            raise NotImplementedError()
+        return emb_interaction_fusion
+
+    @staticmethod
     def other_fused_emb(embed, q2c_table, q2c_mask_table, question_seq, other_table, fusion_type="mean"):
         """
         其它（和concept关联，但是不能直接由concept id取出）embedding的融合，如diff embedding，可能由K个concept，但是diff embedding有k个，

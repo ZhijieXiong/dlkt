@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 from copy import deepcopy
 
+from .Module.KTEmbedLayer import KTEmbedLayer
+
 
 def position_encode(seq_len, device):
     return torch.arange(seq_len).unsqueeze(0).to(device)
@@ -56,27 +58,50 @@ class SAKT(nn.Module):
         self.out = nn.Linear(dim_emb, 1)
 
     def forward(self, batch):
+        data_type = self.params["datasets_config"]["data_type"]
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["SAKT"]
         num_concept = encoder_config["num_concept"]
         num_block = encoder_config["num_block"]
-
-        concept_seq = batch["concept_seq"]
         correct_seq = batch["correct_seq"]
 
-        # 历史的interaction
-        interaction_seq = concept_seq[:, :-1] + num_concept * correct_seq[:, :-1]
-        interaction_emb = self.embed_interaction(interaction_seq)
+        if data_type == "single_concept":
+            # 历史的interaction
+            concept_seq = batch["concept_seq"]
+            interaction_seq = concept_seq[:, :-1] + num_concept * correct_seq[:, :-1]
+            interaction_emb = self.embed_interaction(interaction_seq)
+            # 未来的concept
+            concept_emb = self.embed_concept(concept_seq[:, 1:])
+        else:
+            question_seq = batch["question_seq"]
+            interaction_emb = KTEmbedLayer.interaction_fused_emb(
+                self.embed_interaction,
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                question_seq,
+                correct_seq,
+                num_concept,
+                fusion_type="mean"
+            )[:, :-1]
+            concept_emb = KTEmbedLayer.concept_fused_emb(
+                self.embed_concept,
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                question_seq,
+                fusion_type="mean"
+            )[:, 1:]
+
         position_emb = self.embed_position(position_encode(interaction_emb.shape[1], self.params["device"]))
         interaction_emb = interaction_emb + position_emb
 
-        # 未来的concept
-        concept_emb = self.embed_concept(concept_seq[:, 1:])
         for i in range(num_block):
             interaction_emb = self.blocks[i](concept_emb, interaction_emb, interaction_emb)
 
         p = torch.sigmoid(self.out(self.dropout_layer(interaction_emb))).squeeze(-1)
 
         return p
+
+    def get_predict_score_seq_len_minus1(self, batch):
+        return self.forward(batch)
 
     def get_predict_score(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)

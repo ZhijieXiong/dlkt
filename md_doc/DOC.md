@@ -307,13 +307,12 @@
      - 首先根据训练集统计习题和知识点出现频率，在测试集上根据频率将习题和知识点划分为低频、中频和高频（对于习题来说，还有零频，即训练集中未出现过），然后评估模型在不同频段习题和知识点上的性能
   3. 基于习题和知识点正确率评估（数据偏差）
      - 首先根据训练集统计习题和知识点的正确率，在测试集上根据频率将习题和知识点划分低正确率、中等正确率和高正确率，然后评估模型在不同正确率水平习题和知识点上的性能
-  4. 基于偏差（困难样本）评估
+  4. 偏差冲突样本（或者可以认为是困难样本）评估
      - 首先从测试集中划分出有偏差（seq bias、question bias和double bias）的子集，然后测试模型在这个子集上的效果
-     - seq bias：找出context seq accuracy（即历史正确率，如前20个时刻的做题正确率）高，但是做错习题的时刻，或者context seq accuracy低，但是做对的时刻
-     - question bias：类似seq bias，根据训练集统计信息，找出高正确率但是做错的习题（任意学生），或者低正确率但是做对的习题（任意学生）
-     - double bias：在seq bias（分为low acc but do right和high acc but do wrong）的基础上，结合训练集习题的信息（各习题的正确率），在low acc but do right找出低正确率的习题，以及在high acc but do wrong中找出高正确率的习题
-  5. 简单样本评估：和基于偏差评估相反，从测试集找出简单样本（例如高正确率并且做对的习题）进行评测
-  5. 基于习题偏差进行平衡采样后的评估
+     - seq bias：找出context seq accuracy（即历史正确率，如前10个时刻的做题正确率）高，但是做错习题的时刻，或者context seq accuracy低，但是做对的时刻
+     - question bias：类似seq bias，在测试集中找出高正确率（训练集中计算出每道习题正确率）但是做错的样本，或者低正确率但是做对的习题的样本
+  5. 偏差引导样本（或者可以认为是简单样本）评估：和偏差冲突样本评估相反，从测试集找出偏差引导样本（例如高正确率并且做对的习题）进行评测
+  6. 基于习题偏差进行平衡采样后的评估
      - 来自论文`Do We Fully Understand Students' Knowledge States? Identifying and Mitigating Answer Bias in Knowledge Tracing`
      - 官方代码实现的是有重复的采样，我们有重复和无重复都实现了
 - 按照以下步骤进行细粒度评估

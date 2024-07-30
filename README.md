@@ -15,19 +15,19 @@ This algorithm library was developed inspired by `pyKT` (the code repository cor
 
 - The Comparison with `pyKT`
 
-|                           Content                            | DLKT  | pyKT  |
-| :----------------------------------------------------------: | ----- | ----- |
-| Arbitrary Experimental Settings (Data Processing, Dataset  Partitioning, ...) | True  | False |
-| Mainstream Knowledge Tracing Model (DKT, DKVMN, AKT, LPKT, ...) | True  | True  |
-|     Knowledge Tracing Model  Training Based on Concepts      | True  | True  |
-|     Knowledge Tracing Model Training Based on Questions      | True  | True  |
-|    Knowledge Tracing Model  Evaluating Based on Concepts     | True  | True  |
-|    Knowledge Tracing Model  Evaluating Based on Questions    | True  | True  |
-| Fine-grained Metrics (Cold Start, Long Tail, Bias Evaluation or Hard Sample Evaluation, Easy Sample Evaluation...) | True  | False |
-| Knowledge Tracing Model Training Similar to Sequential Recommendation System | True  | False |
-|                   Cognitive Diagnosis Task                   | True  | False |
-|                                                              |       |       |
-|                            Wandb                             | False | True  |
+|                                     Content                                     | DLKT  | pyKT  |
+|:-------------------------------------------------------------------------------:| ----- | ----- |
+|  Arbitrary Experimental Settings (Data Processing, Dataset  Partitioning, ...)  | True  | False |
+|         Mainstream Knowledge Tracing Model (DKT, DKVMN, AKT, LPKT, ...)         | True  | True  |
+|               Knowledge Tracing Model  Training Based on Concepts               | True  | True  |
+|               Knowledge Tracing Model Training Based on Questions               | True  | True  |
+|              Knowledge Tracing Model  Evaluating Based on Concepts              | True  | True  |
+|             Knowledge Tracing Model  Evaluating Based on Questions              | True  | True  |
+| Fine-grained Metrics (Cold Start, Long Tail, Biased and Unbiased Evaluation...) | True  | False |
+|  Knowledge Tracing Model Training Similar to Sequential Recommendation System   | True  | False |
+|                            Cognitive Diagnosis Task                             | True  | False |
+|                                                                                 |       |       |
+|                                      Wandb                                      | False | True  |
 
 - Data process pipline
 

@@ -125,4 +125,15 @@ class DKT(nn.Module):
         return predict_score
 
     def get_predict_score_seq_len_minus1(self, batch):
-        return self.forward(batch)
+        data_type = self.params["datasets_config"]["data_type"]
+        use_concept = self.params["models_config"]["kt_model"]["encoder_layer"]["DKT"]["use_concept"]
+        num_concept = self.params["models_config"]["kt_model"]["encoder_layer"]["DKT"]["num_concept"]
+
+        if use_concept and data_type != "only_question":
+            one_hot4predict_score = nn.functional.one_hot(batch["concept_seq"][:, 1:], num_concept)
+            predict_score = self.forward(batch)[:, :-1]
+            predict_score = (predict_score * one_hot4predict_score).sum(-1)
+        else:
+            predict_score = self.forward(batch)
+
+        return predict_score

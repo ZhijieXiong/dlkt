@@ -37,7 +37,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
     # 学习率
-    parser.add_argument("--learning_rate", type=float, default=0.0001)
+    parser.add_argument("--learning_rate", type=float, default=0.001)
     parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
@@ -45,20 +45,20 @@ if __name__ == "__main__":
     parser.add_argument("--lr_schedule_milestones", type=str, default="[5, 10]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     # batch size
-    parser.add_argument("--train_batch_size", type=int, default=24)
-    parser.add_argument("--evaluate_batch_size", type=int, default=64)
+    parser.add_argument("--train_batch_size", type=int, default=128)
+    parser.add_argument("--evaluate_batch_size", type=int, default=128)
     # 梯度裁剪
     parser.add_argument("--enable_clip_grad", type=str2bool, default=True)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=27)
     parser.add_argument("--num_question", type=int, default=1223)
-    parser.add_argument("--dim_model", type=int, default=256)
+    parser.add_argument("--dim_model", type=int, default=64)
     parser.add_argument("--key_query_same", type=str2bool, default=True)
-    parser.add_argument("--num_head", type=int, default=8)
+    parser.add_argument("--num_head", type=int, default=4)
     parser.add_argument("--num_block", type=int, default=1)
-    parser.add_argument("--dim_ff", type=int, default=256)
-    parser.add_argument("--dim_final_fc", type=int, default=512)
+    parser.add_argument("--dim_ff", type=int, default=64)
+    parser.add_argument("--dim_final_fc", type=int, default=64)
     parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--separate_qa", type=str2bool, default=False)
     parser.add_argument("--seq_representation", type=str, default="encoder_output",
@@ -69,6 +69,7 @@ if __name__ == "__main__":
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)
+    parser.add_argument("--trace_epoch", type=str2bool, default=False)
     parser.add_argument("--use_cpu", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
 

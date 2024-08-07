@@ -82,3 +82,6 @@ example4llm_expolre/demo
 /example/train/simple_kt_cluster_cl.py
 /example/train/simple_kt_instance_cl.py
 /example/train/akt_max_entropy_aug.py
+
+
+/example/case_study.py

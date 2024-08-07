@@ -204,6 +204,14 @@ class AKT(nn.Module, BaseModel4CL):
 
         return predict_score
 
+    def get_last_predict_score(self, batch):
+        predict_score = self.forward(batch)
+        batch_size = batch["question_seq"].shape[0]
+        first_index = torch.arange(batch_size).long().to(self.params["device"])
+        last_predict_score = predict_score[first_index, batch["seq_len"] - 1]
+
+        return last_predict_score
+
     def set_emb4zero(self):
         """
         transfer head to tail use gaussian distribution

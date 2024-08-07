@@ -15,7 +15,7 @@ from ..model.DCT import DCT
 from ..model.DIMKT import DIMKT
 from ..model.DKVMN import DKVMN
 from ..model.DTransformer import DTransformer
-from ..model.GIKT import GIKT
+# from ..model.GIKT import GIKT
 from ..model.NCD import NCD
 from ..model.LBKT import LBKT
 from ..model.LPKT import LPKT
@@ -32,6 +32,7 @@ model_table = {
     "AuxInfoDCT": AuxInfoDCT,
     "AuxInfoQDKT": AuxInfoQDKT,
     "AKT": AKT,
+    "AKT-ADA": AKT,
     "ATKT": ATKT,
     "AT_DKT": AT_DKT,
     "AC_VAE_GRU": AC_VAE_GRU,
@@ -41,7 +42,7 @@ model_table = {
     "DIMKT": DIMKT,
     "DKVMN": DKVMN,
     "DTransformer": DTransformer,
-    "GIKT": GIKT,
+    # "GIKT": GIKT,
     "NCD": NCD,
     "LBKT": LBKT,
     "LPKT": LPKT,
@@ -49,6 +50,7 @@ model_table = {
     "SAKT": SAKT,
     "SAINT": SAINT,
     "qDKT": qDKT,
+    "qDKT-ADA": qDKT,
     "QIKT": QIKT,
     "qDKT_CORE": qDKT_CORE,
     "SimpleKT": SimpleKT
@@ -88,7 +90,10 @@ def load_kt_model(global_params, global_objects, save_model_dir, ckt_name="saved
         pass
     model_class = model_table[kt_model_name]
     model = model_class(global_params, global_objects).to(global_params["device"])
-    saved_ckt = torch.load(ckt_path)
+    if global_params["device"] == "cpu":
+        saved_ckt = torch.load(ckt_path, map_location=torch.device('cpu'))
+    else:
+        saved_ckt = torch.load(ckt_path)
     model.load_state_dict(saved_ckt[model_name_in_ckt])
 
     return model

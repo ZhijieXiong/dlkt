@@ -146,7 +146,7 @@ def evaluate_core(predict_score, ground_truth, question_ids, allow_replace=True)
     return get_performance_no_error(predict_score_balanced, predict_label_balanced, ground_truth_balanced)
 
 
-def get_seq_fine_grained_sample(all_batch, previous_seq_len, seq_most_accuracy):
+def get_seq_fine_grained_sample(all_batch, window_len, acc_th):
     easy_sample = {
         "question": [],
         "predict_score": [],
@@ -174,7 +174,7 @@ def get_seq_fine_grained_sample(all_batch, previous_seq_len, seq_most_accuracy):
     for batch in all_batch:
         zip_iter = zip(batch["question_seqs"], batch["label_seqs"], batch["predict_score_seqs"], batch["mask_seqs"])
         for question_seq, label_seq, predict_score_seq, mask_seq in zip_iter:
-            for i, m in enumerate(mask_seq[:previous_seq_len]):
+            for i, m in enumerate(mask_seq[:window_len]):
                 if m == 0:
                     break
                 cold_start_sample["question"].append(question_seq[i])
@@ -182,27 +182,27 @@ def get_seq_fine_grained_sample(all_batch, previous_seq_len, seq_most_accuracy):
                 cold_start_sample["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
                 cold_start_sample["ground_truth"].append(label_seq[i])
 
-            for i, m in enumerate(mask_seq[previous_seq_len:]):
-                j = i + previous_seq_len
+            for i, m in enumerate(mask_seq[window_len:]):
+                j = i + window_len
                 if m == 0:
                     break
 
-                context_label = label_seq[j-previous_seq_len:j]
+                context_label = label_seq[j - window_len:j]
                 context_accuracy = sum(context_label) / len(context_label)
 
-                if seq_most_accuracy <= context_accuracy <= (1 - seq_most_accuracy):
+                if acc_th <= context_accuracy <= (1 - acc_th):
                     normal_sample["question"].append(question_seq[j])
                     normal_sample["predict_score"].append(predict_score_seq[j])
                     normal_sample["predict_label"].append(1 if (predict_score_seq[j] > 0.5) else 0)
                     normal_sample["ground_truth"].append(label_seq[j])
-                elif ((context_accuracy > (1 - seq_most_accuracy)) and (label_seq[j] == 0)) or \
-                        ((context_accuracy < seq_most_accuracy) and (label_seq[j] == 1)):
+                elif ((context_accuracy > (1 - acc_th)) and (label_seq[j] == 0)) or \
+                        ((context_accuracy < acc_th) and (label_seq[j] == 1)):
                     hard_sample["question"].append(question_seq[j])
                     hard_sample["predict_score"].append(predict_score_seq[j])
                     hard_sample["predict_label"].append(1 if (predict_score_seq[j] > 0.5) else 0)
                     hard_sample["ground_truth"].append(label_seq[j])
-                elif ((context_accuracy > (1 - seq_most_accuracy)) and (label_seq[j] == 1)) or \
-                        ((context_accuracy < seq_most_accuracy) and (label_seq[j] == 0)):
+                elif ((context_accuracy > (1 - acc_th)) and (label_seq[j] == 1)) or \
+                        ((context_accuracy < acc_th) and (label_seq[j] == 0)):
                     easy_sample["question"].append(question_seq[j])
                     easy_sample["predict_score"].append(predict_score_seq[j])
                     easy_sample["predict_label"].append(1 if (predict_score_seq[j] > 0.5) else 0)
@@ -219,7 +219,7 @@ def get_seq_fine_grained_sample(all_batch, previous_seq_len, seq_most_accuracy):
     return fine_grained_sample
 
 
-def get_seq_fine_grained_sample_mask(batch, previous_seq_len, seq_most_accuracy):
+def get_seq_fine_grained_sample_mask(batch, window_len, acc_th):
     easy_mask = []
     normal_mask = []
     hard_mask = []
@@ -228,33 +228,33 @@ def get_seq_fine_grained_sample_mask(batch, previous_seq_len, seq_most_accuracy)
         easy_mask_seq = []
         normal_mask_seq = []
         hard_mask_seq = []
-        for _ in mask_seq[:previous_seq_len]:
+        for _ in mask_seq[:window_len]:
             easy_mask_seq.append(False)
             normal_mask_seq.append(False)
             hard_mask_seq.append(False)
 
-        for i, m in enumerate(mask_seq[previous_seq_len:]):
-            j = i + previous_seq_len
+        for i, m in enumerate(mask_seq[window_len:]):
+            j = i + window_len
             if m == 0:
                 easy_mask_seq.append(False)
                 normal_mask_seq.append(False)
                 hard_mask_seq.append(False)
                 continue
 
-            context_label = label_seq[j-previous_seq_len:j]
+            context_label = label_seq[j - window_len:j]
             context_accuracy = sum(context_label) / len(context_label)
 
-            if seq_most_accuracy <= context_accuracy <= (1 - seq_most_accuracy):
+            if acc_th <= context_accuracy <= (1 - acc_th):
                 easy_mask_seq.append(False)
                 normal_mask_seq.append(True)
                 hard_mask_seq.append(False)
-            elif ((context_accuracy > (1 - seq_most_accuracy)) and (label_seq[j] == 0)) or \
-                    ((context_accuracy < seq_most_accuracy) and (label_seq[j] == 1)):
+            elif ((context_accuracy > (1 - acc_th)) and (label_seq[j] == 0)) or \
+                    ((context_accuracy < acc_th) and (label_seq[j] == 1)):
                 easy_mask_seq.append(False)
                 normal_mask_seq.append(False)
                 hard_mask_seq.append(True)
-            elif ((context_accuracy > (1 - seq_most_accuracy)) and (label_seq[j] == 1)) or \
-                    ((context_accuracy < seq_most_accuracy) and (label_seq[j] == 0)):
+            elif ((context_accuracy > (1 - acc_th)) and (label_seq[j] == 1)) or \
+                    ((context_accuracy < acc_th) and (label_seq[j] == 0)):
                 easy_mask_seq.append(True)
                 normal_mask_seq.append(False)
                 hard_mask_seq.append(False)
@@ -266,8 +266,8 @@ def get_seq_fine_grained_sample_mask(batch, previous_seq_len, seq_most_accuracy)
     return easy_mask, normal_mask, hard_mask
 
 
-def get_num_seq_fine_grained_sample(all_batch, window_seq_len, acc_th):
-    seq_fine_grained_sample = get_seq_fine_grained_sample(all_batch, window_seq_len, acc_th)
+def get_num_seq_fine_grained_sample(all_batch, window_len, acc_th):
+    seq_fine_grained_sample = get_seq_fine_grained_sample(all_batch, window_len, acc_th)
     num_easy = len(seq_fine_grained_sample["easy"]["question"])
     num_normal = len(seq_fine_grained_sample["normal"]["question"])
     num_hard = len(seq_fine_grained_sample["hard"]["question"])
@@ -277,8 +277,8 @@ def get_num_seq_fine_grained_sample(all_batch, window_seq_len, acc_th):
     return num_easy, num_normal, num_hard, num_hard_label0, num_hard_label1
 
 
-def get_seq_fine_grained_performance(all_batch, window_seq_len, acc_th):
-    seq_fine_grained_sample = get_seq_fine_grained_sample(all_batch, window_seq_len, acc_th)
+def get_seq_fine_grained_performance(all_batch, window_len, acc_th):
+    seq_fine_grained_sample = get_seq_fine_grained_sample(all_batch, window_len, acc_th)
     easy_sample = seq_fine_grained_sample["easy"]
     normal_sample = seq_fine_grained_sample["normal"]
     hard_sample = seq_fine_grained_sample["hard"]
@@ -302,7 +302,7 @@ def get_seq_fine_grained_performance(all_batch, window_seq_len, acc_th):
     return performance_result
 
 
-def get_question_fine_grained_sample(all_batch, statics_train, most_accuracy):
+def get_question_fine_grained_sample(all_batch, statics_train, acc_th):
     unseen_sample = {
         "question": [],
         "predict_score": [],
@@ -342,19 +342,19 @@ def get_question_fine_grained_sample(all_batch, statics_train, most_accuracy):
                     unseen_sample["predict_score"].append(predict_score_seq[i])
                     unseen_sample["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
                     unseen_sample["ground_truth"].append(label_seq[i])
-                elif ((q_acc_statics > (1 - most_accuracy)) and (label == 1)) or \
-                        ((q_acc_statics < most_accuracy) and (label == 0)):
+                elif ((q_acc_statics > (1 - acc_th)) and (label == 1)) or \
+                        ((q_acc_statics < acc_th) and (label == 0)):
                     easy_sample["question"].append(question_seq[i])
                     easy_sample["predict_score"].append(predict_score_seq[i])
                     easy_sample["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
                     easy_sample["ground_truth"].append(label_seq[i])
-                elif most_accuracy <= q_acc_statics <= (1 - most_accuracy):
+                elif acc_th <= q_acc_statics <= (1 - acc_th):
                     normal_sample["question"].append(question_seq[i])
                     normal_sample["predict_score"].append(predict_score_seq[i])
                     normal_sample["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
                     normal_sample["ground_truth"].append(label_seq[i])
-                elif ((q_acc_statics > (1 - most_accuracy)) and (label == 0)) or \
-                        ((q_acc_statics < most_accuracy) and (label == 1)):
+                elif ((q_acc_statics > (1 - acc_th)) and (label == 0)) or \
+                        ((q_acc_statics < acc_th) and (label == 1)):
                     hard_sample["question"].append(question_seq[i])
                     hard_sample["predict_score"].append(predict_score_seq[i])
                     hard_sample["predict_label"].append(1 if (predict_score_seq[i] > 0.5) else 0)
@@ -370,7 +370,7 @@ def get_question_fine_grained_sample(all_batch, statics_train, most_accuracy):
     return fine_grained_sample
 
 
-def get_question_fine_grained_sample_mask(batch, statics_train, most_accuracy):
+def get_question_fine_grained_sample_mask(batch, statics_train, acc_th):
     easy_mask = []
     normal_mask = []
     hard_mask = []
@@ -392,17 +392,17 @@ def get_question_fine_grained_sample_mask(batch, statics_train, most_accuracy):
                 easy_mask_seq.append(False)
                 normal_mask_seq.append(False)
                 hard_mask_seq.append(False)
-            elif ((q_acc_statics > (1 - most_accuracy)) and (label == 1)) or \
-                    ((q_acc_statics < most_accuracy) and (label == 0)):
+            elif ((q_acc_statics > (1 - acc_th)) and (label == 1)) or \
+                    ((q_acc_statics < acc_th) and (label == 0)):
                 easy_mask_seq.append(True)
                 normal_mask_seq.append(False)
                 hard_mask_seq.append(False)
-            elif most_accuracy <= q_acc_statics <= (1 - most_accuracy):
+            elif acc_th <= q_acc_statics <= (1 - acc_th):
                 easy_mask_seq.append(False)
                 normal_mask_seq.append(True)
                 hard_mask_seq.append(False)
-            elif ((q_acc_statics > (1 - most_accuracy)) and (label == 0)) or \
-                    ((q_acc_statics < most_accuracy) and (label == 1)):
+            elif ((q_acc_statics > (1 - acc_th)) and (label == 0)) or \
+                    ((q_acc_statics < acc_th) and (label == 1)):
                 easy_mask_seq.append(False)
                 normal_mask_seq.append(False)
                 hard_mask_seq.append(True)
@@ -450,8 +450,8 @@ def get_question_fine_grained_performance(all_batch, statics_train, acc_th):
     return performance_result
 
 
-def get_double_fine_grained_sample(all_batch, statics_train, window_seq_len, acc_th):
-    seq_fine_grained_sample = get_seq_fine_grained_sample(all_batch, window_seq_len, acc_th)
+def get_double_fine_grained_sample(all_batch, statics_train, window_len, acc_th):
+    seq_fine_grained_sample = get_seq_fine_grained_sample(all_batch, window_len, acc_th)
     seq_easy_sample = seq_fine_grained_sample["easy"]
     seq_hard_sample = seq_fine_grained_sample["hard"]
     double_easy_sample = {
@@ -500,8 +500,8 @@ def get_double_fine_grained_sample(all_batch, statics_train, window_seq_len, acc
     return double_fine_grained_sample
 
 
-def get_double_fine_grained_performance(all_batch, statics_train, window_seq_len, acc_th):
-    double_fine_grained_sample = get_double_fine_grained_sample(all_batch, statics_train, window_seq_len, acc_th)
+def get_double_fine_grained_performance(all_batch, statics_train, window_len, acc_th):
+    double_fine_grained_sample = get_double_fine_grained_sample(all_batch, statics_train, window_len, acc_th)
     easy_sample = double_fine_grained_sample["easy"]
     hard_sample = double_fine_grained_sample["hard"]
 

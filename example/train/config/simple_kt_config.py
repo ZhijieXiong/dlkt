@@ -79,7 +79,7 @@ def simple_kt_instance_cl_config(local_params):
     params_str = instance_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@SimpleKT@@", "@@SimpleKT-instance_cl@@"))
+            global_params["save_model_dir_name"].replace("SimpleKT@@", "SimpleKT-instance-CL@@"))
         global_params["save_model_dir_name"] += f"@@{params_str}"
         save_params(global_params, global_objects)
 
@@ -94,7 +94,7 @@ def simple_kt_cluster_cl_config(local_params):
     params_str = cluster_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@SimpleKT@@", "@@SimpleKT-cluster_cl@@"))
+            global_params["save_model_dir_name"].replace("SimpleKT@@", "@@SimpleKT-cluster-CL@@"))
         global_params["save_model_dir_name"] += f"@@{params_str}"
         save_params(global_params, global_objects)
 

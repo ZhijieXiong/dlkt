@@ -1,5 +1,5 @@
 MODEL_PARAMS = {
-    "backbone": {
+    "encoder_layer": {
         "type": "SAINT",
         "SAINT": {
             "num_question": 17751,

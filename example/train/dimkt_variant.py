@@ -2,12 +2,12 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from config.deep_irt_config import deep_irt_config
+from config.dimkt_config import dimkt_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.model.DeepIRT import DeepIRT
+from lib.model.DIMKT_VARIANT import DIMKT_VARIANT
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0)
+    parser.add_argument("--weight_decay", type=float, default=0.001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
@@ -50,11 +50,21 @@ if __name__ == "__main__":
     # 梯度裁剪
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
+    # DIMKT数据处理参数
+    parser.add_argument("--num_min_question", type=int, default=15)
+    parser.add_argument("--num_min_concept", type=int, default=30)
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=123)
-    parser.add_argument("--dim_emb", type=int, default=200)
-    parser.add_argument("--size_memory", type=int, default=50)
-    parser.add_argument("--dropout", type=float, default=0.2)
+    parser.add_argument("--num_question", type=int, default=17751)
+    parser.add_argument("--dim_emb", type=int, default=128)
+    parser.add_argument("--num_question_diff", type=int, default=50)
+    parser.add_argument("--num_concept_diff", type=int, default=50)
+    parser.add_argument("--dropout", type=float, default=0.3)
+    # IPS
+    parser.add_argument("--use_sample_weight", type=str2bool, default=False)
+    parser.add_argument("--sample_weight_method", type=str, default="IPS-double")
+    parser.add_argument("--IPS_min", type=float, default=0.3)
+    parser.add_argument("--IPS_his_seq_len", type=int, default=20)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)
@@ -65,7 +75,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = deep_irt_config(params)
+    global_params, global_objects = dimkt_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)
@@ -90,8 +100,7 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    global_objects["models"] = {}
-    model = DeepIRT(global_params, global_objects).to(global_params["device"])
+    model = DIMKT_VARIANT(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
     trainer = KnowledgeTracingTrainer(global_params, global_objects)
     trainer.train()

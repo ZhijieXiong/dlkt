@@ -55,8 +55,8 @@ def akt_general_config(local_params, global_params, global_objects):
         train_file_name = local_params["train_file_name"]
 
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@AKT@@seed_{local_params['seed']}@@{setting_name}@@"
-            f"{train_file_name.replace('.txt', '')}")
+            f"AKT@@{setting_name}@@{train_file_name.replace('.txt', '')}@@seed_{local_params['seed']}@@"
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}")
 
 
 def akt_config(local_params):
@@ -148,8 +148,8 @@ def akt_core_config(local_params):
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@AKT_CORE@@seed_{local_params['seed']}"
-            f"@@{setting_name}@@{train_file_name.replace('.txt', '')}"
+            f"AKT-CORE@@{setting_name}@@{train_file_name.replace('.txt', '')}@@seed_{local_params['seed']}@@"
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}"
         )
         save_params(global_params, global_objects)
 
@@ -164,7 +164,7 @@ def akt_duo_cl_config(local_params):
     duo_cl_general_config(local_params, global_params)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT-duo_cl@@"))
+            global_params["save_model_dir_name"].replace("AKT@@", "AKT-DUO-CL@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -178,7 +178,7 @@ def akt_instance_cl_config(local_params):
     instance_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT-instance_cl@@"))
+            global_params["save_model_dir_name"].replace("AKT@@", "AKT-instance-CL@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -192,7 +192,7 @@ def akt_cluster_cl_config(local_params):
     cluster_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT-cluster_cl@@"))
+            global_params["save_model_dir_name"].replace("AKT@@", "AKT-cluster-CL@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -206,7 +206,7 @@ def akt_max_entropy_adv_aug_config(local_params):
     max_entropy_adv_aug_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT-ME-ADA@@"))
+            global_params["save_model_dir_name"].replace("AKT@@", "AKT-ME-ADA@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -232,7 +232,7 @@ def akt4cold_start_config(local_params):
     encoder_config_cold_start["effect_start_step2"] = effect_start_step2
 
     if local_params["save_model"]:
-        global_params["save_model_dir_name"] = global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT4cold_start@@")
+        global_params["save_model_dir_name"] = global_params["save_model_dir_name"].replace("AKT@@", "AKT-cold-start@@")
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -247,7 +247,7 @@ def akt_meta_optimize_cl_config(local_params):
 
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT-meta_optimize_cl@@"))
+            global_params["save_model_dir_name"].replace("AKT@@", "AKT-meta-optimize-CL@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -262,7 +262,7 @@ def akt_output_enhance_config(local_params):
     global_params["datasets_config"]["train"]["kt_output_enhance"] = {}
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@AKT@@", "@@AKT-output_enhance@@"))
+            global_params["save_model_dir_name"].replace("AKT@@", "AKT-output-enhance@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -292,8 +292,8 @@ def akt_LfF_config(local_params):
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@AKT_LfF@@seed_{local_params['seed']}"
-            f"@@{setting_name}@@{train_file_name.replace('.txt', '')}"
+            f"AKT-LfF@@{setting_name}@@{train_file_name.replace('.txt', '')}@@seed_{local_params['seed']}@@"
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}"
         )
         save_params(global_params, global_objects)
 
@@ -327,8 +327,8 @@ def akt_adv_bias_aug_config(local_params):
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@AKT-ADA@@seed_{local_params['seed']}"
-            f"@@{setting_name}@@{train_file_name.replace('.txt', '')}"
+            f"AKT-ADA@@{setting_name}@@{train_file_name.replace('.txt', '')}@@seed_{local_params['seed']}@@"
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}"
         )
         save_params(global_params, global_objects)
 

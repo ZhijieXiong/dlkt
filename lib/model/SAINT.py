@@ -4,6 +4,7 @@ import torch.nn as nn
 from torch.nn import Dropout
 
 from .util import transformer_FFN, get_clones, ut_mask, encode_position
+from .Module.KTEmbedLayer import KTEmbedLayer
 
 
 class SAINT(nn.Module):
@@ -14,7 +15,7 @@ class SAINT(nn.Module):
         self.params = params
         self.objects = objects
 
-        backbone_config = self.params["models_config"]["kt_model"]["backbone"]["SAINT"]
+        backbone_config = self.params["models_config"]["kt_model"]["encoder_layer"]["SAINT"]
         seq_len = backbone_config["seq_len"]
         dim_emb = backbone_config["dim_emb"]
         dropout = backbone_config["dropout"]
@@ -27,10 +28,14 @@ class SAINT(nn.Module):
         self.out = nn.Linear(dim_emb, 1)
 
     def forward(self, batch):
-        backbone_config = self.params["models_config"]["kt_model"]["backbone"]["SAINT"]
+        data_type = self.params["datasets_config"]["data_type"]
+        backbone_config = self.params["models_config"]["kt_model"]["encoder_layer"]["SAINT"]
         num_block = backbone_config["num_block"]
         question_seq = batch["question_seq"]
-        concept_seq = batch["concept_seq"]
+        if data_type == "only_question":
+            concept_seq = None
+        else:
+            concept_seq = batch["concept_seq"]
         correct_seq = batch["correct_seq"][:, :-1]
 
         position_seq = encode_position(question_seq.shape[1], self.params["device"])
@@ -39,7 +44,7 @@ class SAINT(nn.Module):
         # pass through each of the encoder blocks in sequence
         question_emb = question_seq
         for i in range(num_block):
-            question_emb = self.encoder[i](question_emb, concept_seq, position_emb, first_block=i == 0)
+            question_emb = self.encoder[i](question_emb, position_emb, concept_seq, first_block=i == 0)
             concept_seq = question_emb
 
         # pass through each decoder blocks in sequence
@@ -62,6 +67,9 @@ class SAINT(nn.Module):
 
         return predict_score
 
+    def get_predict_score_seq_len_minus1(self, batch):
+        return self.forward(batch)[:, 1:]
+
     def get_predict_loss(self, batch, loss_record=None):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
 
@@ -82,7 +90,7 @@ class Encoder_block(nn.Module):
         self.params = params
         self.objects = objects
 
-        backbone_config = self.params["models_config"]["kt_model"]["backbone"]["SAINT"]
+        backbone_config = self.params["models_config"]["kt_model"]["encoder_layer"]["SAINT"]
         num_question = backbone_config["num_question"]
         num_concept = backbone_config["num_concept"]
         dim_emb = backbone_config["dim_emb"]
@@ -100,9 +108,21 @@ class Encoder_block(nn.Module):
         self.layer_norm2 = nn.LayerNorm(dim_emb)
         self.dropout2 = Dropout(dropout)
 
-    def forward(self, question_seq, concept_seq, position_emb, first_block=True):
+    def forward(self, question_seq, position_emb, concept_seq=None, first_block=True):
+        data_type = self.params["datasets_config"]["data_type"]
         if first_block:
-            out = self.embed_concept(concept_seq) + self.embed_question(question_seq) + position_emb
+            if data_type == "only_question":
+                concept_emb = KTEmbedLayer.concept_fused_emb(
+                    self.embed_concept,
+                    self.objects["data"]["q2c_table"],
+                    self.objects["data"]["q2c_mask_table"],
+                    question_seq,
+                    fusion_type="mean"
+                )
+                batch_size = concept_emb.shape[0]
+                out = concept_emb + self.embed_question(question_seq) + position_emb
+            else:
+                out = self.embed_concept(concept_seq) + self.embed_question(question_seq) + position_emb
         else:
             out = question_seq
         out = out.permute(1, 0, 2)
@@ -134,7 +154,7 @@ class Decoder_block(nn.Module):
         self.params = params
         self.objects = objects
 
-        backbone_config = self.params["models_config"]["kt_model"]["backbone"]["SAINT"]
+        backbone_config = self.params["models_config"]["kt_model"]["encoder_layer"]["SAINT"]
         dim_emb = backbone_config["dim_emb"]
         num_attn_head = backbone_config["num_attn_head"]
         dropout = backbone_config["dropout"]

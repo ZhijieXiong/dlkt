@@ -59,8 +59,8 @@ def at_dkt_general_config(local_params, global_params):
         train_file_name = local_params["train_file_name"]
 
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@AT-DKT@@seed_{local_params['seed']}@@{setting_name}@@"
-            f"{train_file_name.replace('.txt', '')}")
+            f"AT-DKT@@{setting_name}@@{train_file_name.replace('.txt', '')}@@seed_{local_params['seed']}@@"
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}")
         QT_params_str = f"{QT_rnn_type}-{QT_num_rnn_layer}" if QT_net_type == 'rnn' else \
             f"transformer-{QT_transformer_num_block}-{QT_transformer_num_head}"
         global_params["save_model_dir_name"] += QT_params_str + f"-{IK_start}-{weight_QT_loss}-{weight_IK_loss}"

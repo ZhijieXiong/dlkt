@@ -51,6 +51,7 @@ def mikt_config(local_params):
     global_objects = {}
     general_config(local_params, global_params, global_objects)
     mikt_general_config(local_params, global_params, global_objects)
+
     if local_params["save_model"]:
         save_params(global_params, global_objects)
 

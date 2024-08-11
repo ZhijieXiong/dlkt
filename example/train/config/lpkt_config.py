@@ -65,8 +65,8 @@ def lpkt_general_config(local_params, global_params, global_objects):
         train_file_name = local_params["train_file_name"]
 
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@LPKT@@seed_{local_params['seed']}@@{setting_name}@@"
-            f"{train_file_name.replace('.txt', '')}")
+            f"LPKT@@{setting_name}@@{train_file_name.replace('.txt', '')}@@seed_{local_params['seed']}@@"
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}")
 
 
 def lpkt_config(local_params):
@@ -88,7 +88,7 @@ def lpkt_max_entropy_adv_aug_config(local_params):
     max_entropy_adv_aug_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@LPKT@@", "@@LPKT-ME-ADA@@"))
+            global_params["save_model_dir_name"].replace("LPKT@@", "LPKT-ME-ADA@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects

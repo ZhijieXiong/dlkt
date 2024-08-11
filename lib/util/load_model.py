@@ -6,6 +6,7 @@ from .basic import str_dict2params
 from ..model.AuxInfoDCT import AuxInfoDCT
 from ..model.AuxInfoQDKT import AuxInfoQDKT
 from ..model.AKT import AKT
+from ..model.AKT_CORE import AKT_CORE
 from ..model.ATKT import ATKT
 from ..model.AT_DKT import AT_DKT
 from ..model.AC_VAE_GRU import AC_VAE_GRU
@@ -15,17 +16,18 @@ from ..model.DCT import DCT
 from ..model.DIMKT import DIMKT
 from ..model.DKVMN import DKVMN
 from ..model.DTransformer import DTransformer
-# from ..model.GIKT import GIKT
-from ..model.NCD import NCD
+from ..model.GIKT import GIKT
 from ..model.LBKT import LBKT
 from ..model.LPKT import LPKT
 from ..model.LPKTPlus import LPKTPlus
 from ..model.SAKT import SAKT
 from ..model.SAINT import SAINT
 from ..model.qDKT import qDKT
-from ..model.QIKT import QIKT
 from ..model.qDKT_CORE import qDKT_CORE
+from ..model.QIKT import QIKT
 from ..model.SimpleKT import SimpleKT
+from ..model.MIKT import MIKT
+from ..model.SparseKT import SparseKT
 
 
 model_table = {
@@ -33,6 +35,8 @@ model_table = {
     "AuxInfoQDKT": AuxInfoQDKT,
     "AKT": AKT,
     "AKT-ADA": AKT,
+    "AKT-LfF": AKT,
+    "AKT-CORE": AKT_CORE,
     "ATKT": ATKT,
     "AT_DKT": AT_DKT,
     "AC_VAE_GRU": AC_VAE_GRU,
@@ -42,8 +46,7 @@ model_table = {
     "DIMKT": DIMKT,
     "DKVMN": DKVMN,
     "DTransformer": DTransformer,
-    # "GIKT": GIKT,
-    "NCD": NCD,
+    "GIKT": GIKT,
     "LBKT": LBKT,
     "LPKT": LPKT,
     "LPKTPlus": LPKTPlus,
@@ -51,9 +54,12 @@ model_table = {
     "SAINT": SAINT,
     "qDKT": qDKT,
     "qDKT-ADA": qDKT,
+    "qDKT-LfF": qDKT,
+    "qDKT-CORE": qDKT_CORE,
     "QIKT": QIKT,
-    "qDKT_CORE": qDKT_CORE,
-    "SimpleKT": SimpleKT
+    "SimpleKT": SimpleKT,
+    "MIKT": MIKT,
+    "SparseKT": SparseKT
 }
 
 
@@ -67,7 +73,14 @@ def load_kt_model(global_params, global_objects, save_model_dir, ckt_name="saved
     global_params["use_LLM_emb4concept"] = eval(saved_params.get("use_LLM_emb4concept", False))
 
     ckt_path = os.path.join(save_model_dir, ckt_name)
-    kt_model_name = os.path.basename(save_model_dir).split("@@")[1]
+    # 之前kt_model_name是第1个，后面改了命名方式，现在是第0个，为了兼容，用以下方式处理
+    kt_model_name0 = os.path.basename(save_model_dir).split("@@")[0]
+    kt_model_name1 = os.path.basename(save_model_dir).split("@@")[1]
+    if kt_model_name0 in model_table.keys():
+        kt_model_name = kt_model_name0
+    else:
+        kt_model_name = kt_model_name1
+    model_class = model_table[kt_model_name]
     if kt_model_name == "LPKT":
         global_objects["LPKT"] = {
             "q_matrix": torch.from_numpy(global_objects["data"]["Q_table"]).float().to(global_params["device"]) + 0.03
@@ -88,7 +101,6 @@ def load_kt_model(global_params, global_objects, save_model_dir, ckt_name="saved
     if kt_model_name == "AuxInfoDCT":
         #
         pass
-    model_class = model_table[kt_model_name]
     model = model_class(global_params, global_objects).to(global_params["device"])
     if global_params["device"] == "cpu":
         saved_ckt = torch.load(ckt_path, map_location=torch.device('cpu'))

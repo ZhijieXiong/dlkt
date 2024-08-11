@@ -3,6 +3,8 @@ import torch.nn as nn
 from torch.nn import Module, Parameter, Embedding, Linear, Dropout
 from torch.nn.init import kaiming_normal_
 
+from .Module.KTEmbedLayer import KTEmbedLayer
+
 
 class DeepIRT(Module):
     model_name = "DeepIRT"
@@ -36,14 +38,35 @@ class DeepIRT(Module):
         self.a_layer = Linear(dim_emb, dim_emb)
 
     def forward(self, batch):
+        data_type = self.params["datasets_config"]["data_type"]
         num_concept = self.params["models_config"]["kt_model"]["encoder_layer"]["DeepIRT"]["num_concept"]
-        concept_seq = batch["concept_seq"]
         correct_seq = batch["correct_seq"]
-        batch_size = concept_seq.shape[0]
+        batch_size = correct_seq.shape[0]
 
-        x = concept_seq + num_concept * correct_seq
-        k = self.embed_key(concept_seq)
-        v = self.embed_value(x)
+        if data_type == "single_concept":
+            concept_seq = batch["concept_seq"]
+            x = concept_seq + num_concept * correct_seq
+            k = self.embed_key(concept_seq)
+            v = self.embed_value(x)
+        else:
+            question_seq = batch["question_seq"]
+            k = KTEmbedLayer.concept_fused_emb(
+                self.embed_key,
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                question_seq,
+                fusion_type="mean"
+            )
+            v = KTEmbedLayer.interaction_fused_emb(
+                self.embed_value,
+                self.objects["data"]["q2c_table"],
+                self.objects["data"]["q2c_mask_table"],
+                question_seq,
+                correct_seq,
+                num_concept,
+                fusion_type="mean"
+            )
+
         Mvt = self.Mv0.unsqueeze(0).repeat(batch_size, 1, 1)
         Mv = [Mvt]
         w = torch.softmax(torch.matmul(k, self.Mk.T), dim=-1)

@@ -100,8 +100,8 @@ def dimkt_general_config(local_params, global_params, global_objects):
         train_file_name = local_params["train_file_name"]
 
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@DIMKT@@seed_{local_params['seed']}@@{setting_name}@@"
-            f"{train_file_name.replace('.txt', '')}")
+            f"DIMKT@@{setting_name}@@{train_file_name.replace('.txt', '')}@@seed_{local_params['seed']}@@"
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}")
 
 
 def dimkt_config(local_params):
@@ -116,6 +116,23 @@ def dimkt_config(local_params):
         question_difficulty.values()) + 1
     global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_concept_diff"] = max(
         concept_difficulty.values()) + 1
+
+    # sample weight setting
+    use_sample_weight = local_params["use_sample_weight"]
+    sample_weight_method = local_params["sample_weight_method"]
+    IPS_min = local_params["IPS_min"]
+    IPS_his_seq_len = local_params['IPS_his_seq_len']
+
+    global_params["use_sample_weight"] = use_sample_weight
+    global_params["sample_weight_method"] = sample_weight_method
+    global_params["IPS_min"] = IPS_min
+    global_params["IPS_his_seq_len"] = IPS_his_seq_len
+
+    global_objects["logger"].info(
+        f"IPS params\n    "
+        f"use IPS: {use_sample_weight}, IPS_min: {IPS_min}, IPS_his_seq_len: {IPS_his_seq_len}\n"
+    )
+
     if local_params["save_model"]:
         save_params(global_params, global_objects)
 
@@ -131,7 +148,7 @@ def dimkt_instance_cl_config(local_params):
     global_params["datasets_config"]["train"]["kt4aug"] = {"use_diff4dimkt": True}
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@DIMKT@@", "@@DIMKT-instance_cl@@"))
+            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-instance-CL@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -145,7 +162,7 @@ def dimkt_max_entropy_adv_aug_config(local_params):
     max_entropy_adv_aug_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@DIMKT@@", "@@DIMKT-ME-ADA@@"))
+            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-ME-ADA@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -175,7 +192,7 @@ def dimkt_mutual_enhance4long_tail_config(local_params):
 
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@DIMKT@@", "@@DIMKT-ME4long_tail@@"))
+            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-ME-long-tail@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -197,7 +214,7 @@ def dimkt_output_enhance_config(local_params):
         concept_difficulty.values()) + 1
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@DIMKT@@", "@@DIMKT-output_enhance@@"))
+            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-output-enhance@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects

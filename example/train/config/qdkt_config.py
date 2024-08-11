@@ -335,7 +335,7 @@ def qdkt_core_config(local_params):
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@qDKT_CORE@@seed_{local_params['seed']}"
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@qDKT-CORE@@seed_{local_params['seed']}"
             f"@@{setting_name}@@{train_file_name.replace('.txt', '')}"
         )
         save_params(global_params, global_objects)
@@ -366,7 +366,7 @@ def qdkt_LfF_config(local_params):
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@qDKT_LfF@@seed_{local_params['seed']}"
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@qDKT-LfF@@seed_{local_params['seed']}"
             f"@@{setting_name}@@{train_file_name.replace('.txt', '')}"
         )
         save_params(global_params, global_objects)

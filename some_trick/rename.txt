@@ -2,3 +2,11 @@
 ls aux-info-dct_baseline_our_setting_new_*.txt | sed -r 'p;s/aux-info-dct_baseline_our_setting_new_(.*)\.txt/mv & our_setting_new_\1.txt/' | bash
 ls aux-info-dct_baseline_our_setting_new_*.txt 找到所有符合规则的文件名
 sed -r 'p;s/aux-info-dct_baseline_our_setting_new_(.*)\.txt/mv & our_setting_new_\1.txt/' 用正则表达式（使用//包裹）匹配内容，后面的\1就是对应前面正则表达式里第一个()的内容
+
+批量重命名文件夹，将文件夹原名中的AKT_CORE替换为AKT-CORE
+for dir in *AKT_CORE*; do
+    mv "$dir" "${dir/AKT_CORE/AKT-CORE}"
+done
+
+删除某个目录所有符合规则的文件
+find dir -type f -name "evaluate_log*" -delete

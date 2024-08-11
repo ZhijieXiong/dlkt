@@ -19,7 +19,7 @@ def saint_general_config(local_params, global_params, global_objects):
     dropout = local_params["dropout"]
 
     # backbone
-    backbone_config = global_params["models_config"]["kt_model"]["backbone"]["SAINT"]
+    backbone_config = global_params["models_config"]["kt_model"]["encoder_layer"]["SAINT"]
     backbone_config["num_concept"] = num_concept
     backbone_config["num_question"] = num_question
     backbone_config["dim_emb"] = dim_emb
@@ -39,8 +39,8 @@ def saint_general_config(local_params, global_params, global_objects):
         train_file_name = local_params["train_file_name"]
 
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@SAINT@@seed_{local_params['seed']}@@{setting_name}@@"
-            f"{train_file_name.replace('.txt', '')}")
+            f"SAINT@@{setting_name}@@{train_file_name.replace('.txt', '')}@@seed_{local_params['seed']}@@"
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}")
 
 
 def saint_config(local_params):

@@ -32,7 +32,9 @@ class qDKT_CORE(nn.Module):
             nn.ReLU(),
             nn.Linear(64, 2)
         )
-        self.user_net = nn.Linear(dim_emb, 2)
+        # 这里一开始代码写错了，本来是想写user的，写成use了
+        # 但是由于后面已经跑了很多实验了，如果改成user，加载模型会报错，所以这里就不改了
+        self.use_net = nn.Linear(dim_emb, 2)
         self.softmax = nn.Softmax(-1)
 
     def get_qc_emb4single_concept(self, batch):
@@ -103,7 +105,7 @@ class qDKT_CORE(nn.Module):
         latent, _ = self.lstm(interaction_emb)
         logits = self.fc(torch.cat([latent, qc_emb[:, 1:]], -1))
         q_logits = self.question_net(qc_emb[:, 1:].detach())
-        s_logits = self.user_net(latent.detach())
+        s_logits = self.use_net(latent.detach())
 
         # z_QKS = self.fusion(logits, q_logits, s_logits, Q_fact=True, K_fact=True, S_fact=True)
         # z_Q = self.fusion(logits, q_logits, s_logits, Q_fact=True, K_fact=False, S_fact=False)

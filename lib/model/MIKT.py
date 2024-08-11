@@ -125,9 +125,9 @@ class MIKT(nn.Module):
         attn = torch.masked_fill(attn, Q_table == 0, -1e9)
         attn = torch.softmax(attn, dim=-1)
         skill_attn = torch.matmul(attn, skill_embed)
-
+        # 公式（3），pro_diff * self.pro_change(skill_mean)是公式（2）
         now_embed = skill_attn + pro_diff * self.pro_change(skill_mean)
-
+        # pro_embed就是公式（3）中的Q_{q_t}
         pro_embed = self.dropout(now_embed)
 
         next_pro_rasch = F.embedding(next_problem, pro_embed)
@@ -142,15 +142,15 @@ class MIKT(nn.Module):
         res_p = []
 
         last_skill_time = torch.zeros((batch_size, num_concept)).to(device).long()  # batch skill
-
+        # conceptual knowledge state (fine-grained)
         skill_state = self.skill_state.unsqueeze(0).repeat(batch_size, 1, 1)  # batch skill d
-
+        # domain knowledge state (coarse-grained)
         all_state = self.all_state.repeat(batch_size, 1)  # batch d
 
         for now_step in range(seq_len):
             now_pro = next_problem[:, now_step]  # batch
             now_pro2skill = F.embedding(now_pro, Q_table).unsqueeze(1)  # batch 1 skill
-
+            # 当前时刻要预测的习题emb
             now_pro_embed = next_pro_rasch[:, now_step]  # batch d
 
             f1 = now_pro_embed.unsqueeze(1)  # batch 1 d
@@ -160,12 +160,12 @@ class MIKT(nn.Module):
             skill_time_gap_embed = F.embedding(skill_time_gap.long(), time_embed)  # batch skill d
 
             now_all_state = all_state  # batch d
-
+            # 公式（4）
             forget_now_all_state = now_all_state * self.all_forget(
                 self.dropout(torch.cat([now_all_state, all_gap_embed], dim=-1)))
 
             effect_all_state = forget_now_all_state.unsqueeze(1).repeat(1, f2.shape[1], 1)
-
+            # 公式（5）
             skill_forget = torch.sigmoid(self.skill_forget(
                 self.dropout(torch.cat([skill_state, skill_time_gap_embed, effect_all_state], dim=-1))))
             skill_forget = torch.masked_fill(skill_forget, now_pro2skill.transpose(-1, -2) == 0, 1)
@@ -178,15 +178,15 @@ class MIKT(nn.Module):
             now_pro_skill_attn = torch.softmax(now_pro_skill_attn, dim=-1)  # batch 1 skill
 
             now_need_state = torch.matmul(now_pro_skill_attn, skill_state).squeeze(1)  # batch d
-
+            # 公式（7）的attn，其中now_pro_embed是Q_{q_t}，now_need_state是FHS_t，forget_now_all_state是\tilde{H_t}
             all_attn = torch.sigmoid(self.predict_attn(self.dropout(
                 torch.cat([now_need_state, forget_now_all_state, now_pro_embed], dim=-1)
             )))
-
+            # 公式（7）中的f_{q_t}
             now_need_state = torch.cat([(1 - all_attn) * now_need_state, all_attn * forget_now_all_state], dim=-1)
-
+            # 记录每个知识点上一次被练习的时刻
             last_skill_time = torch.masked_fill(last_skill_time, now_pro2skill.squeeze(1) == 1, now_step)
-
+            # 公式（8），针对当前习题的能力
             now_ability = torch.sigmoid(self.pro_ability(torch.cat([now_need_state, now_pro_embed], dim=-1)))  # batch 1
             now_diff = F.embedding(now_pro, pro_diff)  # batch 1
 
@@ -197,9 +197,9 @@ class MIKT(nn.Module):
             res_p.append(now_output)
 
             now_X = next_X[:, now_step]  # batch d
-
+            # 公式（11）
             all_state = forget_now_all_state + torch.tanh(self.all_obtain(self.dropout(now_X))).squeeze(1)
-
+            # 公式（12）
             to_get = torch.tanh(self.now_obtain(self.dropout(now_X))).unsqueeze(1)  # batch 1 d
 
             f1 = to_get  # batch 1 d
@@ -208,7 +208,7 @@ class MIKT(nn.Module):
             now_pro_skill_attn = torch.matmul(f1, f2.transpose(-1, -2)) / f1.shape[-1]  # batch 1 skill
             now_pro_skill_attn = torch.masked_fill(now_pro_skill_attn, now_pro2skill == 0, -1e9)
             now_pro_skill_attn = torch.softmax(now_pro_skill_attn, dim=-1)  # batch 1 skill
-
+            # 公式（13）
             now_get = torch.matmul(now_pro_skill_attn.transpose(-1, -2), to_get)
 
             skill_state = skill_state + now_get

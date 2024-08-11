@@ -68,8 +68,8 @@ def qdkt_general_config(local_params, global_params, global_objects):
         train_file_name = local_params["train_file_name"]
 
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@qDKT@@seed_{local_params['seed']}@@{setting_name}@@"
-            f"{train_file_name.replace('.txt', '')}")
+            f"qDKT@@{setting_name}@@{train_file_name.replace('.txt', '')}@@seed_{local_params['seed']}@@"
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}")
 
 
 def qdkt_config(local_params):
@@ -110,7 +110,7 @@ def qdkt_instance_cl_config(local_params):
     instance_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-instance_cl@@"))
+            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-instance-CL@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -124,7 +124,7 @@ def qdkt_duo_cl_config(local_params):
     duo_cl_general_config(local_params, global_params)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-duo_cl@@"))
+            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-DUO-CL@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -138,7 +138,7 @@ def qdkt_cluster_cl_config(local_params):
     cluster_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-cluster_cl@@"))
+            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-cluster-CL@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -152,7 +152,7 @@ def qdkt_max_entropy_adv_aug_config(local_params):
     max_entropy_adv_aug_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-ME-ADA@@"))
+            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-ME-ADA@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -183,7 +183,7 @@ def qdkt_adv_bias_aug_config(local_params):
 
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-ADA@@"))
+            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-ADA@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -197,7 +197,7 @@ def qdkt_meta_optimize_cl_config(local_params):
     meta_optimize_cl_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-meta_optimize_cl@@"))
+            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-meta-optimize-CL@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -212,7 +212,7 @@ def qdkt_output_enhance_config(local_params):
     global_params["datasets_config"]["train"]["kt_output_enhance"] = {}
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-output_enhance@@"))
+            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-output-enhance@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -227,7 +227,7 @@ def qdkt_mutual_enhance4long_tail_config(local_params):
 
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-ME4long_tail@@"))
+            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-ME4long-tail@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -253,7 +253,7 @@ def qdkt_dro_config(local_params):
 
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT-DRO@@"))
+            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-DRO@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -291,7 +291,7 @@ def qdkt_instance_cl_srs_config(local_params):
 
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("@@qDKT@@", "@@qDKT_instance_cl_srs@@"))
+            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-instance-CL-SRS@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -335,8 +335,8 @@ def qdkt_core_config(local_params):
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@qDKT-CORE@@seed_{local_params['seed']}"
-            f"@@{setting_name}@@{train_file_name.replace('.txt', '')}"
+            f"qDKT-CORE@@{setting_name}@@{train_file_name.replace('.txt', '')}@@seed_{local_params['seed']}@@"
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}"
         )
         save_params(global_params, global_objects)
 
@@ -366,8 +366,8 @@ def qdkt_LfF_config(local_params):
         setting_name = local_params["setting_name"]
         train_file_name = local_params["train_file_name"]
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@qDKT-LfF@@seed_{local_params['seed']}"
-            f"@@{setting_name}@@{train_file_name.replace('.txt', '')}"
+            f"qDKT-LfF@@{setting_name}@@{train_file_name.replace('.txt', '')}@@seed_{local_params['seed']}@@"
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}"
         )
         save_params(global_params, global_objects)
 

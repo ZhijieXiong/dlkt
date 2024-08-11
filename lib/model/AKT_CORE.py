@@ -33,7 +33,6 @@ class AKT_CORE(nn.Module):
 
         self.user_net = nn.Linear(dim_model, 2)
         self.softmax = nn.Softmax(dim=-1)
-        self.fusion_mode = 'sum'
         self.constant = nn.Parameter(torch.tensor(0.0))
 
         self.embed_question_difficulty = nn.Embedding(num_question, 1)

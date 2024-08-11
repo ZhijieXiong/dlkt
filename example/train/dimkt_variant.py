@@ -2,7 +2,7 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from config.dimkt_config import dimkt_config
+from config.dimkt_config import dimkt_variant_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_concept_diff", type=int, default=50)
     parser.add_argument("--dropout", type=float, default=0.3)
     # IPS
-    parser.add_argument("--use_sample_weight", type=str2bool, default=False)
+    parser.add_argument("--use_sample_weight", type=str2bool, default=True)
     parser.add_argument("--sample_weight_method", type=str, default="IPS-double")
     parser.add_argument("--IPS_min", type=float, default=0.3)
     parser.add_argument("--IPS_his_seq_len", type=int, default=20)
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = dimkt_config(params)
+    global_params, global_objects = dimkt_variant_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)

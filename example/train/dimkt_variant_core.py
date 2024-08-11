@@ -2,28 +2,28 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from config.dimkt_config import dimkt_config
+from config.dimkt_config import dimkt_variant_core_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.model.DIMKT import DIMKT
+from lib.model.DIMKT_VARIANT_CORE import DIMKT_VARIANT_CORE
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
-    parser.add_argument("--setting_name", type=str, default="our_setting")
-    parser.add_argument("--dataset_name", type=str, default="assist2017")
-    parser.add_argument("--data_type", type=str, default="single_concept",
+    parser.add_argument("--setting_name", type=str, default="our_setting_new")
+    parser.add_argument("--dataset_name", type=str, default="assist2009")
+    parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2017_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2017_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2017_test_fold_0.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0.0001)
+    parser.add_argument("--weight_decay", type=float, default=0.001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
     # 学习率
-    parser.add_argument("--learning_rate", type=float, default=0.002)
+    parser.add_argument("--learning_rate", type=float, default=0.001)
     parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
@@ -54,16 +54,13 @@ if __name__ == "__main__":
     parser.add_argument("--num_min_question", type=int, default=15)
     parser.add_argument("--num_min_concept", type=int, default=30)
     # 模型参数
-    parser.add_argument("--num_concept", type=int, default=101)
-    parser.add_argument("--num_question", type=int, default=2803)
+    parser.add_argument("--num_concept", type=int, default=123)
+    parser.add_argument("--num_question", type=int, default=17751)
     parser.add_argument("--dim_emb", type=int, default=128)
-    parser.add_argument("--num_question_diff", type=int, default=100)
-    parser.add_argument("--num_concept_diff", type=int, default=100)
-    parser.add_argument("--dropout", type=float, default=0.2)
-    # 是否使用LLM的emb初始化
-    parser.add_argument("--use_LLM_emb4question", type=str2bool, default=False)
-    parser.add_argument("--use_LLM_emb4concept", type=str2bool, default=False)
-    parser.add_argument("--train_LLM_emb", type=str2bool, default=True)
+    parser.add_argument("--num_question_diff", type=int, default=50)
+    parser.add_argument("--num_concept_diff", type=int, default=50)
+    parser.add_argument("--dropout", type=float, default=0.3)
+    parser.add_argument("--fusion_mode", type=str, default="hm", choices=("sum", "hm", "rubin"))
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)
@@ -74,7 +71,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = dimkt_config(params)
+    global_params, global_objects = dimkt_variant_core_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)
@@ -99,7 +96,7 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = DIMKT(global_params, global_objects).to(global_params["device"])
+    model = DIMKT_VARIANT_CORE(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
     trainer = KnowledgeTracingTrainer(global_params, global_objects)
     trainer.train()

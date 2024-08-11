@@ -14,6 +14,8 @@ from ..model.CL4KT import CL4KT
 from ..model.DKT import DKT
 from ..model.DCT import DCT
 from ..model.DIMKT import DIMKT
+from ..model.DIMKT_VARIANT import DIMKT_VARIANT
+from ..model.DIMKT_VARIANT_CORE import DIMKT_VARIANT_CORE
 from ..model.DKVMN import DKVMN
 from ..model.DTransformer import DTransformer
 from ..model.GIKT import GIKT
@@ -45,6 +47,8 @@ model_table = {
     "DCT": DCT,
     "DIMKT": DIMKT,
     "DKVMN": DKVMN,
+    "DIMKT-VARIANT": DIMKT_VARIANT,
+    "DIMKT-VARIANT-CORE": DIMKT_VARIANT_CORE,
     "DTransformer": DTransformer,
     "GIKT": GIKT,
     "LBKT": LBKT,

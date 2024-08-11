@@ -40,4 +40,4 @@ HAS_QUESTION_MODE = ["junyi2015", "SLP-chi", "SLP-his", "SLP-mat", "SLP-geo", "S
 
 MODEL_USE_QC = ["qDKT", "SAINT", "AKT", "LPKT", "DIMKT", "SimpleKT", "AT_DKT", "QIKT", "LBKT", "DCT", "AuxInfoDCT",
                 "qDKT_CORE", "ELMKT", "AuxInfoQDKT", "LBMKT", "IDCT", "SparseKT", "AKT_CORE", "MIKT", "DKT", "DKVMN",
-                "SAKT", "SAINT", "DIMKT_VARIANT"]
+                "SAKT", "SAINT", "DIMKT_VARIANT", "DIMKT_VARIANT_CORE"]

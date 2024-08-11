@@ -154,7 +154,7 @@ def dimkt_variant_config(local_params):
 
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-VARIANT-CORE@@"))
+            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-VARIANT@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -184,7 +184,7 @@ def dimkt_variant_core_config(local_params):
 
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-VARIANT@@"))
+            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-VARIANT-CORE@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects

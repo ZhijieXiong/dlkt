@@ -167,6 +167,36 @@ class BaseTrainer4AB_DA(KnowledgeTracingTrainer):
                 self.dataset_adv_generated["embed_concept_diff"].weight,
                 self.dataset_adv_generated["embed_correct"].weight
             ], lr=adv_learning_rate)
+        elif model_name == "DIMKT_VARIANT":
+            encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]
+            dim_emb = encoder_config["dim_emb"]
+            num_question = encoder_config["num_question"]
+            num_concept = encoder_config["num_concept"]
+            num_question_diff = encoder_config["num_question_diff"]
+            num_concept_diff = encoder_config["num_concept_diff"]
+
+            self.dataset_adv_generated["embed_question"] = \
+                nn.Embedding(num_question, dim_emb,
+                             _weight=model.embed_question.weight.detach().clone())
+            self.dataset_adv_generated["embed_concept"] = \
+                nn.Embedding(num_concept, dim_emb,
+                             _weight=model.embed_concept.weight.detach().clone())
+            self.dataset_adv_generated["embed_question_diff"] = \
+                nn.Embedding(num_question_diff, dim_emb,
+                             _weight=model.embed_question_diff.weight.detach().clone())
+            self.dataset_adv_generated["embed_concept_diff"] = \
+                nn.Embedding(num_concept_diff, dim_emb,
+                             _weight=model.embed_concept_diff.weight.detach().clone())
+            self.dataset_adv_generated["embed_correct"] = \
+                nn.Embedding(2, dim_emb,
+                             _weight=model.embed_correct.weight.detach().clone())
+            optimizer = optim.SGD(params=[
+                self.dataset_adv_generated["embed_question"].weight,
+                self.dataset_adv_generated["embed_concept"].weight,
+                self.dataset_adv_generated["embed_question_diff"].weight,
+                self.dataset_adv_generated["embed_concept_diff"].weight,
+                self.dataset_adv_generated["embed_correct"].weight
+            ], lr=adv_learning_rate)
         elif model_name == "LPKT":
             encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["LPKT"]
             num_question = encoder_config["num_question"]
@@ -204,7 +234,7 @@ class BaseTrainer4AB_DA(KnowledgeTracingTrainer):
             self.dataset_adv_generated["embed_interaction_variation"].weight.requires_grad_(False)
             self.dataset_adv_generated["embed_concept"].weight.requires_grad_(False)
             self.dataset_adv_generated["embed_interaction"].weight.requires_grad_(False)
-        elif model_name == "DIMKT":
+        elif model_name in ["DIMKT", "DIMKT_VARIANT"]:
             self.dataset_adv_generated["embed_question"].weight.requires_grad_(False),
             self.dataset_adv_generated["embed_concept"].weight.requires_grad_(False),
             self.dataset_adv_generated["embed_question_diff"].weight.requires_grad_(False),

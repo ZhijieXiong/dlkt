@@ -343,6 +343,92 @@ def qdkt_core_config(local_params):
     return global_params, global_objects
 
 
+def qdkt_core_new_config(local_params):
+    global_params = {}
+    global_objects = {}
+    general_config(local_params, global_params, global_objects)
+    global_params["models_config"] = {
+        "kt_model": {
+            "kt_embed_layer": {
+
+            },
+            "encoder_layer": {
+                "type": "qDKT_CORE_NEW",
+                "qDKT_CORE_NEW": {
+
+                }
+            },
+            "predict_layer": {
+                "type": "direct",
+                "direct": {
+
+                }
+            }
+        }
+    }
+
+    # 配置模型参数
+    num_concept = local_params["num_concept"]
+    num_question = local_params["num_question"]
+    dim_concept = local_params["dim_concept"]
+    dim_question = local_params["dim_question"]
+    dim_correct = local_params["dim_correct"]
+    dim_latent = local_params["dim_latent"]
+    rnn_type = local_params["rnn_type"]
+    num_rnn_layer = local_params["num_rnn_layer"]
+    dropout = local_params["dropout"]
+    num_predict_layer = local_params["num_predict_layer"]
+    dim_predict_mid = local_params["dim_predict_mid"]
+    activate_type = local_params["activate_type"]
+    fusion_mode = local_params["fusion_mode"]
+
+    # embed layer
+    embed_config = global_params["models_config"]["kt_model"]["kt_embed_layer"]
+    embed_config["concept"] = [num_concept, dim_concept]
+    embed_config["question"] = [num_question, dim_question]
+
+    # encoder layer
+    encoder_config = global_params["models_config"]["kt_model"]["encoder_layer"]["qDKT_CORE_NEW"]
+    encoder_config["dim_concept"] = dim_concept
+    encoder_config["dim_question"] = dim_question
+    encoder_config["dim_correct"] = dim_correct
+    encoder_config["dim_latent"] = dim_latent
+    encoder_config["rnn_type"] = rnn_type
+    encoder_config["num_rnn_layer"] = num_rnn_layer
+    encoder_config["fusion_mode"] = fusion_mode
+
+    # predict layer
+    predict_layer_config = global_params["models_config"]["kt_model"]["predict_layer"]
+    predict_layer_config["type"] = "direct"
+    predict_layer_config["direct"]["dropout"] = dropout
+    predict_layer_config["direct"]["num_predict_layer"] = num_predict_layer
+    predict_layer_config["direct"]["dim_predict_in"] = dim_latent + dim_concept + dim_question
+    predict_layer_config["direct"]["dim_predict_mid"] = dim_predict_mid
+    predict_layer_config["direct"]["activate_type"] = activate_type
+    predict_layer_config["direct"]["dim_predict_out"] = 2
+
+    global_params["loss_config"]["KL loss"] = 1
+
+    global_objects["logger"].info(
+        "model params\n"
+        f"    num_concept: {num_concept}, num_question: {num_question}, dim_question: {dim_question}, "
+        f"dim_concept: {dim_concept}, dim_correct: {dim_correct}, dim_latent: {dim_latent}\n"
+        f"    rnn_type: {rnn_type}, num_rnn_layer: {num_rnn_layer}, dropout: {dropout}, num_predict_layer: {num_predict_layer}, "
+        f"dim_predict_mid: {dim_predict_mid}, activate_type: {activate_type}, fusion_mode: {fusion_mode}"
+    )
+
+    if local_params["save_model"]:
+        setting_name = local_params["setting_name"]
+        train_file_name = local_params["train_file_name"]
+
+        global_params["save_model_dir_name"] = (
+            f"qDKT-CORE-NEW@@{setting_name}@@{train_file_name.replace('.txt', '')}@@seed_{local_params['seed']}@@"
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}")
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects
+
+
 def qdkt_LfF_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)

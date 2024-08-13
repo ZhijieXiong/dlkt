@@ -157,6 +157,11 @@ class Evaluator:
                         f"({seq_fine_grained_performance['cold_start']['num_sample']:<9}), performance is ",
                         seq_fine_grained_performance['cold_start']
                     )
+                    self.print_performance(
+                        f"({his_window_len}, {acc_th}) seq normal&hard samples "
+                        f"({seq_fine_grained_performance['normal&hard']['num_sample']:<9}), performance is ",
+                        seq_fine_grained_performance['normal&hard']
+                    )
 
         train_statics_common_path = fine_grain_config["train_statics_common_path"]
         if not os.path.exists(train_statics_common_path):
@@ -211,6 +216,11 @@ class Evaluator:
                 f"({acc_th}) question unseen samples "
                 f"({question_fine_grained_performance['unseen']['num_sample']:<9}), performance is ",
                 question_fine_grained_performance['unseen']
+            )
+            self.print_performance(
+                f"({acc_th}) question normal&hard samples "
+                f"({question_fine_grained_performance['normal&hard']['num_sample']:<9}), performance is ",
+                question_fine_grained_performance['normal&hard']
             )
 
         if hasattr(model, "get_predict_score_seq_len_minus1"):

@@ -219,7 +219,8 @@ class DIMKT_VARIANT(nn.Module):
                 concept_diff_emb[:, t + 1]
             ), dim=1)
             x_next = self.generate_x_MLP(input_x_next)
-            y[:, t] = torch.sigmoid(torch.sum(x_next * h, dim=-1))
+            # y[:, t] = torch.sigmoid(torch.sum(x_next * h, dim=-1))
+            y[:, t] = self.predict_layer(torch.cat([x_next, h], dim=-1)).squeeze(-1)
             latent[:, t + 1, :] = h
             h_pre = h
 
@@ -347,3 +348,44 @@ class DIMKT_VARIANT(nn.Module):
             optimizer.step()
 
         return adv_predict_loss, adv_entropy, adv_mse_loss
+
+    def adv_bias_aug(self, dataset, batch, optimizer, loop_adv, eta, gamma, mask4gen=None):
+        ablation = self.params["other"]["adv_bias_aug"]["ablation"]
+        if mask4gen is None:
+            mask4gen = torch.ne(batch["mask_seq"][:, 1:], 0)
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask4gen)
+
+        latent_ori = self.get_latent_from_adv_data(dataset, batch).detach().clone()
+        latent_ori = latent_ori[:, 1:][mask4gen]
+        latent_ori.requires_grad_(False)
+        adv_predict_loss = 0.
+        adv_entropy = 0.
+        adv_mse_loss = 0.
+        for ite_max in range(loop_adv):
+            predict_score = self.forward_from_adv_data(dataset, batch)
+            predict_score = torch.masked_select(predict_score[:, :-1], mask4gen)
+            if ablation == 9:
+                weight = torch.masked_select(batch["weight_seq"][:, 1:], mask4gen)
+                weight = 2 - weight
+                predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double(), weight=weight)
+            else:
+                predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+            # entropy_loss = binary_entropy(predict_score)
+            latent = self.get_latent_from_adv_data(dataset, batch)
+            latent = latent[:, 1:][mask4gen]
+            latent_mse_loss = nn.functional.mse_loss(latent, latent_ori)
+
+            if ite_max == (loop_adv - 1):
+                adv_predict_loss += predict_loss.detach().cpu().item()
+                # adv_entropy += entropy_loss.detach().cpu().item()
+                adv_mse_loss += latent_mse_loss.detach().cpu().item()
+            # loss = predict_loss + eta * entropy_loss - gamma * latent_mse_loss
+            loss = predict_loss - gamma * latent_mse_loss
+            self.zero_grad()
+            optimizer.zero_grad()
+            (-loss).backward()
+            # 防止梯度爆炸
+            nn.utils.clip_grad_norm_(optimizer.param_groups[0]["params"], max_norm=10)
+            optimizer.step()
+
+        return adv_predict_loss, adv_mse_loss, adv_entropy

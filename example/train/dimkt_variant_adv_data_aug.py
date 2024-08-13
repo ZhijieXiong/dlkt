@@ -2,12 +2,12 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from config.qdkt_config import qdkt_adv_bias_aug_config
+from config.dimkt_config import dimkt_variant_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.model.qDKT import qDKT
+from lib.model.DIMKT_VARIANT import DIMKT_VARIANT
 from lib.trainer.AdvBiasDataAugTrainer import AdvBiasDataAugTrainer
 
 
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0.0001)
+    parser.add_argument("--weight_decay", type=float, default=0.001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
@@ -50,19 +50,16 @@ if __name__ == "__main__":
     # 梯度裁剪
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
+    # DIMKT数据处理参数
+    parser.add_argument("--num_min_question", type=int, default=15)
+    parser.add_argument("--num_min_concept", type=int, default=30)
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=123)
     parser.add_argument("--num_question", type=int, default=17751)
-    parser.add_argument("--dim_concept", type=int, default=64)
-    parser.add_argument("--dim_question", type=int, default=64)
-    parser.add_argument("--dim_correct", type=int, default=64)
-    parser.add_argument("--dim_latent", type=int, default=64)
-    parser.add_argument("--rnn_type", type=str, default="gru")
-    parser.add_argument("--num_rnn_layer", type=int, default=1)
-    parser.add_argument("--dropout", type=float, default=0.2)
-    parser.add_argument("--num_predict_layer", type=int, default=3)
-    parser.add_argument("--dim_predict_mid", type=int, default=128)
-    parser.add_argument("--activate_type", type=str, default="relu")
+    parser.add_argument("--dim_emb", type=int, default=128)
+    parser.add_argument("--num_question_diff", type=int, default=50)
+    parser.add_argument("--num_concept_diff", type=int, default=50)
+    parser.add_argument("--dropout", type=float, default=0.3)
     # adv aug参数
     parser.add_argument("--epoch_interval_generate", type=int, default=1)
     parser.add_argument("--weight_adv_pred_loss", type=float, default=1)
@@ -70,8 +67,6 @@ if __name__ == "__main__":
     parser.add_argument("--adv_learning_rate", type=float, default=10.0)
     parser.add_argument("--eta", type=float, default=5)
     parser.add_argument("--gamma", type=float, default=1)
-    parser.add_argument("--epsilon", type=int, default=10, help="扰动幅度")
-    parser.add_argument("--beta", type=float, default=1, help="扰动损失权重")
     parser.add_argument("--ablation", type=int, default=8,
                         help="0：对抗损失使用question bias-aligned样本（ME-ADA），对抗样本预测损失使用全部样本"
                              "1：对抗损失使用seq bias-aligned样本（ME-ADA），对抗样本预测损失使用全部样本"
@@ -92,14 +87,14 @@ if __name__ == "__main__":
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)
-    parser.add_argument("--trace_epoch", type=str2bool, default=True)
+    parser.add_argument("--trace_epoch", type=str2bool, default=False)
     parser.add_argument("--use_cpu", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = qdkt_adv_bias_aug_config(params)
+    global_params, global_objects = dimkt_variant_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)
@@ -124,7 +119,7 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = qDKT(global_params, global_objects).to(global_params["device"])
+    model = DIMKT_VARIANT(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
     trainer = AdvBiasDataAugTrainer(global_params, global_objects)
     trainer.train()

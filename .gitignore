@@ -50,7 +50,6 @@ example4llm_expolre/demo
 # not published method
 /example/train/adv_contrast_vae.py
 /example/train/akt4cold_start.py
-/example/train/akt_adv_data_aug.py
 /example/train/akt_cluster_cl.py
 /example/train/akt_duo_cl.py
 /example/train/akt_instance_cl.py

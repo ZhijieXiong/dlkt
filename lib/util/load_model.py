@@ -26,6 +26,7 @@ from ..model.SAKT import SAKT
 from ..model.SAINT import SAINT
 from ..model.qDKT import qDKT
 from ..model.qDKT_CORE import qDKT_CORE
+from ..model.qDKT_CORE_NEW import qDKT_CORE_NEW
 from ..model.QIKT import QIKT
 from ..model.SimpleKT import SimpleKT
 from ..model.MIKT import MIKT
@@ -60,6 +61,7 @@ model_table = {
     "qDKT-ADA": qDKT,
     "qDKT-LfF": qDKT,
     "qDKT-CORE": qDKT_CORE,
+    "qDKT-CORE-NEW": qDKT_CORE_NEW,
     "QIKT": QIKT,
     "SimpleKT": SimpleKT,
     "MIKT": MIKT,

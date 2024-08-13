@@ -296,6 +296,11 @@ def get_seq_fine_grained_performance(all_batch, window_len, acc_th):
         ),
         "cold_start": get_performance_no_error(
             cold_start_sample["predict_score"], cold_start_sample["predict_label"], cold_start_sample["ground_truth"]
+        ),
+        "normal&hard": get_performance_no_error(
+            normal_sample["predict_score"] + hard_sample["predict_score"],
+            normal_sample["predict_label"] + hard_sample["predict_label"],
+            normal_sample["ground_truth"] + hard_sample["ground_truth"]
         )
     }
 
@@ -444,6 +449,11 @@ def get_question_fine_grained_performance(all_batch, statics_train, acc_th):
         ),
         "unseen": get_performance_no_error(
             unseen_sample["predict_score"], unseen_sample["predict_label"], unseen_sample["ground_truth"]
+        ),
+        "normal&hard": get_performance_no_error(
+            normal_sample["predict_score"] + hard_sample["predict_score"],
+            normal_sample["predict_label"] + hard_sample["predict_label"],
+            normal_sample["ground_truth"] + hard_sample["ground_truth"]
         )
     }
 

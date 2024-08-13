@@ -128,6 +128,7 @@ def dimkt_variant_config(local_params):
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
     dimkt_general_config(local_params, global_params, global_objects)
+    adv_bias_aug_general_config(local_params, global_params, global_objects)
     # 需要改一下DIMKT的模型参数
     question_difficulty = global_objects["dimkt"]["question_difficulty"]
     concept_difficulty = global_objects["dimkt"]["concept_difficulty"]
@@ -154,7 +155,7 @@ def dimkt_variant_config(local_params):
 
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-VARIANT@@"))
+            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-VARIANT-ADA@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects

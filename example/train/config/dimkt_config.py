@@ -128,14 +128,37 @@ def dimkt_variant_config(local_params):
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
     dimkt_general_config(local_params, global_params, global_objects)
+
+    # IPS
+    use_sample_weight = local_params["use_sample_weight"]
+    sample_weight_method = local_params["sample_weight_method"]
+    IPS_min = local_params["IPS_min"]
+    IPS_his_seq_len = local_params['IPS_his_seq_len']
+
+    global_params["use_sample_weight"] = use_sample_weight
+    global_params["sample_weight_method"] = sample_weight_method
+    global_params["IPS_min"] = IPS_min
+    global_params["IPS_his_seq_len"] = IPS_his_seq_len
+
+    global_objects["logger"].info(
+        f"IPS params\n    "
+        f"use IPS: {use_sample_weight}, IPS_min: {IPS_min}, IPS_his_seq_len: {IPS_his_seq_len}"
+    )
+
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-VARIANT@@"))
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects
+
+
+def dimkt_variant_adv_bias_aug_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    dimkt_general_config(local_params, global_params, global_objects)
     adv_bias_aug_general_config(local_params, global_params, global_objects)
-    # 需要改一下DIMKT的模型参数
-    question_difficulty = global_objects["dimkt"]["question_difficulty"]
-    concept_difficulty = global_objects["dimkt"]["concept_difficulty"]
-    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_question_diff"] = max(
-        question_difficulty.values()) + 1
-    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_concept_diff"] = max(
-        concept_difficulty.values()) + 1
 
     # IPS
     use_sample_weight = local_params["use_sample_weight"]

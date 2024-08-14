@@ -128,6 +128,13 @@ def dimkt_variant_config(local_params):
     global_objects = deepcopy(OBJECTS)
     general_config(local_params, global_params, global_objects)
     dimkt_general_config(local_params, global_params, global_objects)
+    # 需要改一下DIMKT的模型参数
+    question_difficulty = global_objects["dimkt"]["question_difficulty"]
+    concept_difficulty = global_objects["dimkt"]["concept_difficulty"]
+    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_question_diff"] = max(
+        question_difficulty.values()) + 1
+    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_concept_diff"] = max(
+        concept_difficulty.values()) + 1
 
     # IPS
     use_sample_weight = local_params["use_sample_weight"]
@@ -159,6 +166,13 @@ def dimkt_variant_adv_bias_aug_config(local_params):
     general_config(local_params, global_params, global_objects)
     dimkt_general_config(local_params, global_params, global_objects)
     adv_bias_aug_general_config(local_params, global_params, global_objects)
+    # 需要改一下DIMKT的模型参数
+    question_difficulty = global_objects["dimkt"]["question_difficulty"]
+    concept_difficulty = global_objects["dimkt"]["concept_difficulty"]
+    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_question_diff"] = max(
+        question_difficulty.values()) + 1
+    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_concept_diff"] = max(
+        concept_difficulty.values()) + 1
 
     # IPS
     use_sample_weight = local_params["use_sample_weight"]

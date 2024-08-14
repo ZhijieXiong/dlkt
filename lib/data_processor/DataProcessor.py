@@ -702,6 +702,7 @@ class DataProcessor:
         } for user_id, seqs in data_all.items()]
 
         # 提取每道习题对应的知识点：提供的数据（train_valid_sequences_quelevel.csv和test_quelevel.csv）中习题对应的知识点是最细粒度的，类似edi2020数据集中层级知识点里最细粒度的知识点
+        # 其中concept_meta里面的知识点也是最细粒度的
         # 而question metadata里每道题的kc routes是完整的知识点（层级）
         # 并且提供的数据中习题对应知识点和question metadata中习题对应的知识点不是完全一一对应的，例如习题1035
         # 在question metadata中对应的知识点为
@@ -724,7 +725,8 @@ class DataProcessor:
                 question_ids.append(q_id)
                 concept_ids.extend(c_ids)
 
-        # 习题和知识点id都是映射过的，但是习题共有7651个，其id却是从0开始，7651结束（有一个空缺，但是不会影响后续模型训练，所以就不处理了）
+        # 习题和知识点id都是映射过的，但是习题共有7651个，其id却是从0开始，7651结束
+        # 原因是习题6232在数据集中没出现过，但是在question_meta中是有这道题的，所以保留该习题id
         question_ids = sorted(list(set(question_ids)))
         concept_ids = sorted(list(set(concept_ids)))
         Q_table_multi_concept = np.zeros((len(question_ids) + 1, len(concept_ids)), dtype=int)

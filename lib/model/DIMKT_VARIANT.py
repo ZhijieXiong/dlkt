@@ -312,10 +312,15 @@ class DIMKT_VARIANT(nn.Module):
         return predict_score
 
     def get_predict_loss_from_adv_data(self, dataset, batch):
+        # 就是ab8，不考虑其它实现
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         predict_score = self.get_predict_score_from_adv_data(dataset, batch)
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
-        predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+        if self.params.get("use_sample_weight", False):
+            weight = torch.masked_select(batch["weight_seq"][:, 1:], mask_bool_seq[:, 1:])
+            predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double(), weight=weight)
+        else:
+            predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
 
         return predict_loss
 

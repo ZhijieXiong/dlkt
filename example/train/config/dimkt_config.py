@@ -160,6 +160,41 @@ def dimkt_variant_config(local_params):
     return global_params, global_objects
 
 
+def dimkt_variant_LfF_config(local_params):
+    global_params = deepcopy(PARAMS)
+    global_objects = deepcopy(OBJECTS)
+    general_config(local_params, global_params, global_objects)
+    dimkt_general_config(local_params, global_params, global_objects)
+    # 需要改一下DIMKT的模型参数
+    question_difficulty = global_objects["dimkt"]["question_difficulty"]
+    concept_difficulty = global_objects["dimkt"]["concept_difficulty"]
+    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_question_diff"] = max(
+        question_difficulty.values()) + 1
+    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_concept_diff"] = max(
+        concept_difficulty.values()) + 1
+
+    q = local_params["q"]
+    global_params["other"]["LfF"] = {
+        "q": q
+    }
+
+    # 配置两个优化器的参数（使用相同的参数）
+    config_optimizer(local_params, global_params, global_objects, "model_biased", same_as_kt=True)
+    config_optimizer(local_params, global_params, global_objects, "model_de_biased", same_as_kt=True)
+
+    global_objects["logger"].info(
+        f"LfF params\n    "
+        f"q: {q}"
+    )
+
+    if local_params["save_model"]:
+        global_params["save_model_dir_name"] = (
+            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-VARIANT-LfF@@"))
+        save_params(global_params, global_objects)
+
+    return global_params, global_objects
+
+
 def dimkt_variant_adv_bias_aug_config(local_params):
     global_params = deepcopy(PARAMS)
     global_objects = deepcopy(OBJECTS)

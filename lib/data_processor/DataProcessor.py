@@ -727,12 +727,14 @@ class DataProcessor:
 
         # 习题和知识点id都是映射过的，但是习题共有7651个，其id却是从0开始，7651结束
         # 原因是习题6232在数据集中没出现过，但是在question_meta中是有这道题的，所以保留该习题id
+        # 习题6232对应知识点795（减法横式）
         question_ids = sorted(list(set(question_ids)))
         concept_ids = sorted(list(set(concept_ids)))
         Q_table_multi_concept = np.zeros((len(question_ids) + 1, len(concept_ids)), dtype=int)
         for q_id in question_concept_map.keys():
             correspond_c = question_concept_map[q_id]
             Q_table_multi_concept[[q_id] * len(correspond_c), correspond_c] = [1] * len(correspond_c)
+        Q_table_multi_concept[6232, 795] = 1
         self.Q_table["multi_concept"] = Q_table_multi_concept
 
         # 处理为multi_concept和only_question

@@ -157,6 +157,32 @@ class DIMKT_VARIANT(nn.Module):
 
         return predict_loss
 
+    def get_GCE_loss(self, batch, q=0.7):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+
+        # predict_score全是为1的概率
+        predict_score = self.get_predict_score(batch)
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+        # predict_score_gt为1或者为0的概率，如果标签为1，则是为1的概率，如果标签是0，则是为0的概率
+        predict_score_gt = predict_score * ground_truth + (1 - predict_score) * (1 - ground_truth)
+        weight = (predict_score_gt.detach() ** q) * q
+        GCE_loss = nn.functional.binary_cross_entropy(
+            predict_score.double(), ground_truth.double(), weight=weight
+        )
+
+        return GCE_loss
+
+    def get_predict_loss_per_sample(self, batch):
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+
+        predict_score = self.get_predict_score(batch)
+        ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+        predict_loss_per_sample = nn.functional.binary_cross_entropy(
+            predict_score.double(), ground_truth.double(), reduction="none"
+        )
+
+        return predict_loss_per_sample
+
     # --------------------------------------------------ME-ADA----------------------------------------------------------
 
     def forward_from_adv_data(self, dataset, batch):

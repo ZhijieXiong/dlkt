@@ -69,10 +69,10 @@ if __name__ == "__main__":
     parser.add_argument("--use_LLM_emb4concept", type=str2bool, default=False)
     parser.add_argument("--train_LLM_emb", type=str2bool, default=True)
     # IPS
-    parser.add_argument("--use_sample_weight", type=str2bool, default=False)
+    parser.add_argument("--use_sample_weight", type=str2bool, default=True)
     parser.add_argument("--sample_weight_method", type=str, default="IPS-question")
-    parser.add_argument("--IPS_min", type=float, default=0.3)
-    parser.add_argument("--IPS_his_seq_len", type=int, default=20)
+    parser.add_argument("--IPS_min", type=float, default=0.7)
+    parser.add_argument("--IPS_his_seq_len", type=int, default=10)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)

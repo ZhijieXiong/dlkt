@@ -47,6 +47,7 @@ example4llm_expolre/demo
 /example/prepare_dataset/our_setting_ood_by_school.py
 /prompt_template/our
 
+
 # not published method
 /example/train/adv_contrast_vae.py
 /example/train/akt4cold_start.py
@@ -85,3 +86,8 @@ example4llm_expolre/demo
 
 /example/case_study.py
 *.pyc
+
+
+# dev
+/example4llm_based_agent
+/example4exercise_recommendation

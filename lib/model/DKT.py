@@ -137,3 +137,12 @@ class DKT(nn.Module):
             predict_score = self.forward(batch)
 
         return predict_score
+
+    def get_last_mlkc_kg4ex(self, batch):
+        # 只适用于single_concept和multi_concept，并且使用concept而不是question
+        predict_score = self.forward(batch)
+        batch_size = batch["question_seq"].shape[0]
+        first_index = torch.arange(batch_size).long().to(self.params["device"])
+        last_mlkc = predict_score[first_index, batch["seq_len"] - 1]
+
+        return last_mlkc

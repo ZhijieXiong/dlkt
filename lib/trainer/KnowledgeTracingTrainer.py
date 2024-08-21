@@ -296,6 +296,10 @@ class KnowledgeTracingTrainer:
                     f"({window_len}, {acc_th}) {valid_or_test} seq hard point, "
                     f"performance is ", seq_fine_grained_performance['hard']
                 )
+                self.print_performance(
+                    f"({window_len}, {acc_th}) {valid_or_test} seq normal&hard point, "
+                    f"performance is ", seq_fine_grained_performance['normal&hard']
+                )
 
             # 习题偏差
             train_statics_common = self.objects["data"].get("train_data_statics_common", None)
@@ -316,6 +320,10 @@ class KnowledgeTracingTrainer:
                     self.print_performance(
                         f"({acc_th}, ) {valid_or_test} question hard point, "
                         f"performance is ", question_fine_grained_performance['hard']
+                    )
+                    self.print_performance(
+                        f"({acc_th}, ) {valid_or_test} question normal&hard point, "
+                        f"performance is ", question_fine_grained_performance['normal&hard']
                     )
 
     def evaluate(self):

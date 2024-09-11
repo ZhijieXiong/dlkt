@@ -1,5 +1,7 @@
-import torch
+import os
 import torch.nn as nn
+
+from load_util import *
 
 
 class IDCT(nn.Module):
@@ -61,6 +63,27 @@ class IDCT(nn.Module):
         predict_score = torch.sigmoid(torch.sum(y, dim=-1))
 
         return predict_score
+
+    def get_last_user_ability(self, batch):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["IDCT"]
+        dim_emb = encoder_config["dim_emb"]
+
+        correct_seq = batch["correct_seq"]
+        batch_size, seq_len = correct_seq.shape[0], correct_seq.shape[1]
+
+        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_emb).reshape(batch_size, -1, dim_emb)
+        concept_emb = self.get_concept_emb(batch)
+        interaction_emb = torch.cat((concept_emb, correct_emb), dim=2)
+
+        self.encoder_layer.flatten_parameters()
+        latent, _ = self.encoder_layer(interaction_emb)
+
+        user_ability = torch.sigmoid(latent)
+        batch_size = batch["question_seq"].shape[0]
+        first_index = torch.arange(batch_size).long().to(self.params["device"])
+        last_ability = user_ability[first_index, batch["seq_len"] - 1]
+
+        return last_ability
 
     def forward(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["IDCT"]
@@ -184,3 +207,20 @@ class IDCT(nn.Module):
                 loss = loss + monotonic_loss * w_monotonic
 
         return loss
+
+
+def load_idct(save_model_dir, device, q_table_path, ckt_name="saved.ckt", model_name_in_ckt="best_valid"):
+    global_objects = {"data": get_global_objects_data(q_table_path, device)}
+    params_path = os.path.join(save_model_dir, "params.json")
+    saved_params = load_json(params_path)
+    saved_params["device"] = device
+
+    ckt_path = os.path.join(save_model_dir, ckt_name)
+    model = IDCT(saved_params, global_objects).to(device)
+    if device == "cpu":
+        saved_ckt = torch.load(ckt_path, map_location=torch.device('cpu'))
+    else:
+        saved_ckt = torch.load(ckt_path)
+    model.load_state_dict(saved_ckt[model_name_in_ckt])
+
+    return model

@@ -87,12 +87,12 @@ if __name__ == "__main__":
     # IPS
     parser.add_argument("--use_sample_weight", type=str2bool, default=True)
     parser.add_argument("--sample_weight_method", type=str, default="IPS-double")
-    parser.add_argument("--IPS_min", type=float, default=0.3)
+    parser.add_argument("--IPS_min", type=float, default=0.7)
     parser.add_argument("--IPS_his_seq_len", type=int, default=10)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)
-    parser.add_argument("--trace_epoch", type=str2bool, default=True)
+    parser.add_argument("--trace_epoch", type=str2bool, default=False)
     parser.add_argument("--use_cpu", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
 

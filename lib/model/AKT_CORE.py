@@ -157,6 +157,15 @@ class AKT_CORE(nn.Module):
 
         return predict_score
 
+    def get_last_predict_score(self, batch):
+        _, _, _, logit_Core = self.forward(batch)
+        predict_score = torch.softmax(logit_Core, dim=-1)[:, :, 1]
+        batch_size = batch["question_seq"].shape[0]
+        first_index = torch.arange(batch_size).long().to(self.params["device"])
+        last_predict_score = predict_score[first_index, batch["seq_len"] - 1]
+
+        return last_predict_score
+
     def get_predict_score_seq_len_minus1(self, batch):
         _, _, _, logit_Core = self.forward(batch)
         predict_score = torch.softmax(logit_Core, dim=-1)[:, :, 1]

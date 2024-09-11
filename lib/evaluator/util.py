@@ -460,6 +460,40 @@ def get_question_fine_grained_performance(all_batch, statics_train, acc_th):
     return performance_result
 
 
+def get_double_fine_grained_sample_mask(batch, statics_train, window_len, acc_th):
+    easy_mask = []
+    hard_mask = []
+    seq_easy_question_hard_mask = []
+    seq_hard_question_easy_mask = []
+
+    seq_easy_mask, seq_normal_mask, seq_hard_mask = get_seq_fine_grained_sample_mask(batch, window_len, acc_th)
+    question_easy_mask, question_normal, question_hard_mask = get_question_fine_grained_sample_mask(batch, statics_train, acc_th)
+
+    for s_easy_mask_seq, q_easy_mask_seq, s_hard_mask_seq, q_hard_mask_seq in \
+            zip(seq_easy_mask, question_easy_mask, seq_hard_mask, question_hard_mask):
+        easy_mask_seq = []
+        for s_easy_mask, q_easy_mask in zip(s_easy_mask_seq, q_easy_mask_seq):
+            easy_mask_seq.append(s_easy_mask and q_easy_mask)
+        easy_mask.append(easy_mask_seq)
+
+        hard_mask_seq = []
+        for s_hard_mask, q_hard_mask in zip(s_hard_mask_seq, q_hard_mask_seq):
+            hard_mask_seq.append(s_hard_mask and q_hard_mask)
+        hard_mask.append(hard_mask_seq)
+
+        seq_easy_question_hard_mask_seq = []
+        for s_easy_mask, q_hard_mask in zip(s_easy_mask_seq, q_hard_mask_seq):
+            seq_easy_question_hard_mask_seq.append(s_easy_mask and q_hard_mask)
+        seq_easy_question_hard_mask.append(seq_easy_question_hard_mask_seq)
+
+        seq_hard_question_easy_mask_seq = []
+        for s_hard_mask, q_easy_mask in zip(s_hard_mask_seq, q_easy_mask_seq):
+            seq_hard_question_easy_mask_seq.append(s_hard_mask and q_easy_mask)
+        seq_hard_question_easy_mask.append(seq_hard_question_easy_mask_seq)
+
+    return easy_mask, hard_mask, seq_easy_question_hard_mask, seq_hard_question_easy_mask
+
+
 def get_double_fine_grained_sample(all_batch, statics_train, window_len, acc_th):
     seq_fine_grained_sample = get_seq_fine_grained_sample(all_batch, window_len, acc_th)
     seq_easy_sample = seq_fine_grained_sample["easy"]

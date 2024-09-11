@@ -27,15 +27,10 @@ def idct_general_config(local_params, global_params, global_objects):
     # 辅助损失
     w_monotonic = local_params.get("w_monotonic", 0)
     w_mirt = local_params.get("w_mirt", 0)
-    w_diff_stable = local_params.get("w_diff_stable", 0)
-    diff_noise_strength = local_params.get("diff_noise_strength", 0.1)
     if w_monotonic != 0:
         global_params["loss_config"]["monotonic loss"] = w_monotonic
     if w_mirt != 0:
         global_params["loss_config"]["mirt loss"] = w_mirt
-    if w_diff_stable != 0:
-        global_params["loss_config"]["diff stable loss"] = w_diff_stable
-    global_params["other"]["diff_noise_strength"] = diff_noise_strength
 
     # 配置多知识点习题penalty损失权重
     Q_table = global_objects["data"]["Q_table"]
@@ -67,8 +62,7 @@ def idct_general_config(local_params, global_params, global_objects):
         "model params\n    "
         f"num_concept: {num_concept}, num_question: {num_question}, dim_emb: {dim_emb}, dropout: {dropout}\n"
         f"loss config\n    "
-        f"w_monotonic: {w_monotonic}, w_mirt: {w_mirt}, w_diff_stable: {w_diff_stable}, "
-        f"diff_noise_strength: {diff_noise_strength}"
+        f"w_monotonic: {w_monotonic}, w_mirt: {w_mirt}"
     )
 
     if local_params["save_model"]:
@@ -76,8 +70,8 @@ def idct_general_config(local_params, global_params, global_objects):
         train_file_name = local_params["train_file_name"]
 
         global_params["save_model_dir_name"] = (
-            f"{get_now_time().replace(' ', '@').replace(':', '-')}@@IDCT@@seed_{local_params['seed']}@@{setting_name}@@"
-            f"{train_file_name.replace('.txt', '')}")
+            f"IDCT@@{setting_name}@@{train_file_name.replace('.txt', '')}@@seed_{local_params['seed']}@@"
+            f"{get_now_time().replace(' ', '@').replace(':', '-')}")
 
 
 def idct_config(local_params):

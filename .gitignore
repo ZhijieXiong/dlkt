@@ -46,7 +46,7 @@ example4llm_expolre/demo
 
 # future to open
 /example/prepare_dataset/our_setting_ood_by_country4slepemapy.py
-/example/prepare_dataset/our_setting_ood_by_school.py
+#/example/prepare_dataset/our_setting_ood_by_school.py
 /prompt_template/our
 
 
@@ -92,11 +92,34 @@ example4llm_expolre/demo
 
 # dev
 /example4llm_based_agent
-#/example4exercise_recommendation
-#/example4llm_expolre
+/example4exercise_recommendation
+/example4llm_expolre
 
-# ignore
+# ignore dir
 /some_trick
 /useful_command
+/one_time_scripts
+/prompt_template
+/example/scripts
+/example/deploy
+
+# ignore file
 /auto_export_script.py
 /batch_rename.py
+/example/llm_util.py
+/example/process_xes3g5m_KG.py
+/example/process_xes3g5m_question.py
+/example/process_xes3g5m_user.py
+/example/split_its_user_data.py
+/example/data_analysis/bias_conflicting_examples.py
+/example/data_analysis/data_statics.py
+/example/data_analysis/get_concept_name.py
+/example/data_analysis/get_question_from_concept.py
+/example/data_analysis/question_acc_analysis.py
+/example/data_analysis/question_with_multi_concept_difficulty_analysis.py
+/example/prepare_dataset/dataset_debias_method1.py
+/example/prepare_dataset/dataset_debias_method2.py
+/example/prepare_dataset/dataset_enlarge_bias_method.py
+/example/prepare_dataset/dataset_random_delete.py
+/example/prepare_dataset/prepare4baidu_competition.py
+/example/prepare_dataset/llm4kt_setting.py

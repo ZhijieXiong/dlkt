@@ -93,3 +93,10 @@ example4llm_expolre/demo
 # dev
 /example4llm_based_agent
 #/example4exercise_recommendation
+#/example4llm_expolre
+
+# ignore
+/some_trick
+/useful_command
+/auto_export_script.py
+/batch_rename.py

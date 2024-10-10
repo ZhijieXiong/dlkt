@@ -105,3 +105,4 @@ if __name__ == "__main__":
     global_objects["models"]["kt_model"] = model
     trainer = KnowledgeTracingTrainer(global_params, global_objects)
     trainer.train()
+

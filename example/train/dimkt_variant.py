@@ -14,7 +14,7 @@ from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
-    parser.add_argument("--setting_name", type=str, default="our_setting_new")
+    parser.add_argument("--setting_name", type=str, default="our_setting")
     parser.add_argument("--dataset_name", type=str, default="assist2009")
     parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))

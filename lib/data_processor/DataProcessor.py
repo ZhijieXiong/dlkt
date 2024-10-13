@@ -79,8 +79,8 @@ class DataProcessor:
             self.load_process_SLP()
         elif dataset_name == "statics2011":
             self.load_process_statics2011()
-        elif dataset_name == "slepemapy":
-            self.load_process_slepemapy()
+        elif dataset_name == "slepemapy-anatomy":
+            self.load_process_slepemapy_anatomy()
         elif dataset_name == "junyi2015":
             self.load_process_junyi2015()
         else:
@@ -1019,9 +1019,9 @@ class DataProcessor:
             Q_table[[question_id] * len(correspond_c), correspond_c] = [1] * len(correspond_c)
         self.Q_table["single_concept"] = Q_table
 
-    def load_process_slepemapy(self):
+    def load_process_slepemapy_anatomy(self):
         data_path = self.params["preprocess_config"]["data_path"]
-        dataset_name = "slepemapy"
+        dataset_name = "slepemapy-anatomy"
         useful_cols = CONSTANT.datasets_useful_cols()[dataset_name]
         rename_cols = CONSTANT.datasets_renamed()[dataset_name]
         self.data_raw = load_raw.load_csv(data_path, useful_cols, rename_cols)
@@ -1095,7 +1095,7 @@ class DataProcessor:
         self.Q_table["single_concept"] = Q_table
 
         # 下面代码是选择locations_asked作为知识点处理方法，多知识点数据集
-        # 需要修改CONSTANT中slepemapy的 rename["context_name"] = "concept_id" 为 rename["locations_asked"] = "concept_id"
+        # 需要修改CONSTANT中slepemapy-anatomy的 rename["context_name"] = "concept_id" 为 rename["locations_asked"] = "concept_id"
         # CL4KT这篇文章选择的是locations_asked（有uknown值）
         # def process_concept(c_id_str):
         #     c_ids = eval(c_id_str)
@@ -1211,7 +1211,7 @@ class DataProcessor:
         dataset_name = self.params["preprocess_config"]["dataset_name"]
         if dataset_name == "assist2009":
             self.uniform_assist2009()
-        elif dataset_name in ["assist2012", "assist2017", "slepemapy", "junyi2015"]:
+        elif dataset_name in ["assist2012", "assist2017", "slepemapy-anatomy", "junyi2015"]:
             self.uniform_assist2012()
         elif dataset_name == "assist2015":
             self.uniform_assist2015()
@@ -1223,7 +1223,7 @@ class DataProcessor:
             # 直接在load_process_uniform_xes3g5m里一起处理了
             pass
         elif dataset_name in ["assist2009-full", "ednet-kt1", "algebra2005", "algebra2006", "algebra2008",
-                              "bridge2algebra2006", "bridge2algebra2008", "slepemapy"]:
+                              "bridge2algebra2006", "bridge2algebra2008", "slepemapy-anatomy"]:
             self.uniform_raw_is_single_concept()
         elif dataset_name in ["SLP-bio", "SLP-chi", "SLP-eng", "SLP-geo", "SLP-his", "SLP-mat", "SLP-phy"]:
             self.uniform_SLP()
@@ -1314,7 +1314,7 @@ class DataProcessor:
             school_info_path = os.path.join(data_processed_dir, "school_info.json")
             school_id_map.to_csv(school_id_map_path, index=False)
             data_util.write_json(school_info, school_info_path)
-        if dataset_name in ["slepemapy"]:
+        if dataset_name in ["slepemapy-anatomy"]:
             df["country_id"] = df["country_id"].fillna(-1)
             country_id_map, country_info = preprocess_raw.map_user_info(df, "country_id")
 
@@ -1593,7 +1593,7 @@ class DataProcessor:
             "algebra2008": "~~",
             "bridge2algebra2006": "~~",
             "bridge2algebra2008": "~~",
-            "slepemapy": "@@"
+            "slepemapy-anatomy": "@@"
         }
         df_multi_concept["concept_id"] = df_multi_concept["concept_id"].str.split(split_table[dataset_name])
         df_multi_concept = df_multi_concept.explode("concept_id").reset_index(drop=True)
@@ -1649,9 +1649,9 @@ class DataProcessor:
             "algebra2008": ["timestamp"],
             "bridge2algebra2006": ["timestamp"],
             "bridge2algebra2008": ["timestamp"],
-            "slepemapy": ["timestamp"]
+            "slepemapy-anatomy": ["timestamp"]
         }
-        if dataset_name in ["ednet-kt1", "slepemapy"]:
+        if dataset_name in ["ednet-kt1", "slepemapy-anatomy"]:
             info_name_table["use_time_seq"] = "use_time"
         if dataset_name in ["algebra2005", "algebra2006", "algebra2008", "bridge2algebra2006", "bridge2algebra2008"]:
             df["tmp_index"] = range(df.shape[0])

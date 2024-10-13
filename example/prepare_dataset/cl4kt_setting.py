@@ -12,7 +12,7 @@ from lib.data_processor.util import process4CL4kt_assist2009
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_name", type=str, default="algebra2006", choices=("assist2009", "algebra2005", "algebra2006", "slepemapy"))
+    parser.add_argument("--dataset_name", type=str, default="algebra2006", choices=("assist2009", "algebra2005", "algebra2006"))
     args = parser.parse_args()
     params = vars(args)
 

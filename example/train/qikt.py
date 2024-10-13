@@ -14,13 +14,13 @@ from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
-    parser.add_argument("--setting_name", type=str, default="random_split_leave_multi_out_setting")
-    parser.add_argument("--dataset_name", type=str, default="assist2012")
-    parser.add_argument("--data_type", type=str, default="single_concept",
+    parser.add_argument("--setting_name", type=str, default="our_setting")
+    parser.add_argument("--dataset_name", type=str, default="assist2009")
+    parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2012_train_split_5.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2012_valid_split_5.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2012_test_split_5.txt")
+    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
     parser.add_argument("--weight_decay", type=float, default=0.0001)

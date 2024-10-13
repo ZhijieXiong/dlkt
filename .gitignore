@@ -45,7 +45,7 @@ example4llm_expolre/demo
 
 
 # future to open
-/example/prepare_dataset/our_setting_ood_by_country4slepemapy.py
+/example/prepare_dataset/our_setting_ood_by_country.py
 #/example/prepare_dataset/our_setting_ood_by_school.py
 /prompt_template/our
 
@@ -84,6 +84,7 @@ example4llm_expolre/demo
 /example/train/simple_kt_cluster_cl.py
 /example/train/simple_kt_instance_cl.py
 /example/train/akt_max_entropy_aug.py
+
 
 
 /example/case_study.py

@@ -2,19 +2,19 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from config.qdkt_config import qdkt_core_config
+from config.qdkt_config import qdkt_core_new_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.model.qDKT_CORE import qDKT_CORE
+from lib.model.qDKT_CORE_NEW import qDKT_CORE_NEW
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
-    parser.add_argument("--setting_name", type=str, default="our_setting_new")
+    parser.add_argument("--setting_name", type=str, default="our_setting")
     parser.add_argument("--dataset_name", type=str, default="assist2009")
     parser.add_argument("--data_type", type=str, default="only_question",
                         choices=("multi_concept", "single_concept", "only_question"))
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr_schedule_milestones", type=str, default="[5]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     # batch size
-    parser.add_argument("--train_batch_size", type=int, default=128)
+    parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
     # 梯度裁剪
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
@@ -53,8 +53,17 @@ if __name__ == "__main__":
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=123)
     parser.add_argument("--num_question", type=int, default=17751)
-    parser.add_argument("--dim_emb", type=int, default=64)
-    parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument("--dim_concept", type=int, default=64)
+    parser.add_argument("--dim_question", type=int, default=64)
+    parser.add_argument("--dim_correct", type=int, default=64)
+    parser.add_argument("--dim_latent", type=int, default=64)
+    parser.add_argument("--rnn_type", type=str, default="gru",
+                        choices=("rnn", "lstm", "gru"))
+    parser.add_argument("--num_rnn_layer", type=int, default=1)
+    parser.add_argument("--dropout", type=float, default=0.3)
+    parser.add_argument("--num_predict_layer", type=int, default=3)
+    parser.add_argument("--dim_predict_mid", type=int, default=128)
+    parser.add_argument("--activate_type", type=str, default="relu")
     parser.add_argument("--fusion_mode", type=str, default="sum", choices=("sum", "hm", "rubin"))
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
@@ -66,7 +75,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = qdkt_core_config(params)
+    global_params, global_objects = qdkt_core_new_config(params)
 
     if params["train_strategy"] == "valid_test":
         valid_params = deepcopy(global_params)
@@ -88,12 +97,12 @@ if __name__ == "__main__":
 
     global_objects["data_loaders"] = {}
     global_objects["models"] = {}
-
     global_objects["data_loaders"]["train_loader"] = dataloader_train
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
-    model = qDKT_CORE(global_params, global_objects).to(global_params["device"])
+    model = qDKT_CORE_NEW(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
     trainer = KnowledgeTracingTrainer(global_params, global_objects)
     trainer.train()
+

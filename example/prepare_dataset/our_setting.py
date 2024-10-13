@@ -14,7 +14,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_name", type=str, default="SLP-phy",
                         choices=("assist2009", "assist2012", "assist2017", "edi2020-task1", "edi2020-task34",
-                                 "ednet-kt1", "xes3g5m", "statics2011", "slepemapy", "junyi2015"))
+                                 "ednet-kt1", "xes3g5m", "statics2011", "slepemapy-anatomy", "junyi2015"))
     args = parser.parse_args()
     params = vars(args)
 

@@ -39,39 +39,77 @@ This algorithm library was developed inspired by `pyKT` (the code repository cor
 
 ### Overall metric (AUC)
 
-|           | Assist2009 | Assist2012 | Statics2011 | Ednet-KT1 | Xes3g5m |
-| :-------: | :--------: | :--------: | :---------: | :-------: | :-----: |
-|    DKT    |   0.7481   |   0.7337   |   0.6612    |  0.7113   | 0.7838  |
-|   DKVMN   |   0.7456   |   0.7217   |    0.668    |  0.7046   | 0.7748  |
-|   SAKT    |   0.7328   |   0.721    |   0.6642    |  0.6776   | 0.7791  |
-|   LPKT    |   0.7682   |   0.7884   |   0.7394    |  0.8216   | 0.8257  |
-|   DIMKT   |   0.7647   |   0.7845   |   0.7154    |  0.8198   | 0.8262  |
-| SimpleKT  |   0.7853   |   0.7818   |   0.7342    |  0.8214   | 0.8198  |
-|   QIKT    |   0.7843   |   0.7753   |   0.7329    |  0.8268   | 0.8232  |
-| SparseKT  |   0.7782   |   0.7727   |   0.7302    |  0.8162   | 0.8153  |
-|   MIKT    |   0.7886   |   0.7902   |   0.7436    |  0.8213   | 0.8179  |
-|    AKT    |   0.7854   |   0.7904   |   0.7345    |  0.8193   | 0.8225  |
-|   qDKT    |   0.7684   |   0.7861   |   0.7354    |  0.8191   | 0.8252  |
-| AKT-CORE  |   0.7512   |   0.7619   |   0.7076    |  0.7811   | 0.8037  |
-| qDKT-CORE |   0.7365   |   0.7527   |   0.6544    |  0.7608   |  0.78   |
+|           | Assist2009 | Assist2012 | Statics2011 | Ednet-KT1 | Xes3g5m | Slemapy-Anatomy |
+| :-------: | :--------: | :--------: | :---------: | :-------: | :-----: | :-------------: |
+|    DKT    |   0.7481   |   0.7337   |   0.6612    |  0.7113   | 0.7838  |     0.6838      |
+|   DKVMN   |   0.7456   |   0.7217   |    0.668    |  0.7046   | 0.7748  |     0.6745      |
+|   SAKT    |   0.7328   |   0.721    |   0.6642    |  0.6776   | 0.7791  |      0.676      |
+|   LPKT    |   0.7682   |   0.7884   |   0.7394    |  0.8216   | 0.8257  |     0.7365      |
+|   DIMKT   |   0.7647   |   0.7845   |   0.7154    |  0.8198   | 0.8262  |     0.7285      |
+| SimpleKT  |   0.7853   |   0.7818   |   0.7342    |  0.8214   | 0.8198  |     0.7316      |
+|   QIKT    |   0.7843   |   0.7753   |   0.7329    |  0.8268   | 0.8232  |     0.7234      |
+| SparseKT  |   0.7782   |   0.7727   |   0.7302    |  0.8162   | 0.8153  |     0.7258      |
+|   MIKT    |   0.7886   |   0.7902   |   0.7436    |  0.8213   | 0.8179  |     0.7369      |
+|    AKT    |   0.7854   |   0.7904   |   0.7345    |  0.8193   | 0.8225  |     0.7288      |
+|   qDKT    |   0.7684   |   0.7861   |   0.7354    |  0.8191   | 0.8252  |     0.7247      |
+| AKT-CORE  |   0.7512   |   0.7619   |   0.7076    |  0.7811   | 0.8037  |     0.7133      |
+| qDKT-CORE |   0.7365   |   0.7527   |   0.6544    |  0.7608   |  0.78   |     0.7008      |
+
+|          | Assist2017 | Junyi2015 |    Edi2020-task1    |   Edi2020-task34    |
+| :------: | :--------: | :-------: | :-----------------: | :-----------------: |
+|   qDKT   |   0.7919   |  0.7806   |       0.8141        |       0.7947        |
+|   AKT    |   0.772    |  0.7791   |       0.8129        |        0.793        |
+|   LPKT   |   0.812    |           |       0.8179        |       0.7968        |
+|  DIMKT   |   0.8002   |  0.7836   |       0.8138        |       0.7936        |
+| SimpleKT |   0.7746   |  0.7793   |       0.8135        |       0.7937        |
+|   QIKT   |   0.7874   |  0.7812   |         OOM         |       0.7972        |
+|   LBKT   |   0.8335   |  0.7829   | Lack of information | Lack of information |
+
+`LBKT` in `Assist2009`: 0.7767
+
+`LBKT` in `Assist2012`: 0.7914
 
 ### CORE metric (AUC)
 
-|           | Assist2009 | Assist2012 | Statics2011 | Statics | Xes3g5m |
-| :-------: | :--------: | :--------: | :---------: | :-----: | :-----: |
-|    DKT    |   0.6931   |   0.6716   |   0.5857    | 0.6447  | 0.7031  |
-|   DKVMN   |   0.6859   |   0.6615   |   0.5817    | 0.6468  | 0.6979  |
-|   SAKT    |   0.6755   |   0.6582   |   0.5806    | 0.6283  | 0.7003  |
-|   LPKT    |   0.6559   |   0.6684   |   0.5712    | 0.6061  | 0.7097  |
-|   DIMKT   |   0.6821   |   0.664    |   0.5671    | 0.6131  | 0.7102  |
-| SimpleKT  |   0.6903   |   0.6607   |   0.5722    | 0.6155  | 0.7002  |
-|   QIKT    |   0.6776   |   0.6469   |   0.5652    | 0.6262  | 0.7076  |
-| SparseKT  |   0.6754   |   0.6438   |   0.5591    | 0.6025  | 0.6914  |
-|   MIKT    |   0.6874   |   0.6673   |   0.5809    | 0.6161  | 0.6895  |
-|    AKT    |   0.6955   |   0.6789   |   0.5769    | 0.6173  | 0.7127  |
-|   qDKT    |   0.6826   |   0.666    |   0.5708    | 0.6146  | 0.7078  |
-| AKT-CORE  |   0.6966   |   0.6965   |   0.5858    | 0.6319  | 0.7315  |
-| qDKT-CORE |   0.6657   |   0.6502   |   0.5709    | 0.5864  | 0.6806  |
+|           | Assist2009 | Assist2012 | Statics2011 | Statics | Xes3g5m | Slemapy-Anatomy |
+| :-------: | :--------: | :--------: | :---------: | :-----: | :-----: | :-------------: |
+|    DKT    |   0.6931   |   0.6716   |   0.5857    | 0.6447  | 0.7031  |     0.6681      |
+|   DKVMN   |   0.6859   |   0.6615   |   0.5817    | 0.6468  | 0.6979  |     0.6622      |
+|   SAKT    |   0.6755   |   0.6582   |   0.5806    | 0.6283  | 0.7003  |     0.6651      |
+|   LPKT    |   0.6559   |   0.6684   |   0.5712    | 0.6061  | 0.7097  |     0.6789      |
+|   DIMKT   |   0.6821   |   0.664    |   0.5671    | 0.6131  | 0.7102  |     0.6679      |
+| SimpleKT  |   0.6903   |   0.6607   |   0.5722    | 0.6155  | 0.7002  |     0.6712      |
+|   QIKT    |   0.6776   |   0.6469   |   0.5652    | 0.6262  | 0.7076  |     0.6634      |
+| SparseKT  |   0.6754   |   0.6438   |   0.5591    | 0.6025  | 0.6914  |     0.6667      |
+|   MIKT    |   0.6874   |   0.6673   |   0.5809    | 0.6161  | 0.6895  |     0.6791      |
+|    AKT    |   0.6955   |   0.6789   |   0.5769    | 0.6173  | 0.7127  |     0.6776      |
+|   qDKT    |   0.6826   |   0.666    |   0.5708    | 0.6146  | 0.7078  |      0.665      |
+| AKT-CORE  |   0.6966   |   0.6965   |   0.5858    | 0.6319  | 0.7315  |     0.6902      |
+| qDKT-CORE |   0.6657   |   0.6502   |   0.5709    | 0.5864  | 0.6806  |     0.6396      |
+
+## Our DG setting (Knowledge Tracing)
+
+- DG (Doamin Generalization) setting: Divide the data into training data and testing data according to the student attributes (school, country, etc.). For example, the student data of schools A, B, and C are used as the training set, and the student data of school D is used as the testing set.
+- The `Assist2009` and `Assist2012` datasets have student school information, so domain generalization experiments can be conducted based on schools. The experimental settings are as follows:
+  1. Merge schools with small numbers of students into one school, and do not use extreme schools (with an average sequence length of less than 20) as testing set
+  2. After the merger is completed, first randomly divide 80% of the schools into training sets based on the school as a unit, and the number of samples in the training set is required to account for 70% to 85% of the total number of samples
+  3. After dividing the training set and the test set, 20% of the training set is divided as the validation set based on students
+  4. Obtain 10 different divisions through random division, and use qDKT to measure the gap between I.I.D. and O.O.D, that is, the performance gap between the model on the validation set and the testing set
+  5. The division result with the largest gap is selected for the experiment. In order to reduce randomness, the reported result is the average of the results of 5 random seeds
+  6. The method for stopping model training is still early stop, and the model with the highest performance in the validation set is selected
+  7. Because the validation set is I.I.D., the parameters of each model are the same as those in the previous experiment, and no parameters are adjusted
+- The `Sleepmapy-Anatomy` data set has student country information, so domain generalization experiments can be performed based on countries. Since the student data of one country in the data set accounts for 80%, the student data of this country is directly used as the training set, and the remaining data is used as the testing set.
+- Report results: The results outside the brackets in the table are the validation set results, and the results inside the brackets are the testing set result.
+
+### AUC Metric
+
+|       | Assist2009      | Assist2012      | Slepemapy-Anatomy |
+| ----- | --------------- | --------------- | ----------------- |
+| qDKT  | 0.7482 (0.7327) | 0.7748 (0.7523) | 0.7258 (0.7096)   |
+| AKT   | 0.7558 (0.7321) | 0.7766 (0.7506) | 0.7303 (0.7129)   |
+| LPKT  | 0.7525 (0.7416) | 0.7787 (0.7577) | 0.7423 (0.7238)   |
+| DIMKT | 0.7247 (0.7386) | 0.7724 (0.7449) | 0.7303 (0.7139)   |
+| LBKT  | 0.7603 (0.7482) | 0.779 (0.7574)  |                   |
 
 ## pyKT setting (Knowledge Tracing)
 

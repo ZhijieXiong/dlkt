@@ -45,7 +45,7 @@ example4llm_expolre/demo
 
 
 # future to open
-/example/prepare_dataset/our_setting_ood_by_country.py
+#/example/prepare_dataset/our_setting_ood_by_country.py
 #/example/prepare_dataset/our_setting_ood_by_school.py
 /prompt_template/our
 

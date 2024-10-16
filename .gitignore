@@ -89,7 +89,7 @@ example4llm_expolre/demo
 
 /example/case_study.py
 *.pyc
-
+*.DS_Store
 
 # dev
 /example4llm_based_agent
@@ -103,6 +103,8 @@ example4llm_expolre/demo
 /prompt_template
 /example/scripts
 /example/deploy
+/example4cognitive_diagnosis/demo
+/example4cognitive_diagnosis/script_local
 
 # ignore file
 /auto_export_script.py
@@ -124,3 +126,4 @@ example4llm_expolre/demo
 /example/prepare_dataset/dataset_random_delete.py
 /example/prepare_dataset/prepare4baidu_competition.py
 /example/prepare_dataset/llm4kt_setting.py
+/example/question_concept_embedding_from_LLM.py

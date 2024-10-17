@@ -1,7 +1,5 @@
 from ._config import *
 
-from lib.template.objects_template import OBJECTS
-from lib.template.params_template_v2 import PARAMS
 from lib.util.basic import *
 
 
@@ -55,8 +53,8 @@ def lpkt_general_config(local_params, global_params, global_objects):
 
 
 def lpkt_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
+    global_params = {}
+    global_objects = {}
     general_config(local_params, global_params, global_objects)
     lpkt_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:

@@ -10,6 +10,7 @@ from .Module.attention import attention_DTransformer
 
 class DTransformer(nn.Module):
     model_name = "DTransformer"
+    use_question = True
     MIN_SEQ_LEN = 5
 
     def __init__(self, params, objects):
@@ -145,40 +146,75 @@ class DTransformer(nn.Module):
         concept_emb, interaction_emb, question_difficulty = self.embed_input({
             "concept_seq": concept_seq, "correct_seq": correct_seq, "question_seq": question_seq
         })
-        z, q_scores, k_scores = self(concept_emb, interaction_emb, seqs_length)
+        z, q_scores, k_scores = self.forward(concept_emb, interaction_emb, seqs_length)
 
         n = 1
         query = concept_emb[:, n - 1:, :]
         # predict T+N，即论文中公式(19)的z_{q_t}
         latent = self.readout(z[:, : query.size(1), :], query)
 
-        predict_score = torch.sigmoid(self.out(torch.cat([query, latent], dim=-1)).squeeze(-1))
-
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-        predict_score = torch.masked_select(predict_score[:, 1:], mask_bool_seq[:, 1:])
+        predict_score_batch = torch.sigmoid(self.out(torch.cat([query, latent], dim=-1)).squeeze(-1))[:, 1:]
+        predict_score = torch.masked_select(predict_score_batch, mask_bool_seq[:, 1:])
 
-        return predict_score
+        return {
+            "predict_score": predict_score,
+            "predict_score_batch": predict_score_batch
+        }
 
-    def get_predict_loss(self, batch, loss_record):
-        predict_loss = self.get_predict_loss_(batch, loss_record)
-        if loss_record is not None:
-            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
-            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
+    def get_predict_loss(self, batch):
+        predict_loss_result = self.get_predict_loss_(batch)
+        predict_loss = predict_loss_result["predict loss"]
+        reg_loss = predict_loss_result["reg loss"]
 
         correct_seq = batch["correct_seq"]
         seqs_length = (correct_seq >= 0).sum(dim=1)
         min_len = seqs_length.min().item()
+        num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+        weight_reg = self.params["loss_config"]["reg loss"]
+        weight_cl_loss = self.params["loss_config"]["cl loss"]
         if min_len < DTransformer.MIN_SEQ_LEN:
             # skip CL for batches that are too short
-            loss_record.add_loss("cl loss", 0, 1)
-            loss = predict_loss
+            return {
+                "total_loss": predict_loss + reg_loss * weight_reg,
+                "losses_value": {
+                    "predict loss": {
+                        "value": predict_loss.detach().cpu().item() * num_sample,
+                        "num_sample": num_sample
+                    },
+                    "reg loss": {
+                        "value": reg_loss.detach().cpu().item() * num_sample,
+                        "num_sample": num_sample
+                    },
+                    "cl loss": {
+                        "value": 0,
+                        "num_sample": 1
+                    }
+                },
+                "predict_score": predict_loss_result["predict_score"],
+                "predict_score_batch": predict_loss_result["predict_score_batch"]
+            }
         else:
             cl_loss = self.get_cl_loss(batch)
-            loss_record.add_loss("cl loss", cl_loss.detach().cpu().item(), 1)
-            weight_cl_loss = self.params["loss_config"]["cl loss"]
-            loss = predict_loss + cl_loss * weight_cl_loss
-
-        return loss
+            return {
+                "total_loss": predict_loss + reg_loss * weight_reg + cl_loss * weight_cl_loss,
+                "losses_value": {
+                    "predict loss": {
+                        "value": predict_loss.detach().cpu().item() * num_sample,
+                        "num_sample": num_sample
+                    },
+                    "reg loss": {
+                        "value": reg_loss.detach().cpu().item() * num_sample,
+                        "num_sample": num_sample
+                    },
+                    "cl loss": {
+                        "value": cl_loss.detach().cpu().item(),
+                        "num_sample": 1
+                    }
+                },
+                "predict_score": predict_loss_result["predict_score"],
+                "predict_score_batch": predict_loss_result["predict_score_batch"]
+            }
 
     def get_z(self, batch):
         correct_seq = batch["correct_seq"]
@@ -249,16 +285,16 @@ class DTransformer(nn.Module):
         # predict T+N，即论文中公式(19)的z_{q_t}
         latent = self.readout(z[:, : query.size(1), :], query)
 
-        predict_score = self.out(torch.cat([query, latent], dim=-1)).squeeze(-1)
+        predict_logits = self.out(torch.cat([query, latent], dim=-1)).squeeze(-1)
 
         if use_question:
             reg_loss = (question_difficulty ** 2).mean()
         else:
             reg_loss = 0.0
 
-        return predict_score, z, concept_emb, reg_loss, (q_scores, k_scores)
+        return predict_logits, z, concept_emb, reg_loss, (q_scores, k_scores)
 
-    def get_predict_loss_(self, batch, loss_record):
+    def get_predict_loss_(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DTransformer"]
         window = encoder_config["window"]
 
@@ -267,13 +303,9 @@ class DTransformer(nn.Module):
         question_seq = batch["question_seq"]
 
         # reg_loss实际上就是question difficulty embedding的二范数，和AKT一样，作为loss的一部分
-        predict_logits, z, concept_emb, reg_loss, _ = self.predict(concept_seq, correct_seq, question_seq)
-        loss_record.add_loss("reg loss", reg_loss.detach().cpu().item(), 1)
-        weight_reg_loss = self.params["loss_config"]["reg loss"]
-        reg_loss = reg_loss * weight_reg_loss
-
+        predict_logits_batch, z, concept_emb, reg_loss, _ = self.predict(concept_seq, correct_seq, question_seq)
         ground_truth = correct_seq[correct_seq >= 0].float()
-        predict_logits = predict_logits[correct_seq >= 0]
+        predict_logits = predict_logits_batch[correct_seq >= 0]
         # binary_cross_entropy_with_logits = Sigmoid + BCE loss，因此predict_logits是任意数
         predict_loss = F.binary_cross_entropy_with_logits(predict_logits, ground_truth, reduction="mean")
 
@@ -289,7 +321,16 @@ class DTransformer(nn.Module):
 
         predict_loss /= window
 
-        return predict_loss + reg_loss
+        mask_bool_seq = torch.ne(batch["mask_seq"], 0)
+        predict_score_batch = torch.sigmoid(predict_logits_batch)[:, 1:]
+        predict_score = torch.masked_select(predict_score_batch, mask_bool_seq[:, 1:])
+
+        return {
+            "predict loss": predict_loss,
+            "reg loss": reg_loss,
+            "predict_score_batch": predict_score_batch,
+            "predict_score": predict_score
+        }
 
     def get_cl_loss(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DTransformer"]

@@ -1,12 +1,16 @@
 from ._config import *
 
-from lib.template.kt_model.SAINT import MODEL_PARAMS
 from lib.util.basic import *
 
 
 def saint_general_config(local_params, global_params, global_objects):
     global_params["models_config"] = {
-        "kt_model": deepcopy(MODEL_PARAMS)
+        "kt_model": {
+            "encoder_layer": {
+                "type": "SAINT",
+                "SAINT": {}
+            }
+        }
     }
 
     # 配置模型参数

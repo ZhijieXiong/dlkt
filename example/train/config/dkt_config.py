@@ -1,14 +1,22 @@
 from ._config import *
 
-from lib.template.params_template_v2 import PARAMS
-from lib.template.kt_model.DKT import MODEL_PARAMS as DKT_MODEL_PARAMS
-from lib.template.objects_template import OBJECTS
 from lib.util.basic import *
 
 
 def dkt_general_config(local_params, global_params, global_objects):
-    global_params["models_config"]["kt_model"] = deepcopy(DKT_MODEL_PARAMS)
-    global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "DKT"
+    global_params["models_config"] = {
+        "kt_model": {
+            "kt_embed_layer": {},
+            "encoder_layer": {
+                "type": "DKT",
+                "DKT": {}
+            },
+            "predict_layer": {
+                "type": "direct",
+                "direct": {}
+            }
+        }
+    }
     data_type = global_params["datasets_config"]["data_type"]
 
     # 配置模型参数
@@ -33,16 +41,17 @@ def dkt_general_config(local_params, global_params, global_objects):
         kt_embed_layer_config["interaction"] = [num_concept * 2, dim_emb]
     else:
         kt_embed_layer_config["question"] = [num_question, dim_emb]
+        kt_embed_layer_config["concept"] = [num_concept, dim_emb]
 
     # encoder layer
-    dkt_encoder_layer_config = global_params["models_config"]["kt_model"]["encoder_layer"]["DKT"]
-    dkt_encoder_layer_config["num_concept"] = num_concept
-    dkt_encoder_layer_config["num_question"] = num_question
-    dkt_encoder_layer_config["dim_emb"] = dim_emb
-    dkt_encoder_layer_config["dim_latent"] = dim_latent
-    dkt_encoder_layer_config["rnn_type"] = rnn_type
-    dkt_encoder_layer_config["num_rnn_layer"] = num_rnn_layer
-    dkt_encoder_layer_config["use_concept"] = use_concept
+    encoder_config = global_params["models_config"]["kt_model"]["encoder_layer"]["DKT"]
+    encoder_config["num_concept"] = num_concept
+    encoder_config["num_question"] = num_question
+    encoder_config["dim_emb"] = dim_emb
+    encoder_config["dim_latent"] = dim_latent
+    encoder_config["rnn_type"] = rnn_type
+    encoder_config["num_rnn_layer"] = num_rnn_layer
+    encoder_config["use_concept"] = use_concept
 
     # predict layer
     predict_layer_config = global_params["models_config"]["kt_model"]["predict_layer"]
@@ -62,10 +71,11 @@ def dkt_general_config(local_params, global_params, global_objects):
         predict_layer_config["direct"]["dim_predict_out"] = 1
 
     global_objects["logger"].info(
-        "model params\n"
-        f"    use concept: {use_concept}, num of concept: {num_concept}, num of question: {num_question}, \n"
-        f"    dim of emb: {dim_emb}, dim of latent: {dim_latent}, rnn type: {rnn_type}, num of rnn layer: {num_rnn_layer}\n"
-        f"    dropout: {dropout}, num of predict layer: {num_predict_layer}, dim of middle predict layer: {dim_predict_mid}, type of activate function: {activate_type}"
+        "model params\n    "
+        f"use_concept: {use_concept}, num_concept: {num_concept}, num_question: {num_question}, \n    "
+        f"dim_emb: {dim_emb}, dim_latent: {dim_latent}, rnn_type: {rnn_type}, num_rnn_layer: {num_rnn_layer}\n    "
+        f"dropout: {dropout}, num_predict_layer: {num_predict_layer}, dim_predict_mid: {dim_predict_mid}, "
+        f"activate_type: {activate_type}"
     )
 
     if local_params["save_model"]:
@@ -78,10 +88,11 @@ def dkt_general_config(local_params, global_params, global_objects):
 
 
 def dkt_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
+    global_params = {}
+    global_objects = {}
     general_config(local_params, global_params, global_objects)
     dkt_general_config(local_params, global_params, global_objects)
+
     if local_params["save_model"]:
         save_params(global_params, global_objects)
 

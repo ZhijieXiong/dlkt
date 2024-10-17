@@ -3,30 +3,23 @@ import torch
 
 from .data import load_json
 from .basic import str_dict2params
-from ..model.AuxInfoDCT import AuxInfoDCT
-from ..model.AuxInfoQDKT import AuxInfoQDKT
 from ..model.AKT import AKT
 from ..model.AKT_CORE import AKT_CORE
 from ..model.ATKT import ATKT
 from ..model.AT_DKT import AT_DKT
-from ..model.AC_VAE_GRU import AC_VAE_GRU
 from ..model.CL4KT import CL4KT
 from ..model.DKT import DKT
-from ..model.DCT import DCT
 from ..model.DIMKT import DIMKT
-from ..model.DIMKT_VARIANT import DIMKT_VARIANT
-from ..model.DIMKT_VARIANT_CORE import DIMKT_VARIANT_CORE
+from ..model.DIMKT_CORE import DIMKT_CORE
 from ..model.DKVMN import DKVMN
 from ..model.DTransformer import DTransformer
 from ..model.GIKT import GIKT
 from ..model.LBKT import LBKT
 from ..model.LPKT import LPKT
-from ..model.LPKTPlus import LPKTPlus
 from ..model.SAKT import SAKT
 from ..model.SAINT import SAINT
 from ..model.qDKT import qDKT
 from ..model.qDKT_CORE import qDKT_CORE
-from ..model.qDKT_CORE_NEW import qDKT_CORE_NEW
 from ..model.QIKT import QIKT
 from ..model.SimpleKT import SimpleKT
 from ..model.MIKT import MIKT
@@ -34,34 +27,23 @@ from ..model.SparseKT import SparseKT
 
 
 model_table = {
-    "AuxInfoDCT": AuxInfoDCT,
-    "AuxInfoQDKT": AuxInfoQDKT,
     "AKT": AKT,
-    "AKT-ADA": AKT,
-    "AKT-LfF": AKT,
     "AKT-CORE": AKT_CORE,
     "ATKT": ATKT,
-    "AT_DKT": AT_DKT,
-    "AC_VAE_GRU": AC_VAE_GRU,
+    "AT-DKT": AT_DKT,
     "CL4KT": CL4KT,
     "DKT": DKT,
-    "DCT": DCT,
     "DIMKT": DIMKT,
     "DKVMN": DKVMN,
-    "DIMKT-VARIANT": DIMKT_VARIANT,
-    "DIMKT-VARIANT-CORE": DIMKT_VARIANT_CORE,
+    "DIMKT-CORE": DIMKT_CORE,
     "DTransformer": DTransformer,
     "GIKT": GIKT,
     "LBKT": LBKT,
     "LPKT": LPKT,
-    "LPKTPlus": LPKTPlus,
     "SAKT": SAKT,
     "SAINT": SAINT,
     "qDKT": qDKT,
-    "qDKT-ADA": qDKT,
-    "qDKT-LfF": qDKT,
     "qDKT-CORE": qDKT_CORE,
-    "qDKT-CORE-NEW": qDKT_CORE_NEW,
     "QIKT": QIKT,
     "SimpleKT": SimpleKT,
     "MIKT": MIKT,
@@ -100,13 +82,6 @@ def load_kt_model(global_params, global_objects, save_model_dir, ckt_name="saved
         }
         q_matrix = global_objects["LBKT"]["q_matrix"]
         q_matrix[q_matrix > 1] = 1
-    if kt_model_name == "AuxInfoDCT" or kt_model_name == "AuxInfoQDKT":
-        # 聚合时间信息
-        global_params["datasets_config"]["test"]["type"] = "kt4lpkt_plus"
-        global_params["datasets_config"]["test"]["kt4lpkt_plus"] = {}
-    if kt_model_name == "AuxInfoDCT":
-        #
-        pass
     model = model_class(global_params, global_objects).to(global_params["device"])
     if global_params["device"] == "cpu":
         saved_ckt = torch.load(ckt_path, map_location=torch.device('cpu'))

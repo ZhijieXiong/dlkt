@@ -74,14 +74,6 @@ def evaluate_general_config(local_params):
     fine_grain_config["train_statics_common_path"] = train_statics_common_path
     fine_grain_config["train_statics_special_path"] = train_statics_special_path
 
-    # 是否将head的知识迁移到zero shot的知识
-    transfer_head2zero = local_params.get("transfer_head2zero", False)
-    head2tail_transfer_method = local_params.get("head2tail_transfer_method", "mean_pool")
-
-    global_params["transfer_head2zero"] = {}
-    global_params["transfer_head2zero"]["use_transfer"] = transfer_head2zero
-    global_params["transfer_head2zero"]["transfer_method"] = head2tail_transfer_method
-
     # Q_table
     global_objects["data"] = {}
     if data_type == "only_question":
@@ -98,11 +90,5 @@ def evaluate_general_config(local_params):
         global_objects["data"]["q2c_table"] = q2c_table
         global_objects["data"]["q2c_mask_table"] = q2c_mask_table
         global_objects["data"]["num_max_concept"] = num_max_concept
-
-    # 获取习题和知识点组合的关系
-    Q_table_single_concept = file_manager.get_q_table(dataset_name, "single_concept")
-    if Q_table_single_concept is not None:
-        question2concept_combination = question2concept_from_Q(Q_table_single_concept)
-        global_objects["data"]["question2concept_combination"] = question2concept_combination
 
     return global_params, global_objects

@@ -1,21 +1,24 @@
-from ._config import *
-from ._cl_config import *
-from ._data_aug_config import *
-from ._melt_config import *
-from ._dro_config import *
+import os.path
 
-from lib.template.params_template import PARAMS
-from lib.template.params_template_v2 import PARAMS as PARAMS2
-from lib.template.kt_model.qDKT import MODEL_PARAMS as qDKT_MODEL_PARAMS
-from lib.template.kt_model.qDKT_CORE import MODEL_PARAMS as qDKT_CORE_MODEL_PARAMS
-from lib.template.objects_template import OBJECTS
+from ._config import *
+
 from lib.util.basic import *
-from lib.util.statics import cal_propensity
 
 
 def qdkt_general_config(local_params, global_params, global_objects):
-    global_params["models_config"]["kt_model"] = deepcopy(qDKT_MODEL_PARAMS)
-    global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "qDKT"
+    global_params["models_config"] = {
+        "kt_model": {
+            "kt_embed_layer": {},
+            "encoder_layer": {
+                "type": "qDKT",
+                "qDKT": {}
+            },
+            "predict_layer": {
+                "type": "direct",
+                "direct": {}
+            }
+        }
+    }
 
     # 配置模型参数
     num_concept = local_params["num_concept"]
@@ -73,223 +76,32 @@ def qdkt_general_config(local_params, global_params, global_objects):
 
 
 def qdkt_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
+    global_params = {}
+    global_objects = {}
     general_config(local_params, global_params, global_objects)
     qdkt_general_config(local_params, global_params, global_objects)
 
-    # IPS
-    use_sample_weight = local_params["use_sample_weight"]
-    sample_weight_method = local_params["sample_weight_method"]
-    IPS_min = local_params["IPS_min"]
-    IPS_his_seq_len = local_params['IPS_his_seq_len']
-
-    global_params["use_sample_weight"] = use_sample_weight
-    global_params["sample_weight_method"] = sample_weight_method
-    global_params["IPS_min"] = IPS_min
-    global_params["IPS_his_seq_len"] = IPS_his_seq_len
-
-    global_objects["logger"].info(
-        f"IPS params\n    "
-        f"use IPS: {use_sample_weight}, IPS_min: {IPS_min}, IPS_his_seq_len: {IPS_his_seq_len}\n"
-    )
-
-    if local_params["save_model"]:
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def qdkt_instance_cl_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    qdkt_general_config(local_params, global_params, global_objects)
-    instance_cl_general_config(local_params, global_params, global_objects)
-    if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-instance-CL@@"))
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def qdkt_duo_cl_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    qdkt_general_config(local_params, global_params, global_objects)
-    duo_cl_general_config(local_params, global_params)
-    if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-DUO-CL@@"))
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def qdkt_cluster_cl_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    qdkt_general_config(local_params, global_params, global_objects)
-    cluster_cl_general_config(local_params, global_params, global_objects)
-    if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-cluster-CL@@"))
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def qdkt_max_entropy_adv_aug_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    qdkt_general_config(local_params, global_params, global_objects)
-    max_entropy_adv_aug_general_config(local_params, global_params, global_objects)
-    if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-ME-ADA@@"))
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def qdkt_adv_bias_aug_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    qdkt_general_config(local_params, global_params, global_objects)
-    adv_bias_aug_general_config(local_params, global_params, global_objects)
-
-    # IPS
-    use_sample_weight = local_params["use_sample_weight"]
-    sample_weight_method = local_params["sample_weight_method"]
-    IPS_min = local_params["IPS_min"]
-    IPS_his_seq_len = local_params['IPS_his_seq_len']
-
-    global_params["use_sample_weight"] = use_sample_weight
-    global_params["sample_weight_method"] = sample_weight_method
-    global_params["IPS_min"] = IPS_min
-    global_params["IPS_his_seq_len"] = IPS_his_seq_len
-
-    global_objects["logger"].info(
-        f"IPS params\n    "
-        f"use IPS: {use_sample_weight}, IPS_min: {IPS_min}, IPS_his_seq_len: {IPS_his_seq_len}"
-    )
-
-    if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-ADA@@"))
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def qdkt_meta_optimize_cl_config(local_params):
-    global_params = deepcopy(PARAMS2)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    qdkt_general_config(local_params, global_params, global_objects)
-    meta_optimize_cl_general_config(local_params, global_params, global_objects)
-    if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-meta-optimize-CL@@"))
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def qdkt_output_enhance_config(local_params):
-    global_params = deepcopy(PARAMS2)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    qdkt_general_config(local_params, global_params, global_objects)
-    output_enhance_general_config(local_params, global_params, global_objects)
-    global_params["datasets_config"]["train"]["kt_output_enhance"] = {}
-    if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-output-enhance@@"))
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def qdkt_mutual_enhance4long_tail_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    qdkt_general_config(local_params, global_params, global_objects)
-    mutual_enhance4long_tail_general_config(local_params, global_params, global_objects)
-
-    if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-ME4long-tail@@"))
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def qdkt_dro_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    qdkt_general_config(local_params, global_params, global_objects)
-    dro_general_config(local_params, global_params, global_objects)
-
-    data_type = global_params["datasets_config"]["data_type"]
-    dataset_train = read_preprocessed_file(os.path.join(
-        global_objects["file_manager"].get_setting_dir(global_params["datasets_config"]["train"]["setting_name"]),
-        global_params["datasets_config"]["train"]["file_name"]
-    ))
-    global_objects["dro"] = {
-        "propensity": torch.tensor(
-            cal_propensity(dataset_train, local_params["num_question"], data_type, "question")
-        ).to(global_params["device"])
+    # sample_reweight
+    sample_reweight = {
+        "use_sample_reweight": local_params["use_sample_reweight"],
+        "sample_reweight_method": local_params["sample_reweight_method"],
     }
+    use_sample_reweight = local_params["use_sample_reweight"]
+    sample_reweight_method = local_params["sample_reweight_method"]
+    use_IPS = False
+    if use_sample_reweight and local_params["sample_reweight_method"] in ["IPS-double", "IPS-seq", "IPS-question"]:
+        use_IPS = True
+        sample_reweight["IPS_min"] = local_params["IPS_min"]
+        sample_reweight["IPS_his_seq_len"] = local_params['IPS_his_seq_len']
+    global_params["sample_reweight"] = sample_reweight
+
+    global_objects["logger"].info(
+        f"sample weight\n    "
+        f"use_sample_reweight: {use_sample_reweight}, sample_reweight_method: {sample_reweight_method}"
+        f"{', IPS_min: ' + str(local_params['IPS_min']) + ', IPS_his_seq_len: ' + str(local_params['IPS_his_seq_len']) if use_IPS else ''}"
+    )
 
     if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-DRO@@"))
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def qdkt_instance_cl_srs_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    qdkt_general_config(local_params, global_params, global_objects)
-
-    datasets_train_config = global_params["datasets_config"]["train"]
-    datasets_train_config["type"] = "srs"
-    datasets_train_config["srs"] = {}
-
-    max_seq_len = local_params["max_seq_len"]
-    aug_order = eval(local_params["aug_order"])
-    mask_prob = local_params["mask_prob"]
-    replace_prob = local_params["replace_prob"]
-    crop_prob = local_params["crop_prob"]
-    permute_prob = local_params["permute_prob"]
-    datasets_train_config["srs"]["max_seq_len"] = max_seq_len
-    datasets_train_config["srs"]["aug_order"] = aug_order
-    datasets_train_config["srs"]["mask_prob"] = mask_prob
-    datasets_train_config["srs"]["replace_prob"] = replace_prob
-    datasets_train_config["srs"]["crop_prob"] = crop_prob
-    datasets_train_config["srs"]["permute_prob"] = permute_prob
-
-    temp = local_params["temp"]
-    weight_cl_loss = local_params["weight_cl_loss"]
-    global_params["other"] = {"instance_cl": {}}
-    instance_cl_config = global_params["other"]["instance_cl"]
-    instance_cl_config["temp"] = temp
-    global_params["loss_config"]["cl loss"] = weight_cl_loss
-
-    if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("qDKT@@", "qDKT-instance-CL-SRS@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
@@ -299,60 +111,14 @@ def qdkt_core_config(local_params):
     global_params = {}
     global_objects = {}
     general_config(local_params, global_params, global_objects)
-
-    # 配置模型参数
-    global_params["models_config"] = {
-        "kt_model": deepcopy(qDKT_CORE_MODEL_PARAMS)
-    }
-    num_concept = local_params["num_concept"]
-    num_question = local_params["num_question"]
-    dim_emb = local_params["dim_emb"]
-    fusion_mode = local_params["fusion_mode"]
-    dropout = local_params["dropout"]
-
-    # embed layer
-    embed_config = global_params["models_config"]["kt_model"]["kt_embed_layer"]
-    embed_config["concept"] = [num_concept, dim_emb]
-    embed_config["question"] = [num_question, dim_emb]
-
-    # encoder layer
-    encoder_config = global_params["models_config"]["kt_model"]["encoder_layer"]["qDKT_CORE"]
-    encoder_config["dim_emb"] = dim_emb
-    encoder_config["fusion_mode"] = fusion_mode
-    encoder_config["dropout"] = dropout
-
-    global_objects["logger"].info(
-        f"model params\n    "
-        f"num_concept: {num_concept}, num_question: {num_question}\n    "
-        f"fusion_mode: {fusion_mode}, dim_emb: {dim_emb}, dropout: {dropout}"
-    )
-
-    global_params["loss_config"]["KL loss"] = 1
-
-    if local_params["save_model"]:
-        setting_name = local_params["setting_name"]
-        train_file_name = local_params["train_file_name"]
-        global_params["save_model_dir_name"] = (
-            f"qDKT-CORE@@{setting_name}@@{train_file_name.replace('.txt', '')}@@seed_{local_params['seed']}@@"
-            f"{get_now_time().replace(' ', '@').replace(':', '-')}"
-        )
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def qdkt_core_new_config(local_params):
-    global_params = {}
-    global_objects = {}
-    general_config(local_params, global_params, global_objects)
     global_params["models_config"] = {
         "kt_model": {
             "kt_embed_layer": {
 
             },
             "encoder_layer": {
-                "type": "qDKT_CORE_NEW",
-                "qDKT_CORE_NEW": {
+                "type": "qDKT_CORE",
+                "qDKT_CORE": {
 
                 }
             },
@@ -386,7 +152,7 @@ def qdkt_core_new_config(local_params):
     embed_config["question"] = [num_question, dim_question]
 
     # encoder layer
-    encoder_config = global_params["models_config"]["kt_model"]["encoder_layer"]["qDKT_CORE_NEW"]
+    encoder_config = global_params["models_config"]["kt_model"]["encoder_layer"]["qDKT_CORE"]
     encoder_config["dim_concept"] = dim_concept
     encoder_config["dim_question"] = dim_question
     encoder_config["dim_correct"] = dim_correct
@@ -422,37 +188,6 @@ def qdkt_core_new_config(local_params):
         global_params["save_model_dir_name"] = (
             f"qDKT-CORE-NEW@@{setting_name}@@{train_file_name.replace('.txt', '')}@@seed_{local_params['seed']}@@"
             f"{get_now_time().replace(' ', '@').replace(':', '-')}")
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def qdkt_LfF_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    qdkt_general_config(local_params, global_params, global_objects)
-    q = local_params["q"]
-    global_params["other"]["LfF"] = {
-        "q": q
-    }
-
-    # 配置两个优化器的参数（使用相同的参数）
-    config_optimizer(local_params, global_params, global_objects, "model_biased", same_as_kt=True)
-    config_optimizer(local_params, global_params, global_objects, "model_de_biased", same_as_kt=True)
-
-    global_objects["logger"].info(
-        f"LfF params\n    "
-        f"q: {q}"
-    )
-
-    if local_params["save_model"]:
-        setting_name = local_params["setting_name"]
-        train_file_name = local_params["train_file_name"]
-        global_params["save_model_dir_name"] = (
-            f"qDKT-LfF@@{setting_name}@@{train_file_name.replace('.txt', '')}@@seed_{local_params['seed']}@@"
-            f"{get_now_time().replace(' ', '@').replace(':', '-')}"
-        )
         save_params(global_params, global_objects)
 
     return global_params, global_objects

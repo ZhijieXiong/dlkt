@@ -1,11 +1,18 @@
 from ._config import *
 
-from lib.template.objects_template import OBJECTS
-from lib.template.params_template_v2 import PARAMS
 from lib.util.basic import *
 
 
 def dTransformer_general_config(local_params, global_params, global_objects):
+    global_params["models_config"] = {
+        "kt_model": {
+            "encoder_layer": {
+                "type": "DTransformer",
+                "DTransformer": {}
+            }
+        }
+    }
+
     # 配置模型参数
     num_concept = local_params["num_concept"]
     num_question = local_params["num_question"]
@@ -55,11 +62,13 @@ def dTransformer_general_config(local_params, global_params, global_objects):
     global_params["loss_config"]["cl loss"] = weight_cl_loss
     global_params["loss_config"]["reg loss"] = weight_reg_loss
 
-    # global_objects["logger"].info(
-    #     "model params\n"
-    #     f"    num of concept: {num_concept}, num of question: {num_question}, dim of e: {dim_e}, dim of k: {dim_k}, "
-    #     f"dim of correct emb: {dim_correct}, dropout: {dropout}"
-    # )
+    global_objects["logger"].info(
+        "model params\n    "
+        f"num_concept: {num_concept}, num_question: {num_question}, temp: {temp}\n    "
+        f"dim_model: {dim_model}, dim_final_fc: {dim_final_fc}, num_knowledge_prototype: {num_knowledge_prototype}, "
+        f"num_layer: {num_layer}, num_head: {num_head}, dropout: {dropout}, window: {window}\n    "
+        f"use_question: {use_question}, key_query_same: {key_query_same}, bias: {bias}, use_hard_neg: {use_hard_neg}"
+    )
 
     if local_params["save_model"]:
         setting_name = local_params["setting_name"]
@@ -71,8 +80,8 @@ def dTransformer_general_config(local_params, global_params, global_objects):
 
 
 def dTransformer_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
+    global_params = {}
+    global_objects = {}
     general_config(local_params, global_params, global_objects)
     dTransformer_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:

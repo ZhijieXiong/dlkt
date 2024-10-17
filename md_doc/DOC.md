@@ -273,6 +273,7 @@
 - 其它
   - `save_model` 是否保存模型，如果为`True`，模型会保存在`lab/save_models`下
   - `seed` 随机数种子
+  - `trace_epoch` 是否追踪每个epoch下细粒度指标的变化
 
 # 三、测试模型
 
@@ -296,7 +297,7 @@
 
 ## 2、基于习题的测试
 
-- 由`pyKT`提出，用于测试多知识点数据集在`multi_concept`设置下的性能，具体请看论文
+- 由`pyKT`提出，用于测试多知识点数据集在`multi_concept`设置下的性能
 
 ## 3、细粒度测试
 
@@ -316,9 +317,10 @@
      - 来自论文`Do We Fully Understand Students' Knowledge States? Identifying and Mitigating Answer Bias in Knowledge Tracing`
      - 官方代码实现的是有重复的采样，我们有重复和无重复都实现了
 - 按照以下步骤进行细粒度评估
-  1. 运行`example/prepare4fine_trained_evaluate.py`生成细粒度测试所需要的文件`[train_data_name]_statics.json`
-  2. 运行`example/evaluate.py`进行模型评估
-  3. 如果没有第一步，则只能进行（1）基于序列长度评估和（2）基于seq bias评估（3）基于习题偏差进行平衡采样后的评估
+  1. 运行`example/prepare4fine_trained_evaluate.py`生成细粒度测试所需要的文件`[train_data_name]_statics_common.json`和``[train_data_name]_statics_special.json``
+  2. `statics_common`会提供习题和知识点在指定数据集上的正确率（如果某个习题或者知识点在数据集未出现过，则正确率为-1）
+  3. 运行`example/evaluate.py`进行模型评估
+  4. 如果没有第一步，则只能进行（1）基于序列长度评估和（2）基于seq bias评估（3）基于习题偏差进行平衡采样后的评估
 
 # 四、其它
 
@@ -384,8 +386,7 @@
 ## 2、添加自己的模型
 
 - 第一步：写模型代码，放到`lib/model/`下
-- 第二步：写模型参数配置模版，放到`lib/template/kt_model/`下
 - 第三步：写训练配置代码，放到`example/train/config/`下
 - 第四步：写训练启动代码，放到`example/train`下
 - 第五步：修改`lib/util/load_model`，添加相对应的内容
-- 可参考代码：建议参考`AuxInfoQDKT`模型，该模型使用的标准知识追踪数据集和训练器
+- 可参考代码：建议参考`qDKT`模型，该模型使用的标准知识追踪数据集和训练器

@@ -14,6 +14,7 @@ def ut_mask(seq_len):
 
 class AT_DKT(nn.Module):
     model_name = "AT_DKT"
+    use_question = True
 
     def __init__(self, params, objects):
         super(AT_DKT, self).__init__()
@@ -114,21 +115,22 @@ class AT_DKT(nn.Module):
 
         return KT_predict_score, QT_predict_score, IK_predict_score
 
-    def get_latent(self, batch):
-        pass
-
     def get_predict_score(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AT_DKT"]
         num_concept = encoder_config["num_concept"]
         concept_seq = batch["concept_seq"]
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
 
-        KT_predict_score, QT_predict_score, IK_predict_score = self.forward(batch)
-        KT_predict_score = (KT_predict_score[:, :-1] * nn.functional.one_hot(concept_seq[:, 1:], num_concept)).sum(-1)
+        KT_predict_score_batch, QT_predict_score, IK_predict_score = self.forward(batch)
+        KT_predict_score_batch = (KT_predict_score_batch[:, :-1] *
+                                  nn.functional.one_hot(concept_seq[:, 1:], num_concept)).sum(-1)
 
-        return KT_predict_score[mask_bool_seq[:, 1:]]
+        return {
+            "predict_score": KT_predict_score_batch[mask_bool_seq[:, 1:]],
+            "predict_score_batch": KT_predict_score_batch
+        }
 
-    def get_predict_loss(self, batch, loss_record=None):
+    def get_predict_loss(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["AT_DKT"]
         num_concept = encoder_config["num_concept"]
         IK_start = encoder_config["IK_start"]
@@ -136,11 +138,12 @@ class AT_DKT(nn.Module):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
 
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
-        KT_predict_score, QT_predict_score, IK_predict_score = self.forward(batch)
-        KT_predict_score = (KT_predict_score[:, :-1] * nn.functional.one_hot(concept_seq[:, 1:], num_concept)).sum(-1)
+        KT_predict_score_batch, QT_predict_score, IK_predict_score = self.forward(batch)
+        KT_predict_score_batch = (KT_predict_score_batch[:, :-1] *
+                                  nn.functional.one_hot(concept_seq[:, 1:], num_concept)).sum(-1)
 
         KT_predict_loss = nn.functional.binary_cross_entropy(
-            KT_predict_score[mask_bool_seq[:, 1:]].double(),
+            KT_predict_score_batch[mask_bool_seq[:, 1:]].double(),
             ground_truth.double()
         )
         QT_predict_loss = nn.functional.cross_entropy(
@@ -152,13 +155,27 @@ class AT_DKT(nn.Module):
             batch["history_acc_seq"][:, IK_start + 1:][mask_bool_seq[:, IK_start + 1:]]
         )
 
-        if loss_record is not None:
-            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
-            num_sample_IK = torch.sum(batch["mask_seq"][:, IK_start + 1:]).item()
-            loss_record.add_loss("predict loss", KT_predict_loss.detach().cpu().item() * num_sample, num_sample)
-            loss_record.add_loss("QT_loss", QT_predict_loss.detach().cpu().item() * num_sample, num_sample)
-            loss_record.add_loss("IK_loss", IK_predict_loss.detach().cpu().item() * num_sample_IK, num_sample_IK)
+        loss = (KT_predict_loss + QT_predict_loss * self.params["loss_config"]["QT loss"] +
+                IK_predict_loss * self.params["loss_config"]["IK loss"])
 
-        return (KT_predict_loss +
-                QT_predict_loss * self.params["loss_config"]["QT_loss"] +
-                IK_predict_loss * self.params["loss_config"]["IK_loss"])
+        num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+        num_sample_IK = torch.sum(batch["mask_seq"][:, IK_start + 1:]).item()
+        return {
+            "total_loss": loss,
+            "losses_value": {
+                "predict loss": {
+                    "value": KT_predict_loss.detach().cpu().item() * num_sample,
+                    "num_sample": num_sample
+                },
+                "QT loss": {
+                    "value": QT_predict_loss.detach().cpu().item() * num_sample,
+                    "num_sample": num_sample
+                },
+                "IK loss": {
+                    "value": IK_predict_loss.detach().cpu().item() * num_sample_IK,
+                    "num_sample": num_sample_IK
+                }
+            },
+            "predict_score": KT_predict_score_batch[mask_bool_seq[:, 1:]],
+            "predict_score_batch": KT_predict_score_batch
+        }

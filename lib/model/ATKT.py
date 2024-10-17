@@ -9,6 +9,7 @@ from .util import l2_normalize_adv
 
 class ATKT(nn.Module):
     model_name = "ATKT"
+    use_question = False
 
     def __init__(self, params, objects):
         super(ATKT, self).__init__()
@@ -32,6 +33,7 @@ class ATKT(nn.Module):
         else:
             self.embed_concept = nn.Embedding(num_question, dim_concept)
             self.fc = nn.Linear(dim_latent * 2, num_question)
+            self.use_question = True
         self.embed_concept.weight.data[-1] = 0
         self.embed_correct = nn.Embedding(2, dim_correct)
         self.embed_correct.weight.data[-1] = 0
@@ -106,14 +108,18 @@ class ATKT(nn.Module):
         else:
             num_concept = encoder_config["num_question"]
             concept_seq = batch["question_seq"]
-        predict_score = self.forward(batch)[:, :-1]
+
+        predict_score_batch = self.forward(batch)[:, :-1]
         mask_seq = torch.ne(batch["mask_seq"], 0)
-        predict_score = (predict_score * one_hot(concept_seq[:, 1:].long(), num_concept)).sum(-1)
-        predict_score = torch.masked_select(predict_score, mask_seq[:, 1:])
+        predict_score_batch = (predict_score_batch * one_hot(concept_seq[:, 1:].long(), num_concept)).sum(-1)
+        predict_score = torch.masked_select(predict_score_batch, mask_seq[:, 1:])
 
-        return predict_score
+        return {
+            "predict_score": predict_score,
+            "predict_score_batch": predict_score_batch
+        }
 
-    def get_predict_loss(self, batch, loss_record=None):
+    def get_predict_loss(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["ATKT"]
         use_concept = encoder_config["use_concept"]
         if use_concept:
@@ -132,14 +138,12 @@ class ATKT(nn.Module):
         self.rnn.flatten_parameters()
         rnn_out, _ = self.rnn(interaction_emb)
         latent = self.attention_module(rnn_out)
-        predict_score = self.sig(self.fc(self.dropout_layer(latent)))[:, :-1]
-        predict_score = (predict_score * one_hot_vector).sum(-1)
-        predict_score = torch.masked_select(predict_score, mask_seq[:, 1:])
+        predict_score_batch = self.sig(self.fc(self.dropout_layer(latent)))[:, :-1]
+        predict_score_batch = (predict_score_batch * one_hot_vector).sum(-1)
+        predict_score = torch.masked_select(predict_score_batch, mask_seq[:, 1:])
 
         loss = 0.
         predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
-        if loss_record is not None:
-            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
         loss += predict_loss
 
         epsilon = encoder_config["epsilon"]
@@ -155,8 +159,20 @@ class ATKT(nn.Module):
         adv_score = torch.masked_select(adv_score, mask_seq[:, 1:])
 
         adv_loss = nn.functional.binary_cross_entropy(adv_score.double(), ground_truth.double())
-        if loss_record is not None:
-            loss_record.add_loss("adv loss", adv_loss.detach().cpu().item() * num_sample, num_sample)
         loss += adv_loss * beta
 
-        return loss
+        return {
+            "total_loss": predict_loss,
+            "losses_value": {
+                "predict loss": {
+                    "value": predict_loss.detach().cpu().item() * num_sample,
+                    "num_sample": num_sample
+                },
+                "adv loss": {
+                    "value": adv_loss.detach().cpu().item() * num_sample,
+                    "num_sample": num_sample
+                },
+            },
+            "predict_score": predict_score,
+            "predict_score_batch": predict_score_batch
+        }

@@ -8,6 +8,7 @@ from .util import get_mask4last_or_penultimate
 
 class DKT(nn.Module):
     model_name = "DKT"
+    use_question = False
 
     def __init__(self, params, objects):
         super(DKT, self).__init__()
@@ -19,9 +20,15 @@ class DKT(nn.Module):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DKT"]
         use_concept = encoder_config["use_concept"]
         dim_emb = encoder_config["dim_emb"]
+
+        if not use_concept:
+            # 可以做细粒度评估
+            self.use_question = True
+
         if not (use_concept and data_type != "only_question"):
             # 送入RNN的是知识点|习题emb拼接上correct emb
             dim_emb *= 2
+
         dim_latent = encoder_config["dim_latent"]
         rnn_type = encoder_config["rnn_type"]
         num_rnn_layer = encoder_config["num_rnn_layer"]
@@ -74,29 +81,27 @@ class DKT(nn.Module):
 
         return predict_score
 
-    def get_latent(self, batch):
-        correct_seq = batch["correct_seq"]
-        concept_seq = batch["concept_seq"]
-        dim_predict_out = self.params["models_config"]["kt_model"]["predict_layer"]["direct"]["dim_predict_out"]
-        interaction_seq = concept_seq + dim_predict_out * correct_seq
-        interaction_emb = self.embed_layer.get_emb("interaction", interaction_seq)
-        self.encoder_layer.flatten_parameters()
-        latent, _ = self.encoder_layer(interaction_emb)
-
-        return latent
-
-    def get_predict_loss(self, batch, loss_record=None):
+    def get_predict_loss(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
 
-        predict_score = self.get_predict_score(batch)
+        predict_score_result = self.get_predict_score(batch)
+        predict_score = predict_score_result["predict_score"]
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+
         predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
 
-        if loss_record is not None:
-            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
-            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
-
-        return predict_loss
+        num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+        return {
+            "total_loss": predict_loss,
+            "losses_value": {
+                "predict loss": {
+                    "value": predict_loss.detach().cpu().item() * num_sample,
+                    "num_sample": num_sample
+                },
+            },
+            "predict_score": predict_score,
+            "predict_score_batch": predict_score_result["predict_score_batch"]
+        }
 
     def get_predict_score(self, batch):
         data_type = self.params["datasets_config"]["data_type"]
@@ -106,13 +111,16 @@ class DKT(nn.Module):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
         if use_concept and data_type != "only_question":
             one_hot4predict_score = nn.functional.one_hot(batch["concept_seq"][:, 1:], num_concept)
-            predict_score = self.forward(batch)[:, :-1]
-            predict_score = (predict_score * one_hot4predict_score).sum(-1)
+            predict_score_batch = self.forward(batch)[:, :-1]
+            predict_score_batch = (predict_score_batch * one_hot4predict_score).sum(-1)
         else:
-            predict_score = self.forward(batch)
-        predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
+            predict_score_batch = self.forward(batch)
+        predict_score = torch.masked_select(predict_score_batch, mask_bool_seq[:, 1:])
 
-        return predict_score
+        return {
+            "predict_score": predict_score,
+            "predict_score_batch": predict_score_batch
+        }
 
     def forward4question_evaluate(self, batch):
         # 直接输出的是每个序列最后一个时刻的预测分数
@@ -123,26 +131,3 @@ class DKT(nn.Module):
         predict_score = torch.sum(predict_score, dim=1)
 
         return predict_score
-
-    def get_predict_score_seq_len_minus1(self, batch):
-        data_type = self.params["datasets_config"]["data_type"]
-        use_concept = self.params["models_config"]["kt_model"]["encoder_layer"]["DKT"]["use_concept"]
-        num_concept = self.params["models_config"]["kt_model"]["encoder_layer"]["DKT"]["num_concept"]
-
-        if use_concept and data_type != "only_question":
-            one_hot4predict_score = nn.functional.one_hot(batch["concept_seq"][:, 1:], num_concept)
-            predict_score = self.forward(batch)[:, :-1]
-            predict_score = (predict_score * one_hot4predict_score).sum(-1)
-        else:
-            predict_score = self.forward(batch)
-
-        return predict_score
-
-    def get_last_mlkc_kg4ex(self, batch):
-        # 只适用于single_concept和multi_concept，并且使用concept而不是question
-        predict_score = self.forward(batch)
-        batch_size = batch["question_seq"].shape[0]
-        first_index = torch.arange(batch_size).long().to(self.params["device"])
-        last_mlkc = predict_score[first_index, batch["seq_len"] - 1]
-
-        return last_mlkc

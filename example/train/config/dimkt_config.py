@@ -1,21 +1,21 @@
 import os.path
 
 from ._config import *
-from ._cl_config import *
-from ._data_aug_config import *
-from ._melt_config import *
 
-from lib.template.objects_template import OBJECTS
-from lib.template.params_template_v2 import PARAMS
-from lib.template.kt_model.DIMKT import MODEL_PARAMS as DIMKT_MODEL_PARAMS
 from lib.util.basic import *
 from lib.dataset.util import parse_difficulty
 from lib.util.data import read_preprocessed_file, write_json, load_json
 
 
 def dimkt_general_config(local_params, global_params, global_objects):
-    global_params["models_config"]["kt_model"] = deepcopy(DIMKT_MODEL_PARAMS)
-    global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "DIMKT"
+    global_params["models_config"] = {
+        "kt_model": {
+            "encoder_layer": {
+                "type": "DIMKT",
+                "DIMKT": {}
+            }
+        }
+    }
 
     # 配置模型参数和数据集参数
     num_concept = local_params["num_concept"]
@@ -105,102 +105,31 @@ def dimkt_general_config(local_params, global_params, global_objects):
 
 
 def dimkt_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
+    global_params = {}
+    global_objects = {}
     general_config(local_params, global_params, global_objects)
     dimkt_general_config(local_params, global_params, global_objects)
-    # 需要改一下DIMKT的模型参数
-    question_difficulty = global_objects["dimkt"]["question_difficulty"]
-    concept_difficulty = global_objects["dimkt"]["concept_difficulty"]
-    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_question_diff"] = max(
-        question_difficulty.values()) + 1
-    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_concept_diff"] = max(
-        concept_difficulty.values()) + 1
 
-    if local_params["save_model"]:
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def dimkt_variant_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    dimkt_general_config(local_params, global_params, global_objects)
-    # 需要改一下DIMKT的模型参数
-    question_difficulty = global_objects["dimkt"]["question_difficulty"]
-    concept_difficulty = global_objects["dimkt"]["concept_difficulty"]
-    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_question_diff"] = max(
-        question_difficulty.values()) + 1
-    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_concept_diff"] = max(
-        concept_difficulty.values()) + 1
-
-    # IPS
-    use_sample_weight = local_params["use_sample_weight"]
-    sample_weight_method = local_params["sample_weight_method"]
-    IPS_min = local_params["IPS_min"]
-    IPS_his_seq_len = local_params['IPS_his_seq_len']
-
-    global_params["use_sample_weight"] = use_sample_weight
-    global_params["sample_weight_method"] = sample_weight_method
-    global_params["IPS_min"] = IPS_min
-    global_params["IPS_his_seq_len"] = IPS_his_seq_len
-
-    global_objects["logger"].info(
-        f"IPS params\n    "
-        f"use IPS: {use_sample_weight}, IPS_min: {IPS_min}, IPS_his_seq_len: {IPS_his_seq_len}"
-    )
-
-    if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-VARIANT@@"))
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def dimkt_variant_LfF_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    dimkt_general_config(local_params, global_params, global_objects)
-    # 需要改一下DIMKT的模型参数
-    question_difficulty = global_objects["dimkt"]["question_difficulty"]
-    concept_difficulty = global_objects["dimkt"]["concept_difficulty"]
-    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_question_diff"] = max(
-        question_difficulty.values()) + 1
-    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_concept_diff"] = max(
-        concept_difficulty.values()) + 1
-
-    q = local_params["q"]
-    global_params["other"]["LfF"] = {
-        "q": q
+    # sample_reweight
+    sample_reweight = {
+        "use_sample_reweight": local_params["use_sample_reweight"],
+        "sample_reweight_method": local_params["sample_reweight_method"],
     }
-
-    # 配置两个优化器的参数（使用相同的参数）
-    config_optimizer(local_params, global_params, global_objects, "model_biased", same_as_kt=True)
-    config_optimizer(local_params, global_params, global_objects, "model_de_biased", same_as_kt=True)
+    use_sample_reweight = local_params["use_sample_reweight"]
+    sample_reweight_method = local_params["sample_reweight_method"]
+    use_IPS = False
+    if use_sample_reweight and local_params["sample_reweight_method"] in ["IPS-double", "IPS-seq", "IPS-question"]:
+        use_IPS = True
+        sample_reweight["IPS_min"] = local_params["IPS_min"]
+        sample_reweight["IPS_his_seq_len"] = local_params['IPS_his_seq_len']
+    global_params["sample_reweight"] = sample_reweight
 
     global_objects["logger"].info(
-        f"LfF params\n    "
-        f"q: {q}"
+        f"sample weight\n    "
+        f"use_sample_reweight: {use_sample_reweight}, sample_reweight_method: {sample_reweight_method}"
+        f"{', IPS_min: ' + str(local_params['IPS_min']) + ', IPS_his_seq_len: ' + str(local_params['IPS_his_seq_len']) if use_IPS else ''}"
     )
 
-    if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-VARIANT-LfF@@"))
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def dimkt_variant_adv_bias_aug_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    dimkt_general_config(local_params, global_params, global_objects)
-    adv_bias_aug_general_config(local_params, global_params, global_objects)
     # 需要改一下DIMKT的模型参数
     question_difficulty = global_objects["dimkt"]["question_difficulty"]
     concept_difficulty = global_objects["dimkt"]["concept_difficulty"]
@@ -209,33 +138,15 @@ def dimkt_variant_adv_bias_aug_config(local_params):
     global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_concept_diff"] = max(
         concept_difficulty.values()) + 1
 
-    # IPS
-    use_sample_weight = local_params["use_sample_weight"]
-    sample_weight_method = local_params["sample_weight_method"]
-    IPS_min = local_params["IPS_min"]
-    IPS_his_seq_len = local_params['IPS_his_seq_len']
-
-    global_params["use_sample_weight"] = use_sample_weight
-    global_params["sample_weight_method"] = sample_weight_method
-    global_params["IPS_min"] = IPS_min
-    global_params["IPS_his_seq_len"] = IPS_his_seq_len
-
-    global_objects["logger"].info(
-        f"IPS params\n    "
-        f"use IPS: {use_sample_weight}, IPS_min: {IPS_min}, IPS_his_seq_len: {IPS_his_seq_len}"
-    )
-
     if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-VARIANT-ADA@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects
 
 
-def dimkt_variant_core_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
+def dimkt_core_config(local_params):
+    global_params = {}
+    global_objects = {}
     general_config(local_params, global_params, global_objects)
     dimkt_general_config(local_params, global_params, global_objects)
     # 需要改一下DIMKT的模型参数
@@ -257,88 +168,7 @@ def dimkt_variant_core_config(local_params):
 
     if local_params["save_model"]:
         global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-VARIANT-CORE@@"))
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def dimkt_instance_cl_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    dimkt_general_config(local_params, global_params, global_objects)
-    instance_cl_general_config(local_params, global_params, global_objects)
-    global_params["datasets_config"]["train"]["kt4aug"] = {"use_diff4dimkt": True}
-    if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-instance-CL@@"))
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def dimkt_max_entropy_adv_aug_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    dimkt_general_config(local_params, global_params, global_objects)
-    max_entropy_adv_aug_general_config(local_params, global_params, global_objects)
-    if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-ME-ADA@@"))
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def dimkt_mutual_enhance4long_tail_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    dimkt_general_config(local_params, global_params, global_objects)
-    mutual_enhance4long_tail_general_config(local_params, global_params, global_objects)
-
-    # 需要在global_objects["mutual_enhance4long_tail"]["dataset_train"]里面添加上diff seq
-    question_difficulty = global_objects["dimkt"]["question_difficulty"]
-    concept_difficulty = global_objects["dimkt"]["concept_difficulty"]
-    for item_data in global_objects["mutual_enhance4long_tail"]["dataset_train"]:
-        item_data["question_diff_seq"] = []
-        item_data["concept_diff_seq"] = []
-        for q_id in item_data["question_seq"]:
-            item_data["question_diff_seq"].append(question_difficulty[q_id])
-        for c_id in item_data["concept_seq"]:
-            item_data["concept_diff_seq"].append(concept_difficulty[c_id])
-    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_question_diff"] = max(
-        question_difficulty.values()) + 1
-    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_concept_diff"] = max(
-        concept_difficulty.values()) + 1
-
-    if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-ME-long-tail@@"))
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def dimkt_output_enhance_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    dimkt_general_config(local_params, global_params, global_objects)
-    output_enhance_general_config(local_params, global_params, global_objects)
-
-    global_params["datasets_config"]["train"]["kt_output_enhance"] = {"use_diff4dimkt": True}
-    question_difficulty = global_objects["dimkt"]["question_difficulty"]
-    concept_difficulty = global_objects["dimkt"]["concept_difficulty"]
-    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_question_diff"] = max(
-        question_difficulty.values()) + 1
-    global_params["models_config"]["kt_model"]["encoder_layer"]["DIMKT"]["num_concept_diff"] = max(
-        concept_difficulty.values()) + 1
-    if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-output-enhance@@"))
+            global_params["save_model_dir_name"].replace("DIMKT@@", "DIMKT-CORE@@"))
         save_params(global_params, global_objects)
 
     return global_params, global_objects

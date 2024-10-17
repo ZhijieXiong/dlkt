@@ -1,16 +1,17 @@
 from ._config import *
-from ._cl_config import *
-# from _data_aug_config import *
 
-from lib.template.params_template_v2 import PARAMS
-from lib.template.kt_model.SimpleKT import MODEL_PARAMS as SimpleKT_MODEL_PARAMS
-from lib.template.objects_template import OBJECTS
 from lib.util.basic import *
 
 
 def simple_kt_general_config(local_params, global_params, global_objects):
-    global_params["models_config"]["kt_model"] = deepcopy(SimpleKT_MODEL_PARAMS)
-    global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "SimpleKT"
+    global_params["models_config"] = {
+        "kt_model": {
+            "encoder_layer": {
+                "type": "SimpleKT",
+                "SimpleKT": {}
+            }
+        }
+    }
 
     # 配置模型参数
     num_concept = local_params["num_concept"]
@@ -61,41 +62,11 @@ def simple_kt_general_config(local_params, global_params, global_objects):
 
 
 def simple_kt_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
+    global_params = {}
+    global_objects = {}
     general_config(local_params, global_params, global_objects)
     simple_kt_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def simple_kt_instance_cl_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    simple_kt_general_config(local_params, global_params, global_objects)
-    params_str = instance_cl_general_config(local_params, global_params, global_objects)
-    if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("SimpleKT@@", "SimpleKT-instance-CL@@"))
-        global_params["save_model_dir_name"] += f"@@{params_str}"
-        save_params(global_params, global_objects)
-
-    return global_params, global_objects
-
-
-def simple_kt_cluster_cl_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
-    general_config(local_params, global_params, global_objects)
-    simple_kt_general_config(local_params, global_params, global_objects)
-    params_str = cluster_cl_general_config(local_params, global_params, global_objects)
-    if local_params["save_model"]:
-        global_params["save_model_dir_name"] = (
-            global_params["save_model_dir_name"].replace("SimpleKT@@", "@@SimpleKT-cluster-CL@@"))
-        global_params["save_model_dir_name"] += f"@@{params_str}"
         save_params(global_params, global_objects)
 
     return global_params, global_objects

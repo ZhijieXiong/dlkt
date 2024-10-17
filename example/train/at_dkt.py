@@ -12,23 +12,24 @@ from lib.model.AT_DKT import AT_DKT
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 
+# 必须同时有question和concept的id信息，只能跑single concept和multi concept类型
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="our_setting")
-    parser.add_argument("--dataset_name", type=str, default="assist2009")
-    parser.add_argument("--data_type", type=str, default="only_question",
+    parser.add_argument("--dataset_name", type=str, default="statics2011")
+    parser.add_argument("--data_type", type=str, default="single_concept",
                         choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="assist2009_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="assist2009_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="assist2009_test_fold_0.txt")
+    parser.add_argument("--train_file_name", type=str, default="statics2011_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="statics2011_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="statics2011_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
     parser.add_argument("--weight_decay", type=float, default=0.0001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
-    parser.add_argument("--num_epoch", type=int, default=200)
+    parser.add_argument("--num_epoch", type=int, default=20)
     parser.add_argument("--use_early_stop", type=str2bool, default=True)
     parser.add_argument("--epoch_early_stop", type=int, default=10)
     parser.add_argument("--use_last_average", type=str2bool, default=False)
@@ -46,8 +47,8 @@ if __name__ == "__main__":
     parser.add_argument("--lr_schedule_milestones", type=str, default="[5]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     # batch size
-    parser.add_argument("--train_batch_size", type=int, default=64)
-    parser.add_argument("--evaluate_batch_size", type=int, default=256)
+    parser.add_argument("--train_batch_size", type=int, default=16)
+    parser.add_argument("--evaluate_batch_size", type=int, default=32)
     # 梯度裁剪
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
@@ -76,7 +77,7 @@ if __name__ == "__main__":
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)
-    parser.add_argument("--trace_epoch", type=str2bool, default=False)
+    parser.add_argument("--trace_epoch", type=str2bool, default=True)
     parser.add_argument("--use_cpu", type=str2bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
 
@@ -108,6 +109,7 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["valid_loader"] = dataloader_valid
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
+    global_objects["models"] = {}
     model = AT_DKT(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
     trainer = KnowledgeTracingTrainer(global_params, global_objects)

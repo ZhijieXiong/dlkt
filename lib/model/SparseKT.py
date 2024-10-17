@@ -7,6 +7,7 @@ from .Module.KTEmbedLayer import KTEmbedLayer
 
 class SparseKT(nn.Module):
     model_name = "SparseKT"
+    use_question = True
 
     def __init__(self, params, objects):
         super().__init__()
@@ -141,29 +142,34 @@ class SparseKT(nn.Module):
 
     def get_predict_score(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-        predict_score = self.forward(batch)
-        predict_score = torch.masked_select(predict_score[:, 1:], mask_bool_seq[:, 1:])
+        predict_score_batch = self.forward(batch)[:, 1:]
+        predict_score = torch.masked_select(predict_score_batch, mask_bool_seq[:, 1:])
 
-        return predict_score
+        return {
+            "predict_score": predict_score,
+            "predict_score_batch": predict_score_batch
+        }
 
-    def get_predict_loss(self, batch, loss_record=None):
+    def get_predict_loss(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
 
-        predict_score = self.get_predict_score(batch)
+        predict_score_batch = self.forward(batch)[:, 1:]
+        predict_score = torch.masked_select(predict_score_batch, mask_bool_seq[:, 1:])
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
-        if self.params.get("use_sample_weight", False):
-            weight = torch.masked_select(batch["weight_seq"][:, 1:], mask_bool_seq[:, 1:])
-            predict_loss = nn.functional.binary_cross_entropy(predict_score.double(),
-                                                              ground_truth.double(),
-                                                              weight=weight)
-        else:
-            predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
+        predict_loss = nn.functional.binary_cross_entropy(predict_score.double(), ground_truth.double())
 
-        if loss_record is not None:
-            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
-            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
-
-        return predict_loss
+        num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+        return {
+            "total_loss": predict_loss,
+            "losses_value": {
+                "predict loss": {
+                    "value": predict_loss.detach().cpu().item() * num_sample,
+                    "num_sample": num_sample
+                }
+            },
+            "predict_score": predict_score,
+            "predict_score_batch": predict_score_batch
+        }
 
     def get_predict_loss_per_sample(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)

@@ -1,41 +1,45 @@
-import torch
-import torch.nn as nn
-
 from .Module.KTEmbedLayer import KTEmbedLayer
+from .Module.PredictorLayer import PredictorLayer
+from .util import *
 
 
 class qDKT_CORE(nn.Module):
     model_name = "qDKT_CORE"
+    use_question = True
 
     def __init__(self, params, objects):
-        super().__init__()
+        super(qDKT_CORE, self).__init__()
         self.params = params
         self.objects = objects
 
         self.embed_layer = KTEmbedLayer(self.params, self.objects)
-        encoder_config = params["models_config"]["kt_model"]["encoder_layer"]["qDKT_CORE"]
-        dim_emb = encoder_config["dim_emb"]
-        dropout = encoder_config["dropout"]
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT_CORE_NEW"]
+        dim_concept = encoder_config["dim_concept"]
+        dim_question = encoder_config["dim_question"]
+        dim_correct = encoder_config["dim_correct"]
+        dim_emb = dim_concept + dim_question + dim_correct
+        dim_latent = encoder_config["dim_latent"]
+        rnn_type = encoder_config["rnn_type"]
+        num_rnn_layer = encoder_config["num_rnn_layer"]
+        if rnn_type == "rnn":
+            self.encoder_layer = nn.RNN(dim_emb, dim_latent, batch_first=True, num_layers=num_rnn_layer)
+        elif rnn_type == "lstm":
+            self.encoder_layer = nn.LSTM(dim_emb, dim_latent, batch_first=True, num_layers=num_rnn_layer)
+        else:
+            self.encoder_layer = nn.GRU(dim_emb, dim_latent, batch_first=True, num_layers=num_rnn_layer)
 
-        self.lstm = nn.LSTM(4 * dim_emb, dim_emb, batch_first=True)
-        self.dropout_layer = nn.Dropout(dropout)
-        self.constant = nn.Parameter(torch.tensor(0.0))
-        self.fc = nn.Sequential(
-            nn.Linear(3 * dim_emb, 64),
-            nn.ReLU(),
-            nn.Linear(64, 2)
-        )
+        self.predict_layer = PredictorLayer(self.params, self.objects)
+        dim_qc = dim_concept + dim_question
         self.question_net = nn.Sequential(
-            nn.Linear(dim_emb * 2, 32),
+            nn.Linear(dim_qc, 32),
             nn.ReLU(),
             nn.Linear(32, 64),
             nn.ReLU(),
             nn.Linear(64, 2)
         )
-        # 这里一开始代码写错了，本来是想写user的，写成use了
-        # 但是由于后面已经跑了很多实验了，如果改成user，加载模型会报错，所以这里就不改了
-        self.use_net = nn.Linear(dim_emb, 2)
+        self.user_net = nn.Linear(dim_latent, 2)
         self.softmax = nn.Softmax(-1)
+        self.constant = nn.Parameter(torch.tensor(0.0))
 
     def get_qc_emb4single_concept(self, batch):
         concept_seq = batch["concept_seq"]
@@ -49,6 +53,47 @@ class qDKT_CORE(nn.Module):
 
     def get_qc_emb4only_question(self, batch):
         return self.embed_layer.get_emb_question_with_concept_fused(batch["question_seq"], fusion_type="mean")
+
+    def forward(self, batch):
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT_CORE_NEW"]
+        dim_correct = encoder_config["dim_correct"]
+        correct_seq = batch["correct_seq"]
+        data_type = self.params["datasets_config"]["data_type"]
+
+        batch_size = correct_seq.shape[0]
+        correct_emb = correct_seq.reshape(-1, 1).repeat(1, dim_correct).reshape(batch_size, -1, dim_correct)
+        if data_type == "only_question":
+            qc_emb = self.get_qc_emb4only_question(batch)
+        else:
+            qc_emb = self.get_qc_emb4single_concept(batch)
+        interaction_emb = torch.cat((qc_emb[:, :-1], correct_emb[:, :-1]), dim=2)
+
+        self.encoder_layer.flatten_parameters()
+        latent, _ = self.encoder_layer(interaction_emb)
+
+        logits = self.predict_layer(torch.cat([latent, qc_emb[:, 1:]], -1))
+        q_logits = self.question_net(qc_emb[:, 1:].detach())
+        s_logits = self.user_net(latent.detach())
+
+        # z_QKS = self.fusion(logits, q_logits, s_logits, Q_fact=True, K_fact=True, S_fact=True)
+        # z_Q = self.fusion(logits, q_logits, s_logits, Q_fact=True, K_fact=False, S_fact=False)
+        # z_KS = self.fusion(logits, q_logits, s_logits, q_fact=False, k_fact=True, s_fact=True)
+        # z = self.fusion(logits, q_logits, s_logits, q_fact=False, k_fact=False, s_fact=False)
+
+        z_QKS = self.fusion(logits, q_logits, s_logits, Q_fact=True, K_fact=True, S_fact=True)
+        z_Q = self.fusion(logits, q_logits, s_logits, Q_fact=True, K_fact=False, S_fact=False)
+        logit_Core_DKT = z_QKS - z_Q
+
+        # TIE
+        z_nde = self.fusion(logits.clone().detach(), q_logits.clone().detach(), s_logits.clone().detach(),
+                            Q_fact=True, K_fact=False, S_fact=False)
+        # NDE = z_Q - z
+        mask_bool_seq_ = batch["mask_seq"][:, 1:].unsqueeze(-1).bool()
+        z_nde_pred = torch.masked_select(z_nde, mask_bool_seq_).view(-1, 2)
+        q_pred = torch.masked_select(q_logits, mask_bool_seq_).view(-1, 2)
+        z_qks_pred = torch.masked_select(z_QKS, mask_bool_seq_).view(-1, 2)
+
+        return z_nde_pred, q_pred, z_qks_pred, logit_Core_DKT
 
     def get_predict_score(self, batch):
         # inference和train不一样
@@ -84,51 +129,8 @@ class qDKT_CORE(nn.Module):
 
         return loss
 
-    def forward(self, batch):
-        data_type = self.params["datasets_config"]["data_type"]
-        dim_emb = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT_CORE"]["dim_emb"]
-
-        if data_type == "only_question":
-            qc_emb = self.get_qc_emb4only_question(batch)
-        else:
-            qc_emb = self.get_qc_emb4single_concept(batch)
-
-        # interaction = cat(qc, 0) if correct == 1 else cat(0, qc)
-        correct_seq = batch["correct_seq"]
-        interaction_emb = torch.cat(
-            [
-                qc_emb[:, :-1].mul(correct_seq.unsqueeze(-1).repeat(1, 1, 2 * dim_emb)[:, :-1]),
-                qc_emb[:, :-1].mul((1 - correct_seq).unsqueeze(-1).repeat(1, 1, 2 * dim_emb)[:, :-1])
-            ], dim=-1
-        )
-
-        latent, _ = self.lstm(interaction_emb)
-        logits = self.fc(torch.cat([latent, qc_emb[:, 1:]], -1))
-        q_logits = self.question_net(qc_emb[:, 1:].detach())
-        s_logits = self.use_net(latent.detach())
-
-        # z_QKS = self.fusion(logits, q_logits, s_logits, Q_fact=True, K_fact=True, S_fact=True)
-        # z_Q = self.fusion(logits, q_logits, s_logits, Q_fact=True, K_fact=False, S_fact=False)
-        # z_KS = self.fusion(logits, q_logits, s_logits, q_fact=False, k_fact=True, s_fact=True)
-        # z = self.fusion(logits, q_logits, s_logits, q_fact=False, k_fact=False, s_fact=False)
-
-        z_QKS = self.fusion(logits, q_logits, s_logits, Q_fact=True, K_fact=True, S_fact=True)
-        z_Q = self.fusion(logits, q_logits, s_logits, Q_fact=True, K_fact=False, S_fact=False)
-        logit_Core_DKT = z_QKS - z_Q
-
-        # TIE
-        z_nde = self.fusion(logits.clone().detach(), q_logits.clone().detach(), s_logits.clone().detach(),
-                            Q_fact=True, K_fact=False, S_fact=False)
-        # NDE = z_Q - z
-        mask_bool_seq_ = batch["mask_seq"][:, 1:].unsqueeze(-1).bool()
-        z_nde_pred = torch.masked_select(z_nde, mask_bool_seq_).view(-1, 2)
-        q_pred = torch.masked_select(q_logits, mask_bool_seq_).view(-1, 2)
-        z_qks_pred = torch.masked_select(z_QKS, mask_bool_seq_).view(-1, 2)
-
-        return z_nde_pred, q_pred, z_qks_pred, logit_Core_DKT
-
     def fusion(self, predict_K, predict_Q, predict_S, Q_fact=False, K_fact=False, S_fact=False):
-        fusion_mode = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT_CORE"]["fusion_mode"]
+        fusion_mode = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT_CORE_NEW"]["fusion_mode"]
         predict_K, predict_Q, predict_S = self.transform(predict_K, predict_Q, predict_S, Q_fact, K_fact, S_fact)
 
         if fusion_mode == 'rubin':
@@ -150,7 +152,7 @@ class qDKT_CORE(nn.Module):
         return z
 
     def transform(self, predict_K, predict_Q, predict_S, Q_fact=False, K_fact=False, S_fact=False):
-        fusion_mode = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT_CORE"]["fusion_mode"]
+        fusion_mode = self.params["models_config"]["kt_model"]["encoder_layer"]["qDKT_CORE_NEW"]["fusion_mode"]
 
         if not K_fact:
             predict_K = self.constant * torch.ones_like(predict_K).to(self.params["device"])

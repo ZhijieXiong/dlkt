@@ -104,46 +104,14 @@ def general_config(local_params, global_params, global_objects):
     datasets_config["test"]["file_name"] = test_file_name
     datasets_config["data_type"] = data_type
 
-    # 是否使用样本加权
-    use_sample_weight = local_params.get("use_sample_weight", False)
-    sample_weight_method = local_params.get("sample_weight_method", "highlight_tail")
-    tail_weight = local_params.get("tail_weight", 1)
-
-    global_params["sample_weight"] = {
-        "use_sample_weight": use_sample_weight,
-        "sample_weight_method": sample_weight_method,
-        "tail_weight": tail_weight
-    }
-    global_params["use_sample_weight"] = use_sample_weight
-    global_params["sample_weight_method"] = sample_weight_method
-    global_params["tail_weight"] = tail_weight
-
-    # 是否用大模型的emb初始化
-    use_LLM_emb4question = local_params.get("use_LLM_emb4question", False)
-    use_LLM_emb4concept = local_params.get("use_LLM_emb4concept", False)
-    train_LLM_emb = local_params.get("train_LLM_emb", False)
-
-    global_params["LLM_emb_init"] = {
-        "use_LLM_emb4question": use_LLM_emb4question,
-        "use_LLM_emb4concept": use_LLM_emb4concept,
-        "train_LLM_emb": train_LLM_emb
-    }
-    global_params["use_LLM_emb4question"] = use_LLM_emb4question
-    global_params["use_LLM_emb4concept"] = use_LLM_emb4concept
-    global_params["train_LLM_emb"] = train_LLM_emb
-
     global_objects["logger"].info(
-        "basic setting\n"
-        f"    device: {global_params['device']}, seed: {global_params['seed']}\n"
-        "train policy\n"
-        f"    type: {train_strategy_type}, {train_strategy_type}: {json.dumps(train_strategy_config[train_strategy_type])}, train batch size: {local_params['train_batch_size']}, num of epoch: {num_epoch}\n"
-        f"    use sample weight: {use_sample_weight}{f', weight method: {sample_weight_method}' if use_sample_weight else ''}"
-        f"{f', weight value for tail: {tail_weight}' if (use_sample_weight and sample_weight_method == 'highlight_tail') else ''}\n"
-        f"embedding init\n"
-        f"    use LLM emb to init question emb: {use_LLM_emb4question}, use LLM emb to init concept emb: {use_LLM_emb4concept}"
-        f"{f', train LLM emb: {train_LLM_emb}' if (use_LLM_emb4question or use_LLM_emb4concept) else ''}\n"
-        "evaluate metric\n"
-        f"    main metric: {main_metric}, use multi metrics: {use_multi_metrics}{f', multi metrics: {mutil_metrics}' if use_multi_metrics else ''}"
+        "basic setting\n    "
+        f"device: {global_params['device']}, seed: {global_params['seed']}\n"
+        "train policy\n    "
+        f"type: {train_strategy_type}, {train_strategy_type}: {json.dumps(train_strategy_config[train_strategy_type])}, "
+        f"train batch size: {local_params['train_batch_size']}, num of epoch: {num_epoch}\n"
+        "evaluate metric\n    "
+        f"main metric: {main_metric}, use multi metrics: {use_multi_metrics}{f', multi metrics: {mutil_metrics}' if use_multi_metrics else ''}"
     )
 
     # 优化器配置
@@ -174,12 +142,6 @@ def general_config(local_params, global_params, global_objects):
         global_objects["data"]["q2c_mask_table"] = q2c_mask_table
         global_objects["data"]["num_max_concept"] = num_max_concept
 
-    # 获取习题和知识点组合的关系
-    Q_table_single_concept = file_manager.get_q_table(dataset_name, "single_concept")
-    if Q_table_single_concept is not None:
-        question2concept_combination = question2concept_from_Q(Q_table_single_concept)
-        global_objects["data"]["question2concept_combination"] = question2concept_combination
-
     global_objects["logger"].info(
         "dataset\n"
         f"    setting: {setting_name}, dataset: {dataset_name}, data type: {data_type}, "
@@ -195,7 +157,7 @@ def general_config(local_params, global_params, global_objects):
         global_objects["logger"].warning(
             f"\nWARNING: statics of train dataset (`{statics_info_file_path}`) is not exist. This file is required for some cases, e.g., "
             "fine grain evaluation such as long tail problem and some model using transfer_head2zero. "
-            "If it is necessary, please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset\n"
+            "If it is necessary, please run `prepare4fine_trained_evaluate.py` to generate statics of train dataset"
         )
     else:
         with open(statics_info_file_path, "r") as file:
@@ -220,40 +182,6 @@ def general_config(local_params, global_params, global_objects):
                 question_acc_dict[int(q_id)] = q_acc
             train_statics_common["question_acc"] = question_acc_dict
             global_objects["data"]["train_data_statics_common"] = train_statics_common
-
-    # load大模型的embedding
-    if use_LLM_emb4question or use_LLM_emb4concept:
-        dataset_name = local_params["dataset_name"]
-        data_type = local_params["data_type"]
-        data_dir = global_objects["file_manager"].get_preprocessed_dir(dataset_name)
-        if use_LLM_emb4concept:
-            global_objects["data"]["LLM_concept_embeddings"] = (
-                load_json(os.path.join(data_dir, "concept_embeddings.json")))
-        if use_LLM_emb4question:
-            # 目前没有习题的信息，先用知识点顶着
-            global_objects["data"]["LLM_question_embeddings"] = (
-                load_json(os.path.join(data_dir, "concept_embeddings.json")))
-        if data_type == "only_question":
-            concept_id_map = load_csv(os.path.join(data_dir, "concept_id_map_multi_concept.csv"))
-            # todo
-        else:
-            # 单知识点数据集
-            concept_id_map = load_csv(os.path.join(data_dir, "concept_id_map_single_concept.csv"))
-            if use_LLM_emb4question:
-                q_id2original_c_id = []
-                for q_id in range(len(global_objects["data"]["Q_table"])):
-                    c_id = get_concept_from_question(q_id, global_objects["data"]["Q_table"])[0]
-                    original_c_id = concept_id_map[concept_id_map["concept_mapped_id"] == c_id]["concept_id"].iloc[0]
-                    q_id2original_c_id.append(original_c_id)
-                global_objects["data"]["q_id2original_c_id"] = q_id2original_c_id
-
-            if use_LLM_emb4concept:
-                c_id2original_c_id = {}
-                for _, row in concept_id_map.iterrows():
-                    c_id = row["concept_mapped_id"]
-                    original_c_id = row["concept_id"]
-                    c_id2original_c_id[c_id] = original_c_id
-                global_objects["data"]["c_id2original_c_id"] = c_id2original_c_id
 
 
 def save_params(global_params, global_objects):

@@ -33,28 +33,25 @@ class Evaluator:
             concept_all = []
             # result_all_batch是batch格式，即(num_batch * batch_size, seq_len)
             result_all_batch = []
-            if use_transfer and hasattr(model, "set_emb4zero"):
-                model.set_emb4zero()
             for batch in data_loader:
                 correct_seq = batch["correct_seq"]
                 question_seq = batch["question_seq"]
                 mask_bool_seq = torch.ne(batch["mask_seq"], 0)
 
                 # 用于计算模型在不同序列长度上的效果
-                if hasattr(model, "get_predict_score_seq_len_minus1"):
-                    predict_score_seq_len_minus1 = model.get_predict_score_seq_len_minus1(batch)
-                    result_all_batch.append({
-                        "question_seqs": question_seq[:, 1:].detach().cpu().numpy().tolist(),
-                        "label_seqs": correct_seq[:, 1:].detach().cpu().numpy().tolist(),
-                        "predict_score_seqs": predict_score_seq_len_minus1.detach().cpu().numpy().tolist(),
-                        "mask_seqs": batch["mask_seq"][:, 1:].detach().cpu().numpy().tolist()
-                    })
-                    label_dis, score_dis = record_dis4seq_len(correct_seq[:, 1:],
-                                                              predict_score_seq_len_minus1,
-                                                              batch["mask_seq"][:, 1:])
-                    for i in range(max_seq_len-1):
-                        all_score_dis[i] += score_dis[i]
-                        all_label_dis[i] += label_dis[i]
+                predict_score_batch = model.get_predict_score(batch)["predict_score_batch"]
+                result_all_batch.append({
+                    "question_seqs": question_seq[:, 1:].detach().cpu().numpy().tolist(),
+                    "label_seqs": correct_seq[:, 1:].detach().cpu().numpy().tolist(),
+                    "predict_score_seqs": predict_score_batch.detach().cpu().numpy().tolist(),
+                    "mask_seqs": batch["mask_seq"][:, 1:].detach().cpu().numpy().tolist()
+                })
+                label_dis, score_dis = record_dis4seq_len(correct_seq[:, 1:],
+                                                          predict_score_batch,
+                                                          batch["mask_seq"][:, 1:])
+                for i in range(max_seq_len - 1):
+                    all_score_dis[i] += score_dis[i]
+                    all_label_dis[i] += label_dis[i]
 
                 if use_transfer and hasattr(model, "get_predict_score4question_zero"):
                     predict_score = model.get_predict_score4question_zero(batch).detach().cpu().numpy()
@@ -107,61 +104,59 @@ class Evaluator:
         # )
 
         # performance by seq len
-        if hasattr(model, "get_predict_score_seq_len_minus1"):
-            label_dis4len, score_dis4len, indices4len = evaluate4seq_len(all_label_dis, all_score_dis, seq_len_absolute)
-            self.objects["logger"].info("\nevaluation result of samples at different position")
-            for i in range(len(label_dis4len)):
-                if len(label_dis4len[i]) == 0:
-                    continue
-                g = np.array(label_dis4len[i])
-                p = np.array(score_dis4len[i])
-                p_label = [1 if _ >= 0.5 else 0 for _ in p]
-                answer_acc = g.sum() / len(g)
-                self.objects["logger"].info(
-                    f"({indices4len[i][0]:<3}, {indices4len[i][1]:<3}), num of samples: {g.size:<10}, "
-                    f"acc of answer: {answer_acc * 100:<4.3}%, performance is "
-                    f"AUC: {roc_auc_score(y_true=g, y_score=p):<9.5}, "
-                    f"ACC: {accuracy_score(g, p_label):<9.5}, "
-                    f"RMSE: {mean_squared_error(y_true=g, y_pred=p) ** 0.5:<9.5}, "
-                    f"MAE: {mean_absolute_error(y_true=g, y_pred=p):<9.5}"
-                )
+        label_dis4len, score_dis4len, indices4len = evaluate4seq_len(all_label_dis, all_score_dis, seq_len_absolute)
+        self.objects["logger"].info("\nevaluation result of samples at different position")
+        for i in range(len(label_dis4len)):
+            if len(label_dis4len[i]) == 0:
+                continue
+            g = np.array(label_dis4len[i])
+            p = np.array(score_dis4len[i])
+            p_label = [1 if _ >= 0.5 else 0 for _ in p]
+            answer_acc = g.sum() / len(g)
+            self.objects["logger"].info(
+                f"({indices4len[i][0]:<3}, {indices4len[i][1]:<3}), num of samples: {g.size:<10}, "
+                f"acc of answer: {answer_acc * 100:<4.3}%, performance is "
+                f"AUC: {roc_auc_score(y_true=g, y_score=p):<9.5}, "
+                f"ACC: {accuracy_score(g, p_label):<9.5}, "
+                f"RMSE: {mean_squared_error(y_true=g, y_pred=p) ** 0.5:<9.5}, "
+                f"MAE: {mean_absolute_error(y_true=g, y_pred=p):<9.5}"
+            )
 
         # 测试集的偏差子集
-        if hasattr(model, "get_predict_score_seq_len_minus1"):
-            self.objects["logger"].info("\nevaluation result of seq biased samples")
-            his_window_lens = [10, 15, 20]
-            acc_ths = [0.4, 0.3, 0.2]
-            for his_window_len in his_window_lens:
-                for acc_th in acc_ths:
-                    seq_fine_grained_performance = get_seq_fine_grained_performance(
-                        result_all_batch, his_window_len, acc_th
-                    )
+        self.objects["logger"].info("\nevaluation result of seq biased samples")
+        his_window_lens = [10, 15, 20]
+        acc_ths = [0.4, 0.3, 0.2]
+        for his_window_len in his_window_lens:
+            for acc_th in acc_ths:
+                seq_fine_grained_performance = get_seq_fine_grained_performance(
+                    result_all_batch, his_window_len, acc_th
+                )
 
-                    self.print_performance(
-                        f"({his_window_len}, {acc_th}) seq easy samples "
-                        f"({seq_fine_grained_performance['easy']['num_sample']:<9}), performance is ",
-                        seq_fine_grained_performance['easy']
-                    )
-                    self.print_performance(
-                        f"({his_window_len}, {acc_th}) seq normal samples "
-                        f"({seq_fine_grained_performance['normal']['num_sample']:<9}), performance is ",
-                        seq_fine_grained_performance['normal']
-                    )
-                    self.print_performance(
-                        f"({his_window_len}, {acc_th}) seq hard samples "
-                        f"({seq_fine_grained_performance['hard']['num_sample']:<9}), performance is ",
-                        seq_fine_grained_performance['hard']
-                    )
-                    self.print_performance(
-                        f"({his_window_len}, {acc_th}) cold start samples "
-                        f"({seq_fine_grained_performance['cold_start']['num_sample']:<9}), performance is ",
-                        seq_fine_grained_performance['cold_start']
-                    )
-                    self.print_performance(
-                        f"({his_window_len}, {acc_th}) seq normal&hard samples "
-                        f"({seq_fine_grained_performance['normal&hard']['num_sample']:<9}), performance is ",
-                        seq_fine_grained_performance['normal&hard']
-                    )
+                self.print_performance(
+                    f"({his_window_len}, {acc_th}) seq easy samples "
+                    f"({seq_fine_grained_performance['easy']['num_sample']:<9}), performance is ",
+                    seq_fine_grained_performance['easy']
+                )
+                self.print_performance(
+                    f"({his_window_len}, {acc_th}) seq normal samples "
+                    f"({seq_fine_grained_performance['normal']['num_sample']:<9}), performance is ",
+                    seq_fine_grained_performance['normal']
+                )
+                self.print_performance(
+                    f"({his_window_len}, {acc_th}) seq hard samples "
+                    f"({seq_fine_grained_performance['hard']['num_sample']:<9}), performance is ",
+                    seq_fine_grained_performance['hard']
+                )
+                self.print_performance(
+                    f"({his_window_len}, {acc_th}) cold start samples "
+                    f"({seq_fine_grained_performance['cold_start']['num_sample']:<9}), performance is ",
+                    seq_fine_grained_performance['cold_start']
+                )
+                self.print_performance(
+                    f"({his_window_len}, {acc_th}) seq normal&hard samples "
+                    f"({seq_fine_grained_performance['normal&hard']['num_sample']:<9}), performance is ",
+                    seq_fine_grained_performance['normal&hard']
+                )
 
         train_statics_common_path = fine_grain_config["train_statics_common_path"]
         if not os.path.exists(train_statics_common_path):
@@ -223,26 +218,25 @@ class Evaluator:
                 question_fine_grained_performance['normal&hard']
             )
 
-        if hasattr(model, "get_predict_score_seq_len_minus1"):
-            his_window_lens = [10, 15, 20]
-            acc_ths = [0.4, 0.3, 0.2]
-            self.objects["logger"].info("\nevaluation result of double biased samples")
-            for his_window_len in his_window_lens:
-                for acc_th in acc_ths:
-                    double_fine_grained_performance = get_double_fine_grained_performance(
-                        result_all_batch, train_statics_common, his_window_len, acc_th
-                    )
+        his_window_lens = [10, 15, 20]
+        acc_ths = [0.4, 0.3, 0.2]
+        self.objects["logger"].info("\nevaluation result of double biased samples")
+        for his_window_len in his_window_lens:
+            for acc_th in acc_ths:
+                double_fine_grained_performance = get_double_fine_grained_performance(
+                    result_all_batch, train_statics_common, his_window_len, acc_th
+                )
 
-                    self.print_performance(
-                        f"({his_window_len}, {acc_th}) double easy samples "
-                        f"({double_fine_grained_performance['easy']['num_sample']:<9}), performance is ",
-                        double_fine_grained_performance['easy']
-                    )
-                    self.print_performance(
-                        f"({his_window_len}, {acc_th}) double hard samples "
-                        f"({double_fine_grained_performance['hard']['num_sample']:<9}), performance is ",
-                        double_fine_grained_performance['hard']
-                    )
+                self.print_performance(
+                    f"({his_window_len}, {acc_th}) double easy samples "
+                    f"({double_fine_grained_performance['easy']['num_sample']:<9}), performance is ",
+                    double_fine_grained_performance['easy']
+                )
+                self.print_performance(
+                    f"({his_window_len}, {acc_th}) double hard samples "
+                    f"({double_fine_grained_performance['hard']['num_sample']:<9}), performance is ",
+                    double_fine_grained_performance['hard']
+                )
 
         # 高|中|低频习题|知识点的性能；高|中|低正确率习题|知识点的性能
         train_statics_special_path = fine_grain_config["train_statics_special_path"]

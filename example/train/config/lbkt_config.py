@@ -1,11 +1,9 @@
 import os.path
 
 from ._config import *
-from ._cognition_tracing_config import *
 
-from lib.template.kt_model.LBKT import MODEL_PARAMS as LBKT_MODEL_PARAMS
 from lib.util.basic import *
-from lib.util.data import dataset_delete_pad, generate_factor4lbkt, write2file
+from lib.util.data import dataset_delete_pad, generate_factor4lbkt, write2file, read_preprocessed_file
 from lib.util.parse import get_statics4lbkt
 
 
@@ -89,6 +87,15 @@ def lbkt_general_config(local_params, global_params, global_objects):
     global_params["datasets_config"]["train"]["file_name"] = os.path.basename(train_dataset4lbkt_path)
     global_params["datasets_config"]["test"]["file_name"] = os.path.basename(test_dataset4lbkt_path)
 
+    global_params["models_config"] = {
+        "kt_model": {
+            "encoder_layer": {
+                "type": "LBKT",
+                "LBKT": {}
+            }
+        }
+    }
+
     # 配置模型参数
     num_concept = local_params["num_concept"]
     num_question = local_params["num_question"]
@@ -104,8 +111,6 @@ def lbkt_general_config(local_params, global_params, global_objects):
     b = local_params["b"]
     q_gamma = local_params["q_gamma"]
 
-    global_params["models_config"] = {}
-    global_params["models_config"]["kt_model"] = deepcopy(LBKT_MODEL_PARAMS)
     encoder_config = global_params["models_config"]["kt_model"]["encoder_layer"]["LBKT"]
     encoder_config["num_concept"] = num_concept
     encoder_config["num_question"] = num_question

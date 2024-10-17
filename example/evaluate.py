@@ -35,7 +35,7 @@ if __name__ == "__main__":
                         help="如果是multi concept数据集训练，并且想使用由PYKT提出的基于习题的测试，请设置为question，其它情况都为concept")
     parser.add_argument("--evaluate_batch_size", type=int, default=256)
 
-    # ---------------------------- 细粒度配置（不适用于base_type为question的evaluate）----------------------------------------
+    # ---------------------------- 细粒度配置（不适用于base_type为question的evaluate）---------------
     # 由prepare4fine_trained_evaluate.py生成
     parser.add_argument("--train_statics_common_path", type=str, default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new\ednet-kt1_train_fold_0_statics_common.json")
     parser.add_argument("--train_statics_special_path", type=str, default=r"F:\code\myProjects\dlkt\lab\settings\our_setting_new\ednet-kt1_train_fold_0_statics_special.json")
@@ -48,24 +48,16 @@ if __name__ == "__main__":
 
     # 习题偏差问题（论文：Do We Fully Understand Students’ Knowledge States? Identifying and Mitigating Answer Bias in Knowledge Tracing提出）
     # 长尾问题：需要[train_file]_statics_special.json文件
-    # -------------------------------------------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------
 
-    # -----------------------特殊配置：如DIMKT需要统计习题难度信息，AuxInfoDCT需要聚合时间信息-------------------------------------
-    # 是否将head question的知识迁移到zero shot question
-    parser.add_argument("--transfer_head2zero", type=str2bool, default=False)
-    parser.add_argument("--head2tail_transfer_method", type=str, default="mean_pool",
-                        choices=("mean_pool", "max_pool", "zero_pad", "most_popular"))
-
+    # -----------------------特殊配置：如DIMKT需要统计习题难度信息-------------------------------------
     # 如果是DIMKT，需要训练集数据的difficulty信息
     parser.add_argument("--is_dimkt", type=str2bool, default=False)
     parser.add_argument("--train_diff_file_path", type=str,
                         default=r"F:\code\myProjects\dlkt\lab\settings\our_setting\edi2020-task34_train_fold_0_dimkt_diff.json")
     parser.add_argument("--num_question_diff", type=int, default=100)
     parser.add_argument("--num_concept_diff", type=int, default=100)
-
-    # 如果是AuxInfoDCT，对时间信息首先需要聚合
-    parser.add_argument("--is_dct", type=str2bool, default=True)
-    # -------------------------------------------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------
 
     args = parser.parse_args()
     params = vars(args)

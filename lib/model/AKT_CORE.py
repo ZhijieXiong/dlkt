@@ -7,6 +7,7 @@ from .Module.AKT_Block import Architecture
 
 class AKT_CORE(nn.Module):
     model_name = "AKT_CORE"
+    use_question = True
 
     def __init__(self, params, objects):
         super().__init__()
@@ -120,7 +121,7 @@ class AKT_CORE(nn.Module):
             interaction_emb = interaction_emb + question_difficulty_emb * interaction_variation_emb
         else:
             interaction_emb = interaction_emb + question_difficulty_emb * (
-                        interaction_variation_emb + concept_variation_emb)
+                    interaction_variation_emb + concept_variation_emb)
 
         encoder_input = {
             "question_emb": question_emb,
@@ -152,50 +153,55 @@ class AKT_CORE(nn.Module):
         # inference和train不一样
         mask_bool_seq = batch["mask_seq"][:, 1:].unsqueeze(-1).bool()
         _, _, _, logit_Core = self.forward(batch)
+        predict_score_batch = torch.softmax(logit_Core, dim=-1)[:, :, 1]
         CORE_pred = torch.masked_select(logit_Core, mask_bool_seq)
         predict_score = torch.softmax(CORE_pred.view(-1, 2), dim=-1)[:, 1]
 
-        return predict_score
+        return {
+            "predict_score": predict_score,
+            "predict_score_batch": predict_score_batch
+        }
 
-    def get_last_predict_score(self, batch):
-        _, _, _, logit_Core = self.forward(batch)
-        predict_score = torch.softmax(logit_Core, dim=-1)[:, :, 1]
-        batch_size = batch["question_seq"].shape[0]
-        first_index = torch.arange(batch_size).long().to(self.params["device"])
-        last_predict_score = predict_score[first_index, batch["seq_len"] - 1]
-
-        return last_predict_score
-
-    def get_predict_score_seq_len_minus1(self, batch):
-        _, _, _, logit_Core = self.forward(batch)
-        predict_score = torch.softmax(logit_Core, dim=-1)[:, :, 1]
-
-        return predict_score
-
-    def get_predict_loss(self, batch, loss_record=None):
+    def get_predict_loss(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-
-        z_nde_pred, q_pred, z_qks_pred, CORE_pred = self.forward(batch)
+        z_nde_pred, q_pred, z_qks_pred, logit_Core = self.forward(batch)
+        predict_score_batch = torch.softmax(logit_Core, dim=-1)[:, :, 1]
+        CORE_pred = torch.masked_select(logit_Core, mask_bool_seq[:, 1:].unsqueeze(-1))
+        predict_score = torch.softmax(CORE_pred.view(-1, 2), dim=-1)[:, 1]
         ground_truth = torch.masked_select(batch["correct_seq"][:, 1:], mask_bool_seq[:, 1:])
+
         predict_loss = torch.nn.functional.cross_entropy(z_qks_pred, ground_truth) + \
                        torch.nn.functional.cross_entropy(q_pred, ground_truth)
+
         p_te = self.softmax(z_qks_pred).clone().detach()
         KL_loss = - p_te * self.softmax(z_nde_pred).log()
         KL_loss = KL_loss.sum(1).mean()
 
-        question_seq = batch["question_seq"]
-        question_difficulty_emb = self.embed_question_difficulty(question_seq)
+        question_difficulty_emb = self.embed_question_difficulty(batch["question_seq"])
         rasch_loss = (question_difficulty_emb ** 2.).sum()
 
-        loss = predict_loss + KL_loss + rasch_loss * self.params["loss_config"]["rasch_loss"]
+        loss = predict_loss + KL_loss + rasch_loss * self.params["loss_config"]["rasch loss"]
 
-        if loss_record is not None:
-            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
-            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
-            loss_record.add_loss("KL loss", KL_loss.detach().cpu().item() * num_sample, num_sample)
-            loss_record.add_loss("rasch_loss", rasch_loss.detach().cpu().item(), 1)
-
-        return loss
+        num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+        return {
+            "total_loss": loss,
+            "losses_value": {
+                "predict loss": {
+                    "value": predict_loss.detach().cpu().item() * num_sample,
+                    "num_sample": num_sample
+                },
+                "KL loss": {
+                    "value": KL_loss.detach().cpu().item() * num_sample,
+                    "num_sample": num_sample
+                },
+                "rasch loss": {
+                    "value": rasch_loss.detach().cpu().item() * num_sample,
+                    "num_sample": num_sample
+                }
+            },
+            "predict_score": predict_score,
+            "predict_score_batch": predict_score_batch
+        }
 
     def fusion(self, predict_K, predict_Q, predict_S, Q_fact=False, K_fact=False, S_fact=False):
         fusion_mode = self.params["models_config"]["kt_model"]["encoder_layer"]["AKT"]["fusion_mode"]

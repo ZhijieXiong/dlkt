@@ -26,6 +26,7 @@ class Similarity(Module):
 
 class CL4KT(Module):
     model_name = "CL4KT"
+    use_question = False
 
     def __init__(self, params, objects):
         super(CL4KT, self).__init__()
@@ -111,14 +112,14 @@ class CL4KT(Module):
 
         return model_output
 
-    def get_predict_loss(self, batch, loss_record=None):
+    def get_predict_loss(self, batch):
         weight_cl_loss = self.params["loss_config"]["cl loss"]
         concept_seq, correct_seq = batch["concept_seq"], batch["correct_seq"]
-        predict_score = self.forward(concept_seq, correct_seq)
 
         loss = 0.
         mask_seq = torch.ne(batch["mask_seq"], 0)
-        predict_score = torch.masked_select(predict_score[:, 1:], mask_seq[:, 1:])
+        predict_score_batch = self.forward(concept_seq, correct_seq)[:, 1:]
+        predict_score = torch.masked_select(predict_score_batch, batch["mask_seq"][:, 1:].bool())
         ground_truth = torch.masked_select(correct_seq[:, 1:].long(), mask_seq[:, 1:])
         predict_loss = binary_cross_entropy(predict_score.double(), ground_truth.double())
         loss = loss + predict_loss
@@ -126,20 +127,33 @@ class CL4KT(Module):
         cl_loss = self.get_cl_loss(batch)
         loss = loss + cl_loss * weight_cl_loss
 
-        if loss_record is not None:
-            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
-            num_seq = batch["mask_seq"].shape[0]
-            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
-            loss_record.add_loss("cl loss", cl_loss.detach().cpu().item() * num_seq, num_seq)
-
-        return loss
+        num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+        num_seq = batch["mask_seq"].shape[0]
+        return {
+            "total_loss": loss,
+            "losses_value": {
+                "predict loss": {
+                    "value": predict_loss.detach().cpu().item() * num_sample,
+                    "num_sample": num_sample
+                },
+                "cl loss": {
+                    "value": cl_loss.detach().cpu().item() * num_seq,
+                    "num_sample": num_seq
+                }
+            },
+            "predict_score": predict_score,
+            "predict_score_batch": predict_score_batch
+        }
 
     def get_predict_score(self, batch):
         concept_seq, correct_seq = batch["concept_seq"], batch["correct_seq"]
-        predict_score = self.forward(concept_seq, correct_seq)
-        predict_score = torch.masked_select(predict_score[:, 1:], batch["mask_seq"][:, 1:].bool())
+        predict_score_batch = self.forward(concept_seq, correct_seq)[:, 1:]
+        predict_score = torch.masked_select(predict_score_batch, batch["mask_seq"][:, 1:].bool())
 
-        return predict_score
+        return {
+            "predict_score": predict_score,
+            "predict_score_batch": predict_score_batch
+        }
 
     def get_cl_loss(self, batch):
         use_hard_neg = self.params["other"]["instance_cl"]["use_hard_neg"]

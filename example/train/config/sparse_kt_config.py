@@ -1,4 +1,5 @@
 from ._config import *
+
 from lib.util.basic import *
 
 
@@ -7,9 +8,7 @@ def sparse_kt_general_config(local_params, global_params, global_objects):
     global_params["models_config"]["kt_model"] = {
         "encoder_layer": {
             "type": "SparseKT",
-            "SparseKT": {
-
-            }
+            "SparseKT": {}
         }
     }
 

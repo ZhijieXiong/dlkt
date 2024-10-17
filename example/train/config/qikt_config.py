@@ -1,14 +1,17 @@
 from ._config import *
 
-from lib.template.params_template_v2 import PARAMS
-from lib.template.kt_model.QIKT import MODEL_PARAMS as QIKT_MODEL_PARAMS
-from lib.template.objects_template import OBJECTS
 from lib.util.basic import *
 
 
 def qikt_general_config(local_params, global_params, global_objects):
-    global_params["models_config"]["kt_model"] = deepcopy(QIKT_MODEL_PARAMS)
-    global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "QIKT"
+    global_params["models_config"] = {
+        "kt_model": {
+            "encoder_layer": {
+                "type": "QIKT",
+                "QIKT": {}
+            }
+        }
+    }
 
     # 配置模型参数
     num_concept = local_params["num_concept"]
@@ -65,8 +68,8 @@ def qikt_general_config(local_params, global_params, global_objects):
 
 
 def qikt_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
+    global_params = {}
+    global_objects = {}
     general_config(local_params, global_params, global_objects)
     qikt_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:

@@ -1,12 +1,17 @@
 from ._config import *
 
-from lib.template.cd_model.NCD import MODEL_PARAMS
 from lib.util.basic import *
 
 
 def ncd_general_config(local_params, global_params, global_objects):
     global_params["models_config"] = {
-        "cd_model": deepcopy(MODEL_PARAMS)
+        "cd_model": {
+            "backbone": {
+                "type": "NCD",
+                "NCD": {}
+            },
+            "predict_layer": {}
+        }
     }
 
     # 配置模型参数

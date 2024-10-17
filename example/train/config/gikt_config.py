@@ -1,7 +1,5 @@
 from ._config import *
 
-from lib.template.kt_model.GIKT import MODEL_PARAMS
-
 
 def gen_gikt_graph(question2concept, concept2question, q_neighbor_size, c_neighbor_size):
     num_question = len(question2concept)
@@ -60,9 +58,13 @@ def get_bipartite_graph(question2concept, concept2question, device, q_neighbor_s
 
 def gikt_general_config(local_params, global_params, global_objects):
     global_params["models_config"] = {
-        "kt_model": deepcopy(MODEL_PARAMS)
+        "kt_model": {
+            "encoder_layer": {
+                "type": "GIKT",
+                "GIKT": {}
+            }
+        }
     }
-    global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "GIKT"
 
     # 配置模型参数
     num_concept = local_params["num_concept"]

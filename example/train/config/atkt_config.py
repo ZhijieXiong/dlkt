@@ -1,13 +1,15 @@
 from ._config import *
 
-from lib.template.kt_model.ATKT import MODEL_PARAMS
-from lib.template.objects_template import OBJECTS
-from lib.template.params_template_v2 import PARAMS
-
 
 def atkt_general_config(local_params, global_params, global_objects):
-    global_params["models_config"]["kt_model"] = deepcopy(MODEL_PARAMS)
-    global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "ATKT"
+    global_params["models_config"] = {
+        "kt_model": {
+            "encoder_layer": {
+                "type": "ATKT",
+                "ATKT": {}
+            }
+        }
+    }
 
     # 配置模型参数
     use_concept = local_params["use_concept"]
@@ -36,10 +38,11 @@ def atkt_general_config(local_params, global_params, global_objects):
     global_params["loss_config"]["adv loss"] = beta
 
     global_objects["logger"].info(
-        "model params\n"
-        f"    use_concept: {use_concept}, num of concept: {num_concept}, num of question: {num_question}\n"
-        f"    dim of concept emb: {dim_concept}, dim of correct emb: {dim_correct}, "
-        f"dim of latent: {dim_latent}, dim of attention: {dim_attention}\n    dropout: {dropout}, epsilon: {epsilon}, beta: {beta}"
+        "model params\n    "
+        f"use_concept: {use_concept}, num_concept: {num_concept}, num_question: {num_question}\n    "
+        f"dim_concept: {dim_concept}, dim_correct: {dim_correct}, dim_latent: {dim_latent}, "
+        f"dim_attention: {dim_attention}\n    "
+        f"dropout: {dropout}, epsilon: {epsilon}, beta: {beta}"
     )
 
     if local_params["save_model"]:
@@ -52,8 +55,8 @@ def atkt_general_config(local_params, global_params, global_objects):
 
 
 def atkt_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
+    global_params = {}
+    global_objects = {}
     general_config(local_params, global_params, global_objects)
     atkt_general_config(local_params, global_params, global_objects)
     if local_params["save_model"]:

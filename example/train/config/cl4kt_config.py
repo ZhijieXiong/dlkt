@@ -1,13 +1,17 @@
 from ._config import *
-from ._cl_config import *
 
-from lib.template.kt_model.CL4KT import MODEL_PARAMS as CL4KT_MODEL_PARAMS
 from lib.util.basic import *
 
 
 def cl4kt_general_config(local_params, global_params, global_objects):
-    global_params["models_config"] = {}
-    global_params["models_config"]["kt_model"] = deepcopy(CL4KT_MODEL_PARAMS)
+    global_params["models_config"] = {
+        "kt_model": {
+            "encoder_layer": {
+                "type": "CL4KT",
+                "CL4KT": {}
+            }
+        }
+    }
 
     # 配置模型参数
     num_concept = local_params["num_concept"]

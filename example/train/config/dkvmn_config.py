@@ -1,14 +1,17 @@
 from ._config import *
 
-from lib.template.params_template_v2 import PARAMS
-from lib.template.kt_model.DKVMN import MODEL_PARAMS
-from lib.template.objects_template import OBJECTS
 from lib.util.basic import *
 
 
 def dkvmn_general_config(local_params, global_params, global_objects):
-    global_params["models_config"]["kt_model"] = deepcopy(MODEL_PARAMS)
-    global_params["models_config"]["kt_model"]["encoder_layer"]["type"] = "DKVMN"
+    global_params["models_config"] = {
+        "kt_model": {
+            "encoder_layer": {
+                "type": "DKVMN",
+                "DKVMN": {}
+            }
+        }
+    }
 
     # 配置模型参数
     use_concept = local_params["use_concept"]
@@ -25,11 +28,12 @@ def dkvmn_general_config(local_params, global_params, global_objects):
     encoder_config["num_question"] = num_question
     encoder_config["dim_key"] = dim_key
     encoder_config["dim_value"] = dim_value
+    encoder_config["dropout"] = dropout
 
     global_objects["logger"].info(
-        "model params\n"
-        f"    use concept: {use_concept}, num of concept: {num_concept}, num of question: {num_question}, "
-        f"dim of key: {dim_key}, dim of value: {dim_value}, dropout: {dropout}"
+        "model params\n    "
+        f"use_concept: {use_concept}, num_concept: {num_concept}, num_question: {num_question}, dim_key: {dim_key}, "
+        f"dim_value: {dim_value}, dropout: {dropout}"
     )
 
     if local_params["save_model"]:
@@ -42,10 +46,11 @@ def dkvmn_general_config(local_params, global_params, global_objects):
 
 
 def dkvmn_config(local_params):
-    global_params = deepcopy(PARAMS)
-    global_objects = deepcopy(OBJECTS)
+    global_params = {}
+    global_objects = {}
     general_config(local_params, global_params, global_objects)
     dkvmn_general_config(local_params, global_params, global_objects)
+
     if local_params["save_model"]:
         save_params(global_params, global_objects)
 

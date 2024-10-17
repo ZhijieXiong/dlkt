@@ -28,6 +28,7 @@ def sigmoid_inverse(x, epsilon=1e-8):
 
 class QIKT(nn.Module):
     model_name = "QIKT"
+    use_question = True
 
     def __init__(self, params, objects):
         super().__init__()
@@ -161,22 +162,22 @@ class QIKT(nn.Module):
 
     def get_predict_score(self, batch):
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
-        predict_score, _, _, _, _ = self.forward(batch)
-        predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
+        predict_score_batch, _, _, _, _ = self.forward(batch)
+        predict_score = torch.masked_select(predict_score_batch, mask_bool_seq[:, 1:])
 
-        return predict_score
+        return {
+            "predict_score": predict_score,
+            "predict_score_batch": predict_score_batch
+        }
 
-    def get_predict_score_seq_len_minus1(self, batch):
-        return self.forward(batch)[0]
-
-    def get_predict_loss(self, batch, loss_record=None):
+    def get_predict_loss(self, batch):
         loss_wight = self.params["loss_config"]
         use_irt = self.params["models_config"]["kt_model"]["encoder_layer"]["QIKT"]["use_irt"]
         mask_bool_seq = torch.ne(batch["mask_seq"], 0)
 
-        predict_score, predict_score_q_next, predict_score_q_all, predict_score_c_next, predict_score_c_all = (
+        predict_score_batch, predict_score_q_next, predict_score_q_all, predict_score_c_next, predict_score_c_all = (
             self.forward(batch))
-        predict_score = torch.masked_select(predict_score, mask_bool_seq[:, 1:])
+        predict_score = torch.masked_select(predict_score_batch, mask_bool_seq[:, 1:])
         predict_score_q_next = torch.masked_select(predict_score_q_next, mask_bool_seq[:, 1:])
         predict_score_q_all = torch.masked_select(predict_score_q_all, mask_bool_seq[:, 1:])
         predict_score_c_next = torch.masked_select(predict_score_c_next, mask_bool_seq[:, 1:])
@@ -189,19 +190,36 @@ class QIKT(nn.Module):
         predict_loss_c_next = nn.functional.binary_cross_entropy(predict_score_c_next.double(), ground_truth.double())
         predict_loss_c_all = nn.functional.binary_cross_entropy(predict_score_c_all.double(), ground_truth.double())
 
-        if loss_record is not None:
-            num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
-            loss_record.add_loss("predict loss", predict_loss.detach().cpu().item() * num_sample, num_sample)
-            loss_record.add_loss("q all loss", predict_loss_q_all.detach().cpu().item() * num_sample, num_sample)
-            loss_record.add_loss("q next loss", predict_loss_q_next.detach().cpu().item() * num_sample, num_sample)
-            loss_record.add_loss("c all loss", predict_loss_c_all.detach().cpu().item() * num_sample, num_sample)
-            loss_record.add_loss("c next loss", predict_loss_c_next.detach().cpu().item() * num_sample, num_sample)
-
-        predict_loss = (predict_loss +
-                        loss_wight["q all loss"] * predict_loss_q_all +
-                        loss_wight["c all loss"] * predict_loss_c_all +
-                        loss_wight["c next loss"] * predict_loss_c_next)
+        loss = (predict_loss + loss_wight["q all loss"] * predict_loss_q_all +
+                loss_wight["c all loss"] * predict_loss_c_all + loss_wight["c next loss"] * predict_loss_c_next)
         if not use_irt:
-            predict_loss = predict_loss + loss_wight["q next loss"] * predict_loss_q_next
+            loss = loss + loss_wight["q next loss"] * predict_loss_q_next
 
-        return predict_loss
+        num_sample = torch.sum(batch["mask_seq"][:, 1:]).item()
+        return {
+            "total_loss": loss,
+            "losses_value": {
+                "predict loss": {
+                    "value": predict_loss.detach().cpu().item() * num_sample,
+                    "num_sample": num_sample
+                },
+                "q all loss": {
+                    "value": predict_loss_q_all.detach().cpu().item() * num_sample,
+                    "num_sample": num_sample
+                },
+                "q next loss": {
+                    "value": predict_loss_q_next.detach().cpu().item() * num_sample,
+                    "num_sample": num_sample
+                },
+                "c all loss": {
+                    "value": predict_loss_c_all.detach().cpu().item() * num_sample,
+                    "num_sample": num_sample
+                },
+                "c next loss": {
+                    "value": predict_loss_c_next.detach().cpu().item() * num_sample,
+                    "num_sample": num_sample
+                }
+            },
+            "predict_score": predict_score,
+            "predict_score_batch": predict_score_batch
+        }

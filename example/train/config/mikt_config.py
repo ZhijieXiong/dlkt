@@ -1,4 +1,5 @@
 from ._config import *
+
 from lib.util.basic import *
 
 
@@ -7,9 +8,7 @@ def mikt_general_config(local_params, global_params, global_objects):
         "kt_model": {
             "encoder_layer": {
                 "type": "MIKT",
-                "MIKT": {
-
-                }
+                "MIKT": {}
             }
         }
     }

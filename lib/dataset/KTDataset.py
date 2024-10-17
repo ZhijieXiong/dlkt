@@ -3,8 +3,7 @@ import random
 
 from ..util.data import *
 from ..util.parse import *
-from .sample_weight import *
-from ..CONSTANT import INTERVAL_TIME4LPKT_PLUS, USE_TIME4LPKT_PLUS
+from .sample_reweight import *
 
 
 class KTDataset(Dataset):
@@ -108,7 +107,7 @@ class KTDataset(Dataset):
         # 根据num_hint和num_attempt取值分为12类，其中num_hint可选值为unknown、0、1、multi，num_attempt可选值为unknown、1、multi
         dataset_converted["hint_attempt_seq"] = []
         dataset_converted["seq_id"] = []
-        if self.params.get("use_sample_weight", False):
+        if self.params.get("sample_reweight", False) and self.params["sample_reweight"].get("use_sample_reweight", False):
             dataset_converted["weight_seq"] = []
 
         max_seq_len = len(dataset_original[0]["mask_seq"])
@@ -154,34 +153,12 @@ class KTDataset(Dataset):
                     interval_time_seq = [0]
                     for time_i in range(1, seq_len):
                         interval_time_real = (item_data["time_seq"][time_i] - item_data["time_seq"][time_i - 1]) // 60
-                        if dataset_type == "agg_aux_info":
-                            interval_time_idx = len(INTERVAL_TIME4LPKT_PLUS)
-                            for idx, interval_time_value in enumerate(INTERVAL_TIME4LPKT_PLUS):
-                                if interval_time_real < 0:
-                                    interval_time_idx = 0
-                                    break
-                                if interval_time_real <= interval_time_value:
-                                    interval_time_idx = idx
-                                    break
-                        else:
-                            interval_time_idx = max(0, min(interval_time_real, 60 * 24 * 30))
+                        interval_time_idx = max(0, min(interval_time_real, 60 * 24 * 30))
                         interval_time_seq.append(interval_time_idx)
                     interval_time_seq += [0] * (max_seq_len - seq_len)
                     dataset_converted["interval_time_seq"].append(interval_time_seq)
                 elif k == "use_time_seq":
-                    if dataset_type == "agg_aux_info":
-                        use_time_seq = []
-                        for time_i, use_time in enumerate(item_data["use_time_seq"][:seq_len]):
-                            use_time_idx = len(USE_TIME4LPKT_PLUS)
-                            for idx, use_time_value in enumerate(USE_TIME4LPKT_PLUS):
-                                if use_time <= use_time_value:
-                                    use_time_idx = idx
-                                    break
-                            use_time_seq.append(use_time_idx)
-                        use_time_seq += [0] * (max_seq_len - seq_len)
-                        dataset_converted["use_time_seq"].append(use_time_seq)
-                    else:
-                        dataset_converted["use_time_seq"].append(item_data["use_time_seq"])
+                    dataset_converted["use_time_seq"].append(item_data["use_time_seq"])
                 elif k in ["num_hint_seq", "num_attempt_seq"] and agg_num:
                     num_seq = list(map(lambda x: x if (x <= 10) else (
                             (5 + x // 5) if (x <= 50) else (50 + x // 10)
@@ -191,22 +168,17 @@ class KTDataset(Dataset):
                     dataset_converted[k].append(item_data[k])
 
             # 生成weight seq
-            if self.params.get("use_sample_weight", False):
-                if self.params["sample_weight_method"] == "discount":
-                    w_seq = discount(item_data["correct_seq"], item_data["seq_len"], max_seq_len)
-                elif self.params["sample_weight_method"] == "highlight_tail":
-                    w_seq = highlight_tail(self.params["tail_weight"], item_data["question_seq"],
-                                           self.objects["data"]["train_data_statics"], item_data["seq_len"], max_seq_len)
-                elif self.params["sample_weight_method"] == "IPS-seq":
-                    IPS_min = self.params["IPS_min"]
-                    IPS_his_seq_len = self.params["IPS_his_seq_len"]
+            if self.params.get("sample_reweight", False) and self.params["sample_reweight"].get("use_sample_reweight", False):
+                if self.params["sample_reweight"]["sample_reweight_method"] == "IPS-seq":
+                    IPS_min = self.params["sample_reweight"]["IPS_min"]
+                    IPS_his_seq_len = self.params["sample_reweight"]["IPS_his_seq_len"]
                     w_seq = IPS_seq_weight(item_data, IPS_min, IPS_his_seq_len)
-                elif self.params["sample_weight_method"] == "IPS-question":
-                    IPS_min = self.params["IPS_min"]
+                elif self.params["sample_reweight"]["sample_reweight_method"] == "IPS-question":
+                    IPS_min = self.params["sample_reweight"]["IPS_min"]
                     w_seq = IPS_question_weight(item_data, self.objects["data"]["train_data_statics_common"], IPS_min)
-                elif self.params["sample_weight_method"] == "IPS-double":
-                    IPS_min = self.params["IPS_min"]
-                    IPS_his_seq_len = self.params["IPS_his_seq_len"]
+                elif self.params["sample_reweight"]["sample_reweight_method"] == "IPS-double":
+                    IPS_min = self.params["sample_reweight"]["IPS_min"]
+                    IPS_his_seq_len = self.params["sample_reweight"]["IPS_his_seq_len"]
                     w_seq = IPS_double_weight(item_data, self.objects["data"]["train_data_statics_common"],
                                               IPS_min, IPS_his_seq_len)
                 else:

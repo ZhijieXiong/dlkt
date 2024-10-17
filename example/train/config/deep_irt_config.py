@@ -1,12 +1,17 @@
 from ._config import *
 
-from lib.template.kt_model.DeepIRT import MODEL_PARAMS as DeepIRT_PARAMS
 from lib.util.basic import *
 
 
 def deep_irt_general_config(local_params, global_params, global_objects):
-    global_params["models_config"] = {}
-    global_params["models_config"]["kt_model"] = deepcopy(DeepIRT_PARAMS)
+    global_params["models_config"] = {
+        "kt_model": {
+            "encoder_layer": {
+                "type": "DeepIRT",
+                "DeepIRT": {}
+            }
+        }
+    }
 
     # 配置模型参数
     num_concept = local_params["num_concept"]
@@ -19,6 +24,7 @@ def deep_irt_general_config(local_params, global_params, global_objects):
     encoder_config["num_concept"] = num_concept
     encoder_config["dim_emb"] = dim_emb
     encoder_config["size_memory"] = size_memory
+    encoder_config["dropout"] = dropout
 
     global_objects["logger"].info(
         "model params\n"

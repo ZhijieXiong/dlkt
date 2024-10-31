@@ -1,0 +1,12 @@
+{
+  "0": {
+    "content": "",
+    "type": "choice",
+    "options": ["", "", "", ""]
+  },
+  "1": {
+    "content": "How much bigger is $frac{}{}$ than?",
+    "type": "choice",
+    "options": ["", "", "", ""]
+  }
+}

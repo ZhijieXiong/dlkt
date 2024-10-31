@@ -53,10 +53,7 @@ class Evaluator:
                     all_score_dis[i] += score_dis[i]
                     all_label_dis[i] += label_dis[i]
 
-                if use_transfer and hasattr(model, "get_predict_score4question_zero"):
-                    predict_score = model.get_predict_score4question_zero(batch).detach().cpu().numpy()
-                else:
-                    predict_score = model.get_predict_score(batch).detach().cpu().numpy()
+                predict_score = model.get_predict_score(batch)["predict_score"].detach().cpu().numpy()
                 ground_truth = torch.masked_select(correct_seq[:, 1:], mask_bool_seq[:, 1:]).detach().cpu().numpy()
                 predict_score_all.append(predict_score)
                 ground_truth_all.append(ground_truth)

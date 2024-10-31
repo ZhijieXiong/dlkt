@@ -45,6 +45,19 @@ class KTEmbedLayer(nn.Module):
             result = torch.cat((result, self.get_emb(seq, emb_indices2cat[i+1])), dim=-1)
         return result
 
+    def get_emb_concatenated_w_net(self, seq_names2cat, emb_indices2cat, nets):
+        """
+        获取拼接后的emb，其中emb会通过一个网络进行转换，seq_names2cat是拼接的顺序，emb_indices2cat是id序列（bs * seq_len）
+        :param seq_names2cat:
+        :param emb_indices2cat:
+        :param nets:
+        :return:
+        """
+        result = nets[0](self.get_emb(seq_names2cat[0], emb_indices2cat[0]))
+        for i, seq in enumerate(seq_names2cat[1:]):
+            result = torch.cat((result, nets[i](self.get_emb(seq, emb_indices2cat[i+1]))), dim=-1)
+        return result
+
     def get_emb_question_with_concept_fused(self, question_seq, fusion_type="mean"):
         """
         多知识点embedding融合，如一道多知识点习题的知识点embedding取平均值作为该习题的embedding，再拼接上习题embedding
@@ -54,6 +67,25 @@ class KTEmbedLayer(nn.Module):
         """
         emb_question = self.get_emb("question", question_seq)
         emb_concept = self.get_emb("concept", self.objects["data"]["q2c_table"][question_seq])
+        mask_concept = self.objects["data"]["q2c_mask_table"][question_seq]
+        if fusion_type == "mean":
+            emb_concept_fusion = (emb_concept * mask_concept.unsqueeze(-1)).sum(-2)
+            emb_concept_fusion = emb_concept_fusion / mask_concept.sum(-1).unsqueeze(-1)
+        else:
+            raise NotImplementedError()
+        return torch.cat((emb_concept_fusion, emb_question), dim=-1)
+
+    def get_emb_question_with_concept_fused_w_nets(self, question_seq, q_net, c_net, fusion_type="mean"):
+        """
+        多知识点embedding融合，其中emb会通过一个网络进行转换，如一道多知识点习题的知识点embedding取平均值作为该习题的embedding，再拼接上习题embedding
+        :param question_seq:
+        :param fusion_type:
+        :param q_net:
+        :param c_net:
+        :return:
+        """
+        emb_question = q_net(self.get_emb("question", question_seq))
+        emb_concept = c_net(self.get_emb("concept", self.objects["data"]["q2c_table"][question_seq]))
         mask_concept = self.objects["data"]["q2c_mask_table"][question_seq]
         if fusion_type == "mean":
             emb_concept_fusion = (emb_concept * mask_concept.unsqueeze(-1)).sum(-2)

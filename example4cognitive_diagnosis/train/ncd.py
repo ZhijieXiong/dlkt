@@ -15,13 +15,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="ncd_setting")
-    parser.add_argument("--dataset_name", type=str, default="ednet-kt1")
-    parser.add_argument("--train_file_name", type=str, default="ednet-kt1_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="ednet-kt1_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="ednet-kt1_test_fold_0.txt")
+    parser.add_argument("--dataset_name", type=str, default="xes3g5m")
+    parser.add_argument("--train_file_name", type=str, default="xes3g5m_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="xes3g5m_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="xes3g5m_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0)
+    parser.add_argument("--weight_decay", type=float, default=0.00001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
@@ -49,12 +49,12 @@ if __name__ == "__main__":
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--num_user", type=int, default=2290)
-    parser.add_argument("--num_concept", type=int, default=188)
-    parser.add_argument("--num_question", type=int, default=11858)
+    parser.add_argument("--num_user", type=int, default=18066)
+    parser.add_argument("--num_concept", type=int, default=865)
+    parser.add_argument("--num_question", type=int, default=7652)
     parser.add_argument("--dim_predict1", type=int, default=512)
     parser.add_argument("--dim_predict2", type=int, default=256)
-    parser.add_argument("--dropout", type=float, default=0.5)
+    parser.add_argument("--dropout", type=float, default=0.2)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--use_cpu", type=str2bool, default=False)

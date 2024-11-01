@@ -1,0 +1,845 @@
+fold 0
+overall performance is AUC: 0.66337  , ACC: 0.67533  , RMSE: 0.45845  , MAE: 0.41386  
+
+PPMCC between history average accuracy and current model predict score
+(10, 0.4), PPMCC between history acc and prediction of all is 0.5829
+(10, 0.4), PPMCC between history acc and prediction of easy is 0.6803
+(10, 0.4), PPMCC between history acc and prediction of normal is 0.2751
+(10, 0.4), PPMCC between history acc and prediction of hard is 0.5288
+(10, 0.4), PPMCC between history acc and prediction of unbalanced is 0.637
+(15, 0.4), PPMCC between history acc and prediction of all is 0.6095
+(15, 0.4), PPMCC between history acc and prediction of easy is 0.6781
+(15, 0.4), PPMCC between history acc and prediction of normal is 0.2932
+(15, 0.4), PPMCC between history acc and prediction of hard is 0.5539
+(15, 0.4), PPMCC between history acc and prediction of unbalanced is 0.6438
+(20, 0.4), PPMCC between history acc and prediction of all is 0.6234
+(20, 0.4), PPMCC between history acc and prediction of easy is 0.67
+(20, 0.4), PPMCC between history acc and prediction of normal is 0.3088
+(20, 0.4), PPMCC between history acc and prediction of hard is 0.5578
+(20, 0.4), PPMCC between history acc and prediction of unbalanced is 0.6398
+(10, 0.3), PPMCC between history acc and prediction of all is 0.5829
+(10, 0.3), PPMCC between history acc and prediction of easy is 0.7066
+(10, 0.3), PPMCC between history acc and prediction of normal is 0.4112
+(10, 0.3), PPMCC between history acc and prediction of hard is 0.582
+(10, 0.3), PPMCC between history acc and prediction of unbalanced is 0.6703
+(15, 0.3), PPMCC between history acc and prediction of all is 0.6095
+(15, 0.3), PPMCC between history acc and prediction of easy is 0.6935
+(15, 0.3), PPMCC between history acc and prediction of normal is 0.4022
+(15, 0.3), PPMCC between history acc and prediction of hard is 0.5815
+(15, 0.3), PPMCC between history acc and prediction of unbalanced is 0.6617
+(20, 0.3), PPMCC between history acc and prediction of all is 0.6234
+(20, 0.3), PPMCC between history acc and prediction of easy is 0.6837
+(20, 0.3), PPMCC between history acc and prediction of normal is 0.4574
+(20, 0.3), PPMCC between history acc and prediction of hard is 0.5852
+(20, 0.3), PPMCC between history acc and prediction of unbalanced is 0.656
+(10, 0.2), PPMCC between history acc and prediction of all is 0.5829
+(10, 0.2), PPMCC between history acc and prediction of easy is 0.7056
+(10, 0.2), PPMCC between history acc and prediction of normal is 0.5042
+(10, 0.2), PPMCC between history acc and prediction of hard is 0.6103
+(10, 0.2), PPMCC between history acc and prediction of unbalanced is 0.6776
+(15, 0.2), PPMCC between history acc and prediction of all is 0.6095
+(15, 0.2), PPMCC between history acc and prediction of easy is 0.6894
+(15, 0.2), PPMCC between history acc and prediction of normal is 0.5392
+(15, 0.2), PPMCC between history acc and prediction of hard is 0.6145
+(15, 0.2), PPMCC between history acc and prediction of unbalanced is 0.6681
+(20, 0.2), PPMCC between history acc and prediction of all is 0.6234
+(20, 0.2), PPMCC between history acc and prediction of easy is 0.6745
+(20, 0.2), PPMCC between history acc and prediction of normal is 0.5544
+(20, 0.2), PPMCC between history acc and prediction of hard is 0.593
+(20, 0.2), PPMCC between history acc and prediction of unbalanced is 0.652
+
+CORE metric allow repeat (97538    ), performance is AUC: 0.582145 , ACC: 0.533556 , RMSE: 0.522416 , MAE: 0.48015  
+
+evaluation result of samples at different position
+(0  , 10 ), num of samples: 11750     , acc of answer: 54.7%, performance is AUC: 0.66965  , ACC: 0.62289  , RMSE: 0.47505  , MAE: 0.4507   
+(10 , 20 ), num of samples: 8796      , acc of answer: 58.2%, performance is AUC: 0.69789  , ACC: 0.67076  , RMSE: 0.46134  , MAE: 0.42322  
+(20 , 30 ), num of samples: 7910      , acc of answer: 61.0%, performance is AUC: 0.68706  , ACC: 0.67396  , RMSE: 0.46092  , MAE: 0.42407  
+(30 , 40 ), num of samples: 6695      , acc of answer: 66.4%, performance is AUC: 0.65367  , ACC: 0.67095  , RMSE: 0.45666  , MAE: 0.41391  
+(40 , 50 ), num of samples: 6211      , acc of answer: 66.2%, performance is AUC: 0.65652  , ACC: 0.68041  , RMSE: 0.45718  , MAE: 0.41231  
+(50 , 100), num of samples: 27287     , acc of answer: 67.2%, performance is AUC: 0.6483   , ACC: 0.68454  , RMSE: 0.45496  , MAE: 0.40633  
+(100, 200), num of samples: 45020     , acc of answer: 67.4%, performance is AUC: 0.64286  , ACC: 0.68452  , RMSE: 0.45557  , MAE: 0.40539  
+
+evaluation result of seq biased samples
+(10, 0.4) seq easy samples (44730    ), performance is AUC: 0.950674 , ACC: 0.947306 , RMSE: 0.299936 , MAE: 0.275209 
+(10, 0.4) seq normal samples (37937    ), performance is AUC: 0.622725 , ACC: 0.637715 , RMSE: 0.474811 , MAE: 0.443609 
+(10, 0.4) seq hard samples (19252    ), performance is AUC: 0.181169 , ACC: 0.149543 , RMSE: 0.670763 , MAE: 0.654889 
+(10, 0.4) cold start samples (11750    ), performance is AUC: 0.669648 , ACC: 0.622894 , RMSE: 0.47505  , MAE: 0.450702 
+(10, 0.4) seq normal&hard samples (57189    ), performance is AUC: 0.467536 , ACC: 0.473378 , RMSE: 0.548647 , MAE: 0.514734 
+(10, 0.3) seq easy samples (28709    ), performance is AUC: 0.976454 , ACC: 0.968303 , RMSE: 0.274064 , MAE: 0.251338 
+(10, 0.3) seq normal samples (62501    ), performance is AUC: 0.633213 , ACC: 0.650438 , RMSE: 0.469957 , MAE: 0.43429  
+(10, 0.3) seq hard samples (10709    ), performance is AUC: 0.107357 , ACC: 0.0927257, RMSE: 0.70206  , MAE: 0.689886 
+(10, 0.3) cold start samples (11750    ), performance is AUC: 0.669648 , ACC: 0.622894 , RMSE: 0.47505  , MAE: 0.450702 
+(10, 0.3) seq normal&hard samples (73210    ), performance is AUC: 0.546933 , ACC: 0.568857 , RMSE: 0.51054  , MAE: 0.471678 
+(10, 0.2) seq easy samples (14288    ), performance is AUC: 0.984857 , ACC: 0.980753 , RMSE: 0.247203 , MAE: 0.225128 
+(10, 0.2) seq normal samples (83188    ), performance is AUC: 0.641898 , ACC: 0.663377 , RMSE: 0.465156 , MAE: 0.42472  
+(10, 0.2) seq hard samples (4443     ), performance is AUC: 0.0594979, ACC: 0.0555931, RMSE: 0.729762 , MAE: 0.72     
+(10, 0.2) cold start samples (11750    ), performance is AUC: 0.669648 , ACC: 0.622894 , RMSE: 0.47505  , MAE: 0.450702 
+(10, 0.2) seq normal&hard samples (87631    ), performance is AUC: 0.605233 , ACC: 0.632562 , RMSE: 0.48208  , MAE: 0.439691 
+(15, 0.4) seq easy samples (45306    ), performance is AUC: 0.958775 , ACC: 0.958085 , RMSE: 0.293936 , MAE: 0.271408 
+(15, 0.4) seq normal samples (32853    ), performance is AUC: 0.619289 , ACC: 0.631662 , RMSE: 0.476584 , MAE: 0.447625 
+(15, 0.4) seq hard samples (19240    ), performance is AUC: 0.157716 , ACC: 0.116424 , RMSE: 0.680067 , MAE: 0.666727 
+(15, 0.4) cold start samples (16270    ), performance is AUC: 0.679367 , ACC: 0.637062 , RMSE: 0.471408 , MAE: 0.443325 
+(15, 0.4) seq normal&hard samples (52093    ), performance is AUC: 0.445569 , ACC: 0.441364 , RMSE: 0.56041  , MAE: 0.528548 
+(15, 0.3) seq easy samples (33848    ), performance is AUC: 0.975341 , ACC: 0.971549 , RMSE: 0.275198 , MAE: 0.25408  
+(15, 0.3) seq normal samples (50492    ), performance is AUC: 0.626927 , ACC: 0.643013 , RMSE: 0.47258  , MAE: 0.439846 
+(15, 0.3) seq hard samples (13059    ), performance is AUC: 0.108612 , ACC: 0.0801746, RMSE: 0.701959 , MAE: 0.690808 
+(15, 0.3) cold start samples (16270    ), performance is AUC: 0.679367 , ACC: 0.637062 , RMSE: 0.471408 , MAE: 0.443325 
+(15, 0.3) seq normal&hard samples (63551    ), performance is AUC: 0.511081 , ACC: 0.527356 , RMSE: 0.527914 , MAE: 0.491416 
+(15, 0.2) seq easy samples (12594    ), performance is AUC: 0.988574 , ACC: 0.98666  , RMSE: 0.236    , MAE: 0.215798 
+(15, 0.2) seq normal samples (80984    ), performance is AUC: 0.641895 , ACC: 0.664551 , RMSE: 0.464239 , MAE: 0.423517 
+(15, 0.2) seq hard samples (3821     ), performance is AUC: 0.0518675, ACC: 0.0405653, RMSE: 0.744824 , MAE: 0.736508 
+(15, 0.2) cold start samples (16270    ), performance is AUC: 0.679367 , ACC: 0.637062 , RMSE: 0.471408 , MAE: 0.443325 
+(15, 0.2) seq normal&hard samples (84805    ), performance is AUC: 0.605482 , ACC: 0.636437 , RMSE: 0.480419 , MAE: 0.437619 
+(20, 0.4) seq easy samples (44502    ), performance is AUC: 0.961836 , ACC: 0.966698 , RMSE: 0.288912 , MAE: 0.267979 
+(20, 0.4) seq normal samples (29795    ), performance is AUC: 0.615783 , ACC: 0.627454 , RMSE: 0.47768  , MAE: 0.450204 
+(20, 0.4) seq hard samples (18826    ), performance is AUC: 0.150462 , ACC: 0.097206 , RMSE: 0.685767 , MAE: 0.673807 
+(20, 0.4) cold start samples (20546    ), performance is AUC: 0.684438 , ACC: 0.643386 , RMSE: 0.469228 , MAE: 0.438938 
+(20, 0.4) seq normal&hard samples (48621    ), performance is AUC: 0.432318 , ACC: 0.422143 , RMSE: 0.567378 , MAE: 0.536783 
+(20, 0.3) seq easy samples (27200    ), performance is AUC: 0.985536 , ACC: 0.98375  , RMSE: 0.258758 , MAE: 0.23984  
+(20, 0.3) seq normal samples (56094    ), performance is AUC: 0.628225 , ACC: 0.646843 , RMSE: 0.471012 , MAE: 0.436945 
+(20, 0.3) seq hard samples (9829     ), performance is AUC: 0.089699 , ACC: 0.0511751, RMSE: 0.720385 , MAE: 0.711253 
+(20, 0.3) cold start samples (20546    ), performance is AUC: 0.684438 , ACC: 0.643386 , RMSE: 0.469228 , MAE: 0.438938 
+(20, 0.3) seq normal&hard samples (65923    ), performance is AUC: 0.532492 , ACC: 0.55803  , RMSE: 0.515897 , MAE: 0.477844 
+(20, 0.2) seq easy samples (11445    ), performance is AUC: 0.993642 , ACC: 0.991088 , RMSE: 0.226427 , MAE: 0.208221 
+(20, 0.2) seq normal samples (78385    ), performance is AUC: 0.638375 , ACC: 0.664655 , RMSE: 0.464322 , MAE: 0.423267 
+(20, 0.2) seq hard samples (3293     ), performance is AUC: 0.0507947, ACC: 0.0312785, RMSE: 0.755668 , MAE: 0.748164 
+(20, 0.2) cold start samples (20546    ), performance is AUC: 0.684438 , ACC: 0.643386 , RMSE: 0.469228 , MAE: 0.438938 
+(20, 0.2) seq normal&hard samples (81678    ), performance is AUC: 0.603329 , ACC: 0.639119 , RMSE: 0.479505 , MAE: 0.436365 
+
+PPMCC between question accuracy in train dataset and current model predict score
+(0.4), PPMCC between question acc and prediction of all is 0.4259
+(0.4), PPMCC between question acc and prediction of easy is 0.5003
+(0.4), PPMCC between question acc and prediction of normal is 0.1743
+(0.4), PPMCC between question acc and prediction of hard is 0.2552
+(0.4), PPMCC between question acc and prediction of unbalanced is 0.4489
+(0.3), PPMCC between question acc and prediction of all is 0.4259
+(0.3), PPMCC between question acc and prediction of easy is 0.5288
+(0.3), PPMCC between question acc and prediction of normal is 0.2476
+(0.3), PPMCC between question acc and prediction of hard is 0.3202
+(0.3), PPMCC between question acc and prediction of unbalanced is 0.4878
+(0.2), PPMCC between question acc and prediction of all is 0.4259
+(0.2), PPMCC between question acc and prediction of easy is 0.3037
+(0.2), PPMCC between question acc and prediction of normal is 0.3935
+(0.2), PPMCC between question acc and prediction of hard is 0.1182
+(0.2), PPMCC between question acc and prediction of unbalanced is 0.272
+
+evaluation result of question biased samples
+(0.4) question easy samples (61430    ), performance is AUC: 0.815881 , ACC: 0.881849 , RMSE: 0.350966 , MAE: 0.317902 
+(0.4) question normal samples (30438    ), performance is AUC: 0.60149  , ACC: 0.573855 , RMSE: 0.500368 , MAE: 0.467579 
+(0.4) question hard samples (21670    ), performance is AUC: 0.379155 , ACC: 0.231657 , RMSE: 0.632936 , MAE: 0.610801 
+(0.4) question unseen samples (131      ), performance is AUC: 0.608877 , ACC: 0.801527 , RMSE: 0.406556 , MAE: 0.351342 
+(0.4) question normal&hard samples (52108    ), performance is AUC: 0.508079 , ACC: 0.431546 , RMSE: 0.559328 , MAE: 0.52714  
+(0.3) question easy samples (43377    ), performance is AUC: 0.859667 , ACC: 0.917076 , RMSE: 0.324949 , MAE: 0.294677 
+(0.3) question normal samples (58152    ), performance is AUC: 0.614488 , ACC: 0.597056 , RMSE: 0.492125 , MAE: 0.456335 
+(0.3) question hard samples (12009    ), performance is AUC: 0.303147 , ACC: 0.179782 , RMSE: 0.658331 , MAE: 0.639345 
+(0.3) question unseen samples (131      ), performance is AUC: 0.608877 , ACC: 0.801527 , RMSE: 0.406556 , MAE: 0.351342 
+(0.3) question normal&hard samples (70161    ), performance is AUC: 0.562905 , ACC: 0.525634 , RMSE: 0.524324 , MAE: 0.48766  
+(0.2) question easy samples (23566    ), performance is AUC: 0.817375 , ACC: 0.9456   , RMSE: 0.299845 , MAE: 0.272606 
+(0.2) question normal samples (85225    ), performance is AUC: 0.638136 , ACC: 0.630085 , RMSE: 0.479229 , MAE: 0.439293 
+(0.2) question hard samples (4747     ), performance is AUC: 0.383982 , ACC: 0.142406 , RMSE: 0.677214 , MAE: 0.660195 
+(0.2) question unseen samples (131      ), performance is AUC: 0.608877 , ACC: 0.801527 , RMSE: 0.406556 , MAE: 0.351342 
+(0.2) question normal&hard samples (89972    ), performance is AUC: 0.618987 , ACC: 0.604355 , RMSE: 0.491671 , MAE: 0.450948 
+
+evaluation result of double biased samples
+(10, 0.4) double easy samples (31329    ), performance is AUC: 0.98159  , ACC: 0.983625 , RMSE: 0.265527 , MAE: 0.246662 
+(10, 0.4) double hard samples (7976     ), performance is AUC: 0.0442957, ACC: 0.0309679, RMSE: 0.72488  , MAE: 0.717604 
+(10, 0.3) double easy samples (15684    ), performance is AUC: 0.997529 , ACC: 0.993943 , RMSE: 0.235815 , MAE: 0.218979 
+(10, 0.3) double hard samples (2846     ), performance is AUC: 0.00524959, ACC: 0.0130007, RMSE: 0.755558 , MAE: 0.749761 
+(10, 0.2) double easy samples (4836     ), performance is AUC: 0.998077 , ACC: 0.997519 , RMSE: 0.20319  , MAE: 0.187815 
+(10, 0.2) double hard samples (523      ), performance is AUC: 0.00888031, ACC: 0.0133843, RMSE: 0.784205 , MAE: 0.778547 
+(15, 0.4) double easy samples (32025    ), performance is AUC: 0.985596 , ACC: 0.986698 , RMSE: 0.264462 , MAE: 0.246633 
+(15, 0.4) double hard samples (8219     ), performance is AUC: 0.0325482, ACC: 0.0274973, RMSE: 0.724518 , MAE: 0.717658 
+(15, 0.3) double easy samples (18337    ), performance is AUC: 0.99693  , ACC: 0.99411  , RMSE: 0.239316 , MAE: 0.223333 
+(15, 0.3) double hard samples (3476     ), performance is AUC: 0.0051084, ACC: 0.0135213, RMSE: 0.750268 , MAE: 0.744544 
+(15, 0.2) double easy samples (4314     ), performance is AUC: 0.999845 , ACC: 0.999073 , RMSE: 0.195581 , MAE: 0.181853 
+(15, 0.2) double hard samples (459      ), performance is AUC: 0.00109409, ACC: 0.00217865, RMSE: 0.795412 , MAE: 0.79157  
+(20, 0.4) double easy samples (31727    ), performance is AUC: 0.988061 , ACC: 0.988653 , RMSE: 0.263198 , MAE: 0.246094 
+(20, 0.4) double hard samples (8203     ), performance is AUC: 0.03624  , ACC: 0.0231623, RMSE: 0.724781 , MAE: 0.718277 
+(20, 0.3) double easy samples (14947    ), performance is AUC: 0.999547 , ACC: 0.997391 , RMSE: 0.228543 , MAE: 0.21376  
+(20, 0.3) double hard samples (2690     ), performance is AUC: 0.000566038, ACC: 0.00594796, RMSE: 0.761167 , MAE: 0.756433 
+(20, 0.2) double easy samples (4000     ), performance is AUC: 0.999375 , ACC: 0.999    , RMSE: 0.191465 , MAE: 0.178367 
+(20, 0.2) double hard samples (413      ), performance is AUC: 0.00162602, ACC: 0.00484262, RMSE: 0.80297  , MAE: 0.799334 
+
+question zero shot (131       samples), AUC: 0.608877 , ACC: 0.801527 , RMSE: 0.406556 , MAE: 0.351342 
+question low frequency (3852      samples), AUC: 0.643974 , ACC: 0.726895 , RMSE: 0.433716 , MAE: 0.386602 
+question middle frequency (44421     samples), AUC: 0.643531 , ACC: 0.703271 , RMSE: 0.446942 , MAE: 0.399732 
+question high frequency (65265     samples), AUC: 0.668181 , ACC: 0.653015 , RMSE: 0.467607 , MAE: 0.425209 
+
+
+
+fold 1
+overall performance is AUC: 0.66729  , ACC: 0.67654  , RMSE: 0.45671  , MAE: 0.41411  
+
+PPMCC between history average accuracy and current model predict score
+(10, 0.4), PPMCC between history acc and prediction of all is 0.5955
+(10, 0.4), PPMCC between history acc and prediction of easy is 0.6811
+(10, 0.4), PPMCC between history acc and prediction of normal is 0.2868
+(10, 0.4), PPMCC between history acc and prediction of hard is 0.5413
+(10, 0.4), PPMCC between history acc and prediction of unbalanced is 0.6415
+(15, 0.4), PPMCC between history acc and prediction of all is 0.6193
+(15, 0.4), PPMCC between history acc and prediction of easy is 0.6799
+(15, 0.4), PPMCC between history acc and prediction of normal is 0.3025
+(15, 0.4), PPMCC between history acc and prediction of hard is 0.5538
+(15, 0.4), PPMCC between history acc and prediction of unbalanced is 0.6454
+(20, 0.4), PPMCC between history acc and prediction of all is 0.6275
+(20, 0.4), PPMCC between history acc and prediction of easy is 0.6607
+(20, 0.4), PPMCC between history acc and prediction of normal is 0.3149
+(20, 0.4), PPMCC between history acc and prediction of hard is 0.5514
+(20, 0.4), PPMCC between history acc and prediction of unbalanced is 0.6318
+(10, 0.3), PPMCC between history acc and prediction of all is 0.5955
+(10, 0.3), PPMCC between history acc and prediction of easy is 0.7035
+(10, 0.3), PPMCC between history acc and prediction of normal is 0.4265
+(10, 0.3), PPMCC between history acc and prediction of hard is 0.5795
+(10, 0.3), PPMCC between history acc and prediction of unbalanced is 0.6667
+(15, 0.3), PPMCC between history acc and prediction of all is 0.6193
+(15, 0.3), PPMCC between history acc and prediction of easy is 0.6841
+(15, 0.3), PPMCC between history acc and prediction of normal is 0.4152
+(15, 0.3), PPMCC between history acc and prediction of hard is 0.5643
+(15, 0.3), PPMCC between history acc and prediction of unbalanced is 0.65
+(20, 0.3), PPMCC between history acc and prediction of all is 0.6275
+(20, 0.3), PPMCC between history acc and prediction of easy is 0.6535
+(20, 0.3), PPMCC between history acc and prediction of normal is 0.4681
+(20, 0.3), PPMCC between history acc and prediction of hard is 0.5533
+(20, 0.3), PPMCC between history acc and prediction of unbalanced is 0.6253
+(10, 0.2), PPMCC between history acc and prediction of all is 0.5955
+(10, 0.2), PPMCC between history acc and prediction of easy is 0.7141
+(10, 0.2), PPMCC between history acc and prediction of normal is 0.5176
+(10, 0.2), PPMCC between history acc and prediction of hard is 0.6009
+(10, 0.2), PPMCC between history acc and prediction of unbalanced is 0.6803
+(15, 0.2), PPMCC between history acc and prediction of all is 0.6193
+(15, 0.2), PPMCC between history acc and prediction of easy is 0.7043
+(15, 0.2), PPMCC between history acc and prediction of normal is 0.5443
+(15, 0.2), PPMCC between history acc and prediction of hard is 0.6016
+(15, 0.2), PPMCC between history acc and prediction of unbalanced is 0.6746
+(20, 0.2), PPMCC between history acc and prediction of all is 0.6275
+(20, 0.2), PPMCC between history acc and prediction of easy is 0.6646
+(20, 0.2), PPMCC between history acc and prediction of normal is 0.5567
+(20, 0.2), PPMCC between history acc and prediction of hard is 0.5744
+(20, 0.2), PPMCC between history acc and prediction of unbalanced is 0.6393
+
+CORE metric allow repeat (92540    ), performance is AUC: 0.585022 , ACC: 0.537108 , RMSE: 0.518913 , MAE: 0.478628 
+
+evaluation result of samples at different position
+(0  , 10 ), num of samples: 11572     , acc of answer: 53.9%, performance is AUC: 0.66551  , ACC: 0.61441  , RMSE: 0.47624  , MAE: 0.45095  
+(10 , 20 ), num of samples: 8393      , acc of answer: 58.4%, performance is AUC: 0.70029  , ACC: 0.66984  , RMSE: 0.45984  , MAE: 0.42008  
+(20 , 30 ), num of samples: 7538      , acc of answer: 60.1%, performance is AUC: 0.6981   , ACC: 0.66662  , RMSE: 0.46001  , MAE: 0.422    
+(30 , 40 ), num of samples: 6366      , acc of answer: 66.1%, performance is AUC: 0.65658  , ACC: 0.67625  , RMSE: 0.45707  , MAE: 0.41633  
+(40 , 50 ), num of samples: 5953      , acc of answer: 67.0%, performance is AUC: 0.63723  , ACC: 0.68386  , RMSE: 0.45754  , MAE: 0.41345  
+(50 , 100), num of samples: 26248     , acc of answer: 67.5%, performance is AUC: 0.64741  , ACC: 0.68394  , RMSE: 0.45445  , MAE: 0.40778  
+(100, 200), num of samples: 42693     , acc of answer: 68.3%, performance is AUC: 0.64821  , ACC: 0.69091  , RMSE: 0.45128  , MAE: 0.40521  
+
+evaluation result of seq biased samples
+(10, 0.4) seq easy samples (43385    ), performance is AUC: 0.954814 , ACC: 0.94883  , RMSE: 0.302208 , MAE: 0.278328 
+(10, 0.4) seq normal samples (35620    ), performance is AUC: 0.627281 , ACC: 0.633857 , RMSE: 0.475046 , MAE: 0.446831 
+(10, 0.4) seq hard samples (18186    ), performance is AUC: 0.166697 , ACC: 0.15006  , RMSE: 0.665761 , MAE: 0.650498 
+(10, 0.4) cold start samples (11572    ), performance is AUC: 0.665514 , ACC: 0.614414 , RMSE: 0.476236 , MAE: 0.450948 
+(10, 0.4) seq normal&hard samples (53806    ), performance is AUC: 0.464076 , ACC: 0.470338 , RMSE: 0.546996 , MAE: 0.515669 
+(10, 0.3) seq easy samples (28111    ), performance is AUC: 0.980126 , ACC: 0.972929 , RMSE: 0.274684 , MAE: 0.253128 
+(10, 0.3) seq normal samples (58873    ), performance is AUC: 0.636001 , ACC: 0.648684 , RMSE: 0.469526 , MAE: 0.436752 
+(10, 0.3) seq hard samples (10207    ), performance is AUC: 0.104119 , ACC: 0.0913099, RMSE: 0.697201 , MAE: 0.685091 
+(10, 0.3) cold start samples (11572    ), performance is AUC: 0.665514 , ACC: 0.614414 , RMSE: 0.476236 , MAE: 0.450948 
+(10, 0.3) seq normal&hard samples (69080    ), performance is AUC: 0.546765 , ACC: 0.566329 , RMSE: 0.509611 , MAE: 0.473446 
+(10, 0.2) seq easy samples (13913    ), performance is AUC: 0.995277 , ACC: 0.987781 , RMSE: 0.246705 , MAE: 0.22706  
+(10, 0.2) seq normal samples (78944    ), performance is AUC: 0.647148 , ACC: 0.665155 , RMSE: 0.46293  , MAE: 0.424966 
+(10, 0.2) seq hard samples (4334     ), performance is AUC: 0.0536561, ACC: 0.0505307, RMSE: 0.727939 , MAE: 0.71845  
+(10, 0.2) cold start samples (11572    ), performance is AUC: 0.665514 , ACC: 0.614414 , RMSE: 0.476236 , MAE: 0.450948 
+(10, 0.2) seq normal&hard samples (83278    ), performance is AUC: 0.607844 , ACC: 0.633168 , RMSE: 0.480341 , MAE: 0.440239 
+(15, 0.4) seq easy samples (43820    ), performance is AUC: 0.964279 , ACC: 0.959083 , RMSE: 0.297311 , MAE: 0.27551  
+(15, 0.4) seq normal samples (30975    ), performance is AUC: 0.621977 , ACC: 0.624245 , RMSE: 0.477811 , MAE: 0.451635 
+(15, 0.4) seq hard samples (18086    ), performance is AUC: 0.150162 , ACC: 0.124627 , RMSE: 0.672852 , MAE: 0.65954  
+(15, 0.4) cold start samples (15882    ), performance is AUC: 0.674111 , ACC: 0.62744  , RMSE: 0.472964 , MAE: 0.443838 
+(15, 0.4) seq normal&hard samples (49061    ), performance is AUC: 0.44324  , ACC: 0.440064 , RMSE: 0.557706 , MAE: 0.528278 
+(15, 0.3) seq easy samples (33309    ), performance is AUC: 0.981895 , ACC: 0.974121 , RMSE: 0.277702 , MAE: 0.257507 
+(15, 0.3) seq normal samples (47221    ), performance is AUC: 0.630183 , ACC: 0.637704 , RMSE: 0.473262 , MAE: 0.44371  
+(15, 0.3) seq hard samples (12351    ), performance is AUC: 0.106039 , ACC: 0.0855801, RMSE: 0.696289 , MAE: 0.68504  
+(15, 0.3) cold start samples (15882    ), performance is AUC: 0.674111 , ACC: 0.62744  , RMSE: 0.472964 , MAE: 0.443838 
+(15, 0.3) seq normal&hard samples (59572    ), performance is AUC: 0.510173 , ACC: 0.523232 , RMSE: 0.527311 , MAE: 0.493745 
+(15, 0.2) seq easy samples (12641    ), performance is AUC: 0.997441 , ACC: 0.992722 , RMSE: 0.235349 , MAE: 0.217635 
+(15, 0.2) seq normal samples (76535    ), performance is AUC: 0.644303 , ACC: 0.665408 , RMSE: 0.462921 , MAE: 0.424975 
+(15, 0.2) seq hard samples (3705     ), performance is AUC: 0.0333776, ACC: 0.0380567, RMSE: 0.740551 , MAE: 0.732543 
+(15, 0.2) cold start samples (15882    ), performance is AUC: 0.674111 , ACC: 0.62744  , RMSE: 0.472964 , MAE: 0.443838 
+(15, 0.2) seq normal&hard samples (80240    ), performance is AUC: 0.606511 , ACC: 0.636441 , RMSE: 0.479294 , MAE: 0.439177 
+(20, 0.4) seq easy samples (43395    ), performance is AUC: 0.965253 , ACC: 0.965134 , RMSE: 0.29481  , MAE: 0.274156 
+(20, 0.4) seq normal samples (27653    ), performance is AUC: 0.616095 , ACC: 0.615991 , RMSE: 0.479848 , MAE: 0.455188 
+(20, 0.4) seq hard samples (17750    ), performance is AUC: 0.14279  , ACC: 0.108958 , RMSE: 0.677521 , MAE: 0.665424 
+(20, 0.4) cold start samples (19965    ), performance is AUC: 0.683855 , ACC: 0.637716 , RMSE: 0.469411 , MAE: 0.437971 
+(20, 0.4) seq normal&hard samples (45403    ), performance is AUC: 0.427766 , ACC: 0.41777  , RMSE: 0.565415 , MAE: 0.537379 
+(20, 0.3) seq easy samples (26976    ), performance is AUC: 0.989301 , ACC: 0.983875 , RMSE: 0.263116 , MAE: 0.24474  
+(20, 0.3) seq normal samples (52384    ), performance is AUC: 0.630406 , ACC: 0.643956 , RMSE: 0.471151 , MAE: 0.440154 
+(20, 0.3) seq hard samples (9438     ), performance is AUC: 0.0745819, ACC: 0.0610299, RMSE: 0.712463 , MAE: 0.703167 
+(20, 0.3) cold start samples (19965    ), performance is AUC: 0.683855 , ACC: 0.637716 , RMSE: 0.469411 , MAE: 0.437971 
+(20, 0.3) seq normal&hard samples (61822    ), performance is AUC: 0.53235  , ACC: 0.554964 , RMSE: 0.515351 , MAE: 0.480307 
+(20, 0.2) seq easy samples (11479    ), performance is AUC: 0.996194 , ACC: 0.99216  , RMSE: 0.23023  , MAE: 0.21293  
+(20, 0.2) seq normal samples (74022    ), performance is AUC: 0.641704 , ACC: 0.666815 , RMSE: 0.462367 , MAE: 0.42424  
+(20, 0.2) seq hard samples (3297     ), performance is AUC: 0.0381911, ACC: 0.0309372, RMSE: 0.749791 , MAE: 0.742587 
+(20, 0.2) cold start samples (19965    ), performance is AUC: 0.683855 , ACC: 0.637716 , RMSE: 0.469411 , MAE: 0.437971 
+(20, 0.2) seq normal&hard samples (77319    ), performance is AUC: 0.604787 , ACC: 0.6397   , RMSE: 0.478163 , MAE: 0.437815 
+
+PPMCC between question accuracy in train dataset and current model predict score
+(0.4), PPMCC between question acc and prediction of all is 0.4307
+(0.4), PPMCC between question acc and prediction of easy is 0.5056
+(0.4), PPMCC between question acc and prediction of normal is 0.1518
+(0.4), PPMCC between question acc and prediction of hard is 0.2488
+(0.4), PPMCC between question acc and prediction of unbalanced is 0.4528
+(0.3), PPMCC between question acc and prediction of all is 0.4307
+(0.3), PPMCC between question acc and prediction of easy is 0.5347
+(0.3), PPMCC between question acc and prediction of normal is 0.2361
+(0.3), PPMCC between question acc and prediction of hard is 0.3126
+(0.3), PPMCC between question acc and prediction of unbalanced is 0.4924
+(0.2), PPMCC between question acc and prediction of all is 0.4307
+(0.2), PPMCC between question acc and prediction of easy is 0.3557
+(0.2), PPMCC between question acc and prediction of normal is 0.3829
+(0.2), PPMCC between question acc and prediction of hard is 0.185
+(0.2), PPMCC between question acc and prediction of unbalanced is 0.3282
+
+evaluation result of question biased samples
+(0.4) question easy samples (59284    ), performance is AUC: 0.817454 , ACC: 0.87457  , RMSE: 0.356011 , MAE: 0.323362 
+(0.4) question normal samples (28842    ), performance is AUC: 0.604362 , ACC: 0.575931 , RMSE: 0.497714 , MAE: 0.467069 
+(0.4) question hard samples (20542    ), performance is AUC: 0.38995  , ACC: 0.24574  , RMSE: 0.624445 , MAE: 0.60179  
+(0.4) question unseen samples (95       ), performance is AUC: 0.50831  , ACC: 0.789474 , RMSE: 0.427024 , MAE: 0.382078 
+(0.4) question normal&hard samples (49384    ), performance is AUC: 0.509689 , ACC: 0.438583 , RMSE: 0.553963 , MAE: 0.523109 
+(0.3) question easy samples (42107    ), performance is AUC: 0.868454 , ACC: 0.910205 , RMSE: 0.32951  , MAE: 0.299337 
+(0.3) question normal samples (55346    ), performance is AUC: 0.615322 , ACC: 0.596936 , RMSE: 0.490877 , MAE: 0.457371 
+(0.3) question hard samples (11215    ), performance is AUC: 0.321261 , ACC: 0.191083 , RMSE: 0.651519 , MAE: 0.631794 
+(0.3) question unseen samples (95       ), performance is AUC: 0.50831  , ACC: 0.789474 , RMSE: 0.427024 , MAE: 0.382078 
+(0.3) question normal&hard samples (66561    ), performance is AUC: 0.564034 , ACC: 0.528553 , RMSE: 0.521423 , MAE: 0.48676  
+(0.2) question easy samples (23071    ), performance is AUC: 0.851158 , ACC: 0.937021 , RMSE: 0.307174 , MAE: 0.279278 
+(0.2) question normal samples (81197    ), performance is AUC: 0.64128  , ACC: 0.630984 , RMSE: 0.477335 , MAE: 0.439355 
+(0.2) question hard samples (4400     ), performance is AUC: 0.349131 , ACC: 0.148864 , RMSE: 0.672692 , MAE: 0.65587  
+(0.2) question unseen samples (95       ), performance is AUC: 0.50831  , ACC: 0.789474 , RMSE: 0.427024 , MAE: 0.382078 
+(0.2) question normal&hard samples (85597    ), performance is AUC: 0.621164 , ACC: 0.606201 , RMSE: 0.489282 , MAE: 0.450485 
+
+evaluation result of double biased samples
+(10, 0.4) double easy samples (30704    ), performance is AUC: 0.989305 , ACC: 0.981598 , RMSE: 0.270893 , MAE: 0.251872 
+(10, 0.4) double hard samples (7388     ), performance is AUC: 0.0461599, ACC: 0.035869 , RMSE: 0.719536 , MAE: 0.711557 
+(10, 0.3) double easy samples (15783    ), performance is AUC: 0.999593 , ACC: 0.993601 , RMSE: 0.239466 , MAE: 0.222427 
+(10, 0.3) double hard samples (2709     ), performance is AUC: 0.0299587, ACC: 0.0191953, RMSE: 0.752356 , MAE: 0.745721 
+(10, 0.2) double easy samples (4894     ), performance is AUC: 0.999949 , ACC: 0.998774 , RMSE: 0.207513 , MAE: 0.192165 
+(10, 0.2) double hard samples (534      ), performance is AUC: -1.0     , ACC: 0.0168539, RMSE: 0.781471 , MAE: 0.775931 
+(15, 0.4) double easy samples (31293    ), performance is AUC: 0.992404 , ACC: 0.984278 , RMSE: 0.270432 , MAE: 0.25243  
+(15, 0.4) double hard samples (7589     ), performance is AUC: 0.0299189, ACC: 0.0317565, RMSE: 0.71941  , MAE: 0.712047 
+(15, 0.3) double easy samples (18556    ), performance is AUC: 0.998302 , ACC: 0.992024 , RMSE: 0.245539 , MAE: 0.228831 
+(15, 0.3) double hard samples (3278     ), performance is AUC: 0.0117769, ACC: 0.0176937, RMSE: 0.748007 , MAE: 0.74184  
+(15, 0.2) double easy samples (4537     ), performance is AUC: 1.0      , ACC: 0.999339 , RMSE: 0.199737 , MAE: 0.18573  
+(15, 0.2) double hard samples (468      ), performance is AUC: 0.0      , ACC: 0.0128205, RMSE: 0.787342 , MAE: 0.782693 
+(20, 0.4) double easy samples (31133    ), performance is AUC: 0.991883 , ACC: 0.985867 , RMSE: 0.27089  , MAE: 0.253349 
+(20, 0.4) double hard samples (7603     ), performance is AUC: 0.0312842, ACC: 0.0309089, RMSE: 0.718641 , MAE: 0.711474 
+(20, 0.3) double easy samples (15248    ), performance is AUC: 0.997189 , ACC: 0.995278 , RMSE: 0.234922 , MAE: 0.219443 
+(20, 0.3) double hard samples (2593     ), performance is AUC: 0.00271512, ACC: 0.0158118, RMSE: 0.755156 , MAE: 0.749498 
+(20, 0.2) double easy samples (4129     ), performance is AUC: -1.0     , ACC: 0.999273 , RMSE: 0.195107 , MAE: 0.181594 
+(20, 0.2) double hard samples (432      ), performance is AUC: 0.0      , ACC: 0.00694444, RMSE: 0.79478  , MAE: 0.790569 
+
+question zero shot (95        samples), AUC: 0.50831  , ACC: 0.789474 , RMSE: 0.427024 , MAE: 0.382078 
+question low frequency (3807      samples), AUC: 0.617563 , ACC: 0.738902 , RMSE: 0.431416 , MAE: 0.383011 
+question middle frequency (43424     samples), AUC: 0.654114 , ACC: 0.699153 , RMSE: 0.445887 , MAE: 0.400828 
+question high frequency (61437     samples), AUC: 0.669839 , ACC: 0.65651  , RMSE: 0.465742 , MAE: 0.425472 
+
+
+
+fold 2
+overall performance is AUC: 0.67186  , ACC: 0.6812   , RMSE: 0.45445  , MAE: 0.40897  
+
+PPMCC between history average accuracy and current model predict score
+(10, 0.4), PPMCC between history acc and prediction of all is 0.5734
+(10, 0.4), PPMCC between history acc and prediction of easy is 0.6679
+(10, 0.4), PPMCC between history acc and prediction of normal is 0.2608
+(10, 0.4), PPMCC between history acc and prediction of hard is 0.5019
+(10, 0.4), PPMCC between history acc and prediction of unbalanced is 0.622
+(15, 0.4), PPMCC between history acc and prediction of all is 0.5934
+(15, 0.4), PPMCC between history acc and prediction of easy is 0.6582
+(15, 0.4), PPMCC between history acc and prediction of normal is 0.2797
+(15, 0.4), PPMCC between history acc and prediction of hard is 0.5177
+(15, 0.4), PPMCC between history acc and prediction of unbalanced is 0.6204
+(20, 0.4), PPMCC between history acc and prediction of all is 0.6018
+(20, 0.4), PPMCC between history acc and prediction of easy is 0.6422
+(20, 0.4), PPMCC between history acc and prediction of normal is 0.2687
+(20, 0.4), PPMCC between history acc and prediction of hard is 0.5224
+(20, 0.4), PPMCC between history acc and prediction of unbalanced is 0.6109
+(10, 0.3), PPMCC between history acc and prediction of all is 0.5734
+(10, 0.3), PPMCC between history acc and prediction of easy is 0.6913
+(10, 0.3), PPMCC between history acc and prediction of normal is 0.4026
+(10, 0.3), PPMCC between history acc and prediction of hard is 0.5484
+(10, 0.3), PPMCC between history acc and prediction of unbalanced is 0.651
+(15, 0.3), PPMCC between history acc and prediction of all is 0.5934
+(15, 0.3), PPMCC between history acc and prediction of easy is 0.6698
+(15, 0.3), PPMCC between history acc and prediction of normal is 0.3847
+(15, 0.3), PPMCC between history acc and prediction of hard is 0.5366
+(15, 0.3), PPMCC between history acc and prediction of unbalanced is 0.633
+(20, 0.3), PPMCC between history acc and prediction of all is 0.6018
+(20, 0.3), PPMCC between history acc and prediction of easy is 0.6437
+(20, 0.3), PPMCC between history acc and prediction of normal is 0.4399
+(20, 0.3), PPMCC between history acc and prediction of hard is 0.528
+(20, 0.3), PPMCC between history acc and prediction of unbalanced is 0.6117
+(10, 0.2), PPMCC between history acc and prediction of all is 0.5734
+(10, 0.2), PPMCC between history acc and prediction of easy is 0.7071
+(10, 0.2), PPMCC between history acc and prediction of normal is 0.4894
+(10, 0.2), PPMCC between history acc and prediction of hard is 0.593
+(10, 0.2), PPMCC between history acc and prediction of unbalanced is 0.6752
+(15, 0.2), PPMCC between history acc and prediction of all is 0.5934
+(15, 0.2), PPMCC between history acc and prediction of easy is 0.686
+(15, 0.2), PPMCC between history acc and prediction of normal is 0.5162
+(15, 0.2), PPMCC between history acc and prediction of hard is 0.5918
+(15, 0.2), PPMCC between history acc and prediction of unbalanced is 0.66
+(20, 0.2), PPMCC between history acc and prediction of all is 0.6018
+(20, 0.2), PPMCC between history acc and prediction of easy is 0.6489
+(20, 0.2), PPMCC between history acc and prediction of normal is 0.5299
+(20, 0.2), PPMCC between history acc and prediction of hard is 0.5455
+(20, 0.2), PPMCC between history acc and prediction of unbalanced is 0.6198
+
+CORE metric allow repeat (97212    ), performance is AUC: 0.579983 , ACC: 0.530634 , RMSE: 0.522921 , MAE: 0.480216 
+
+evaluation result of samples at different position
+(0  , 10 ), num of samples: 11635     , acc of answer: 54.4%, performance is AUC: 0.67431  , ACC: 0.62037  , RMSE: 0.47348  , MAE: 0.44782  
+(10 , 20 ), num of samples: 8481      , acc of answer: 58.6%, performance is AUC: 0.71594  , ACC: 0.67386  , RMSE: 0.45531  , MAE: 0.41515  
+(20 , 30 ), num of samples: 7773      , acc of answer: 59.1%, performance is AUC: 0.70356  , ACC: 0.67104  , RMSE: 0.45976  , MAE: 0.42091  
+(30 , 40 ), num of samples: 6485      , acc of answer: 66.7%, performance is AUC: 0.65658  , ACC: 0.67124  , RMSE: 0.4557   , MAE: 0.41141  
+(40 , 50 ), num of samples: 6104      , acc of answer: 68.6%, performance is AUC: 0.65908  , ACC: 0.69201  , RMSE: 0.44881  , MAE: 0.40125  
+(50 , 100), num of samples: 27353     , acc of answer: 68.1%, performance is AUC: 0.65061  , ACC: 0.69151  , RMSE: 0.45124  , MAE: 0.4008   
+(100, 200), num of samples: 45678     , acc of answer: 68.3%, performance is AUC: 0.64854  , ACC: 0.69357  , RMSE: 0.4509   , MAE: 0.40148  
+
+evaluation result of seq biased samples
+(10, 0.4) seq easy samples (46382    ), performance is AUC: 0.948087 , ACC: 0.948191 , RMSE: 0.298482 , MAE: 0.273011 
+(10, 0.4) seq normal samples (36495    ), performance is AUC: 0.627614 , ACC: 0.63532  , RMSE: 0.474134 , MAE: 0.442739 
+(10, 0.4) seq hard samples (18997    ), performance is AUC: 0.195399 , ACC: 0.154709 , RMSE: 0.668807 , MAE: 0.652265 
+(10, 0.4) cold start samples (11635    ), performance is AUC: 0.67431  , ACC: 0.62037  , RMSE: 0.473484 , MAE: 0.447817 
+(10, 0.4) seq normal&hard samples (55492    ), performance is AUC: 0.475396 , ACC: 0.470789 , RMSE: 0.54861  , MAE: 0.514467 
+(10, 0.3) seq easy samples (30148    ), performance is AUC: 0.974599 , ACC: 0.970744 , RMSE: 0.271976 , MAE: 0.24894  
+(10, 0.3) seq normal samples (61053    ), performance is AUC: 0.639906 , ACC: 0.651893 , RMSE: 0.467962 , MAE: 0.431927 
+(10, 0.3) seq hard samples (10673    ), performance is AUC: 0.12203  , ACC: 0.0972548, RMSE: 0.700272 , MAE: 0.687353 
+(10, 0.3) cold start samples (11635    ), performance is AUC: 0.67431  , ACC: 0.62037  , RMSE: 0.473484 , MAE: 0.447817 
+(10, 0.3) seq normal&hard samples (71726    ), performance is AUC: 0.555109 , ACC: 0.569361 , RMSE: 0.509287 , MAE: 0.469935 
+(10, 0.2) seq easy samples (15529    ), performance is AUC: 0.987441 , ACC: 0.982484 , RMSE: 0.246477 , MAE: 0.224927 
+(10, 0.2) seq normal samples (81844    ), performance is AUC: 0.648707 , ACC: 0.66694  , RMSE: 0.462344 , MAE: 0.421308 
+(10, 0.2) seq hard samples (4501     ), performance is AUC: 0.0640201, ACC: 0.0582093, RMSE: 0.729497 , MAE: 0.719222 
+(10, 0.2) cold start samples (11635    ), performance is AUC: 0.67431  , ACC: 0.62037  , RMSE: 0.473484 , MAE: 0.447817 
+(10, 0.2) seq normal&hard samples (86345    ), performance is AUC: 0.611212 , ACC: 0.635208 , RMSE: 0.479959 , MAE: 0.436838 
+(15, 0.4) seq easy samples (46992    ), performance is AUC: 0.95647  , ACC: 0.957354 , RMSE: 0.29383  , MAE: 0.270373 
+(15, 0.4) seq normal samples (31438    ), performance is AUC: 0.626305 , ACC: 0.628093 , RMSE: 0.476266 , MAE: 0.446959 
+(15, 0.4) seq hard samples (19079    ), performance is AUC: 0.176269 , ACC: 0.126474 , RMSE: 0.67699  , MAE: 0.662624 
+(15, 0.4) cold start samples (16000    ), performance is AUC: 0.688808 , ACC: 0.635938 , RMSE: 0.468368 , MAE: 0.438933 
+(15, 0.4) seq normal&hard samples (50517    ), performance is AUC: 0.455438 , ACC: 0.438644 , RMSE: 0.560585 , MAE: 0.52841  
+(15, 0.3) seq easy samples (35724    ), performance is AUC: 0.976452 , ACC: 0.9724   , RMSE: 0.274748 , MAE: 0.253071 
+(15, 0.3) seq normal samples (48629    ), performance is AUC: 0.634184 , ACC: 0.64297  , RMSE: 0.471171 , MAE: 0.438234 
+(15, 0.3) seq hard samples (13156    ), performance is AUC: 0.128322 , ACC: 0.0868045, RMSE: 0.699647 , MAE: 0.687707 
+(15, 0.3) cold start samples (16000    ), performance is AUC: 0.688808 , ACC: 0.635938 , RMSE: 0.468368 , MAE: 0.438933 
+(15, 0.3) seq normal&hard samples (61785    ), performance is AUC: 0.518521 , ACC: 0.524545 , RMSE: 0.528169 , MAE: 0.491355 
+(15, 0.2) seq easy samples (14071    ), performance is AUC: 0.99151  , ACC: 0.987563 , RMSE: 0.237183 , MAE: 0.217353 
+(15, 0.2) seq normal samples (79417    ), performance is AUC: 0.64791  , ACC: 0.668648 , RMSE: 0.461613 , MAE: 0.420421 
+(15, 0.2) seq hard samples (4021     ), performance is AUC: 0.0481658, ACC: 0.0370555, RMSE: 0.742711 , MAE: 0.73417  
+(15, 0.2) cold start samples (16000    ), performance is AUC: 0.688808 , ACC: 0.635938 , RMSE: 0.468368 , MAE: 0.438933 
+(15, 0.2) seq normal&hard samples (83438    ), performance is AUC: 0.610108 , ACC: 0.63821  , RMSE: 0.478959 , MAE: 0.435541 
+(20, 0.4) seq easy samples (46475    ), performance is AUC: 0.96042  , ACC: 0.963808 , RMSE: 0.290106 , MAE: 0.267968 
+(20, 0.4) seq normal samples (28168    ), performance is AUC: 0.621425 , ACC: 0.62326  , RMSE: 0.477802 , MAE: 0.450206 
+(20, 0.4) seq hard samples (18750    ), performance is AUC: 0.161773 , ACC: 0.1088   , RMSE: 0.682492 , MAE: 0.669629 
+(20, 0.4) cold start samples (20116    ), performance is AUC: 0.695135 , ACC: 0.642921 , RMSE: 0.465909 , MAE: 0.434044 
+(20, 0.4) seq normal&hard samples (46918    ), performance is AUC: 0.438431 , ACC: 0.417665 , RMSE: 0.568514 , MAE: 0.537895 
+(20, 0.3) seq easy samples (29183    ), performance is AUC: 0.985387 , ACC: 0.982147 , RMSE: 0.260725 , MAE: 0.240906 
+(20, 0.3) seq normal samples (54146    ), performance is AUC: 0.63553  , ACC: 0.648487 , RMSE: 0.469202 , MAE: 0.434855 
+(20, 0.3) seq hard samples (10064    ), performance is AUC: 0.0933999, ACC: 0.0610095, RMSE: 0.71685  , MAE: 0.706953 
+(20, 0.3) cold start samples (20116    ), performance is AUC: 0.695135 , ACC: 0.642921 , RMSE: 0.465909 , MAE: 0.434044 
+(20, 0.3) seq normal&hard samples (64210    ), performance is AUC: 0.539663 , ACC: 0.556409 , RMSE: 0.515933 , MAE: 0.477502 
+(20, 0.2) seq easy samples (12695    ), performance is AUC: 0.994738 , ACC: 0.990705 , RMSE: 0.228907 , MAE: 0.210425 
+(20, 0.2) seq normal samples (77099    ), performance is AUC: 0.64435  , ACC: 0.670294 , RMSE: 0.461109 , MAE: 0.419644 
+(20, 0.2) seq hard samples (3599     ), performance is AUC: 0.057239 , ACC: 0.0369547, RMSE: 0.748728 , MAE: 0.74057  
+(20, 0.2) cold start samples (20116    ), performance is AUC: 0.695135 , ACC: 0.642921 , RMSE: 0.465909 , MAE: 0.434044 
+(20, 0.2) seq normal&hard samples (80698    ), performance is AUC: 0.608288 , ACC: 0.642048 , RMSE: 0.47764  , MAE: 0.433956 
+
+PPMCC between question accuracy in train dataset and current model predict score
+(0.4), PPMCC between question acc and prediction of all is 0.4492
+(0.4), PPMCC between question acc and prediction of easy is 0.5171
+(0.4), PPMCC between question acc and prediction of normal is 0.1524
+(0.4), PPMCC between question acc and prediction of hard is 0.2705
+(0.4), PPMCC between question acc and prediction of unbalanced is 0.4676
+(0.3), PPMCC between question acc and prediction of all is 0.4492
+(0.3), PPMCC between question acc and prediction of easy is 0.5529
+(0.3), PPMCC between question acc and prediction of normal is 0.2306
+(0.3), PPMCC between question acc and prediction of hard is 0.3428
+(0.3), PPMCC between question acc and prediction of unbalanced is 0.5135
+(0.2), PPMCC between question acc and prediction of all is 0.4492
+(0.2), PPMCC between question acc and prediction of easy is 0.3508
+(0.2), PPMCC between question acc and prediction of normal is 0.4064
+(0.2), PPMCC between question acc and prediction of hard is 0.1476
+(0.2), PPMCC between question acc and prediction of unbalanced is 0.3168
+
+evaluation result of question biased samples
+(0.4) question easy samples (62660    ), performance is AUC: 0.826068 , ACC: 0.883402 , RMSE: 0.347106 , MAE: 0.313206 
+(0.4) question normal samples (29405    ), performance is AUC: 0.604594 , ACC: 0.574494 , RMSE: 0.498833 , MAE: 0.467009 
+(0.4) question hard samples (21332    ), performance is AUC: 0.372986 , ACC: 0.233968 , RMSE: 0.633289 , MAE: 0.610515 
+(0.4) question unseen samples (112      ), performance is AUC: 0.567356 , ACC: 0.75     , RMSE: 0.428427 , MAE: 0.362596 
+(0.4) question normal&hard samples (50737    ), performance is AUC: 0.501305 , ACC: 0.431322 , RMSE: 0.559316 , MAE: 0.527345 
+(0.3) question easy samples (45224    ), performance is AUC: 0.879837 , ACC: 0.914072 , RMSE: 0.322186 , MAE: 0.290638 
+(0.3) question normal samples (56368    ), performance is AUC: 0.61434  , ACC: 0.59972  , RMSE: 0.490701 , MAE: 0.455403 
+(0.3) question hard samples (11805    ), performance is AUC: 0.289867 , ACC: 0.177467 , RMSE: 0.660792 , MAE: 0.641035 
+(0.3) question unseen samples (112      ), performance is AUC: 0.567356 , ACC: 0.75     , RMSE: 0.428427 , MAE: 0.362596 
+(0.3) question normal&hard samples (68173    ), performance is AUC: 0.556811 , ACC: 0.526601 , RMSE: 0.524121 , MAE: 0.487548 
+(0.2) question easy samples (24169    ), performance is AUC: 0.869927 , ACC: 0.947495 , RMSE: 0.294484 , MAE: 0.266394 
+(0.2) question normal samples (84761    ), performance is AUC: 0.643929 , ACC: 0.633924 , RMSE: 0.476633 , MAE: 0.436271 
+(0.2) question hard samples (4467     ), performance is AUC: 0.352388 , ACC: 0.135662 , RMSE: 0.680707 , MAE: 0.663557 
+(0.2) question unseen samples (112      ), performance is AUC: 0.567356 , ACC: 0.75     , RMSE: 0.428427 , MAE: 0.362596 
+(0.2) question normal&hard samples (89228    ), performance is AUC: 0.623989 , ACC: 0.608979 , RMSE: 0.488879 , MAE: 0.44765  
+
+evaluation result of double biased samples
+(10, 0.4) double easy samples (33459    ), performance is AUC: 0.987183 , ACC: 0.983144 , RMSE: 0.265075 , MAE: 0.245444 
+(10, 0.4) double hard samples (7966     ), performance is AUC: 0.0415861, ACC: 0.0369069, RMSE: 0.725119 , MAE: 0.71714  
+(10, 0.3) double easy samples (17330    ), performance is AUC: 0.99717  , ACC: 0.992499 , RMSE: 0.235888 , MAE: 0.217854 
+(10, 0.3) double hard samples (2927     ), performance is AUC: 0.0220451, ACC: 0.016399 , RMSE: 0.757458 , MAE: 0.751204 
+(10, 0.2) double easy samples (5448     ), performance is AUC: 0.998515 , ACC: 0.997247 , RMSE: 0.206437 , MAE: 0.189585 
+(10, 0.2) double hard samples (534      ), performance is AUC: 0.00188679, ACC: 0.00749064, RMSE: 0.788511 , MAE: 0.783354 
+(15, 0.4) double easy samples (34167    ), performance is AUC: 0.98874  , ACC: 0.98481  , RMSE: 0.265603 , MAE: 0.246573 
+(15, 0.4) double hard samples (8190     ), performance is AUC: 0.0363476, ACC: 0.0326007, RMSE: 0.725661 , MAE: 0.718163 
+(15, 0.3) double easy samples (20257    ), performance is AUC: 0.998067 , ACC: 0.992398 , RMSE: 0.240977 , MAE: 0.223376 
+(15, 0.3) double hard samples (3580     ), performance is AUC: 0.00554023, ACC: 0.0142458, RMSE: 0.750789 , MAE: 0.744798 
+(15, 0.2) double easy samples (4985     ), performance is AUC: 0.99799  , ACC: 0.997192 , RMSE: 0.200483 , MAE: 0.184709 
+(15, 0.2) double hard samples (491      ), performance is AUC: 0.0      , ACC: 0.00407332, RMSE: 0.792746 , MAE: 0.787925 
+(20, 0.4) double easy samples (33898    ), performance is AUC: 0.990275 , ACC: 0.987256 , RMSE: 0.264388 , MAE: 0.24609  
+(20, 0.4) double hard samples (8212     ), performance is AUC: 0.034322 , ACC: 0.0288602, RMSE: 0.72555  , MAE: 0.718424 
+(20, 0.3) double easy samples (16793    ), performance is AUC: 0.998234 , ACC: 0.995296 , RMSE: 0.231936 , MAE: 0.215353 
+(20, 0.3) double hard samples (2815     ), performance is AUC: 0.00943989, ACC: 0.0124334, RMSE: 0.76073  , MAE: 0.755203 
+(20, 0.2) double easy samples (4597     ), performance is AUC: 0.9997   , ACC: 0.99826  , RMSE: 0.194318 , MAE: 0.179902 
+(20, 0.2) double hard samples (441      ), performance is AUC: 0.00227273, ACC: 0.00226757, RMSE: 0.797739 , MAE: 0.793123 
+
+question zero shot (112       samples), AUC: 0.567356 , ACC: 0.75     , RMSE: 0.428427 , MAE: 0.362596 
+question low frequency (3868      samples), AUC: 0.650069 , ACC: 0.745605 , RMSE: 0.423371 , MAE: 0.37524  
+question middle frequency (45928     samples), AUC: 0.648586 , ACC: 0.702447 , RMSE: 0.445738 , MAE: 0.397081 
+question high frequency (63601     samples), AUC: 0.679549 , ACC: 0.661813 , RMSE: 0.462477 , MAE: 0.419692 
+
+
+
+fold 3
+overall performance is AUC: 0.6721   , ACC: 0.68124  , RMSE: 0.45433  , MAE: 0.41088  
+
+PPMCC between history average accuracy and current model predict score
+(10, 0.4), PPMCC between history acc and prediction of all is 0.5875
+(10, 0.4), PPMCC between history acc and prediction of easy is 0.6777
+(10, 0.4), PPMCC between history acc and prediction of normal is 0.2739
+(10, 0.4), PPMCC between history acc and prediction of hard is 0.5295
+(10, 0.4), PPMCC between history acc and prediction of unbalanced is 0.6371
+(15, 0.4), PPMCC between history acc and prediction of all is 0.6102
+(15, 0.4), PPMCC between history acc and prediction of easy is 0.6762
+(15, 0.4), PPMCC between history acc and prediction of normal is 0.2985
+(15, 0.4), PPMCC between history acc and prediction of hard is 0.5446
+(15, 0.4), PPMCC between history acc and prediction of unbalanced is 0.6412
+(20, 0.4), PPMCC between history acc and prediction of all is 0.6219
+(20, 0.4), PPMCC between history acc and prediction of easy is 0.6642
+(20, 0.4), PPMCC between history acc and prediction of normal is 0.302
+(20, 0.4), PPMCC between history acc and prediction of hard is 0.5462
+(20, 0.4), PPMCC between history acc and prediction of unbalanced is 0.6337
+(10, 0.3), PPMCC between history acc and prediction of all is 0.5875
+(10, 0.3), PPMCC between history acc and prediction of easy is 0.6931
+(10, 0.3), PPMCC between history acc and prediction of normal is 0.4108
+(10, 0.3), PPMCC between history acc and prediction of hard is 0.575
+(10, 0.3), PPMCC between history acc and prediction of unbalanced is 0.6595
+(15, 0.3), PPMCC between history acc and prediction of all is 0.6102
+(15, 0.3), PPMCC between history acc and prediction of easy is 0.6841
+(15, 0.3), PPMCC between history acc and prediction of normal is 0.4011
+(15, 0.3), PPMCC between history acc and prediction of hard is 0.5621
+(15, 0.3), PPMCC between history acc and prediction of unbalanced is 0.6503
+(20, 0.3), PPMCC between history acc and prediction of all is 0.6219
+(20, 0.3), PPMCC between history acc and prediction of easy is 0.6664
+(20, 0.3), PPMCC between history acc and prediction of normal is 0.4542
+(20, 0.3), PPMCC between history acc and prediction of hard is 0.5739
+(20, 0.3), PPMCC between history acc and prediction of unbalanced is 0.6412
+(10, 0.2), PPMCC between history acc and prediction of all is 0.5875
+(10, 0.2), PPMCC between history acc and prediction of easy is 0.6801
+(10, 0.2), PPMCC between history acc and prediction of normal is 0.504
+(10, 0.2), PPMCC between history acc and prediction of hard is 0.5907
+(10, 0.2), PPMCC between history acc and prediction of unbalanced is 0.6539
+(15, 0.2), PPMCC between history acc and prediction of all is 0.6102
+(15, 0.2), PPMCC between history acc and prediction of easy is 0.6512
+(15, 0.2), PPMCC between history acc and prediction of normal is 0.5348
+(15, 0.2), PPMCC between history acc and prediction of hard is 0.579
+(15, 0.2), PPMCC between history acc and prediction of unbalanced is 0.6302
+(20, 0.2), PPMCC between history acc and prediction of all is 0.6219
+(20, 0.2), PPMCC between history acc and prediction of easy is 0.5827
+(20, 0.2), PPMCC between history acc and prediction of normal is 0.549
+(20, 0.2), PPMCC between history acc and prediction of hard is 0.5354
+(20, 0.2), PPMCC between history acc and prediction of unbalanced is 0.5699
+
+CORE metric allow repeat (97270    ), performance is AUC: 0.585167 , ACC: 0.53625  , RMSE: 0.519688 , MAE: 0.47882  
+
+evaluation result of samples at different position
+(0  , 10 ), num of samples: 11464     , acc of answer: 54.8%, performance is AUC: 0.67914  , ACC: 0.62378  , RMSE: 0.4727   , MAE: 0.4487   
+(10 , 20 ), num of samples: 8410      , acc of answer: 58.5%, performance is AUC: 0.71082  , ACC: 0.67551  , RMSE: 0.45702  , MAE: 0.41782  
+(20 , 30 ), num of samples: 7774      , acc of answer: 61.1%, performance is AUC: 0.67493  , ACC: 0.66427  , RMSE: 0.46355  , MAE: 0.42707  
+(30 , 40 ), num of samples: 6595      , acc of answer: 67.5%, performance is AUC: 0.66289  , ACC: 0.69052  , RMSE: 0.45084  , MAE: 0.40711  
+(40 , 50 ), num of samples: 6177      , acc of answer: 67.1%, performance is AUC: 0.65708  , ACC: 0.69014  , RMSE: 0.45268  , MAE: 0.40765  
+(50 , 100), num of samples: 27671     , acc of answer: 67.9%, performance is AUC: 0.65907  , ACC: 0.69199  , RMSE: 0.45048  , MAE: 0.40318  
+(100, 200), num of samples: 45664     , acc of answer: 68.2%, performance is AUC: 0.65398  , ACC: 0.69054  , RMSE: 0.45056  , MAE: 0.403    
+
+evaluation result of seq biased samples
+(10, 0.4) seq easy samples (46319    ), performance is AUC: 0.953433 , ACC: 0.948898 , RMSE: 0.30069  , MAE: 0.276391 
+(10, 0.4) seq normal samples (36813    ), performance is AUC: 0.627009 , ACC: 0.638932 , RMSE: 0.473585 , MAE: 0.443989 
+(10, 0.4) seq hard samples (19159    ), performance is AUC: 0.17761  , ACC: 0.149799 , RMSE: 0.66507  , MAE: 0.649779 
+(10, 0.4) cold start samples (11464    ), performance is AUC: 0.679136 , ACC: 0.623779 , RMSE: 0.472703 , MAE: 0.448703 
+(10, 0.4) seq normal&hard samples (55972    ), performance is AUC: 0.471089 , ACC: 0.471504 , RMSE: 0.546732 , MAE: 0.51443  
+(10, 0.3) seq easy samples (30360    ), performance is AUC: 0.97595  , ACC: 0.969532 , RMSE: 0.274586 , MAE: 0.252108 
+(10, 0.3) seq normal samples (61175    ), performance is AUC: 0.637945 , ACC: 0.652325 , RMSE: 0.468238 , MAE: 0.434508 
+(10, 0.3) seq hard samples (10756    ), performance is AUC: 0.108543 , ACC: 0.0931573, RMSE: 0.696464 , MAE: 0.684341 
+(10, 0.3) cold start samples (11464    ), performance is AUC: 0.679136 , ACC: 0.623779 , RMSE: 0.472703 , MAE: 0.448703 
+(10, 0.3) seq normal&hard samples (71931    ), performance is AUC: 0.55018  , ACC: 0.568712 , RMSE: 0.508915 , MAE: 0.471866 
+(10, 0.2) seq easy samples (15573    ), performance is AUC: 0.988076 , ACC: 0.982149 , RMSE: 0.247121 , MAE: 0.225782 
+(10, 0.2) seq normal samples (82126    ), performance is AUC: 0.649337 , ACC: 0.667231 , RMSE: 0.462148 , MAE: 0.423583 
+(10, 0.2) seq hard samples (4592     ), performance is AUC: 0.0601264, ACC: 0.0546603, RMSE: 0.727039 , MAE: 0.717015 
+(10, 0.2) cold start samples (11464    ), performance is AUC: 0.679136 , ACC: 0.623779 , RMSE: 0.472703 , MAE: 0.448703 
+(10, 0.2) seq normal&hard samples (86718    ), performance is AUC: 0.609634 , ACC: 0.634793 , RMSE: 0.479855 , MAE: 0.439121 
+(15, 0.4) seq easy samples (46885    ), performance is AUC: 0.958366 , ACC: 0.959454 , RMSE: 0.296393 , MAE: 0.274044 
+(15, 0.4) seq normal samples (31844    ), performance is AUC: 0.624048 , ACC: 0.632364 , RMSE: 0.474772 , MAE: 0.447016 
+(15, 0.4) seq hard samples (19264    ), performance is AUC: 0.15738  , ACC: 0.121366 , RMSE: 0.672784 , MAE: 0.659639 
+(15, 0.4) cold start samples (15762    ), performance is AUC: 0.689735 , ACC: 0.636658 , RMSE: 0.468802 , MAE: 0.440879 
+(15, 0.4) seq normal&hard samples (51108    ), performance is AUC: 0.450677 , ACC: 0.439755 , RMSE: 0.557726 , MAE: 0.527159 
+(15, 0.3) seq easy samples (35765    ), performance is AUC: 0.978694 , ACC: 0.972879 , RMSE: 0.277426 , MAE: 0.256535 
+(15, 0.3) seq normal samples (49055    ), performance is AUC: 0.629404 , ACC: 0.642891 , RMSE: 0.47173  , MAE: 0.440741 
+(15, 0.3) seq hard samples (13173    ), performance is AUC: 0.114636 , ACC: 0.0855538, RMSE: 0.694158 , MAE: 0.682842 
+(15, 0.3) cold start samples (15762    ), performance is AUC: 0.689735 , ACC: 0.636658 , RMSE: 0.468802 , MAE: 0.440879 
+(15, 0.3) seq normal&hard samples (62228    ), performance is AUC: 0.513386 , ACC: 0.524908 , RMSE: 0.526712 , MAE: 0.491991 
+(15, 0.2) seq easy samples (14020    ), performance is AUC: 0.990459 , ACC: 0.987375 , RMSE: 0.236649 , MAE: 0.217058 
+(15, 0.2) seq normal samples (79952    ), performance is AUC: 0.647222 , ACC: 0.668326 , RMSE: 0.461699 , MAE: 0.42297  
+(15, 0.2) seq hard samples (4021     ), performance is AUC: 0.0480582, ACC: 0.0452624, RMSE: 0.737677 , MAE: 0.728719 
+(15, 0.2) cold start samples (15762    ), performance is AUC: 0.689735 , ACC: 0.636658 , RMSE: 0.468802 , MAE: 0.440879 
+(15, 0.2) seq normal&hard samples (83973    ), performance is AUC: 0.608754 , ACC: 0.638491 , RMSE: 0.478556 , MAE: 0.43761  
+(20, 0.4) seq easy samples (46638    ), performance is AUC: 0.961255 , ACC: 0.964814 , RMSE: 0.293637 , MAE: 0.272395 
+(20, 0.4) seq normal samples (28321    ), performance is AUC: 0.618608 , ACC: 0.623566 , RMSE: 0.477437 , MAE: 0.451496 
+(20, 0.4) seq hard samples (18922    ), performance is AUC: 0.149201 , ACC: 0.105961 , RMSE: 0.677501 , MAE: 0.665425 
+(20, 0.4) cold start samples (19874    ), performance is AUC: 0.695438 , ACC: 0.645668 , RMSE: 0.466131 , MAE: 0.435634 
+(20, 0.4) seq normal&hard samples (47243    ), performance is AUC: 0.433636 , ACC: 0.416252 , RMSE: 0.56612  , MAE: 0.53718  
+(20, 0.3) seq easy samples (29111    ), performance is AUC: 0.984394 , ACC: 0.982721 , RMSE: 0.263166 , MAE: 0.243972 
+(20, 0.3) seq normal samples (54703    ), performance is AUC: 0.632153 , ACC: 0.64788  , RMSE: 0.469617 , MAE: 0.437315 
+(20, 0.3) seq hard samples (10067    ), performance is AUC: 0.0749435, ACC: 0.060892 , RMSE: 0.7105   , MAE: 0.701024 
+(20, 0.3) cold start samples (19874    ), performance is AUC: 0.695438 , ACC: 0.645668 , RMSE: 0.466131 , MAE: 0.435634 
+(20, 0.3) seq normal&hard samples (64770    ), performance is AUC: 0.535814 , ACC: 0.556647 , RMSE: 0.514513 , MAE: 0.478303 
+(20, 0.2) seq easy samples (12858    ), performance is AUC: 0.987763 , ACC: 0.991601 , RMSE: 0.226827 , MAE: 0.208976 
+(20, 0.2) seq normal samples (77535    ), performance is AUC: 0.643051 , ACC: 0.667918 , RMSE: 0.462082 , MAE: 0.423265 
+(20, 0.2) seq hard samples (3488     ), performance is AUC: 0.0548317, ACC: 0.0358372, RMSE: 0.746824 , MAE: 0.738851 
+(20, 0.2) cold start samples (19874    ), performance is AUC: 0.695438 , ACC: 0.645668 , RMSE: 0.466131 , MAE: 0.435634 
+(20, 0.2) seq normal&hard samples (81023    ), performance is AUC: 0.606701 , ACC: 0.640707 , RMSE: 0.477848 , MAE: 0.43685  
+
+PPMCC between question accuracy in train dataset and current model predict score
+(0.4), PPMCC between question acc and prediction of all is 0.431
+(0.4), PPMCC between question acc and prediction of easy is 0.501
+(0.4), PPMCC between question acc and prediction of normal is 0.182
+(0.4), PPMCC between question acc and prediction of hard is 0.2276
+(0.4), PPMCC between question acc and prediction of unbalanced is 0.4456
+(0.3), PPMCC between question acc and prediction of all is 0.431
+(0.3), PPMCC between question acc and prediction of easy is 0.5276
+(0.3), PPMCC between question acc and prediction of normal is 0.2453
+(0.3), PPMCC between question acc and prediction of hard is 0.2917
+(0.3), PPMCC between question acc and prediction of unbalanced is 0.4836
+(0.2), PPMCC between question acc and prediction of all is 0.431
+(0.2), PPMCC between question acc and prediction of easy is 0.3338
+(0.2), PPMCC between question acc and prediction of normal is 0.3868
+(0.2), PPMCC between question acc and prediction of hard is 0.1194
+(0.2), PPMCC between question acc and prediction of unbalanced is 0.2999
+
+evaluation result of question biased samples
+(0.4) question easy samples (62301    ), performance is AUC: 0.816869 , ACC: 0.877273 , RMSE: 0.352675 , MAE: 0.319458 
+(0.4) question normal samples (29989    ), performance is AUC: 0.609395 , ACC: 0.581346 , RMSE: 0.495766 , MAE: 0.464947 
+(0.4) question hard samples (21364    ), performance is AUC: 0.396037 , ACC: 0.249251 , RMSE: 0.625004 , MAE: 0.601943 
+(0.4) question unseen samples (101      ), performance is AUC: 0.780526 , ACC: 0.792079 , RMSE: 0.388106 , MAE: 0.336611 
+(0.4) question normal&hard samples (51353    ), performance is AUC: 0.514102 , ACC: 0.443187 , RMSE: 0.553211 , MAE: 0.52194  
+(0.3) question easy samples (44069    ), performance is AUC: 0.862217 , ACC: 0.910822 , RMSE: 0.327118 , MAE: 0.296062 
+(0.3) question normal samples (58065    ), performance is AUC: 0.620282 , ACC: 0.603496 , RMSE: 0.48854  , MAE: 0.454404 
+(0.3) question hard samples (11520    ), performance is AUC: 0.329447 , ACC: 0.193837 , RMSE: 0.651594 , MAE: 0.63139  
+(0.3) question unseen samples (101      ), performance is AUC: 0.780526 , ACC: 0.792079 , RMSE: 0.388106 , MAE: 0.336611 
+(0.3) question normal&hard samples (69585    ), performance is AUC: 0.570126 , ACC: 0.535676 , RMSE: 0.519084 , MAE: 0.483704 
+(0.2) question easy samples (23962    ), performance is AUC: 0.843974 , ACC: 0.939028 , RMSE: 0.30252  , MAE: 0.273887 
+(0.2) question normal samples (85294    ), performance is AUC: 0.643756 , ACC: 0.635637 , RMSE: 0.475708 , MAE: 0.43707  
+(0.2) question hard samples (4398     ), performance is AUC: 0.402312 , ACC: 0.158481 , RMSE: 0.669343 , MAE: 0.651078 
+(0.2) question unseen samples (101      ), performance is AUC: 0.780526 , ACC: 0.792079 , RMSE: 0.388106 , MAE: 0.336611 
+(0.2) question normal&hard samples (89692    ), performance is AUC: 0.625835 , ACC: 0.61224  , RMSE: 0.487001 , MAE: 0.447563 
+
+evaluation result of double biased samples
+(10, 0.4) double easy samples (33047    ), performance is AUC: 0.984943 , ACC: 0.978848 , RMSE: 0.270318 , MAE: 0.250545 
+(10, 0.4) double hard samples (7929     ), performance is AUC: 0.0364918, ACC: 0.0401059, RMSE: 0.716999 , MAE: 0.708989 
+(10, 0.3) double easy samples (17078    ), performance is AUC: 0.996304 , ACC: 0.991041 , RMSE: 0.239234 , MAE: 0.221221 
+(10, 0.3) double hard samples (2815     ), performance is AUC: 0.00807972, ACC: 0.0191829, RMSE: 0.750203 , MAE: 0.74388  
+(10, 0.2) double easy samples (5600     ), performance is AUC: 0.992031 , ACC: 0.9975   , RMSE: 0.205388 , MAE: 0.189311 
+(10, 0.2) double hard samples (502      ), performance is AUC: 0.0      , ACC: 0.0059761, RMSE: 0.787157 , MAE: 0.782303 
+(15, 0.4) double easy samples (33664    ), performance is AUC: 0.989178 , ACC: 0.982801 , RMSE: 0.27033  , MAE: 0.25159  
+(15, 0.4) double hard samples (8237     ), performance is AUC: 0.0336996, ACC: 0.0353284, RMSE: 0.716792 , MAE: 0.709269 
+(15, 0.3) double easy samples (19869    ), performance is AUC: 0.996291 , ACC: 0.991142 , RMSE: 0.24531  , MAE: 0.227741 
+(15, 0.3) double hard samples (3448     ), performance is AUC: 0.0203485, ACC: 0.0188515, RMSE: 0.742309 , MAE: 0.735992 
+(15, 0.2) double easy samples (5115     ), performance is AUC: 0.99413  , ACC: 0.998045 , RMSE: 0.198839 , MAE: 0.183674 
+(15, 0.2) double hard samples (434      ), performance is AUC: 0.0      , ACC: 0.00460829, RMSE: 0.796683 , MAE: 0.792388 
+(20, 0.4) double easy samples (33651    ), performance is AUC: 0.987504 , ACC: 0.985142 , RMSE: 0.269877 , MAE: 0.251694 
+(20, 0.4) double hard samples (8213     ), performance is AUC: 0.0334559, ACC: 0.0331182, RMSE: 0.717005 , MAE: 0.709698 
+(20, 0.3) double easy samples (16398    ), performance is AUC: 0.997671 , ACC: 0.99439  , RMSE: 0.235052 , MAE: 0.218586 
+(20, 0.3) double hard samples (2661     ), performance is AUC: 0.0267436, ACC: 0.0124014, RMSE: 0.754753 , MAE: 0.749137 
+(20, 0.2) double easy samples (4778     ), performance is AUC: 0.995393 , ACC: 0.998744 , RMSE: 0.193034 , MAE: 0.179139 
+(20, 0.2) double hard samples (392      ), performance is AUC: 0.0      , ACC: 0.00255102, RMSE: 0.800718 , MAE: 0.797    
+
+question zero shot (101       samples), AUC: 0.780526 , ACC: 0.792079 , RMSE: 0.388106 , MAE: 0.336611 
+question low frequency (3577      samples), AUC: 0.634867 , ACC: 0.755382 , RMSE: 0.421516 , MAE: 0.373474 
+question middle frequency (45146     samples), AUC: 0.660231 , ACC: 0.712023 , RMSE: 0.44038  , MAE: 0.393685 
+question high frequency (64931     samples), AUC: 0.670755 , ACC: 0.655573 , RMSE: 0.465573 , MAE: 0.425013 
+
+
+
+fold 4
+overall performance is AUC: 0.66552  , ACC: 0.67682  , RMSE: 0.45691  , MAE: 0.4176   
+
+PPMCC between history average accuracy and current model predict score
+(10, 0.4), PPMCC between history acc and prediction of all is 0.5814
+(10, 0.4), PPMCC between history acc and prediction of easy is 0.6723
+(10, 0.4), PPMCC between history acc and prediction of normal is 0.2773
+(10, 0.4), PPMCC between history acc and prediction of hard is 0.5313
+(10, 0.4), PPMCC between history acc and prediction of unbalanced is 0.6322
+(15, 0.4), PPMCC between history acc and prediction of all is 0.5996
+(15, 0.4), PPMCC between history acc and prediction of easy is 0.6602
+(15, 0.4), PPMCC between history acc and prediction of normal is 0.2948
+(15, 0.4), PPMCC between history acc and prediction of hard is 0.536
+(15, 0.4), PPMCC between history acc and prediction of unbalanced is 0.6271
+(20, 0.4), PPMCC between history acc and prediction of all is 0.6047
+(20, 0.4), PPMCC between history acc and prediction of easy is 0.6408
+(20, 0.4), PPMCC between history acc and prediction of normal is 0.3078
+(20, 0.4), PPMCC between history acc and prediction of hard is 0.5237
+(20, 0.4), PPMCC between history acc and prediction of unbalanced is 0.6105
+(10, 0.3), PPMCC between history acc and prediction of all is 0.5814
+(10, 0.3), PPMCC between history acc and prediction of easy is 0.6842
+(10, 0.3), PPMCC between history acc and prediction of normal is 0.4186
+(10, 0.3), PPMCC between history acc and prediction of hard is 0.5744
+(10, 0.3), PPMCC between history acc and prediction of unbalanced is 0.6516
+(15, 0.3), PPMCC between history acc and prediction of all is 0.5996
+(15, 0.3), PPMCC between history acc and prediction of easy is 0.6614
+(15, 0.3), PPMCC between history acc and prediction of normal is 0.4106
+(15, 0.3), PPMCC between history acc and prediction of hard is 0.5483
+(15, 0.3), PPMCC between history acc and prediction of unbalanced is 0.6303
+(20, 0.3), PPMCC between history acc and prediction of all is 0.6047
+(20, 0.3), PPMCC between history acc and prediction of easy is 0.623
+(20, 0.3), PPMCC between history acc and prediction of normal is 0.4612
+(20, 0.3), PPMCC between history acc and prediction of hard is 0.5127
+(20, 0.3), PPMCC between history acc and prediction of unbalanced is 0.5929
+(10, 0.2), PPMCC between history acc and prediction of all is 0.5814
+(10, 0.2), PPMCC between history acc and prediction of easy is 0.6828
+(10, 0.2), PPMCC between history acc and prediction of normal is 0.5021
+(10, 0.2), PPMCC between history acc and prediction of hard is 0.6027
+(10, 0.2), PPMCC between history acc and prediction of unbalanced is 0.6575
+(15, 0.2), PPMCC between history acc and prediction of all is 0.5996
+(15, 0.2), PPMCC between history acc and prediction of easy is 0.6428
+(15, 0.2), PPMCC between history acc and prediction of normal is 0.5316
+(15, 0.2), PPMCC between history acc and prediction of hard is 0.5202
+(15, 0.2), PPMCC between history acc and prediction of unbalanced is 0.6087
+(20, 0.2), PPMCC between history acc and prediction of all is 0.6047
+(20, 0.2), PPMCC between history acc and prediction of easy is 0.5992
+(20, 0.2), PPMCC between history acc and prediction of normal is 0.54
+(20, 0.2), PPMCC between history acc and prediction of hard is 0.4441
+(20, 0.2), PPMCC between history acc and prediction of unbalanced is 0.5575
+
+CORE metric allow repeat (94602    ), performance is AUC: 0.581236 , ACC: 0.532674 , RMSE: 0.51834  , MAE: 0.481009 
+
+evaluation result of samples at different position
+(0  , 10 ), num of samples: 11467     , acc of answer: 54.2%, performance is AUC: 0.67434  , ACC: 0.6258   , RMSE: 0.47414  , MAE: 0.45166  
+(10 , 20 ), num of samples: 8300      , acc of answer: 57.2%, performance is AUC: 0.70647  , ACC: 0.66687  , RMSE: 0.45964  , MAE: 0.4249   
+(20 , 30 ), num of samples: 7615      , acc of answer: 60.6%, performance is AUC: 0.69627  , ACC: 0.67196  , RMSE: 0.45901  , MAE: 0.42524  
+(30 , 40 ), num of samples: 6427      , acc of answer: 67.2%, performance is AUC: 0.65686  , ACC: 0.68399  , RMSE: 0.45362  , MAE: 0.41325  
+(40 , 50 ), num of samples: 5923      , acc of answer: 67.3%, performance is AUC: 0.64655  , ACC: 0.68242  , RMSE: 0.45489  , MAE: 0.41295  
+(50 , 100), num of samples: 26429     , acc of answer: 67.7%, performance is AUC: 0.64076  , ACC: 0.68342  , RMSE: 0.45476  , MAE: 0.41124  
+(100, 200), num of samples: 44266     , acc of answer: 67.8%, performance is AUC: 0.64519  , ACC: 0.68701  , RMSE: 0.45351  , MAE: 0.41115  
+
+evaluation result of seq biased samples
+(10, 0.4) seq easy samples (43820    ), performance is AUC: 0.950088 , ACC: 0.949019 , RMSE: 0.309661 , MAE: 0.288012 
+(10, 0.4) seq normal samples (36597    ), performance is AUC: 0.628807 , ACC: 0.635653 , RMSE: 0.474021 , MAE: 0.446981 
+(10, 0.4) seq hard samples (18543    ), performance is AUC: 0.174653 , ACC: 0.146363 , RMSE: 0.658906 , MAE: 0.644782 
+(10, 0.4) cold start samples (11467    ), performance is AUC: 0.674342 , ACC: 0.625796 , RMSE: 0.474138 , MAE: 0.451664 
+(10, 0.4) seq normal&hard samples (55140    ), performance is AUC: 0.471762 , ACC: 0.47111  , RMSE: 0.543264 , MAE: 0.5135   
+(10, 0.3) seq easy samples (28065    ), performance is AUC: 0.973507 , ACC: 0.970426 , RMSE: 0.283871 , MAE: 0.263905 
+(10, 0.3) seq normal samples (60602    ), performance is AUC: 0.63649  , ACC: 0.649764 , RMSE: 0.469167 , MAE: 0.438277 
+(10, 0.3) seq hard samples (10293    ), performance is AUC: 0.105642 , ACC: 0.0923929, RMSE: 0.688168 , MAE: 0.676979 
+(10, 0.3) cold start samples (11467    ), performance is AUC: 0.674342 , ACC: 0.625796 , RMSE: 0.474138 , MAE: 0.451664 
+(10, 0.3) seq normal&hard samples (70895    ), performance is AUC: 0.55116  , ACC: 0.568841 , RMSE: 0.506869 , MAE: 0.472933 
+(10, 0.2) seq easy samples (13720    ), performance is AUC: 0.988294 , ACC: 0.984475 , RMSE: 0.254466 , MAE: 0.235952 
+(10, 0.2) seq normal samples (80985    ), performance is AUC: 0.64319  , ACC: 0.664456 , RMSE: 0.463686 , MAE: 0.428419 
+(10, 0.2) seq hard samples (4255     ), performance is AUC: 0.0569722, ACC: 0.0575793, RMSE: 0.714973 , MAE: 0.705597 
+(10, 0.2) cold start samples (11467    ), performance is AUC: 0.674342 , ACC: 0.625796 , RMSE: 0.474138 , MAE: 0.451664 
+(10, 0.2) seq normal&hard samples (85240    ), performance is AUC: 0.607076 , ACC: 0.634162 , RMSE: 0.479364 , MAE: 0.442255 
+(15, 0.4) seq easy samples (44331    ), performance is AUC: 0.953122 , ACC: 0.956983 , RMSE: 0.305772 , MAE: 0.285501 
+(15, 0.4) seq normal samples (31848    ), performance is AUC: 0.623742 , ACC: 0.631814 , RMSE: 0.475161 , MAE: 0.450008 
+(15, 0.4) seq hard samples (18538    ), performance is AUC: 0.155379 , ACC: 0.120132 , RMSE: 0.666218 , MAE: 0.653931 
+(15, 0.4) cold start samples (15710    ), performance is AUC: 0.681204 , ACC: 0.634373 , RMSE: 0.471336 , MAE: 0.445789 
+(15, 0.4) seq normal&hard samples (50386    ), performance is AUC: 0.44921  , ACC: 0.443556 , RMSE: 0.553182 , MAE: 0.525036 
+(15, 0.3) seq easy samples (33282    ), performance is AUC: 0.9711   , ACC: 0.972117 , RMSE: 0.287239 , MAE: 0.268431 
+(15, 0.3) seq normal samples (48890    ), performance is AUC: 0.63032  , ACC: 0.642135 , RMSE: 0.472039 , MAE: 0.44359  
+(15, 0.3) seq hard samples (12545    ), performance is AUC: 0.118659 , ACC: 0.0817059, RMSE: 0.687167 , MAE: 0.676758 
+(15, 0.3) cold start samples (15710    ), performance is AUC: 0.681204 , ACC: 0.634373 , RMSE: 0.471336 , MAE: 0.445789 
+(15, 0.3) seq normal&hard samples (61435    ), performance is AUC: 0.516352 , ACC: 0.527696 , RMSE: 0.523205 , MAE: 0.491203 
+(15, 0.2) seq easy samples (12684    ), performance is AUC: 0.98646  , ACC: 0.986597 , RMSE: 0.248359 , MAE: 0.230812 
+(15, 0.2) seq normal samples (78447    ), performance is AUC: 0.639793 , ACC: 0.664232 , RMSE: 0.463959 , MAE: 0.428403 
+(15, 0.2) seq hard samples (3586     ), performance is AUC: 0.0696538, ACC: 0.0423871, RMSE: 0.726889 , MAE: 0.718473 
+(15, 0.2) cold start samples (15710    ), performance is AUC: 0.681204 , ACC: 0.634373 , RMSE: 0.471336 , MAE: 0.445789 
+(15, 0.2) seq normal&hard samples (82033    ), performance is AUC: 0.606072 , ACC: 0.637049 , RMSE: 0.478482 , MAE: 0.441083 
+(20, 0.4) seq easy samples (43914    ), performance is AUC: 0.953459 , ACC: 0.963041 , RMSE: 0.303004 , MAE: 0.283874 
+(20, 0.4) seq normal samples (28515    ), performance is AUC: 0.617246 , ACC: 0.624759 , RMSE: 0.477477 , MAE: 0.453481 
+(20, 0.4) seq hard samples (18231    ), performance is AUC: 0.155977 , ACC: 0.105425 , RMSE: 0.670223 , MAE: 0.65884  
+(20, 0.4) cold start samples (19767    ), performance is AUC: 0.689709 , ACC: 0.643041 , RMSE: 0.468104 , MAE: 0.440428 
+(20, 0.4) seq normal&hard samples (46746    ), performance is AUC: 0.435489 , ACC: 0.422218 , RMSE: 0.560588 , MAE: 0.533571 
+(20, 0.3) seq easy samples (26842    ), performance is AUC: 0.975572 , ACC: 0.981447 , RMSE: 0.273446 , MAE: 0.25627  
+(20, 0.3) seq normal samples (54415    ), performance is AUC: 0.626988 , ACC: 0.645723 , RMSE: 0.471095 , MAE: 0.441218 
+(20, 0.3) seq hard samples (9403     ), performance is AUC: 0.108461 , ACC: 0.0581729, RMSE: 0.702374 , MAE: 0.693468 
+(20, 0.3) cold start samples (19767    ), performance is AUC: 0.689709 , ACC: 0.643041 , RMSE: 0.468104 , MAE: 0.440428 
+(20, 0.3) seq normal&hard samples (63818    ), performance is AUC: 0.53755  , ACC: 0.559153 , RMSE: 0.511779 , MAE: 0.478385 
+(20, 0.2) seq easy samples (11358    ), performance is AUC: 0.980947 , ACC: 0.989523 , RMSE: 0.241376 , MAE: 0.224672 
+(20, 0.2) seq normal samples (76064    ), performance is AUC: 0.636849 , ACC: 0.66611  , RMSE: 0.4632   , MAE: 0.427378 
+(20, 0.2) seq hard samples (3238     ), performance is AUC: 0.0808171, ACC: 0.0376776, RMSE: 0.733164 , MAE: 0.725283 
+(20, 0.2) cold start samples (19767    ), performance is AUC: 0.689709 , ACC: 0.643041 , RMSE: 0.468104 , MAE: 0.440428 
+(20, 0.2) seq normal&hard samples (79302    ), performance is AUC: 0.604001 , ACC: 0.64045  , RMSE: 0.477223 , MAE: 0.439542 
+
+PPMCC between question accuracy in train dataset and current model predict score
+(0.4), PPMCC between question acc and prediction of all is 0.4418
+(0.4), PPMCC between question acc and prediction of easy is 0.5121
+(0.4), PPMCC between question acc and prediction of normal is 0.1791
+(0.4), PPMCC between question acc and prediction of hard is 0.2636
+(0.4), PPMCC between question acc and prediction of unbalanced is 0.4611
+(0.3), PPMCC between question acc and prediction of all is 0.4418
+(0.3), PPMCC between question acc and prediction of easy is 0.5467
+(0.3), PPMCC between question acc and prediction of normal is 0.2443
+(0.3), PPMCC between question acc and prediction of hard is 0.3197
+(0.3), PPMCC between question acc and prediction of unbalanced is 0.503
+(0.2), PPMCC between question acc and prediction of all is 0.4418
+(0.2), PPMCC between question acc and prediction of easy is 0.3245
+(0.2), PPMCC between question acc and prediction of normal is 0.398
+(0.2), PPMCC between question acc and prediction of hard is 0.1609
+(0.2), PPMCC between question acc and prediction of unbalanced is 0.2986
+
+evaluation result of question biased samples
+(0.4) question easy samples (60037    ), performance is AUC: 0.826509 , ACC: 0.881756 , RMSE: 0.356116 , MAE: 0.327287 
+(0.4) question normal samples (29295    ), performance is AUC: 0.598729 , ACC: 0.570985 , RMSE: 0.498551 , MAE: 0.470349 
+(0.4) question hard samples (20936    ), performance is AUC: 0.375161 , ACC: 0.236769 , RMSE: 0.623099 , MAE: 0.603111 
+(0.4) question unseen samples (159      ), performance is AUC: 0.5796   , ACC: 0.735849 , RMSE: 0.433594 , MAE: 0.373706 
+(0.4) question normal&hard samples (50231    ), performance is AUC: 0.500455 , ACC: 0.431686 , RMSE: 0.553876 , MAE: 0.525683 
+(0.3) question easy samples (42805    ), performance is AUC: 0.878237 , ACC: 0.911809 , RMSE: 0.333058 , MAE: 0.306243 
+(0.3) question normal samples (55941    ), performance is AUC: 0.611191 , ACC: 0.599328 , RMSE: 0.489933 , MAE: 0.458979 
+(0.3) question hard samples (11522    ), performance is AUC: 0.307132 , ACC: 0.179222 , RMSE: 0.648633 , MAE: 0.631001 
+(0.3) question unseen samples (159      ), performance is AUC: 0.5796   , ACC: 0.735849 , RMSE: 0.433594 , MAE: 0.373706 
+(0.3) question normal&hard samples (67463    ), performance is AUC: 0.555855 , ACC: 0.527578 , RMSE: 0.520476 , MAE: 0.488359 
+(0.2) question easy samples (22713    ), performance is AUC: 0.835226 , ACC: 0.943513 , RMSE: 0.30774  , MAE: 0.283392 
+(0.2) question normal samples (83224    ), performance is AUC: 0.638881 , ACC: 0.632173 , RMSE: 0.476956 , MAE: 0.442005 
+(0.2) question hard samples (4331     ), performance is AUC: 0.37519  , ACC: 0.133918 , RMSE: 0.66932  , MAE: 0.654079 
+(0.2) question unseen samples (159      ), performance is AUC: 0.5796   , ACC: 0.735849 , RMSE: 0.433594 , MAE: 0.373706 
+(0.2) question normal&hard samples (87555    ), performance is AUC: 0.618988 , ACC: 0.607527 , RMSE: 0.488256 , MAE: 0.452495 
+
+evaluation result of double biased samples
+(10, 0.4) double easy samples (31093    ), performance is AUC: 0.987012 , ACC: 0.981411 , RMSE: 0.279019 , MAE: 0.261978 
+(10, 0.4) double hard samples (7687     ), performance is AUC: 0.0336893, ACC: 0.0344738, RMSE: 0.710837 , MAE: 0.703915 
+(10, 0.3) double easy samples (15722    ), performance is AUC: 0.997703 , ACC: 0.992367 , RMSE: 0.248988 , MAE: 0.233518 
+(10, 0.3) double hard samples (2764     ), performance is AUC: 0.00539849, ACC: 0.0155572, RMSE: 0.741364 , MAE: 0.735734 
+(10, 0.2) double easy samples (4795     ), performance is AUC: 0.996534 , ACC: 0.997706 , RMSE: 0.215523 , MAE: 0.202059 
+(10, 0.2) double hard samples (490      ), performance is AUC: 0.0      , ACC: 0.00816327, RMSE: 0.773808 , MAE: 0.769651 
+(15, 0.4) double easy samples (31717    ), performance is AUC: 0.988948 , ACC: 0.984267 , RMSE: 0.278314 , MAE: 0.262074 
+(15, 0.4) double hard samples (7942     ), performance is AUC: 0.0266444, ACC: 0.0297154, RMSE: 0.710497 , MAE: 0.703996 
+(15, 0.3) double easy samples (18395    ), performance is AUC: 0.998265 , ACC: 0.992661 , RMSE: 0.253876 , MAE: 0.239049 
+(15, 0.3) double hard samples (3357     ), performance is AUC: 0.00262381, ACC: 0.0157879, RMSE: 0.735659 , MAE: 0.730235 
+(15, 0.2) double easy samples (4410     ), performance is AUC: 0.996913 , ACC: 0.998186 , RMSE: 0.211392 , MAE: 0.198649 
+(15, 0.2) double hard samples (408      ), performance is AUC: 0.0      , ACC: 0.00490196, RMSE: 0.780307 , MAE: 0.776591 
+(20, 0.4) double easy samples (31540    ), performance is AUC: 0.987382 , ACC: 0.98662  , RMSE: 0.278109 , MAE: 0.262454 
+(20, 0.4) double hard samples (7941     ), performance is AUC: 0.0243132, ACC: 0.026445 , RMSE: 0.710807 , MAE: 0.704601 
+(20, 0.3) double easy samples (15102    ), performance is AUC: 0.998689 , ACC: 0.995564 , RMSE: 0.245074 , MAE: 0.231214 
+(20, 0.3) double hard samples (2566     ), performance is AUC: 0.00098099, ACC: 0.0101325, RMSE: 0.744753 , MAE: 0.740019 
+(20, 0.2) double easy samples (3978     ), performance is AUC: 0.998491 , ACC: 0.998492 , RMSE: 0.206211 , MAE: 0.194116 
+(20, 0.2) double hard samples (379      ), performance is AUC: -1.0     , ACC: 0.00527704, RMSE: 0.781024 , MAE: 0.777438 
+
+question zero shot (159       samples), AUC: 0.5796   , ACC: 0.735849 , RMSE: 0.433594 , MAE: 0.373706 
+question low frequency (3613      samples), AUC: 0.628312 , ACC: 0.726543 , RMSE: 0.438768 , MAE: 0.400637 
+question middle frequency (44840     samples), AUC: 0.64948  , ACC: 0.700513 , RMSE: 0.446633 , MAE: 0.404698 
+question high frequency (61815     samples), AUC: 0.669753 , ACC: 0.656572 , RMSE: 0.465302 , MAE: 0.428063 
+
+
+

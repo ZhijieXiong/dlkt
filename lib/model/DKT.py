@@ -52,7 +52,12 @@ class DKT(nn.Module):
             return self.embed_layer.get_emb("question", batch["question_seq"])
 
     def get_concept_emb4only_question(self, batch):
-        return self.embed_layer.get_concept_fused_emb(batch["question_seq"], fusion_type="mean")
+        encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DKT"]
+        use_concept = encoder_config["use_concept"]
+        if use_concept:
+            return self.embed_layer.get_concept_fused_emb(batch["question_seq"], fusion_type="mean")
+        else:
+            return self.embed_layer.get_emb("question", batch["question_seq"])
 
     def forward(self, batch):
         encoder_config = self.params["models_config"]["kt_model"]["encoder_layer"]["DKT"]

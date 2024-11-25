@@ -56,18 +56,62 @@
 |   QIKT   |   0.7874   |  0.7812   |              OOM              |            0.7972             |
 |   LBKT   |   0.8335   |  0.7829   | Lacking behaviour information | Lacking behaviour information |
 
-|                 | Assist2017  | Edi2020-task34 | Statics2011 | Xes3g5m |
-| --------------- | ----------- | -------------- | ----------- | ------- |
-| DKT             | 0.7284      | 0.7598         | 0.7113      | 0.7838  |
-| DKT (que)       | 0.7953      | 0.7913         | 0.8145      | todo    |
-| DKT_QUE_KCQRL   | No que text | No que text    | No que text | todo    |
-| DKVMN           | 0.6941      | 0.748          | 0.7046      | 0.7748  |
-| DKVMN (que)     | 0.7411      | 0.7886         | 0.8032      | todo    |
-| DKVMN_QUE_KCQRL | No que text | No que text    | No que text | todo    |
+- 一些习题数量较少（基于习题建模，数据较稠密）的数据集上，基于习题的DKT和DKVMN
 
-`LBKT` in `Assist2009`: 0.7767
+|                 | Assist2017 | Edi2020-task34 | Statics2011 | Xes3g5m |
+| :-------------: | :--------: | :------------: | :---------: | :-----: |
+|  DKT (concept)  |   0.7284   |     0.7598     |   0.7113    | 0.7838  |
+|    DKT (que)    |   0.7953   |     0.7913     |   0.8145    | 0.8226  |
+| DKVMN (concept) |   0.6941   |     0.748      |   0.7046    | 0.7748  |
+|   DKVMN (que)   |   0.7411   |     0.7886     |   0.8032    |  todo   |
 
-`LBKT` in `Assist2012`: 0.7914
+- KCQRL
+  - official emb：使用数据集提供的question emb
+  - KCQRL：使用论文 Automated **K**nowledge **C**oncept Annotation and **Q**uestion **R**epresentation **L**earning for Knowledge Tracing 提出的训练方法所得到的question emb（[paper](https://arxiv.org/abs/2410.01727), [code](https://github.com/oezyurty/KCQRL)）
+  - frozen ｜ free：预训练的question emb不可学习｜可学习
+
+|                                 | Xes3g5m |
+| :-----------------------------: | :-----: |
+|         DKT (baseline)          | 0.8226  |
+|  DKT_QUE (official emb frozen)  | 0.8177  |
+|   DKT_QUE (official emb free)   |  0.827  |
+|   DKT_QUE (KCQRL emb frozen)    | 0.8123  |
+|    DKT_QUE (KCQRL emb free)     |  0.828  |
+|        DKVMN (baseline)         | 0.7748  |
+| DKVMN_QUE (official emb frozen) |         |
+|  DKVMN_QUE (official emb free)  |         |
+|  DKVMN_QUE (KCQRL emb frozen)   |         |
+|   DKVMN_QUE (KCQRL emb free)    |         |
+|         AKT (baseline)          | 0.8225  |
+|  AKT_QUE (official emb frozen)  |         |
+|   AKT_QUE (official emb free)   |         |
+|   AKT_QUE (KCQRL emb frozen)    |         |
+|    AKT_QUE (KCQRL emb free)     |         |
+|        DIMKT (baseline)         | 0.8262  |
+| DIMKT_QUE (official emb frozen) |         |
+|  DIMKT_QUE (official emb free)  |         |
+|  DIMKT_QUE (KCQRL emb frozen)   |         |
+|   DIMKT_QUE (KCQRL emb free)    |         |
+
+- KCQRL消融实验（Xes3g5m）
+  - w/o step：对比学习训练习题的emb时，只使用知识点，不使用解题步骤
+  - w/o cluster：对比学习训练习题的emb时，不对知识点进行聚类
+  - (LLM)：使用LLM提取的知识点（和论文一样）
+  - (KC)：使用数据集提供的知识点
+  - 训练que emb的[代码](https://github.com/ZhijieXiong/KCQRL-train-que-emb)
+
+|           | KCQRL | w/o step (LLM) | w/o step & cluster (LLM) | w/o step (KC) | w/o step & cluster (KC) |
+| :-------: | :---: | :------------: | :----------------------: | :-----------: | :---------------------: |
+|  DKT_QUE  | 0.828 |     0.8271     |          0.8279          |    0.8273     |         0.8273          |
+| DKVMN_QUE |       |                |                          |               |                         |
+|  AKT_QUE  |       |                |                          |               |                         |
+| DIMKT_QUE |       |                |                          |               |                         |
+
+- LBKT在有行为数据的数据集上的性能
+
+| Assist2009 | Assist2012 | Assist2017 | Junyi2015 |
+| ---------- | ---------- | ---------- | --------- |
+| 0.7767     | 0.7914     | 0.8335     | 0.7829    |
 
 ### CORE metric (AUC)
 

@@ -24,6 +24,8 @@ from ..model.QIKT import QIKT
 from ..model.SimpleKT import SimpleKT
 from ..model.MIKT import MIKT
 from ..model.SparseKT import SparseKT
+from ..model.DKT_QUE import DKT_QUE
+from ..model.DKVMN_QUE import DKVMN_QUE
 
 
 model_table = {
@@ -47,7 +49,9 @@ model_table = {
     "QIKT": QIKT,
     "SimpleKT": SimpleKT,
     "MIKT": MIKT,
-    "SparseKT": SparseKT
+    "SparseKT": SparseKT,
+    "DKT_QUE": DKT_QUE,
+    "DKVMN_QUE": DKVMN_QUE
 }
 
 
@@ -61,13 +65,7 @@ def load_kt_model(global_params, global_objects, save_model_dir, ckt_name="saved
     global_params["use_LLM_emb4concept"] = eval(saved_params.get("use_LLM_emb4concept", False))
 
     ckt_path = os.path.join(save_model_dir, ckt_name)
-    # 之前kt_model_name是第1个，后面改了命名方式，现在是第0个，为了兼容，用以下方式处理
-    kt_model_name0 = os.path.basename(save_model_dir).split("@@")[0]
-    kt_model_name1 = os.path.basename(save_model_dir).split("@@")[1]
-    if kt_model_name0 in model_table.keys():
-        kt_model_name = kt_model_name0
-    else:
-        kt_model_name = kt_model_name1
+    kt_model_name = os.path.basename(save_model_dir).split("@@")[0]
     model_class = model_table[kt_model_name]
     if kt_model_name == "LPKT":
         global_objects["LPKT"] = {

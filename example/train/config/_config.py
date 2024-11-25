@@ -17,8 +17,6 @@ sys.path.append(settings["LIB_PATH"])
 from lib.util.FileManager import FileManager
 from lib.util.basic import *
 from lib.util.data import write_json
-from lib.util.data import load_json
-from lib.data_processor.load_raw import load_csv
 from lib.util.parse import *
 from lib.model.Module.KTEmbedLayer import KTEmbedLayer
 
@@ -29,7 +27,10 @@ def general_config(local_params, global_params, global_objects):
     global_objects["logger"] = logging.getLogger("train_log")
     global_objects["logger"].setLevel(4)
     ch = logging.StreamHandler(stream=sys.stdout)
-    ch.setLevel(logging.DEBUG)
+    if not local_params.get("search_params", False):
+        ch.setLevel(logging.DEBUG)
+    else:
+        ch.setLevel(logging.ERROR)
     global_objects["logger"].addHandler(ch)
     file_manager = FileManager(FILE_MANAGER_ROOT)
     global_objects["file_manager"] = file_manager
@@ -74,10 +75,10 @@ def general_config(local_params, global_params, global_objects):
         train_strategy_config["valid_test"]["use_early_stop"] = use_early_stop
         if use_early_stop:
             train_strategy_config["valid_test"]["epoch_early_stop"] = epoch_early_stop
-    elif train_strategy_type == "no_valid":
-        train_strategy_config["no_valid"]["use_average"] = use_last_average
+    elif train_strategy_type == "no_test":
+        train_strategy_config["no_test"]["use_average"] = use_last_average
         if use_last_average:
-            train_strategy_config["no_valid"]["epoch_last_average"] = epoch_last_average
+            train_strategy_config["no_test"]["epoch_last_average"] = epoch_last_average
     else:
         raise NotImplementedError()
 
@@ -96,12 +97,12 @@ def general_config(local_params, global_params, global_objects):
     }
     datasets_config = global_params["datasets_config"]
     datasets_config["train"]["setting_name"] = setting_name
-    datasets_config["test"]["setting_name"] = setting_name
     datasets_config["valid"]["setting_name"] = setting_name
-    if train_strategy_config["type"] == "valid_test":
-        datasets_config["valid"]["file_name"] = valid_file_name
     datasets_config["train"]["file_name"] = train_file_name
-    datasets_config["test"]["file_name"] = test_file_name
+    datasets_config["valid"]["file_name"] = valid_file_name
+    if train_strategy_config["type"] == "valid_test":
+        datasets_config["test"]["setting_name"] = setting_name
+        datasets_config["test"]["file_name"] = test_file_name
     datasets_config["data_type"] = data_type
 
     global_objects["logger"].info(

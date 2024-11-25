@@ -148,8 +148,10 @@ class FileManager:
 
     # ==================================================================================================================
     def get_preprocessed_dir(self, dataset_name):
-        assert dataset_name in self.builtin_datasets, f"{dataset_name} is not in builtin datasets"
-        return os.path.join(self.root_dir, FileManager.data_preprocessed_dir_in_lab[dataset_name])
+        if not FileManager.data_preprocessed_dir_in_lab.get(dataset_name, False):
+            return os.path.join(self.root_dir, f"lab/dataset_preprocessed/{dataset_name}")
+        else:
+            return os.path.join(self.root_dir, FileManager.data_preprocessed_dir_in_lab[dataset_name])
 
     def save_q_table(self, Q_table, dataset_name, data_type):
         assert data_type in ["multi_concept", "single_concept", "only_question"]

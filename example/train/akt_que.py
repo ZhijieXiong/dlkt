@@ -2,71 +2,83 @@ import argparse
 from copy import deepcopy
 from torch.utils.data import DataLoader
 
-from config.atkt_config import atkt_config
+from config.akt_que_config import akt_que_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.model.ATKT import ATKT
+from lib.model.AKT_QUE import AKT_QUE
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 
-# use_concept (True)
-#     only_question: 未实现
-#     single_concept | multi_concept: 使用concept建模
-# use_concept (False)
-#     only_question | single_concept | multi_concept：使用question建模
+# 如果要使用IPS-double或者IPS-question这两种样本损失重加权方法
+# 请先运行prepare4fine_trained_evaluate.py获得数据集中习题的common statics信息
+# akt_que只使用习题信息（默认预训练的question emb包含｜对齐知识点信息）
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
     parser.add_argument("--setting_name", type=str, default="our_setting")
-    parser.add_argument("--dataset_name", type=str, default="statics2011")
-    parser.add_argument("--data_type", type=str, default="single_concept",
-                        choices=("multi_concept", "single_concept", "only_question"))
-    parser.add_argument("--train_file_name", type=str, default="statics2011_train_fold_0.txt")
-    parser.add_argument("--valid_file_name", type=str, default="statics2011_valid_fold_0.txt")
-    parser.add_argument("--test_file_name", type=str, default="statics2011_test_fold_0.txt")
+    parser.add_argument("--dataset_name", type=str, default="xes3g5m")
+    parser.add_argument("--data_type", type=str, default="only_question",
+                        choices=("single_concept", "only_question"))
+    parser.add_argument("--train_file_name", type=str, default="xes3g5m_train_fold_0.txt")
+    parser.add_argument("--valid_file_name", type=str, default="xes3g5m_valid_fold_0.txt")
+    parser.add_argument("--test_file_name", type=str, default="xes3g5m_test_fold_0.txt")
     # 优化器相关参数选择
     parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
     parser.add_argument("--weight_decay", type=float, default=0)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test",
-                        choices=("valid_test", "no_test"))
-    parser.add_argument("--num_epoch", type=int, default=200)
+                        choices=("valid_test", "no_test"), help="no_valid目前未实现")
+    parser.add_argument("--num_epoch", type=int, default=20)
     parser.add_argument("--use_early_stop", type=str2bool, default=True)
     parser.add_argument("--epoch_early_stop", type=int, default=10)
-    parser.add_argument("--use_last_average", type=str2bool, default=False)
-    parser.add_argument("--epoch_last_average", type=int, default=5)
+    parser.add_argument("--use_last_average", type=str2bool, default=False, help="目前未实现")
+    parser.add_argument("--epoch_last_average", type=int, default=5, help="目前未实现")
     # 评价指标选择
-    parser.add_argument("--main_metric", type=str, default="AUC")
+    parser.add_argument("--main_metric", type=str, default="AUC", choices=("AUC", "ACC", "RMSE", "MAE"))
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
     # 学习率
-    parser.add_argument("--learning_rate", type=float, default=0.001)
+    parser.add_argument("--learning_rate", type=float, default=0.0001)
     parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
     parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
-    parser.add_argument("--lr_schedule_milestones", type=str, default="[5]")
+    parser.add_argument("--lr_schedule_milestones", type=str, default="[5, 10]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     # batch size
-    parser.add_argument("--train_batch_size", type=int, default=64)
-    parser.add_argument("--evaluate_batch_size", type=int, default=256)
+    parser.add_argument("--train_batch_size", type=int, default=2)
+    parser.add_argument("--evaluate_batch_size", type=int, default=24)
     # 梯度裁剪
     parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
     # 模型参数
-    parser.add_argument("--use_concept", type=str2bool, default=True)
-    parser.add_argument("--num_concept", type=int, default=27)
-    parser.add_argument("--num_question", type=int, default=1223)
-    parser.add_argument("--dim_concept", type=int, default=64)
-    parser.add_argument("--dim_correct", type=int, default=64)
-    parser.add_argument("--dim_latent", type=int, default=64)
-    parser.add_argument("--dim_attention", type=int, default=64)
+    parser.add_argument("--que_emb_file_name", type=str, default="qid2content_sol_avg_emb.json",
+                        help="放在dataset_preprocessed对应数据集目录下")
+    parser.add_argument("--frozen_que_emb", type=str2bool, default=True,
+                        help="是否固定预训练的question emb")
+    parser.add_argument("--num_question", type=int, default=7652)
+    parser.add_argument("--dim_model", type=int, default=64)
+    parser.add_argument("--key_query_same", type=str2bool, default=True)
+    parser.add_argument("--num_head", type=int, default=4)
+    parser.add_argument("--num_block", type=int, default=1)
+    parser.add_argument("--dim_ff", type=int, default=64)
+    parser.add_argument("--dim_final_fc", type=int, default=64)
     parser.add_argument("--dropout", type=float, default=0.1)
-    parser.add_argument("--epsilon", type=int, default=5)
-    parser.add_argument("--beta", type=float, default=0.1)
+    parser.add_argument("--separate_qa", type=str2bool, default=False)
+    parser.add_argument("--seq_representation", type=str, default="encoder_output",
+                        help="主要用于对比学习，在CL4KT中使用的是knowledge_encoder_output作为序列的表征，"
+                             "但是也可以选择encoder_output作为序列表征，实测区别不大",
+                        choices=("encoder_output", "knowledge_encoder_output"))
+    parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
+    # sample weight
+    parser.add_argument("--use_sample_reweight", type=str2bool, default=False)
+    parser.add_argument("--sample_reweight_method", type=str, default="IPS-seq",
+                        choices=("IPS-double", "IPS-seq", "IPS-question"))
+    parser.add_argument("--IPS_min", type=float, default=0.7)
+    parser.add_argument("--IPS_his_seq_len", type=int, default=20)
     # 其它
     parser.add_argument("--save_model", type=str2bool, default=False)
     parser.add_argument("--debug_mode", type=str2bool, default=False)
@@ -77,7 +89,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     params = vars(args)
     set_seed(params["seed"])
-    global_params, global_objects = atkt_config(params)
+    global_params, global_objects = akt_que_config(params)
 
     valid_params = deepcopy(global_params)
     valid_params["datasets_config"]["dataset_this"] = "valid"
@@ -103,7 +115,7 @@ if __name__ == "__main__":
     global_objects["data_loaders"]["test_loader"] = dataloader_test
 
     global_objects["models"] = {}
-    model = ATKT(global_params, global_objects).to(global_params["device"])
+    model = AKT_QUE(global_params, global_objects).to(global_params["device"])
     global_objects["models"]["kt_model"] = model
     trainer = KnowledgeTracingTrainer(global_params, global_objects)
     trainer.train()

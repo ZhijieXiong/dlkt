@@ -32,7 +32,7 @@ def dkvmn_que_general_config(local_params, global_params, global_objects):
         "num_item": num_question,
         "dim_item": dim_key,
         "learnable": not frozen_que_emb,
-        "que_emb_path": que_emb_path
+        "embed_path": que_emb_path
     }
 
     # encoder layer

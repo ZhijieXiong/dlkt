@@ -38,9 +38,7 @@ class PredictorLayer(nn.Module):
                 self.predict_layer.append(nn.Linear(dim_predict_mid, dim_predict_out))
                 self.predict_layer.append(nn.Sigmoid())
             self.predict_layer = nn.Sequential(*self.predict_layer)
-        elif predict_layer_config["type"] == "concat_direct":
-            pass
-        elif predict_layer_config["type"] == "product":
+        elif predict_layer_config["type"] == "dot":
             pass
         else:
             raise NotImplementedError()

@@ -210,13 +210,12 @@ class KnowledgeTracingTrainer:
         train_strategy = self.params["train_strategy"]
         stop_flag = self.train_record.stop_training()
         if stop_flag:
-            if train_strategy["type"] == "no_valid":
-                pass
-            else:
-                best_train_performance_by_valid = self.train_record.get_evaluate_result_str("train", "valid")
-                best_valid_performance_by_valid = self.train_record.get_evaluate_result_str("valid", "valid")
-                best_test_performance_by_valid = self.train_record.get_evaluate_result_str("test", "valid")
+            best_train_performance_by_valid = self.train_record.get_evaluate_result_str("train", "valid")
+            best_valid_performance_by_valid = self.train_record.get_evaluate_result_str("valid", "valid")
+            valid_loader = self.objects["data_loaders"]["valid_loader"]
 
+            if train_strategy["type"] == "valid_test":
+                best_test_performance_by_valid = self.train_record.get_evaluate_result_str("test", "valid")
                 self.objects["logger"].info(
                     f"best valid epoch: {self.train_record.get_best_epoch('valid'):<3} , "
                     f"best test epoch: {self.train_record.get_best_epoch('test')}\n"
@@ -229,17 +228,27 @@ class KnowledgeTracingTrainer:
                     f"test performance by best test epoch is "
                     f"{self.train_record.get_evaluate_result_str('test', 'test')}\n"
                 )
+            elif train_strategy["type"] == "no_test":
+                self.objects["logger"].info(
+                    f"best valid epoch: {self.train_record.get_best_epoch('valid'):<3} , "
+                    f"train performance by best valid epoch is {best_train_performance_by_valid}\n"
+                    f"valid performance by best valid epoch is {best_valid_performance_by_valid}\n"
+                    f"{'-' * 100}\n"
+                    f"train performance by best train epoch is "
+                    f"{self.train_record.get_evaluate_result_str('train', 'train')}\n"
+                )
+            else:
+                raise NotImplementedError()
 
-                valid_loader = self.objects["data_loaders"]["valid_loader"]
-                test_loader = self.objects["data_loaders"]["test_loader"]
-                model = self.objects["models"]["kt_model"]
-                if model.use_question:
-                    len1 = len("fine-grained metric of valid data")
-                    self.objects["logger"].info("-" * ((100 - len1) // 2) + "fine-grained metric of valid data" +
-                                                "-" * ((100 - len1) // 2))
-                    self.evaluate_fine_grained(valid_loader, "valid")
-                    self.objects["logger"].info("-" * 100)
-
+            model = self.objects["models"]["kt_model"]
+            if model.use_question:
+                len1 = len("fine-grained metric of valid data")
+                self.objects["logger"].info("-" * ((100 - len1) // 2) + "fine-grained metric of valid data" +
+                                            "-" * ((100 - len1) // 2))
+                self.evaluate_fine_grained(valid_loader, "valid")
+                self.objects["logger"].info("-" * 100)
+                if train_strategy["type"] == "valid_test":
+                    test_loader = self.objects["data_loaders"]["test_loader"]
                     len2 = len("fine-grained metric of test data")
                     self.objects["logger"].info("-" * ((100 - len2) // 2) + "fine-grained metric of test data" +
                                                 "-" * ((100 - len2) // 2))
@@ -326,13 +335,41 @@ class KnowledgeTracingTrainer:
         train_loader = data_loaders["train_loader"]
         model = self.objects["models"]["kt_model"]
         train_performance = self.evaluate_kt_dataset(model, train_loader)
-        if train_strategy["type"] == "no_valid":
-            # 无验证集，只有测试集
-            data_loader = data_loaders["test_loader"]
-            test_performance = self.evaluate_kt_dataset(model, data_loader)
-            self.train_record.next_epoch(train_performance, test_performance)
+        if train_strategy["type"] == "no_test":
+            data_loader = data_loaders["valid_loader"]
+            valid_performance = self.evaluate_kt_dataset(model, data_loader)
+            if self.params.get("trace_epoch", False):
+                # 存储历史细粒度性能信息
+                self.AUC_every_epoch_valid["seq_easy"].append(
+                    valid_performance["fine_grained_performance"]["seq_easy"]["AUC"]
+                )
+                self.AUC_every_epoch_valid["seq_hard"].append(
+                    valid_performance["fine_grained_performance"]["seq_hard"]["AUC"]
+                )
+                if "question_easy" in valid_performance["fine_grained_performance"]:
+                    # 存储习题细粒度性能信息
+                    self.AUC_every_epoch_valid["question_easy"].append(
+                        valid_performance["fine_grained_performance"]["question_easy"]["AUC"]
+                    )
+                    self.AUC_every_epoch_valid["question_hard"].append(
+                        valid_performance["fine_grained_performance"]["question_hard"]["AUC"]
+                    )
+            self.train_record.next_epoch(train_performance, valid_performance)
+            valid_performance_str = self.train_record.get_performance_str("valid")
+            best_epoch = self.train_record.get_best_epoch("valid")
+            self.objects["logger"].info(
+                f"{get_now_time()} epoch {self.train_record.get_current_epoch():<3} , valid performance is "
+                f"{valid_performance_str}train loss is {self.loss_record.get_str()}")
+            self.loss_record.clear_loss()
+            current_epoch = self.train_record.get_current_epoch()
+            if best_epoch == current_epoch:
+                # 节省显存
+                self.best_model = deepcopy(model).to("cpu")
+                if save_model:
+                    save_model_dir = self.params["save_model_dir"]
+                    model_weight_path = os.path.join(save_model_dir, "saved.ckt")
+                    torch.save({"best_valid": model.state_dict()}, model_weight_path)
         else:
-            # 有验证集，同时在验证集和测试集上测试
             data_loader = data_loaders["valid_loader"]
             valid_performance = self.evaluate_kt_dataset(model, data_loader)
             if self.params.get("trace_epoch", False):
@@ -371,7 +408,7 @@ class KnowledgeTracingTrainer:
                         test_performance["fine_grained_performance"]["question_hard"]["AUC"]
                     )
 
-            self.train_record.next_epoch(train_performance, test_performance, valid_performance)
+            self.train_record.next_epoch(train_performance, valid_performance, test_performance)
             valid_performance_str = self.train_record.get_performance_str("valid")
             test_performance_str = self.train_record.get_performance_str("test")
             best_epoch = self.train_record.get_best_epoch("valid")
@@ -397,11 +434,11 @@ class KnowledgeTracingTrainer:
         self.objects["logger"].info("")
         train_statics = train_loader.dataset.get_statics_kt_dataset()
         self.objects["logger"].info(f"train, seq: {train_statics[0]}, sample: {train_statics[1]}, accuracy: {train_statics[2]:<.4}")
+        valid_statics = self.objects["data_loaders"]["valid_loader"].dataset.get_statics_kt_dataset()
+        self.objects["logger"].info(f"valid, seq: {valid_statics[0]}, sample: {valid_statics[1]}, accuracy: {valid_statics[2]:<.4}")
         if train_strategy["type"] == "valid_test":
-            valid_statics = self.objects["data_loaders"]["valid_loader"].dataset.get_statics_kt_dataset()
-            self.objects["logger"].info(f"valid, seq: {valid_statics[0]}, sample: {valid_statics[1]}, accuracy: {valid_statics[2]:<.4}")
-        test_statics = test_loader.dataset.get_statics_kt_dataset()
-        self.objects["logger"].info(f"test, seq: {test_statics[0]}, sample: {test_statics[1]}, accuracy: {test_statics[2]:<.4}")
+            test_statics = test_loader.dataset.get_statics_kt_dataset()
+            self.objects["logger"].info(f"test, seq: {test_statics[0]}, sample: {test_statics[1]}, accuracy: {test_statics[2]:<.4}")
 
     def evaluate_kt_dataset(self, model, data_loader):
         model.eval()

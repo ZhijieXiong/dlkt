@@ -243,6 +243,7 @@ class KTEmbedLayer2(nn.Module):
                     ("init_method" not in embed_config)):
                 # 默认nn.Embedding
                 self.__setattr__(embed_name, nn.Embedding(num_item, dim_item))
+
             elif "embed_path" not in embed_config:
                 # 根据init_method使用不同初始化方法
                 init_method = embed_config["init_method"]
@@ -251,6 +252,10 @@ class KTEmbedLayer2(nn.Module):
                     self.__setattr__(embed_name, self.init_constant_embed(embed_config))
                 else:
                     self.__setattr__(embed_name, nn.Embedding(num_item, dim_item))
+                    if init_method == "zero":
+                        # 初始化为全0
+                        for p in self.__getattr__(embed_name).parameters():
+                            torch.nn.init.constant_(p, 0.)
                     # 默认是可学习的
                     self.__getattr__(embed_name).weight.requires_grad = embed_config.get("learnable", True)
             else:

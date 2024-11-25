@@ -26,7 +26,8 @@ if __name__ == "__main__":
     parser.add_argument("--weight_decay", type=float, default=0.0001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
-    parser.add_argument("--train_strategy", type=str, default="valid_test", choices=("valid_test", "no_valid"))
+    parser.add_argument("--train_strategy", type=str, default="valid_test",
+                        choices=("valid_test", "no_test"))
     parser.add_argument("--num_epoch", type=int, default=200)
     parser.add_argument("--use_early_stop", type=str2bool, default=True)
     parser.add_argument("--epoch_early_stop", type=int, default=10)
@@ -82,23 +83,23 @@ if __name__ == "__main__":
     set_seed(params["seed"])
     global_params, global_objects = qdkt_config(params)
 
-    if params["train_strategy"] == "valid_test":
-        valid_params = deepcopy(global_params)
-        valid_params["datasets_config"]["dataset_this"] = "valid"
-        dataset_valid = KTDataset(valid_params, global_objects)
-        dataloader_valid = DataLoader(dataset_valid, batch_size=params["evaluate_batch_size"], shuffle=False)
-    else:
-        dataloader_valid = None
+    valid_params = deepcopy(global_params)
+    valid_params["datasets_config"]["dataset_this"] = "valid"
+    dataset_valid = KTDataset(valid_params, global_objects)
+    dataloader_valid = DataLoader(dataset_valid, batch_size=params["evaluate_batch_size"], shuffle=False)
 
     train_params = deepcopy(global_params)
     train_params["datasets_config"]["dataset_this"] = "train"
     dataset_train = KTDataset(train_params, global_objects)
     dataloader_train = DataLoader(dataset_train, batch_size=params["train_batch_size"], shuffle=True)
 
-    test_params = deepcopy(global_params)
-    test_params["datasets_config"]["dataset_this"] = "test"
-    dataset_test = KTDataset(test_params, global_objects)
-    dataloader_test = DataLoader(dataset_test, batch_size=params["evaluate_batch_size"], shuffle=False)
+    if params["train_strategy"] == "valid_test":
+        test_params = deepcopy(global_params)
+        test_params["datasets_config"]["dataset_this"] = "test"
+        dataset_test = KTDataset(test_params, global_objects)
+        dataloader_test = DataLoader(dataset_test, batch_size=params["evaluate_batch_size"], shuffle=False)
+    else:
+        dataloader_test = None
 
     global_objects["data_loaders"] = {}
     global_objects["data_loaders"]["train_loader"] = dataloader_train

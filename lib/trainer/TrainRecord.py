@@ -15,13 +15,13 @@ class TrainRecord:
             "performance_test": []
         }
 
-    def next_epoch(self, train_performance, test_performance, valid_performance=None):
+    def next_epoch(self, train_performance, valid_performance, test_performance=None):
         self.record["current_epoch"] += 1
         train_strategy = self.params["train_strategy"]
         self.update_best_metric(train_performance, update_type="train")
+        self.update_best_metric(valid_performance, update_type="valid")
         if train_strategy["type"] == "valid_test":
-            self.update_best_metric(valid_performance, update_type="valid")
-        self.update_best_metric(test_performance, update_type="test")
+            self.update_best_metric(test_performance, update_type="test")
 
     def get_current_epoch(self):
         return self.record["current_epoch"]
@@ -77,10 +77,13 @@ class TrainRecord:
         current_epoch = self.record["current_epoch"]
         best_epoch_by_valid = self.record["best_epoch_by_valid"]
         num_epoch = train_strategy["num_epoch"]
-        use_early_stop = train_strategy["valid_test"]["use_early_stop"]
-        epoch_early_stop = train_strategy["valid_test"]["epoch_early_stop"]
-        if train_strategy["type"] == "valid_test" and use_early_stop:
-            return (current_epoch >= num_epoch) or ((current_epoch - best_epoch_by_valid) >= epoch_early_stop)
+        if train_strategy["type"] == "valid_test":
+            use_early_stop = train_strategy["valid_test"]["use_early_stop"]
+            epoch_early_stop = train_strategy["valid_test"]["epoch_early_stop"]
+            if use_early_stop:
+                return (current_epoch >= num_epoch) or ((current_epoch - best_epoch_by_valid) >= epoch_early_stop)
+            else:
+                return current_epoch >= num_epoch
         else:
             return current_epoch >= num_epoch
 
@@ -101,6 +104,22 @@ class TrainRecord:
         result = (f"main metric: {performance['main_metric']:<9.5}, AUC: {performance['AUC']:<9.5}, "
                   f"ACC: {performance['ACC']:<9.5}, RMSE: {performance['RMSE']:<9.5}, MAE: {performance['MAE']:<9.5}, ")
         return result
+
+    def get_evaluate_result(self, performance_type, performance_by):
+        if performance_type == "train":
+            all_performance = self.record["performance_train"]
+        elif performance_type == "valid":
+            all_performance = self.record["performance_valid"]
+        else:
+            all_performance = self.record["performance_test"]
+        if performance_by == "train":
+            performance_index = self.record["best_epoch_by_train"] - 1
+        elif performance_by == "valid":
+            performance_index = self.record["best_epoch_by_valid"] - 1
+        else:
+            performance_index = self.record["best_epoch_by_test"] - 1
+        performance = all_performance[performance_index]
+        return performance
 
     @staticmethod
     def cal_main_metric(performance, multi_metrics):

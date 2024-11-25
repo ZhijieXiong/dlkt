@@ -12,9 +12,9 @@ class EncoderLayer(nn.Module):
         self.objects = objects
 
         self.encoder_type = params["models_config"]["kt_model"]["encoder_layer"]["type"]
-        if self.encoder_type == "AKT":
+        if self.encoder_type in ["AKT", "AKT_QUE"]:
             self.encoder = AKT_Architecture(self.params)
-        elif self.encoder_type == "SimpleKT":
+        elif self.encoder_type in ["SimpleKT", "SimpleKT_QUE"]:
             self.encoder = SimpleKT_Architecture(self.params)
         else:
             raise NotImplementedError()

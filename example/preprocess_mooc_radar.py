@@ -88,7 +88,7 @@ if __name__ == "__main__":
 
     data = load_json(data_path)
     # 最大3个课程的数据集C_2287011（政治），C_797404（酒）, C_746997（模电）
-    target_course_id = "C_746997"
+    target_course_id = "C_797404"
     data_target_course = []
     course_count = defaultdict(int)
     # 预处理数据，丢弃不完整的数据记录，并计算每个课程的数据量
@@ -206,16 +206,16 @@ if __name__ == "__main__":
         np.save(os.path.join(data_dir, "Q_table_multi_concept.npy"), Q_table)
         # 非必需
         write_json(data_statics_preprocessed, os.path.join(data_dir, "statics_preprocessed_multi_concept.json"))
-        concept_id_map.to_csv(os.path.join(data_dir, "concept_id_map_multi_concept.csv"))
-        question_id_map.to_csv(os.path.join(data_dir, "question_id_map_multi_concept.csv"))
+        concept_id_map.to_csv(os.path.join(data_dir, "concept_id_map_multi_concept.csv"), index=False)
+        question_id_map.to_csv(os.path.join(data_dir, "question_id_map_multi_concept.csv"), index=False)
     else:
         # 必须有的数据
         write2file(data_target_course, os.path.join(data_dir, "data_single_concept.txt"))
         np.save(os.path.join(data_dir, "Q_table_single_concept.npy"), Q_table)
         # 非必需
         write_json(data_statics_preprocessed, os.path.join(data_dir, "statics_preprocessed_single_concept.json"))
-        concept_id_map.to_csv(os.path.join(data_dir, "concept_id_map_single_concept.csv"))
-        question_id_map.to_csv(os.path.join(data_dir, "question_id_map_single_concept.csv"))
+        concept_id_map.to_csv(os.path.join(data_dir, "concept_id_map_single_concept.csv"), index=False)
+        question_id_map.to_csv(os.path.join(data_dir, "question_id_map_single_concept.csv"), index=False)
     write_json(course_q_meta_data_final, os.path.join(data_dir, "question_meta.json"))
 
 

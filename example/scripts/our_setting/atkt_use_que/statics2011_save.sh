@@ -22,4 +22,4 @@
       --dim_attention 256 --dropout 0.1 --epsilon 15 --beta 2 \
       --save_model True --debug_mode False --use_cpu False --seed 0 --trace_epoch True
   done
-} >> F:/code/myProjects/dlkt/example/result_local/atkt_que_our_setting_new_statics2011_save.txt
+} >> F:/code/myProjects/dlkt/example/result_local/atkt_use_que_our_setting_new_statics2011_save.txt

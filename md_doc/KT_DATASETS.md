@@ -16,39 +16,43 @@
   - [Statics2011](#statics2011)
   - [Slepemapy](#slepemapy)
   - [Slepemapy-Anatomy](#slepemapy-anatomy)
+  - [Moocradar](#Moocradar)
 
 
 # Datasets Intro and Basic Info
 
 ## Seq Info
 
-|    dataset name    | question id | concept id | correct | timestamp | use time | age  | hint | attempt | error type |
-|:------------------:| :---------: | :--------: | :-----: | :-------: | :------: | :--: | :--: | :-----: | :--------: |
-|     assist2009     |      T      |     T      |    T    |           |          |      |  T   |    T    |            |
-|  assist2009-full   |      T      |     T      |    T    |           |          |      |      |         |            |
-|     assist2012     |      T      |     T      |    T    |     T     |    T     |      |  T   |    T    |            |
-|     assist2015     |      T      |            |    T    |           |          |      |      |         |            |
-|     assist2017     |      T      |     T      |    T    |     T     |    T     |      |  T   |    T    |            |
-|     ednet-kt1      |      T      |     T      |    T    |     T     |    T     |      |      |         |            |
-|   edi2020-task1    |      T      |     T      |    T    |     T     |          |  T   |      |         |            |
-|   edi2020-task34   |      T      |     T      |    T    |     T     |          |  T   |      |         |            |
-|        poj         |      T      |            |    T    |     T     |          |      |      |         |     T      |
-|    algebra2005     |      T      |     T      |    T    |     T     |          |      |      |         |            |
-|    algebra2006     |      T      |     T      |    T    |     T     |          |      |      |         |            |
-|    algebra2008     |      T      |     T      |    T    |     T     |          |      |      |         |            |
-| bridge2algebra2006 |      T      |     T      |    T    |     T     |          |      |      |         |            |
-| bridge2algebra2008 |      T      |     T      |    T    |     T     |          |      |      |         |            |
-|     junyi2015      |      T      |     T      |    T    |     T     |    T     |      |  T   |    T    |            |
-|      xes3g5m       |      T      |     T      |    T    |     T     |          |      |      |         |            |
-|    statics2011     |      T      |     T      |    T    |     T     |          |      |      |         |            |
-| slepemapy-anatomy  |      T      |     T      |    T    |     T     |    T     |      |      |         |            |
-|      SLP-bio       |      T      |     T      |    T    |           |          |      |      |         |            |
-|      SLP-chi       |      T      |     T      |    T    |           |          |      |      |         |            |
-|      SLP-eng       |      T      |     T      |    T    |           |          |      |      |         |            |
-|      SLP-geo       |      T      |     T      |    T    |           |          |      |      |         |            |
-|      SLP-his       |      T      |     T      |    T    |           |          |      |      |         |            |
-|      SLP-mat       |      T      |     T      |    T    |           |          |      |      |         |            |
-|      SLP-mat       |      T      |     T      |    T    |           |          |      |      |         |            |
+|    dataset name     | question id | concept id | correct | timestamp | use time | age  | hint | attempt | error type |
+| :-----------------: | :---------: | :--------: | :-----: | :-------: | :------: | :--: | :--: | :-----: | :--------: |
+|     assist2009      |      T      |     T      |    T    |           |          |      |  T   |    T    |            |
+|   assist2009-full   |      T      |     T      |    T    |           |          |      |      |         |            |
+|     assist2012      |      T      |     T      |    T    |     T     |    T     |      |  T   |    T    |            |
+|     assist2015      |      T      |            |    T    |           |          |      |      |         |            |
+|     assist2017      |      T      |     T      |    T    |     T     |    T     |      |  T   |    T    |            |
+|      ednet-kt1      |      T      |     T      |    T    |     T     |    T     |      |      |         |            |
+|    edi2020-task1    |      T      |     T      |    T    |     T     |          |  T   |      |         |            |
+|   edi2020-task34    |      T      |     T      |    T    |     T     |          |  T   |      |         |            |
+|         poj         |      T      |            |    T    |     T     |          |      |      |         |     T      |
+|     algebra2005     |      T      |     T      |    T    |     T     |          |      |      |         |            |
+|     algebra2006     |      T      |     T      |    T    |     T     |          |      |      |         |            |
+|     algebra2008     |      T      |     T      |    T    |     T     |          |      |      |         |            |
+| bridge2algebra2006  |      T      |     T      |    T    |     T     |          |      |      |         |            |
+| bridge2algebra2008  |      T      |     T      |    T    |     T     |          |      |      |         |            |
+|      junyi2015      |      T      |     T      |    T    |     T     |    T     |      |  T   |    T    |            |
+|       xes3g5m       |      T      |     T      |    T    |     T     |          |      |      |         |            |
+|     statics2011     |      T      |     T      |    T    |     T     |          |      |      |         |            |
+|  slepemapy-anatomy  |      T      |     T      |    T    |     T     |    T     |      |      |         |            |
+|       SLP-bio       |      T      |     T      |    T    |           |          |      |      |         |            |
+|       SLP-chi       |      T      |     T      |    T    |           |          |      |      |         |            |
+|       SLP-eng       |      T      |     T      |    T    |           |          |      |      |         |            |
+|       SLP-geo       |      T      |     T      |    T    |           |          |      |      |         |            |
+|       SLP-his       |      T      |     T      |    T    |           |          |      |      |         |            |
+|       SLP-mat       |      T      |     T      |    T    |           |          |      |      |         |            |
+|       SLP-mat       |      T      |     T      |    T    |           |          |      |      |         |            |
+| moocradar-C_2287011 |      T      |     T      |    T    |     T     |          |      |      |    T    |            |
+| moocradar-C_797404  |      T      |     T      |    T    |     T     |          |      |      |    T    |            |
+| moocradar-C_746997  |      T      |     T      |    T    |     T     |          |      |      |    T    |            |
 
 ## Side Info
 
@@ -70,7 +74,7 @@
 ## Text Info
 
 - with text of concept: `xes3g5m` `assist2009` `assist2012` `assist2017`
-- with text of quextion:  `xes3g5m`
+- with text of quextion:  `xes3g5m` `moocradar`
 
 ## Statics Info
 
@@ -128,6 +132,9 @@
 |    SLP-phy     |    107288    |    664    |    54    |   1915    |
 |   junyi2015    |   25925987   |  247606   |    40    |    817    |
 |      poj       |    996240    |   22916   |    --    |   2750    |
+| moocradar-C_2287011 | 384928 | 2907 | 180 | 181 |
+| moocradar-C_797404 | 182148 | 1806 | 253 | 184 |
+| moocradar-C_746997 | 100066 | 1577 | 265 | 550 |
 
 ### after preprocessing (for multi concept datasets)
 
@@ -191,3 +198,7 @@ assist2017: [download](https://sites.google.com/view/assistmentsdatamining/datas
 ## Slepemapy-Anatomy
 
 [download](http://data.practiceanatomy.com/)
+
+## Moocradar
+
+[download](https://github.com/THU-KEG/MOOC-Radar)

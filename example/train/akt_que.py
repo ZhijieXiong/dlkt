@@ -30,7 +30,7 @@ if __name__ == "__main__":
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
     parser.add_argument("--train_strategy", type=str, default="valid_test",
-                        choices=("valid_test", "no_test"), help="no_valid目前未实现")
+                        choices=("valid_test", "no_test"))
     parser.add_argument("--num_epoch", type=int, default=20)
     parser.add_argument("--use_early_stop", type=str2bool, default=True)
     parser.add_argument("--epoch_early_stop", type=int, default=10)

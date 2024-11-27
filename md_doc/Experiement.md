@@ -46,15 +46,14 @@
 | AKT-CORE  |   0.7512   |   0.7619   |  0.7076   |   0.7811    | 0.8037  |     0.7133      |
 | qDKT-CORE |   0.7365   |   0.7527   |  0.6544   |   0.7608    |  0.78   |     0.7008      |
 
-|          | Assist2017 | Junyi2015 |         Edi2020-task1         |        Edi2020-task34         |
-| :------: | :--------: | :-------: | :---------------------------: | :---------------------------: |
-|   qDKT   |   0.7919   |  0.7806   |            0.8141             |            0.7947             |
-|   AKT    |   0.772    |  0.7791   |            0.8129             |             0.793             |
-|   LPKT   |   0.812    |  not run  |            0.8179             |            0.7968             |
-|  DIMKT   |   0.8002   |  0.7836   |            0.8138             |            0.7936             |
-| SimpleKT |   0.7746   |  0.7793   |            0.8135             |            0.7937             |
-|   QIKT   |   0.7874   |  0.7812   |              OOM              |            0.7972             |
-|   LBKT   |   0.8335   |  0.7829   | Lacking behaviour information | Lacking behaviour information |
+|          | Assist2017 | Junyi2015 | Edi2020-task1 | Edi2020-task34 |
+| :------: | :--------: | :-------: | :-----------: | :------------: |
+|   qDKT   |   0.7919   |  0.7806   |    0.8141     |     0.7947     |
+|   AKT    |   0.772    |  0.7791   |    0.8129     |     0.793      |
+|   LPKT   |   0.812    |           |    0.8179     |     0.7968     |
+|  DIMKT   |   0.8002   |  0.7836   |    0.8138     |     0.7936     |
+| SimpleKT |   0.7746   |  0.7793   |    0.8135     |     0.7937     |
+|   QIKT   |   0.7874   |  0.7812   |      OOM      |     0.7972     |
 
 - 一些习题数量较少（基于习题建模，数据较稠密）的数据集上，基于习题的DKT和DKVMN
 
@@ -63,49 +62,7 @@
 |  DKT (concept)  |   0.7284   |     0.7598     |   0.7113    | 0.7838  |
 |    DKT (que)    |   0.7953   |     0.7913     |   0.8145    | 0.8226  |
 | DKVMN (concept) |   0.6941   |     0.748      |   0.7046    | 0.7748  |
-|   DKVMN (que)   |   0.7411   |     0.7886     |   0.8032    |  todo   |
-
-- KCQRL
-  - official emb：使用数据集提供的question emb
-  - KCQRL：使用论文 Automated **K**nowledge **C**oncept Annotation and **Q**uestion **R**epresentation **L**earning for Knowledge Tracing 提出的训练方法所得到的question emb（[paper](https://arxiv.org/abs/2410.01727), [code](https://github.com/oezyurty/KCQRL)）
-  - frozen ｜ free：预训练的question emb不可学习｜可学习
-
-|                                 | Xes3g5m |
-| :-----------------------------: | :-----: |
-|         DKT (baseline)          | 0.8226  |
-|  DKT_QUE (official emb frozen)  | 0.8177  |
-|   DKT_QUE (official emb free)   |  0.827  |
-|   DKT_QUE (KCQRL emb frozen)    | 0.8123  |
-|    DKT_QUE (KCQRL emb free)     |  0.828  |
-|        DKVMN (baseline)         | 0.7748  |
-| DKVMN_QUE (official emb frozen) |         |
-|  DKVMN_QUE (official emb free)  |         |
-|  DKVMN_QUE (KCQRL emb frozen)   |         |
-|   DKVMN_QUE (KCQRL emb free)    |         |
-|         AKT (baseline)          | 0.8225  |
-|  AKT_QUE (official emb frozen)  |         |
-|   AKT_QUE (official emb free)   |         |
-|   AKT_QUE (KCQRL emb frozen)    |         |
-|    AKT_QUE (KCQRL emb free)     |         |
-|        DIMKT (baseline)         | 0.8262  |
-| DIMKT_QUE (official emb frozen) |         |
-|  DIMKT_QUE (official emb free)  |         |
-|  DIMKT_QUE (KCQRL emb frozen)   |         |
-|   DIMKT_QUE (KCQRL emb free)    |         |
-
-- KCQRL消融实验（Xes3g5m）
-  - w/o step：对比学习训练习题的emb时，只使用知识点，不使用解题步骤
-  - w/o cluster：对比学习训练习题的emb时，不对知识点进行聚类
-  - (LLM)：使用LLM提取的知识点（和论文一样）
-  - (KC)：使用数据集提供的知识点
-  - 训练que emb的[代码](https://github.com/ZhijieXiong/KCQRL-train-que-emb)
-
-|           | KCQRL | w/o step (LLM) | w/o step & cluster (LLM) | w/o step (KC) | w/o step & cluster (KC) |
-| :-------: | :---: | :------------: | :----------------------: | :-----------: | :---------------------: |
-|  DKT_QUE  | 0.828 |     0.8271     |          0.8279          |    0.8273     |         0.8273          |
-| DKVMN_QUE |       |                |                          |               |                         |
-|  AKT_QUE  |       |                |                          |               |                         |
-| DIMKT_QUE |       |                |                          |               |                         |
+|   DKVMN (que)   |   0.7411   |     0.7886     |   0.8032    | 0.8213  |
 
 - LBKT在有行为数据的数据集上的性能
 
@@ -113,9 +70,49 @@
 | ---------- | ---------- | ---------- | --------- |
 | 0.7767     | 0.7914     | 0.8335     | 0.7829    |
 
+- KCQRL
+  - Automated **K**nowledge **C**oncept Annotation and **Q**uestion **R**epresentation **L**earning for Knowledge Tracing （[paper](https://arxiv.org/abs/2410.01727), [code](https://github.com/oezyurty/KCQRL)）
+  - direct que emb：直接使用习题文本的emb训练KT模型。其中Xes3g5m使用数据集提供的question emb，Moocradar-C_746997调用ZhipuAI/embedding-3获取question emb
+  - KCQRL emb：使用论文提出的训练方法所得到的question emb
+  - 训练KT模型时，设置预训练的question emb为可学习
+  - DIMKT：no concept表示concept emb和concept diff emb设置为0（和KCQRL论文一致）；use concept表示设置concept emb和concept diff emb（使用数据集提供的知识点）为可学习的embedding
+
+|                                         | Xes3g5m | Moocradar-C_746997 | Edi  |
+| :-------------------------------------: | :-----: | :----------------: | :--: |
+|             DKT (baseline)              | 0.8226  |       0.8126       |      |
+|        DKT_QUE (direct que emb)         |  0.827  |       0.8205       |      |
+|           DKT_QUE (KCQRL emb)           |  0.828  |       0.8164       |      |
+|            DKVMN (baseline)             | 0.8213  |       0.8073       |      |
+|       DKVMN_QUE (direct que emb)        | 0.8232  |       0.8148       |      |
+|          DKVMN_QUE (KCQRL emb)          | 0.8232  |       0.8101       |      |
+|             AKT (baseline)              | 0.8225  |                    |      |
+|        AKT_QUE (direct que emb)         |         |                    |      |
+|           AKT_QUE (KCQRL emb)           |         |                    |      |
+|            DIMKT (baseline)             | 0.8262  |                    |      |
+| DIMKT_QUE (no concept, direct que emb)  | 0.8259  |                    |      |
+| DIMKT_QUE (use concept, direct que emb) | 0.8257  |                    |      |
+|    DIMKT_QUE (no concept, KCQRL emb)    | 0.8248  |                    |      |
+
+- KCQRL消融实验
+  - w/o step：对比学习训练习题的emb时，只使用知识点，不使用解题步骤
+  - w/o cluster：对比学习训练习题的emb时，不对知识点进行聚类
+  - (LLM)：使用LLM提取的知识点（和论文一样）训练que emb
+  - (KC)：使用数据集提供的知识点训练que emb
+  - 训练que emb代码：[翻译和解题步骤获取](https://github.com/ZhijieXiong/DSPY-application/tree/main/dspy-project/KnowledgeTracing/KCQRL), [训练](https://github.com/ZhijieXiong/KCQRL-train-que-emb)
+
+|           |           | KCQRL  | w/o step (LLM) | w/o step & cluster (LLM) | w/o step (KC) | w/o step & cluster (KC) |
+| :-------: | :-------: | :----: | :------------: | :----------------------: | :-----------: | :---------------------: |
+|  Xes3g5m  |  DKT_QUE  | 0.828  |     0.8271     |          0.8279          |    0.8273     |         0.8273          |
+|  Xes3g5m  | DKVMN_QUE | 0.8232 |                |                          |               |                         |
+| Moocradar |  DKT_QUE  | 0.8164 |     0.8154     |          0.8169          |     0.817     |         0.8174          |
+| Moocradar | DKVMN_QUE | 0.8101 |     0.8103     |          0.8088          |    0.8135     |         0.8128          |
+|    Edi    |  DKT_QUE  |        |                |                          |               |                         |
+|    Edi    | DKVMN_QUE |        |                |                          |               |                         |
+
 ### CORE metric (AUC)
 
-- 论文`"Model-agnostic counterfactual reasoning for identifying and mitigating answer bias in knowledge tracing", Neural Networks 2024`提出来的一种无偏指标，汇报AUC指标
+- 论文`"Model-agnostic counterfactual reasoning for identifying and mitigating answer bias in knowledge tracing", Neural Networks 2024`提出来的一种无偏指标
+- 汇报AUC指标
 
 |          | Assist2009 | Assist2012 | Ednet-KT1 | Statics2011 | Xes3g5m | Slemapy-Anatomy |
 | :------: | :--------: | :--------: | :-------: | :---------: | :-----: | :-------------: |
@@ -153,8 +150,6 @@
 
   Slepemapy-Anatomy数据集有学生城市信息，所以可以基于城市做域泛化的实验，由于该数据集中其中一个城市的学生数据占比达到80%，所以直接使用该城市学生数据作为训练集，剩余数据作为测试集
 - 汇报结果，使用AUC指标，括号外为验证集（I.I.D.）性能，括号内为测试集（O.O.D.）性能
-
-### AUC Metric
 
 |       | Assist2009      | Assist2012      | Slepemapy-Anatomy |
 | ----- | --------------- | --------------- | ----------------- |

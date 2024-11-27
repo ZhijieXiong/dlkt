@@ -21,4 +21,4 @@
       --use_concept False --num_concept 101 --num_question 2803 --dim_key 32 --dim_value 64 --dropout 0.1 \
       --save_model True --debug_mode False --use_cpu False --seed 0 --trace_epoch True
   done
-} >> F:/code/myProjects/dlkt/example/result_local/dkvmn_que_our_setting_new_assist2017_save.txt
+} >> F:/code/myProjects/dlkt/example/result_local/dkvmn_use_que_our_setting_new_assist2017_save.txt

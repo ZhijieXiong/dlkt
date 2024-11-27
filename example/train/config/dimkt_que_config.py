@@ -128,8 +128,8 @@ def dimkt_que_general_config(local_params, global_params, global_objects):
 
     global_objects["logger"].info(
         f"model params\n    "
-        f"num of concept: {num_concept}, num of question: {num_question}, frozen_que_emb: {frozen_que_emb}, "
-        f"que_emb_path: {que_emb_path}\n    "
+        f"num of concept: {num_concept}, num of question: {num_question}, use_concept: {use_concept}, "
+        f"frozen_que_emb: {frozen_que_emb}, que_emb_path: {que_emb_path}\n    "
         f"num of min question: {num_min_question}, num of min concept: {num_min_concept}, "
         f"num of question difficulty: {num_question_diff}, num of concept difficulty: {num_concept_diff}, "
         f"dim of emb: {dim_emb}, dropout: {dropout}"

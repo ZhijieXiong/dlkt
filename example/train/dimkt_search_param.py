@@ -1,19 +1,18 @@
 import argparse
+import os
 from copy import deepcopy
 from hyperopt import fmin, tpe, hp
 from torch.utils.data import DataLoader
 
-from config.akt_config import akt_config
+from config.dimkt_config import dimkt_config
 
 from lib.util.parse import str2bool
 from lib.util.set_up import set_seed
 from lib.dataset.KTDataset import KTDataset
-from lib.model.AKT import AKT
+from lib.model.DIMKT import DIMKT
 from lib.trainer.KnowledgeTracingTrainer import KnowledgeTracingTrainer
 
 
-# 如果要使用IPS-double或者IPS-question这两种样本损失重加权方法
-# 请先运行prepare4fine_trained_evaluate.py获得数据集中习题的common statics信息
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 数据集相关
@@ -25,53 +24,45 @@ if __name__ == "__main__":
     parser.add_argument("--valid_file_name", type=str, default="moocradar-C_746997_valid_fold_0.txt")
     parser.add_argument("--test_file_name", type=str, default="moocradar-C_746997_test_fold_0.txt")
     # 优化器相关参数选择
-    parser.add_argument("--optimizer_type", type=str, default="adam",
-                        choices=("adam", "sgd"))
-    parser.add_argument("--weight_decay", type=float, default=0)
+    parser.add_argument("--optimizer_type", type=str, default="adam", choices=("adam", "sgd"))
+    parser.add_argument("--weight_decay", type=float, default=0.0001)
     parser.add_argument("--momentum", type=float, default=0.9)
     # 训练策略
-    parser.add_argument("--train_strategy", type=str, default="no_test",
-                        choices=("no_test", ))
+    parser.add_argument("--train_strategy", type=str, default="valid_test",
+                        choices=("valid_test", "no_test"))
     parser.add_argument("--num_epoch", type=int, default=200)
     parser.add_argument("--use_early_stop", type=str2bool, default=True)
     parser.add_argument("--epoch_early_stop", type=int, default=10)
-    parser.add_argument("--use_last_average", type=str2bool, default=False, help="目前未实现")
-    parser.add_argument("--epoch_last_average", type=int, default=5, help="目前未实现")
+    parser.add_argument("--use_last_average", type=str2bool, default=False)
+    parser.add_argument("--epoch_last_average", type=int, default=5)
     # 评价指标选择
-    parser.add_argument("--main_metric", type=str, default="AUC",
-                        choices=("AUC", "ACC", "RMSE", "MAE"))
+    parser.add_argument("--main_metric", type=str, default="AUC")
     parser.add_argument("--use_multi_metrics", type=str2bool, default=False)
     parser.add_argument("--multi_metrics", type=str, default="[('AUC', 1), ('ACC', 1)]")
     # 学习率
-    parser.add_argument("--learning_rate", type=float, default=0.0001)
-    parser.add_argument("--enable_lr_schedule", type=str2bool, default=False)
-    parser.add_argument("--lr_schedule_type", type=str, default="MultiStepLR",
+    parser.add_argument("--learning_rate", type=float, default=0.001)
+    parser.add_argument("--enable_lr_schedule", type=str2bool, default=True)
+    parser.add_argument("--lr_schedule_type", type=str, default="StepLR",
                         choices=("StepLR", "MultiStepLR"))
     parser.add_argument("--lr_schedule_step", type=int, default=10)
-    parser.add_argument("--lr_schedule_milestones", type=str, default="[5, 10]")
+    parser.add_argument("--lr_schedule_milestones", type=str, default="[5]")
     parser.add_argument("--lr_schedule_gamma", type=float, default=0.5)
     # batch size
-    parser.add_argument("--train_batch_size", type=int, default=24)
+    parser.add_argument("--train_batch_size", type=int, default=64)
     parser.add_argument("--evaluate_batch_size", type=int, default=128)
     # 梯度裁剪
-    parser.add_argument("--enable_clip_grad", type=str2bool, default=True)
+    parser.add_argument("--enable_clip_grad", type=str2bool, default=False)
     parser.add_argument("--grad_clipped", type=float, default=10.0)
+    # DIMKT数据处理参数
+    parser.add_argument("--num_min_question", type=int, default=15)
+    parser.add_argument("--num_min_concept", type=int, default=30)
     # 模型参数
     parser.add_argument("--num_concept", type=int, default=265)
     parser.add_argument("--num_question", type=int, default=550)
-    parser.add_argument("--dim_model", type=int, default=64)
-    parser.add_argument("--key_query_same", type=str2bool, default=True)
-    parser.add_argument("--num_head", type=int, default=4)
-    parser.add_argument("--num_block", type=int, default=1)
-    parser.add_argument("--dim_ff", type=int, default=64)
-    parser.add_argument("--dim_final_fc", type=int, default=64)
-    parser.add_argument("--dropout", type=float, default=0.1)
-    parser.add_argument("--separate_qa", type=str2bool, default=False)
-    parser.add_argument("--seq_representation", type=str, default="encoder_output",
-                        help="主要用于对比学习，在CL4KT中使用的是knowledge_encoder_output作为序列的表征，"
-                             "但是也可以选择encoder_output作为序列表征，实测区别不大",
-                        choices=("encoder_output", "knowledge_encoder_output"))
-    parser.add_argument("--weight_rasch_loss", type=float, default=0.00001)
+    parser.add_argument("--dim_emb", type=int, default=64)
+    parser.add_argument("--num_question_diff", type=int, default=100)
+    parser.add_argument("--num_concept_diff", type=int, default=100)
+    parser.add_argument("--dropout", type=float, default=0.2)
     # sample weight
     parser.add_argument("--use_sample_reweight", type=str2bool, default=False)
     parser.add_argument("--sample_reweight_method", type=str, default="IPS-seq",
@@ -83,6 +74,7 @@ if __name__ == "__main__":
 
     def objective(parameters):
         global current_best_performance
+
         args = parser.parse_args()
         params = vars(args)
 
@@ -96,7 +88,7 @@ if __name__ == "__main__":
             params[param_name] = parameters[param_name]
 
         set_seed(params["seed"])
-        global_params, global_objects = akt_config(params)
+        global_params, global_objects = dimkt_config(params)
 
         valid_params = deepcopy(global_params)
         valid_params["datasets_config"]["dataset_this"] = "valid"
@@ -122,10 +114,17 @@ if __name__ == "__main__":
         global_objects["data_loaders"]["test_loader"] = dataloader_test
 
         global_objects["models"] = {}
-        model = AKT(global_params, global_objects).to(global_params["device"])
+        model = DIMKT(global_params, global_objects).to(global_params["device"])
         global_objects["models"]["kt_model"] = model
         trainer = KnowledgeTracingTrainer(global_params, global_objects)
         trainer.train()
+
+        # DIMKT会生成difficulty文件，搜参时需要删除
+        setting_dir = global_objects["file_manager"].get_setting_dir(params["setting_name"])
+        train_file_name = params["train_file_name"]
+        difficulty_info_path = os.path.join(setting_dir, train_file_name.replace(".txt", "_dimkt_diff.json"))
+        if os.path.exists(difficulty_info_path):
+            os.remove(difficulty_info_path)
         performance_this = trainer.train_record.get_evaluate_result("valid", "valid")["main_metric"]
 
         if performance_this > current_best_performance:
@@ -136,15 +135,16 @@ if __name__ == "__main__":
             print(performance_this)
         return -performance_this
 
+
     parameters_space = {
         "weight_decay": [0, 0.0001, 0.00001],
-        "learning_rate": [0.0001],
-        "dim_model": [64, 128],
-        "num_head": [4, 8],
-        "num_block": [1, 2],
+        "learning_rate": [0.001],
+        "dim_emb": [64, 128],
+        "num_question_diff": [25, 50, 100],
+        "num_concept_diff": [25, 50, 100],
         "dropout": [0.1, 0.2],
-        "dim_ff": [128, 256],
-        "dim_final_fc": [128, 256]
+        "num_min_question": [10],
+        "num_min_concept": [10, 30]
     }
     space = {
         param_name: hp.choice(param_name, param_space)

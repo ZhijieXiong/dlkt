@@ -26,6 +26,8 @@ from ..model.MIKT import MIKT
 from ..model.SparseKT import SparseKT
 from ..model.DKT_QUE import DKT_QUE
 from ..model.DKVMN_QUE import DKVMN_QUE
+from ..model.AKT_QUE import AKT_QUE
+from ..model.DIMKT_QUE import DIMKT_QUE
 
 
 model_table = {
@@ -51,7 +53,9 @@ model_table = {
     "MIKT": MIKT,
     "SparseKT": SparseKT,
     "DKT_QUE": DKT_QUE,
-    "DKVMN_QUE": DKVMN_QUE
+    "DKVMN_QUE": DKVMN_QUE,
+    "AKT_QUE": AKT_QUE,
+    "DIMKT_QUE": DIMKT_QUE
 }
 
 

@@ -13,7 +13,7 @@ def cal_average(metrics):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--file_path", type=str,
-                        default=r"/Users/dream/myProjects/dlkt-release/example/result_cluster/our_setting_dkvmn_que_kcqrl_CL-no-cluster_only-original-KC_free_emb_moocradar-C_746997_save.txt")
+                        default=r"/Users/dream/myProjects/dlkt-release/example/result_cluster/our_setting_dkvmn_que_kcqrl_CL-no-cluster_only-original-KC_free_emb_xes3g5m_save.txt")
     parser.add_argument("--key_words", type=str, default="test performance by best valid epoch is main metric")
     parser.add_argument("--n", help="隔几个做一次平均", type=int, default=5)
     parser.add_argument("--first_num", type=int, default=1,

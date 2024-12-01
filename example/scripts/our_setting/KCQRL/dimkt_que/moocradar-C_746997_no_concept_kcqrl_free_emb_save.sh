@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 {
-  dataset_name="moocradar-C_74997"
+  dataset_name="moocradar-C_746997"
   data_type="only_question"
 
   for fold in 0 1 2 3 4
@@ -23,4 +23,4 @@
       --dim_emb 64 --num_question_diff 25 --num_concept_diff 100 --dropout 0.1 \
       --use_sample_reweight False --save_model True --debug_mode False --use_cpu False --seed 0 --trace_epoch True
   done
-} >> /ghome/xiongzj/code/dlkt-release/example/result_cluster/our_setting_dimkt_que_no_concept_kcqrl_free_emb_moocradar-C_74997_save.txt
+} >> /ghome/xiongzj/code/dlkt-release/example/result_cluster/our_setting_dimkt_que_no_concept_kcqrl_free_emb_moocradar-C_746997_save.txt

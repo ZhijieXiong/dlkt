@@ -42,7 +42,7 @@ example4llm_expolre/demo
 /freeze.yml
 /requirements.txt
 /keys.json
-
+/parse_result_local.py
 
 # future to open
 #/example/prepare_dataset/our_setting_ood_by_country.py

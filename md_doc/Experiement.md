@@ -70,28 +70,29 @@
 | ---------- | ---------- | ---------- | --------- |
 | 0.7767     | 0.7914     | 0.8335     | 0.7829    |
 
-- KCQRL
+- KCQRL复现
   - Automated **K**nowledge **C**oncept Annotation and **Q**uestion **R**epresentation **L**earning for Knowledge Tracing （[paper](https://arxiv.org/abs/2410.01727), [code](https://github.com/oezyurty/KCQRL)）
   - direct que emb：直接使用习题文本的emb训练KT模型。其中Xes3g5m使用数据集提供的question emb，Moocradar-C_746997调用ZhipuAI/embedding-3获取question emb
   - KCQRL emb：使用论文提出的训练方法所得到的question emb
   - 训练KT模型时，设置预训练的question emb为可学习
   - DIMKT：no concept表示concept emb和concept diff emb设置为0（和KCQRL论文一致）；use concept表示设置concept emb和concept diff emb（使用数据集提供的知识点）为可学习的embedding
+  - 
 
-|                                         | Xes3g5m | Moocradar-C_746997 | Edi  |
-| :-------------------------------------: | :-----: | :----------------: | :--: |
-|             DKT (baseline)              | 0.8226  |       0.8126       |      |
-|        DKT_QUE (direct que emb)         |  0.827  |       0.8205       |      |
-|           DKT_QUE (KCQRL emb)           |  0.828  |       0.8164       |      |
-|            DKVMN (baseline)             | 0.8213  |       0.8073       |      |
-|       DKVMN_QUE (direct que emb)        | 0.8232  |       0.8148       |      |
-|          DKVMN_QUE (KCQRL emb)          | 0.8232  |       0.8101       |      |
-|             AKT (baseline)              | 0.8225  |                    |      |
-|        AKT_QUE (direct que emb)         |         |                    |      |
-|           AKT_QUE (KCQRL emb)           |         |                    |      |
-|            DIMKT (baseline)             | 0.8262  |                    |      |
-| DIMKT_QUE (no concept, direct que emb)  | 0.8259  |                    |      |
-| DIMKT_QUE (use concept, direct que emb) | 0.8257  |                    |      |
-|    DIMKT_QUE (no concept, KCQRL emb)    | 0.8248  |                    |      |
+|                                         |    Xes3g5m    | Moocradar-C_746997 | Eedi |
+| :-------------------------------------: | :-----------: | :----------------: | :--: |
+|             DKT (baseline)              |    0.8226     |       0.8126       |      |
+|        DKT_QUE (direct que emb)         |     0.827     |       0.8205       |      |
+|           DKT_QUE (KCQRL emb)           |     0.828     |       0.8164       |      |
+|            DKVMN (baseline)             |    0.8213     |       0.8073       |      |
+|       DKVMN_QUE (direct que emb)        |    0.8232     |       0.8148       |      |
+|          DKVMN_QUE (KCQRL emb)          |    0.8232     |       0.8101       |      |
+|             AKT (baseline)              |    0.8225     |       0.8155       |      |
+|        AKT_QUE (direct que emb)         |  **0.8287**   |       0.8202       |      |
+|           AKT_QUE (KCQRL emb)           | <u>0.8281</u> |       0.8187       |      |
+|            DIMKT (baseline)             |    0.8262     |       0.8186       |      |
+| DIMKT_QUE (no concept, direct que emb)  |    0.8259     |   <u>0.8208</u>    |      |
+| DIMKT_QUE (use concept, direct que emb) |    0.8257     |       0.8205       |      |
+|    DIMKT_QUE (no concept, KCQRL emb)    |    0.8248     |     **0.8211**     |      |
 
 - KCQRL消融实验
   - w/o step：对比学习训练习题的emb时，只使用知识点，不使用解题步骤
@@ -103,11 +104,14 @@
 |           |           | KCQRL  | w/o step (LLM) | w/o step & cluster (LLM) | w/o step (KC) | w/o step & cluster (KC) |
 | :-------: | :-------: | :----: | :------------: | :----------------------: | :-----------: | :---------------------: |
 |  Xes3g5m  |  DKT_QUE  | 0.828  |     0.8271     |          0.8279          |    0.8273     |         0.8273          |
-|  Xes3g5m  | DKVMN_QUE | 0.8232 |                |                          |               |                         |
+|  Xes3g5m  | DKVMN_QUE | 0.8232 |     0.8231     |          0.8229          |    0.8232     |         0.8227          |
+|  Xes3g5m  |  AKT_QUE  | 0.8281 |     0.8282     |          0.8276          |    0.8272     |         0.8273          |
 | Moocradar |  DKT_QUE  | 0.8164 |     0.8154     |          0.8169          |     0.817     |         0.8174          |
 | Moocradar | DKVMN_QUE | 0.8101 |     0.8103     |          0.8088          |    0.8135     |         0.8128          |
-|    Edi    |  DKT_QUE  |        |                |                          |               |                         |
-|    Edi    | DKVMN_QUE |        |                |                          |               |                         |
+| Moocradar |  AKT_QUE  | 0.8187 |     0.8173     |          0.8169          |     0.818     |         0.8185          |
+|   Eedi    |  DKT_QUE  |        |                |                          |               |                         |
+|   Eedi    | DKVMN_QUE |        |                |                          |               |                         |
+|   Eedi    |  AKT_QUE  |        |                |                          |               |                         |
 
 ### CORE metric (AUC)
 

@@ -26,8 +26,6 @@
 
 - 根据我们的经验，知识追踪模型对超参数敏感度低，所以即使是不同的实验设置，也可以使用该实验设置下的超参数来训练模型，无需再次调参
 
-- [获取划分好的数据](https://drive.google.com/drive/folders/1HYERnQYJz3diK1TZXhd_gJDL7eW1VnOk?usp=sharing)
-
 ### Overall metric (AUC)
 
 - 常规指标，计算所有样本的性能，汇报AUC指标

@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 
 import config
 from load_data import user_ids, users_history
@@ -9,7 +10,6 @@ from rec_strategy import *
 from lib.util.data import read_mlkc_data
 from lib.util.parse import question2concept_from_Q
 from lib.util.set_up import set_seed
-from lib.dataset.KG4EXDataset import *
 from lib.util.FileManager import FileManager
 from lib.metric.exercise_recommendation import *
 

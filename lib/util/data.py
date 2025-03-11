@@ -474,14 +474,14 @@ def kt_data2user_question_matrix(data, num_question, remove_last=1):
     return matrix / sum_matrix
 
 
-def kt_data2user_concept_matrix(data, num_concept, q2c, remove_last=1):
+def kt_data2user_concept_matrix(kt_data, num_concept, q2c, remove_last=1):
     """
     构造user-concept矩阵，矩阵元素是用户对知识点答对正确率，如果未作答过，则为-1
     """
-    num_user = len(data)
+    num_user = len(kt_data)
     matrix = np.zeros((num_user, num_concept))
     sum_matrix = np.zeros((num_user, num_concept))
-    for item_data in data:
+    for item_data in kt_data:
         user_id = item_data["user_id"]
         question_seq = item_data["question_seq"][:item_data["seq_len"]-remove_last]
         correct_seq = item_data["correct_seq"][:item_data["seq_len"] - remove_last]

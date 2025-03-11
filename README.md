@@ -11,6 +11,8 @@ The experiments in the `Experiment` section are based on this code repository. C
 
 The new code repository is still under active development. Once completed, I will release all divided datasets, model training parameters, and model weights. Below is a flowchart illustrating the experimental design of the new repository.
 
+![](./resources/pyedmine.jpg)
+
 If you are interested in accessing the new code repository, please feel free to email me, and I will grant you access.
 # Introduction
 

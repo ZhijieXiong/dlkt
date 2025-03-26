@@ -3,7 +3,7 @@ import os.path
 from ._config import *
 
 from lib.util.basic import *
-from lib.util.data import dataset_delete_pad, generate_factor4lbkt, write2file, read_preprocessed_file
+from lib.util.data import dataset_delete_pad, generate_factor4lbkt, write2file, read_preprocessed_file, load_json
 from lib.util.parse import get_statics4lbkt
 
 

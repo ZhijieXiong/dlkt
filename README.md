@@ -5,15 +5,30 @@
 [PaperCollection]: https://zhijiexiong.github.io/sub-page/pyedmine/paperCollection.html
 [Experiment]: md_doc/Experiement.md
 [RankingList]: https://zhijiexiong.github.io/sub-page/pyedmine/rankingList.html
-NOTE
+# Code Repository Update Notice
 
-The experiments in the `Experiment` section are based on this code repository. Currently, I am in the process of refactoring the repository to eliminate redundant code and redesign the dataset division to create a more unified framework for **Knowledge Tracing (KT), Cognitive Diagnosis (CD), and Exercise Recommendation (ER) tasks**. As a result, the results in the `RankingList` may differ from those in the `Experiment` section. For the KT model, I have retained the hyperparameters used in the original experiments.
+The experiments in the Experiment section were initially based on an earlier version of the code. We have since refactored the repository to:
 
-The new code repository is still under active development. Once completed, I will release all divided datasets, model training parameters, and model weights. Below is a flowchart illustrating the experimental design of the new repository.
+- Remove redundant code.
 
-![](./resources/pyedmine.jpg)
+- Redesign the dataset splits for better consistency across Knowledge Tracing (KT), Cognitive Diagnosis (CD), and Exercise Recommendation (ER) tasks.
 
-If you are interested in accessing the new code repository, please feel free to email me, and I will grant you access.
+Due to these changes, some results in the RankingList may differ from those in the original experiments. However, for KT models, we have retained the original hyperparameters to ensure comparability.
+
+# New Code Repository Now Open-Sourced! 🎉
+
+The revised codebase is now publicly available, including:
+
+✅ Standardized dataset splits (for KT, CD, and ER tasks)
+
+✅ Model training configurations (hyperparameters, preprocessing steps)
+
+✅ Pre-trained model weights
+
+You can access the repository here: [pyedmine](https://github.com/ZhijieXiong/pyedmine)
+
+For any questions or collaboration opportunities, feel free to email me or open an issue on GitHub.
+
 # Introduction
 
 A library of algorithms for reproducing knowledge tracing, cognitive diagnosis, and exercise recommendation models.

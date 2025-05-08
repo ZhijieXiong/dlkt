@@ -5,29 +5,9 @@
 [PaperCollection]: https://zhijiexiong.github.io/sub-page/pyedmine/paperCollection.html
 [Experiment]: md_doc/Experiement.md
 [RankingList]: https://zhijiexiong.github.io/sub-page/pyedmine/rankingList.html
-# Code Repository Update Notice
+# Import News!!!
 
-The experiments in the Experiment section were initially based on an earlier version of the code. We have since refactored the repository to:
-
-- Remove redundant code.
-
-- Redesign the dataset splits for better consistency across Knowledge Tracing (KT), Cognitive Diagnosis (CD), and Exercise Recommendation (ER) tasks.
-
-Due to these changes, some results in the RankingList may differ from those in the original experiments. However, for KT models, we have retained the original hyperparameters to ensure comparability.
-
-# New Code Repository Now Open-Sourced! 🎉
-
-The revised codebase is now publicly available, including:
-
-✅ Standardized dataset splits (for KT, CD, and ER tasks)
-
-✅ Model training configurations (hyperparameters, preprocessing steps)
-
-✅ Pre-trained model weights
-
-You can access the repository here: [pyedmine](https://github.com/ZhijieXiong/pyedmine)
-
-For any questions or collaboration opportunities, feel free to email me or open an issue on GitHub.
+We have migrated all code to **[PyEdmine](https://github.com/ZhijieXiong/pyedmine)**, which significantly refactors and optimizes the framework while introducing a unified experimental pipeline for **Knowledge Tracing (KT), Cognitive Diagnosis (CD), and Exercise Recommendation (ER)**. Additionally, PyEdmine open-sources all **pre-trained model weights and parameters** from the benchmark rankings.
 
 # Introduction
 

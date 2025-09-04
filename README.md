@@ -7,7 +7,7 @@
 [RankingList]: https://zhijiexiong.github.io/sub-page/pyedmine/rankingList.html
 # Important News!!!
 
-We have migrated all code to **[PyEdmine](https://github.com/ZhijieXiong/pyedmine)**, which significantly refactors and optimizes the framework while introducing a unified experimental pipeline for **Knowledge Tracing (KT), Cognitive Diagnosis (CD), and Exercise Recommendation (ER)**. Additionally, PyEdmine open-sources all **pre-trained model weights and parameters** from the benchmark rankings.
+DLKT has been fully migrated to [PyEdmine](https://github.com/ZhijieXiong/pyedmine) and is no longer maintained.
 
 # Introduction
 
